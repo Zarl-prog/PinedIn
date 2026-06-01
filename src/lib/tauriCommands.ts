@@ -76,3 +76,16 @@ export async function updateSetting(
 ): Promise<void> {
   return invoke("update_setting", { key, value });
 }
+
+// ─── Overlay Commands ───────────────────────────────────────────────────────
+
+export async function saveOverlayPosition(
+  x: number,
+  y: number,
+): Promise<void> {
+  return invoke("save_overlay_position", { x, y });
+}
+
+export async function getOverlayPosition(): Promise<[number, number] | null> {
+  return invoke<[number, number] | null>("get_overlay_position");
+}

@@ -1,34 +1,29 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, ListTodo, GripHorizontal, Pin, ExternalLink } from "lucide-react";
-import { useReminderStore } from "@/store/reminderStore";
+import { motion } from "framer-motion";
+import { CheckCircle2, ListTodo, GripHorizontal, Pin } from "lucide-react";
+import { getIncompleteTasks, completeTask, saveOverlayPosition } from "@/lib/tauriCommands";
 import UrgencyBadge from "./UrgencyBadge";
-import { completeTask } from "@/lib/tauriCommands";
 import { listen } from "@tauri-apps/api/event";
-import { cn } from "@/lib/utils";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 /**
  * OverlayPanel - Compact always-on-top floating panel showing incomplete tasks.
- * Anchored to bottom-right of screen, always visible when tasks exist.
- * Collapses to a minimal "All clear" pill when all tasks are completed.
- * Content updates live via Tauri events from the backend.
+ * Uses Tauri's native drag region for window repositioning.
+ * Frosted glass dark theme with OS-level transparency.
+ * Saves and restores position across sessions.
  */
 export default function OverlayPanel() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [collapsed, setCollapsed] = useState(false);
-  const [dragging, setDragging] = useState(false);
-  const dragRef = useRef<{ startX: number; startY: number; posX: number; posY: number } | null>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
+  const windowApi = useRef(getCurrentWindow());
 
   const fetchTasks = useCallback(async () => {
     try {
-      const { getIncompleteTasks } = await import("@/lib/tauriCommands");
       const result = await getIncompleteTasks();
       setTasks(result);
-      setLoading(false);
     } catch (e) {
       console.error("Failed to fetch tasks:", e);
+    } finally {
       setLoading(false);
     }
   }, []);
@@ -45,6 +40,10 @@ export default function OverlayPanel() {
     }
     setup();
 
+    // Apply transparent background to html/body for this window
+    document.documentElement.style.background = "transparent";
+    document.body.style.background = "transparent";
+
     return () => {
       if (unlisten) unlisten();
     };
@@ -53,59 +52,25 @@ export default function OverlayPanel() {
   const handleComplete = async (id: number) => {
     try {
       await completeTask(id);
-      // The tasks-updated event will re-fetch, so optimistic update is fine
       setTasks((prev) => prev.filter((t) => t.id !== id));
     } catch (e) {
       console.error("Failed to complete task:", e);
     }
   };
 
+  // Save current window position after Tauri native drag ends
+  const savePosition = useCallback(async () => {
+    try {
+      const win = windowApi.current;
+      const pos = await win.outerPosition();
+      await saveOverlayPosition(pos.x, pos.y);
+    } catch (e) {
+      // Silently fail - position saving is non-critical
+    }
+  }, []);
+
   const incompleteCount = tasks.length;
   const isAllClear = incompleteCount === 0 && !loading;
-
-  // Drag handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (!panelRef.current) return;
-    const rect = panelRef.current.getBoundingClientRect();
-    dragRef.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      posX: rect.left,
-      posY: rect.top,
-    };
-    setDragging(true);
-  };
-
-  useEffect(() => {
-    if (!dragging) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!dragRef.current) return;
-      const dx = e.clientX - dragRef.current.startX;
-      const dy = e.clientY - dragRef.current.startY;
-      const newX = dragRef.current.posX + dx;
-      const newY = dragRef.current.posY + dy;
-
-      if (panelRef.current) {
-        panelRef.current.style.left = `${newX}px`;
-        panelRef.current.style.top = `${newY}px`;
-        panelRef.current.style.right = "auto";
-        panelRef.current.style.bottom = "auto";
-      }
-    };
-
-    const handleMouseUp = () => {
-      setDragging(false);
-      dragRef.current = null;
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [dragging]);
 
   // All clear - show minimal pill
   if (isAllClear) {
@@ -115,9 +80,16 @@ export default function OverlayPanel() {
         animate={{ opacity: 1, y: 0 }}
         className="fixed bottom-4 right-4 z-[9999]"
       >
-        <div className="flex cursor-default items-center gap-2 rounded-full border border-border/50 bg-card/80 px-4 py-2 shadow-lg backdrop-blur-md">
+        <div className="flex cursor-default items-center gap-2 rounded-full px-4 py-2 shadow-lg"
+          style={{
+            background: "rgba(15, 15, 18, 0.55)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+          }}
+        >
           <CheckCircle2 className="h-4 w-4 text-green-500" />
-          <span className="text-xs font-medium text-muted-foreground">All clear</span>
+          <span className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.6)" }}>All clear</span>
         </div>
       </motion.div>
     );
@@ -125,41 +97,52 @@ export default function OverlayPanel() {
 
   return (
     <motion.div
-      ref={panelRef}
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: "spring", damping: 25, stiffness: 300 }}
-      className={cn(
-        "fixed bottom-4 right-4 z-[9999] w-[320px] overflow-hidden rounded-xl border",
-        "border-border/50 bg-card/95 shadow-2xl backdrop-blur-xl",
-        dragging && "shadow-2xl",
-      )}
-      style={{ userSelect: dragging ? "none" : undefined }}
+      className="fixed bottom-4 right-4 z-[9999] w-[320px] overflow-hidden"
+      style={{
+        borderRadius: "16px",
+        background: "rgba(15, 15, 18, 0.55)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        border: "1px solid rgba(255, 255, 255, 0.08)",
+        boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
+      }}
     >
-      {/* Header with drag handle */}
+      {/* Header with Tauri native drag region */}
+      {/* onMouseUp fires after OS-level drag ends, letting us save position */}
       <div
-        className="flex cursor-grab items-center justify-between border-b border-border/30 px-3 py-2.5 active:cursor-grabbing"
-        onMouseDown={handleMouseDown}
+        data-tauri-drag-region
+        onMouseUp={savePosition}
+        className="flex cursor-grab items-center justify-between px-3 py-2.5 active:cursor-grabbing"
+        style={{
+          borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
+          userSelect: "none",
+        }}
       >
-        <div className="flex items-center gap-2">
-          <Pin className="h-3.5 w-3.5 text-primary" />
-          <span className="text-xs font-semibold text-foreground">Active Tasks</span>
-          <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary/20 px-1 text-[10px] font-bold text-primary">
+        <div className="flex items-center gap-2" data-tauri-drag-region>
+          <Pin className="h-3.5 w-3.5" style={{ color: "rgba(139, 127, 255, 0.9)" }} />
+          <span className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.85)" }}>Active Tasks</span>
+          <span
+            className="flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-bold"
+            style={{ background: "rgba(139, 127, 255, 0.2)", color: "rgba(139, 127, 255, 0.9)" }}
+          >
             {incompleteCount}
           </span>
         </div>
-        <GripHorizontal className="h-3.5 w-3.5 text-muted-foreground/40" />
+        <GripHorizontal className="h-3.5 w-3.5" style={{ color: "rgba(255,255,255,0.25)" }} />
       </div>
 
       {/* Task list */}
-      <div className="max-h-[360px] overflow-y-auto">
+      <div className="max-h-[360px] overflow-y-auto" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.1) transparent" }}>
         {tasks.length === 0 ? (
           <div className="flex flex-col items-center py-8 text-center">
-            <ListTodo className="mb-2 h-8 w-8 text-muted-foreground/30" />
-            <p className="text-xs text-muted-foreground/50">No active tasks</p>
+            <ListTodo className="mb-2 h-8 w-8" style={{ color: "rgba(255,255,255,0.15)" }} />
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>No active tasks</p>
           </div>
         ) : (
-          <div className="divide-y divide-border/20">
+          <div style={{ borderTop: "1px solid rgba(255, 255, 255, 0.04)" }}>
             {tasks.map((task, index) => (
               <OverlayTaskItem
                 key={task.id ?? index}
@@ -169,11 +152,6 @@ export default function OverlayPanel() {
             ))}
           </div>
         )}
-      </div>
-
-      {/* Subtle resize handle hint */}
-      <div className="flex items-center justify-center border-t border-border/20 py-1">
-        <div className="h-1 w-8 rounded-full bg-muted-foreground/20" />
       </div>
     </motion.div>
   );
@@ -190,25 +168,42 @@ function OverlayTaskItem({ task, onComplete }: OverlayTaskItemProps) {
   const urgency = task.urgency as "low" | "medium" | "critical";
 
   return (
-    <div className="group flex items-start gap-2.5 px-3 py-2.5 transition-colors hover:bg-muted/30">
+    <div
+      className="group flex items-start gap-2.5 px-3 py-2.5 transition-colors"
+      style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.04)" }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+    >
       {/* Complete button */}
       <button
         onClick={onComplete}
-        className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-muted-foreground/30 transition-colors hover:border-primary/50 hover:bg-primary/10"
+        className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full transition-colors"
+        style={{
+          border: "1px solid rgba(255,255,255,0.2)",
+          background: "transparent",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.border = "1px solid rgba(139, 127, 255, 0.5)";
+          e.currentTarget.style.background = "rgba(139, 127, 255, 0.1)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.border = "1px solid rgba(255,255,255,0.2)";
+          e.currentTarget.style.background = "transparent";
+        }}
       >
-        <CheckCircle2 className="h-3 w-3 text-transparent group-hover:text-primary/50" />
+        <CheckCircle2 className="h-3 w-3" style={{ color: "transparent" }} />
       </button>
 
       {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
-          <p className="truncate text-xs font-medium text-foreground">
+          <p className="truncate text-xs font-medium" style={{ color: "rgba(255,255,255,0.85)" }}>
             {task.title}
           </p>
           <UrgencyBadge urgency={urgency} className="shrink-0 scale-[0.7] origin-right" />
         </div>
         {task.due_time && (
-          <p className="mt-0.5 text-[10px] text-muted-foreground/60">
+          <p className="mt-0.5 text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>
             Due {formatOverlayDate(task.due_time)}
           </p>
         )}

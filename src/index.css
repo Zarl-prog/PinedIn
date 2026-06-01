@@ -61,6 +61,16 @@
   }
 }
 
+/* ─── Overlay window: force solid opaque background at every DOM level ─────── */
+
+html, body, #root {
+  background: #0f0f11 !important;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;
@@ -98,9 +108,4 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .overlay-scroll::-webkit-scrollbar-thumb {
   background: hsl(var(--muted-foreground) / 0.15);
   border-radius: 3px;
-}
-
-/* Drag handle cursor region */
-.drag-region {
-  -webkit-app-region: no-drag;
 }

@@ -1,6 +1,5 @@
 use std::sync::Arc;
 use crate::db::{AppSettings, DbHandle, Task};
-use crate::window;
 use tauri::{Emitter, State};
 
 fn emit_tasks_updated(app: &tauri::AppHandle, db: &DbHandle) {
@@ -19,7 +18,6 @@ pub fn create_task(
     due_time: String,
 ) -> Result<Task, String> {
     let task = db.create_task(&title, &description, &urgency, &due_time)?;
-    let _ = window::create_or_show_overlay(&app);
     emit_tasks_updated(&app, &db);
     Ok(task)
 }

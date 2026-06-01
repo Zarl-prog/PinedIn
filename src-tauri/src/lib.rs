@@ -1,7 +1,6 @@
 pub mod commands;
 pub mod db;
 pub mod tray;
-pub mod window;
 
 use db::DbHandle;
 use std::sync::Arc;
@@ -24,13 +23,6 @@ pub fn run() {
 
             // Setup system tray
             tray::setup_tray(app.handle())?;
-
-            // Open overlay at startup if there are incomplete tasks
-            if let Ok(tasks) = db_handle.get_incomplete_tasks() {
-                if !tasks.is_empty() {
-                    let _ = window::create_or_show_overlay(app.handle());
-                }
-            }
 
             Ok(())
         })

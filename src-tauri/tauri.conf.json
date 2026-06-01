@@ -31,11 +31,12 @@
         "alwaysOnTop": true,
         "skipTaskbar": true,
         "visible": true,
-        "transparent": false,
+        "transparent": true,
         "resizable": false,
         "x": 1100,
         "y": 300,
-        "url": "overlay.html"
+        "url": "overlay.html",
+        "dragDropEnabled": false
       }
     ],
     "security": {

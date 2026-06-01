@@ -200,6 +200,24 @@ impl DbHandle {
 
     // ─── Settings ────────────────────────────────────────────────────────
 
+    pub fn get_settings_map(&self) -> Result<std::collections::HashMap<String, String>, String> {
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let mut stmt = conn.prepare("SELECT key, value FROM settings")
+            .map_err(|e| format!("Failed to prepare: {e}"))?;
+
+        let mut map = std::collections::HashMap::new();
+        let rows = stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        }).map_err(|e| format!("Query error: {e}"))?;
+
+        for row in rows {
+            if let Ok((key, value)) = row {
+                map.insert(key, value);
+            }
+        }
+        Ok(map)
+    }
+
     pub fn get_settings(&self) -> Result<AppSettings, String> {
         let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
         let mut stmt = conn.prepare("SELECT key, value FROM settings")

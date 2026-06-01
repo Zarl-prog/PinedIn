@@ -168,6 +168,26 @@ impl DbHandle {
         Ok(tasks)
     }
 
+    pub fn get_task_by_id(&self, id: i64) -> Result<Task, String> {
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        conn.query_row(
+            "SELECT id, title, description, urgency, due_time, completed, created_at
+             FROM tasks WHERE id = ?1",
+            rusqlite::params![id],
+            |row| {
+                Ok(Task {
+                    id: Some(row.get(0)?),
+                    title: row.get(1)?,
+                    description: row.get(2)?,
+                    urgency: row.get(3)?,
+                    due_time: row.get(4)?,
+                    completed: row.get::<_, i32>(5)? != 0,
+                    created_at: row.get(6)?,
+                })
+            }
+        ).map_err(|e| format!("Failed to get task by id: {e}"))
+    }
+
     pub fn update_task(
         &self,
         id: i64,

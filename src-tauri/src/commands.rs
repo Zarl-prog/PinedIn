@@ -1,6 +1,7 @@
 use std::sync::Arc;
-use crate::db::{AppSettings, DbHandle, Task};
-use tauri::{Emitter, State};
+use crate::db::{DbHandle, Task};
+use crate::window;
+use tauri::{Emitter, Manager, State};
 
 fn emit_tasks_updated(app: &tauri::AppHandle, db: &DbHandle) {
     if let Ok(tasks) = db.get_all_tasks() {
@@ -19,6 +20,16 @@ pub fn create_task(
 ) -> Result<Task, String> {
     let task = db.create_task(&title, &description, &urgency, &due_time)?;
     emit_tasks_updated(&app, &db);
+
+    // Open a floating card for the new task
+    // Count existing incomplete tasks for proper stacking position
+    if let Ok(tasks) = db.get_incomplete_tasks() {
+        let index = tasks.iter().position(|t| t.id == task.id).unwrap_or(0);
+        let _ = window::open_task_card(&app, &task, index);
+    } else {
+        let _ = window::open_task_card(&app, &task, 0);
+    }
+
     Ok(task)
 }
 
@@ -34,6 +45,14 @@ pub fn get_incomplete_tasks(
     db: State<'_, Arc<DbHandle>>,
 ) -> Result<Vec<Task>, String> {
     db.get_incomplete_tasks()
+}
+
+#[tauri::command]
+pub fn get_task_by_id(
+    db: State<'_, Arc<DbHandle>>,
+    id: i64,
+) -> Result<Task, String> {
+    db.get_task_by_id(id)
 }
 
 #[tauri::command]
@@ -58,6 +77,7 @@ pub fn delete_task(
     id: i64,
 ) -> Result<(), String> {
     db.delete_task(id)?;
+    window::close_task_card(&app, id);
     emit_tasks_updated(&app, &db);
     Ok(())
 }
@@ -69,7 +89,37 @@ pub fn complete_task(
     id: i64,
 ) -> Result<(), String> {
     db.complete_task(id)?;
+    window::close_task_card(&app, id);
     emit_tasks_updated(&app, &db);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn snooze_task(
+    app: tauri::AppHandle,
+    db: State<'_, Arc<DbHandle>>,
+    id: i64,
+) -> Result<(), String> {
+    // Close the card window
+    window::close_task_card(&app, id);
+
+    // Re-read the task data before it goes out of scope
+    let task = db.get_task_by_id(id)?;
+
+    // Spawn a thread to reopen the card after 30 minutes
+    let app_clone = app.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(30 * 60));
+
+        // Find the task's position among incomplete tasks
+        if let Ok(tasks) = app_clone.state::<Arc<DbHandle>>().get_incomplete_tasks() {
+            let index = tasks.iter().position(|t| t.id == Some(id)).unwrap_or(0);
+            let _ = window::open_task_card(&app_clone, &task, index);
+        } else {
+            let _ = window::open_task_card(&app_clone, &task, 0);
+        }
+    });
+
     Ok(())
 }
 
@@ -80,6 +130,9 @@ pub fn get_settings(
     db.get_settings()
 }
 
+// Re-export for the handler macro
+use crate::db::AppSettings;
+
 #[tauri::command]
 pub fn update_setting(
     db: State<'_, Arc<DbHandle>>,
@@ -89,31 +142,3 @@ pub fn update_setting(
     db.update_setting(&key, &value)
 }
 
-#[tauri::command]
-pub fn save_overlay_position(
-    _app: tauri::AppHandle,
-    db: State<'_, Arc<DbHandle>>,
-    x: i32,
-    y: i32,
-) -> Result<(), String> {
-    db.update_setting("overlay_pos_x", &x.to_string())?;
-    db.update_setting("overlay_pos_y", &y.to_string())?;
-    Ok(())
-}
-
-#[tauri::command]
-pub fn get_overlay_position(
-    db: State<'_, Arc<DbHandle>>,
-) -> Result<Option<(i32, i32)>, String> {
-    let map = db.get_settings_map()
-        .map_err(|e| format!("Failed to read settings: {e}"))?;
-    let x = match map.get("overlay_pos_x").and_then(|s| s.parse::<i32>().ok()) {
-        Some(v) => v,
-        None => return Ok(None),
-    };
-    let y = match map.get("overlay_pos_y").and_then(|s| s.parse::<i32>().ok()) {
-        Some(v) => v,
-        None => return Ok(None),
-    };
-    Ok(Some((x, y)))
-}

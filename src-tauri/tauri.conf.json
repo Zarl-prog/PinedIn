@@ -20,13 +20,6 @@
         "center": true,
         "minWidth": 600,
         "minHeight": 400
-      },
-      {
-        "label": "reminder-popup",
-        "alwaysOnTop": true,
-        "decorations": false,
-        "skipTaskbar": true,
-        "focus": true
       }
     ],
     "security": {

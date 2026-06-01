@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { Pin } from "lucide-react";
 import TaskList from "@/components/TaskList";
 import AddTaskModal from "@/components/AddTaskModal";
 import SettingsPanel from "@/components/SettingsPanel";
@@ -51,7 +50,11 @@ export default function App() {
         >
           <div className="mb-4 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
-              <Pin className="h-5 w-5 text-primary-foreground" />
+              <img
+                src="/pinedin-icon.png"
+                alt="PinedIn"
+                className="h-7 w-7"
+              />
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground">

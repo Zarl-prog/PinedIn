@@ -1,6 +1,7 @@
 pub mod commands;
 pub mod db;
 pub mod tray;
+pub mod window;
 
 use db::DbHandle;
 use std::sync::Arc;
@@ -25,19 +26,24 @@ pub fn run() {
             // Setup system tray
             tray::setup_tray(app.handle())?;
 
+            // Open floating task cards for all incomplete tasks
+            if let Ok(tasks) = db_handle.get_incomplete_tasks() {
+                window::open_all_task_cards(app.handle(), &tasks);
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             commands::create_task,
             commands::get_all_tasks,
             commands::get_incomplete_tasks,
+            commands::get_task_by_id,
             commands::update_task,
             commands::delete_task,
             commands::complete_task,
+            commands::snooze_task,
             commands::get_settings,
             commands::update_setting,
-            commands::save_overlay_position,
-            commands::get_overlay_position,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

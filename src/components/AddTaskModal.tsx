@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Clock, RotateCcw } from "lucide-react";
+import { X, Calendar } from "lucide-react";
 import { useReminderStore } from "@/store/reminderStore";
 import type { Task } from "@/lib/tauriCommands";
 import { cn } from "@/lib/utils";
@@ -13,7 +13,7 @@ interface AddTaskModalProps {
 
 /**
  * AddTaskModal - Modal for creating or editing tasks.
- * Supports title, description, urgency, due time, and repeat toggle.
+ * Supports title, description, urgency, and optional due date.
  */
 export default function AddTaskModal({
   open,
@@ -29,8 +29,6 @@ export default function AddTaskModal({
     "medium",
   );
   const [dueDate, setDueDate] = useState("");
-  const [dueTime, setDueTime] = useState("");
-  const [repeat, setRepeat] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,16 +38,12 @@ export default function AddTaskModal({
       setTitle(editTask.title);
       setDescription(editTask.description);
       setUrgency(editTask.urgency as "low" | "medium" | "critical");
-      setRepeat(editTask.repeat);
-      const due = new Date(editTask.due_time);
-      setDueDate(due.toISOString().split("T")[0]);
-      setDueTime(
-        due.toLocaleTimeString("en-US", {
-          hour12: false,
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      );
+      // due_time might be just a date string or empty
+      if (editTask.due_time) {
+        setDueDate(editTask.due_time);
+      } else {
+        setDueDate("");
+      }
     } else {
       resetForm();
     }
@@ -60,23 +54,16 @@ export default function AddTaskModal({
     setDescription("");
     setUrgency("medium");
     setDueDate("");
-    setDueTime("");
-    setRepeat(false);
     setError(null);
   };
 
   const handleSubmit = async () => {
-    // Validation
+    // Title is the only required field
     if (!title.trim()) {
       setError("Title is required");
       return;
     }
-    if (!dueDate || !dueTime) {
-      setError("Due date and time are required");
-      return;
-    }
 
-    const dueDateTime = new Date(`${dueDate}T${dueTime}:00`).toISOString();
     setIsSubmitting(true);
     setError(null);
 
@@ -87,16 +74,14 @@ export default function AddTaskModal({
           title.trim(),
           description.trim(),
           urgency,
-          dueDateTime,
-          repeat,
+          dueDate || "",
         );
       } else {
         await addTask(
           title.trim(),
           description.trim(),
           urgency,
-          dueDateTime,
-          repeat,
+          dueDate || "",
         );
       }
       onClose();
@@ -228,57 +213,23 @@ export default function AddTaskModal({
                 </div>
               </div>
 
-              {/* Due Date & Time */}
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <label className="mb-1.5 block text-sm font-medium text-foreground">
-                    Date <span className="text-destructive">*</span>
-                  </label>
+              {/* Due Date - optional */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">
+                  Due Date <span className="text-muted-foreground/60">(optional)</span>
+                </label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <input
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="w-full rounded-lg border border-border bg-background px-10 py-2.5 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
                 </div>
-                <div className="flex-1">
-                  <label className="mb-1.5 block text-sm font-medium text-foreground">
-                    Time <span className="text-destructive">*</span>
-                  </label>
-                  <input
-                    type="time"
-                    value={dueTime}
-                    onChange={(e) => setDueTime(e.target.value)}
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  />
-                </div>
-              </div>
-
-              {/* Repeat */}
-              <div className="flex items-center gap-3">
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setRepeat(!repeat)}
-                  className={cn(
-                    "flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all",
-                    repeat
-                      ? "border-primary/50 bg-primary/10 text-foreground"
-                      : "border-border bg-background text-muted-foreground",
-                  )}
-                >
-                  <RotateCcw
-                    className={cn(
-                      "h-4 w-4",
-                      repeat && "text-primary",
-                    )}
-                  />
-                  Repeat
-                </motion.button>
-                {repeat && (
-                  <span className="text-xs text-muted-foreground">
-                    Task will re-trigger after completion
-                  </span>
-                )}
+                <p className="mt-1 text-[11px] text-muted-foreground/50">
+                  Set a deadline for this task
+                </p>
               </div>
 
               {/* Error */}

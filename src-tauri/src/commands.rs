@@ -90,3 +90,32 @@ pub fn update_setting(
 ) -> Result<(), String> {
     db.update_setting(&key, &value)
 }
+
+#[tauri::command]
+pub fn save_overlay_position(
+    _app: tauri::AppHandle,
+    db: State<'_, Arc<DbHandle>>,
+    x: i32,
+    y: i32,
+) -> Result<(), String> {
+    db.update_setting("overlay_pos_x", &x.to_string())?;
+    db.update_setting("overlay_pos_y", &y.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn get_overlay_position(
+    db: State<'_, Arc<DbHandle>>,
+) -> Result<Option<(i32, i32)>, String> {
+    let map = db.get_settings_map()
+        .map_err(|e| format!("Failed to read settings: {e}"))?;
+    let x = match map.get("overlay_pos_x").and_then(|s| s.parse::<i32>().ok()) {
+        Some(v) => v,
+        None => return Ok(None),
+    };
+    let y = match map.get("overlay_pos_y").and_then(|s| s.parse::<i32>().ok()) {
+        Some(v) => v,
+        None => return Ok(None),
+    };
+    Ok(Some((x, y)))
+}

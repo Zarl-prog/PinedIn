@@ -6,26 +6,17 @@ import {
   updateTask,
   deleteTask,
   completeTask as completeTaskCmd,
-  snoozeTask as snoozeTaskCmd,
   getSettings,
   updateSetting,
 } from "@/lib/tauriCommands";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-export interface ActivePopup {
-  taskId: number;
-  task: Task;
-  isReTrigger: boolean;
-  shownAt: string;
-}
-
-export interface ReminderState {
+export interface OverlayState {
   // Data
   tasks: Task[];
-  activePopups: ActivePopup[];
   settings: AppSettings;
-  remindersPaused: boolean;
+  overlayVisible: boolean;
 
   // UI state
   isLoading: boolean;
@@ -38,26 +29,18 @@ export interface ReminderState {
   addTask: (
     title: string,
     description: string,
-    urgency: Task['urgency'],
+    urgency: Task["urgency"],
     dueTime: string,
-    repeat: boolean,
   ) => Promise<void>;
   editTask: (
     id: number,
     title: string,
     description: string,
-    urgency: Task['urgency'],
+    urgency: Task["urgency"],
     dueTime: string,
-    repeat: boolean,
   ) => Promise<void>;
   removeTask: (id: number) => Promise<void>;
   completeTask: (id: number) => Promise<void>;
-  snoozeTaskAction: (id: number, minutes: number) => Promise<void>;
-
-  // Actions - Popups
-  showPopup: (task: Task, isReTrigger?: boolean) => void;
-  dismissPopup: (taskId: number) => void;
-  dismissAllPopups: () => void;
 
   // Actions - Settings
   fetchSettings: () => Promise<void>;
@@ -67,24 +50,18 @@ export interface ReminderState {
   setAddTaskOpen: (open: boolean) => void;
   setSettingsOpen: (open: boolean) => void;
   setEditingTask: (task: Task | null) => void;
-  setRemindersPaused: (paused: boolean) => void;
+  setOverlayVisible: (visible: boolean) => void;
 }
 
 // ─── Store ──────────────────────────────────────────────────────────────────
 
-export const useReminderStore = create<ReminderState>()((set, get) => ({
+export const useReminderStore = create<OverlayState>()((set, get) => ({
   // Initial state
   tasks: [],
-  activePopups: [],
   settings: {
-    default_snooze_minutes: 10,
-    start_on_boot: false,
-    sound_enabled: true,
     theme: "dark",
-    quiet_hours_start: null,
-    quiet_hours_end: null,
   },
-  remindersPaused: false,
+  overlayVisible: false,
   isLoading: false,
   isAddTaskOpen: false,
   isSettingsOpen: false,
@@ -103,15 +80,9 @@ export const useReminderStore = create<ReminderState>()((set, get) => ({
     }
   },
 
-  addTask: async (title, description, urgency, dueTime, repeat) => {
+  addTask: async (title, description, urgency, dueTime) => {
     try {
-      const newTask = await createTask(
-        title,
-        description,
-        urgency,
-        dueTime,
-        repeat,
-      );
+      const newTask = await createTask(title, description, urgency, dueTime);
       set((state) => ({
         tasks: [...state.tasks, newTask].sort(sortTasks),
       }));
@@ -121,14 +92,14 @@ export const useReminderStore = create<ReminderState>()((set, get) => ({
     }
   },
 
-  editTask: async (id, title, description, urgency, dueTime, repeat) => {
+  editTask: async (id, title, description, urgency, dueTime) => {
     try {
-      await updateTask(id, title, description, urgency, dueTime, repeat);
+      await updateTask(id, title, description, urgency, dueTime);
       set((state) => ({
         tasks: state.tasks
           .map((t) =>
             t.id === id
-              ? { ...t, title, description, urgency: urgency as Task['urgency'], due_time: dueTime, repeat }
+              ? { ...t, title, description, urgency: urgency as Task["urgency"], due_time: dueTime }
               : t,
           )
           .sort(sortTasks),
@@ -144,7 +115,6 @@ export const useReminderStore = create<ReminderState>()((set, get) => ({
       await deleteTask(id);
       set((state) => ({
         tasks: state.tasks.filter((t) => t.id !== id),
-        activePopups: state.activePopups.filter((p) => p.taskId !== id),
       }));
     } catch (error) {
       console.error("Failed to delete task:", error);
@@ -159,75 +129,11 @@ export const useReminderStore = create<ReminderState>()((set, get) => ({
         tasks: state.tasks.map((t) =>
           t.id === id ? { ...t, completed: true } : t,
         ),
-        activePopups: state.activePopups.filter((p) => p.taskId !== id),
       }));
     } catch (error) {
       console.error("Failed to complete task:", error);
       throw error;
     }
-  },
-
-  snoozeTaskAction: async (id, minutes) => {
-    try {
-      await snoozeTaskCmd(id, minutes);
-      // Remove the popup and update the task's snooze count locally
-      set((state) => ({
-        activePopups: state.activePopups.filter((p) => p.taskId !== id),
-        tasks: state.tasks.map((t) =>
-          t.id === id
-            ? {
-                ...t,
-                snooze_count: t.snooze_count + 1,
-                due_time: new Date(
-                  Date.now() + minutes * 60 * 1000,
-                ).toISOString(),
-              }
-            : t,
-        ),
-      }));
-    } catch (error) {
-      console.error("Failed to snooze task:", error);
-      throw error;
-    }
-  },
-
-  // ─── Popups ────────────────────────────────────────────────────────────
-
-  showPopup: (task, isReTrigger = false) => {
-    const taskId = task.id ?? 0;
-    const { activePopups } = get();
-
-    // Don't add duplicate popups
-    if (activePopups.some((p) => p.taskId === taskId)) {
-      // Update the existing popup to mark it as re-triggered
-      set((state) => ({
-        activePopups: state.activePopups.map((p) =>
-          p.taskId === taskId ? { ...p, isReTrigger: p.isReTrigger || isReTrigger } : p,
-        ),
-      }));
-      return;
-    }
-
-    const popup: ActivePopup = {
-      taskId,
-      task,
-      isReTrigger,
-      shownAt: new Date().toISOString(),
-    };
-
-    set((state) => ({
-      activePopups: [...state.activePopups, popup],
-    }));
-  },
-
-  dismissPopup: (taskId) => {
-    set((state) => ({
-      activePopups: state.activePopups.filter((p) => p.taskId !== taskId),
-    }));
-  },
-
-  dismissAllPopups: () => {
-    set({ activePopups: [] });
   },
 
   // ─── Settings ──────────────────────────────────────────────────────────
@@ -236,7 +142,6 @@ export const useReminderStore = create<ReminderState>()((set, get) => ({
     try {
       const settings = await getSettings();
       set({ settings });
-      // Apply theme
       applyTheme(settings.theme);
     } catch (error) {
       console.error("Failed to fetch settings:", error);
@@ -246,12 +151,9 @@ export const useReminderStore = create<ReminderState>()((set, get) => ({
   saveSetting: async (key, value) => {
     try {
       await updateSetting(key, value);
-      // Update local state
       const { settings } = get();
       const updated = { ...settings, [key]: value };
       set({ settings: updated as AppSettings });
-
-      // Apply theme if it changed
       if (key === "theme") {
         applyTheme(value);
       }
@@ -266,7 +168,7 @@ export const useReminderStore = create<ReminderState>()((set, get) => ({
   setAddTaskOpen: (open) => set({ isAddTaskOpen: open, editingTask: open ? get().editingTask : null }),
   setSettingsOpen: (open) => set({ isSettingsOpen: open }),
   setEditingTask: (task) => set({ editingTask: task, isAddTaskOpen: !!task }),
-  setRemindersPaused: (paused) => set({ remindersPaused: paused }),
+  setOverlayVisible: (visible) => set({ overlayVisible: visible }),
 }));
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -277,7 +179,7 @@ function sortTasks(a: Task, b: Task): number {
   const bOrder = urgencyOrder[b.urgency as keyof typeof urgencyOrder] ?? 3;
 
   if (aOrder !== bOrder) return aOrder - bOrder;
-  return new Date(a.due_time).getTime() - new Date(b.due_time).getTime();
+  return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
 }
 
 function applyTheme(theme: string): void {
@@ -287,7 +189,6 @@ function applyTheme(theme: string): void {
   } else if (theme === "light") {
     root.classList.remove("dark");
   } else {
-    // system
     const prefersDark = window.matchMedia(
       "(prefers-color-scheme: dark)",
     ).matches;

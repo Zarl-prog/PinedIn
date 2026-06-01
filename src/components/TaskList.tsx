@@ -4,7 +4,7 @@ import {
   Plus,
   Search,
   CheckCircle2,
-  Clock,
+  Calendar,
   MoreVertical,
   Trash2,
   Edit3,
@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * TaskList - Full task manager view with sorting, filtering, and actions.
- * Sorted by urgency then due time.
+ * Sorted by urgency then creation date.
  * Includes empty state illustration.
  */
 export default function TaskList() {
@@ -175,8 +175,8 @@ function TaskCard({
   onDelete,
   completed = false,
 }: TaskCardProps) {
-  const isOverdue = !completed && new Date(task.due_time) < new Date();
   const urgency = task.urgency as "low" | "medium" | "critical";
+  const hasDueDate = task.due_time && task.due_time.length > 0;
 
   return (
     <motion.div
@@ -189,9 +189,7 @@ function TaskCard({
         "group relative mb-2 rounded-xl border bg-card p-4 transition-all duration-200",
         completed
           ? "border-border/30 opacity-60"
-          : isOverdue && urgency === "critical"
-            ? "border-urgency-critical/40 shadow-sm shadow-urgency-critical/5"
-            : "border-border/50 hover:border-border hover:shadow-md",
+          : "border-border/50 hover:border-border hover:shadow-md",
       )}
     >
       <div className="flex items-start gap-3">
@@ -234,19 +232,12 @@ function TaskCard({
           </div>
 
           {/* Meta */}
-          <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground/60">
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {formatDueDate(task.due_time)}
-              {isOverdue && !completed && (
-                <span className="text-urgency-critical">Overdue</span>
-              )}
-            </span>
-            {task.repeat && <span>Repeats</span>}
-            {task.snooze_count > 0 && (
-              <span>Snoozed {task.snooze_count}x</span>
-            )}
-          </div>
+          {hasDueDate && (
+            <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground/60">
+              <Calendar className="h-3 w-3" />
+              <span>{formatTaskDate(task.due_time)}</span>
+            </div>
+          )}
         </div>
 
         {/* Menu */}
@@ -311,7 +302,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
       <p className="mb-6 text-center text-sm text-muted-foreground">
         Create your first task to get started
         <br />
-        with PinedIn reminders.
+        with PinedIn.
       </p>
       <motion.button
         whileHover={{ scale: 1.05 }}
@@ -328,25 +319,28 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatDueDate(dueTime: string): string {
-  const due = new Date(dueTime);
+function formatTaskDate(dateStr: string): string {
+  if (!dateStr) return "";
+  const due = new Date(dateStr + "T00:00:00");
   const now = new Date();
-  const diffMs = due.getTime() - now.getTime();
-  const diffMins = Math.floor(Math.abs(diffMs) / 60000);
-  const isPast = diffMs < 0;
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
 
-  if (diffMins < 1) return "Just now";
-  if (diffMins < 60) return `${diffMins} min ${isPast ? "ago" : ""}`;
+  const diffTime = due.getTime() - today.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) {
-    return `${diffHours}h ${diffMins % 60}m ${isPast ? "ago" : ""}`;
-  }
+  if (diffTime === 0) return "Today";
+  if (diffTime === 86400000) return "Tomorrow";
+  if (diffTime === -86400000) return "Yesterday";
+
+  if (diffDays < -1) return `${Math.abs(diffDays)} days overdue`;
+  if (diffDays > 1) return `In ${diffDays} days`;
 
   return due.toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
   });
 }

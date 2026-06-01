@@ -43,6 +43,8 @@ pub fn run() {
             commands::complete_task,
             commands::get_settings,
             commands::update_setting,
+            commands::save_overlay_position,
+            commands::get_overlay_position,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

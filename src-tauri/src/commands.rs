@@ -132,18 +132,16 @@ pub fn remind_task(
     app: tauri::AppHandle,
     db: State<'_, Arc<DbHandle>>,
     id: i64,
+    minutes: u64,
 ) -> Result<(), String> {
-    // Close the card window
     window::close_task_card(&app, id);
 
     let task = db.get_task_by_id(id)?;
-
-    // Reopen after 5 minutes
     let app_clone = app.clone();
+    let db_clone = Arc::clone(&*db);
     std::thread::spawn(move || {
-        std::thread::sleep(std::time::Duration::from_secs(5 * 60));
-
-        if let Ok(tasks) = app_clone.state::<Arc<DbHandle>>().get_incomplete_tasks() {
+        std::thread::sleep(std::time::Duration::from_secs(minutes * 60));
+        if let Ok(tasks) = db_clone.get_incomplete_tasks() {
             let index = tasks.iter().position(|t| t.id == Some(id)).unwrap_or(0);
             let _ = window::open_task_card(&app_clone, &task, index);
         } else {

@@ -28,7 +28,6 @@ export default function TaskCard({ taskId, title, description, urgency, dueTime 
     mouseDownPos.current = { x: e.clientX, y: e.clientY };
     // Don't initiate drag if clicking a button
     if ((e.target as HTMLElement).closest("button")) return;
-    e.preventDefault();
     isDragging.current = true;
     await getCurrentWindow().startDragging();
     isDragging.current = false;
@@ -54,9 +53,9 @@ export default function TaskCard({ taskId, title, description, urgency, dueTime 
     // Rust side closes this window and schedules reopen in 30 min
   }, [taskId]);
 
-  const handleDismiss = useCallback(async () => {
-    await getCurrentWindow().close();
-  }, []);
+  const handleRemind = useCallback(async () => {
+    await invoke("remind_task", { id: taskId });
+  }, [taskId]);
 
   return (
     <motion.div
@@ -179,23 +178,23 @@ export default function TaskCard({ taskId, title, description, urgency, dueTime 
               💤 Snooze
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
+              onClick={(e) => { e.stopPropagation(); handleRemind(); }}
               style={{
                 flex: 1,
                 padding: "8px",
                 borderRadius: "8px",
-                background: "rgba(239,68,68,0.12)",
-                color: "#ef4444",
-                border: "1px solid rgba(239,68,68,0.25)",
+                background: "rgba(139,92,246,0.12)",
+                color: "#8b5cf6",
+                border: "1px solid rgba(139,92,246,0.25)",
                 fontSize: "12px",
                 fontWeight: 600,
                 cursor: "pointer",
                 transition: "all 0.15s ease",
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.2)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.12)"; }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(139,92,246,0.2)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(139,92,246,0.12)"; }}
             >
-              ✕ Dismiss
+              🔔 Remind
             </button>
           </div>
         </motion.div>

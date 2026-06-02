@@ -42,6 +42,7 @@ pub fn run() {
             commands::delete_task,
             commands::complete_task,
             commands::snooze_task,
+            commands::remind_task,
             commands::get_settings,
             commands::update_setting,
         ])

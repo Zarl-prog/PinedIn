@@ -63,10 +63,16 @@
 
 /* ─── Overlay window: force solid opaque background at every DOM level ─────── */
 
-html, body, #root {
-  background: #0f0f11 !important;
+html, body {
+  background: transparent !important;
   margin: 0;
   padding: 0;
+  height: 100%;
+  width: 100%;
+}
+
+#root {
+  background: transparent;
   height: 100%;
   width: 100%;
 }

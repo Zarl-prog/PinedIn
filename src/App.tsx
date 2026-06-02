@@ -39,7 +39,7 @@ export default function App() {
   }, [isAddTaskOpen, isSettingsOpen, setAddTaskOpen, setSettingsOpen, setEditingTask]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground antialiased border border-primary/20 rounded-xl overflow-hidden ring-1 ring-primary/10">
+    <div className="flex h-screen flex-col bg-background text-foreground antialiased border border-primary/20 rounded-xl overflow-hidden ring-1 ring-primary/10">
       {/* Custom title bar */}
       <div
         data-tauri-drag-region

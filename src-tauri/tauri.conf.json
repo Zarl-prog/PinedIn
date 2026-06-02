@@ -18,6 +18,8 @@
         "height": 650,
         "resizable": true,
         "decorations": false,
+        "transparent": true,
+        "shadow": true,
         "fullscreen": false,
         "center": true,
         "minWidth": 600,

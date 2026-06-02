@@ -28,28 +28,43 @@ export default function TaskCard({ taskId, title, description, urgency, dueTime 
   const [expanded, setExpanded] = useState(false);
   const [showRemindPicker, setShowRemindPicker] = useState(false);
   const mouseDownPos = useRef({ x: 0, y: 0 });
+  const dragging = useRef(false);
   const uc = URGENCY_COLORS[urgency] ?? URGENCY_COLORS.medium;
 
   const resize = useCallback((h: number) => {
     getCurrentWindow().setSize(new LogicalSize(280, h));
   }, []);
 
-  const handleMouseDown = useCallback(async (e: React.MouseEvent) => {
-    mouseDownPos.current = { x: e.clientX, y: e.clientY };
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
-    await getCurrentWindow().startDragging();
+    mouseDownPos.current = { x: e.clientX, y: e.clientY };
+    dragging.current = false;
+
+    const onMove = async (me: MouseEvent) => {
+      if (dragging.current) return;
+      const dx = Math.abs(me.clientX - mouseDownPos.current.x);
+      const dy = Math.abs(me.clientY - mouseDownPos.current.y);
+      if (dx > 4 || dy > 4) {
+        dragging.current = true;
+        window.removeEventListener("mousemove", onMove);
+        await getCurrentWindow().startDragging();
+      }
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
   }, []);
 
   const handleClick = useCallback(async (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
-    const dx = Math.abs(e.clientX - mouseDownPos.current.x);
-    const dy = Math.abs(e.clientY - mouseDownPos.current.y);
-    if (dx < 5 && dy < 5) {
-      const next = !expanded;
-      setExpanded(next);
-      setShowRemindPicker(false);
-      resize(next ? EXPANDED_H : COLLAPSED_H);
-    }
+    if (dragging.current) return;
+    const next = !expanded;
+    setExpanded(next);
+    setShowRemindPicker(false);
+    resize(next ? EXPANDED_H : COLLAPSED_H);
   }, [expanded, resize]);
 
   const handleDone = useCallback(async () => {

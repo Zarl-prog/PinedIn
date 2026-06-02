@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import TaskList from "@/components/TaskList";
 import AddTaskModal from "@/components/AddTaskModal";
 import SettingsPanel from "@/components/SettingsPanel";
@@ -39,6 +40,42 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground antialiased border border-primary/20 rounded-xl overflow-hidden ring-1 ring-primary/10">
+      {/* Custom title bar */}
+      <div
+        data-tauri-drag-region
+        className="flex h-9 shrink-0 items-center justify-between border-b border-border/20 bg-background/80 px-3"
+      >
+        <div data-tauri-drag-region className="flex items-center gap-2 select-none">
+          <img src="/pinedin-icon.png" alt="" className="h-4 w-4 opacity-70" />
+          <span className="text-xs font-medium text-muted-foreground/60">PinedIn</span>
+        </div>
+        <div className="flex items-center gap-1">
+          {/* Minimize */}
+          <button
+            onClick={() => getCurrentWindow().minimize()}
+            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
+            title="Minimize"
+          >
+            <svg width="10" height="2" viewBox="0 0 10 2" fill="currentColor"><rect width="10" height="1.5" rx="0.75"/></svg>
+          </button>
+          {/* Maximize/Restore */}
+          <button
+            onClick={() => getCurrentWindow().toggleMaximize()}
+            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
+            title="Maximize"
+          >
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="0.75" y="0.75" width="8.5" height="8.5" rx="1"/></svg>
+          </button>
+          {/* Close */}
+          <button
+            onClick={() => getCurrentWindow().close()}
+            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-destructive hover:text-white"
+            title="Close"
+          >
+            <svg width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>
+          </button>
+        </div>
+      </div>
       {/* Main content */}
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-6">
         {/* Header */}

@@ -38,7 +38,7 @@ export default function App() {
   }, [isAddTaskOpen, isSettingsOpen, setAddTaskOpen, setSettingsOpen, setEditingTask]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground antialiased">
+    <div className="flex min-h-screen flex-col bg-background text-foreground antialiased border border-primary/20 rounded-xl overflow-hidden ring-1 ring-primary/10">
       {/* Main content */}
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-6">
         {/* Header */}

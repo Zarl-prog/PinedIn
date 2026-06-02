@@ -23,6 +23,15 @@ pub fn run() {
 
             app.manage(db_handle.clone());
 
+            // Force remove native decorations — must run after window-state plugin
+            // restores its state, so we post it to the event loop
+            if let Some(win) = app.get_webview_window("main") {
+                let _ = win.set_decorations(false);
+                // Also hide and re-show to force Windows to redraw without native frame
+                let _ = win.hide();
+                let _ = win.show();
+            }
+
             // Setup system tray
             tray::setup_tray(app.handle())?;
 

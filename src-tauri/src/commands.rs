@@ -21,14 +21,18 @@ pub fn create_task(
     let task = db.create_task(&title, &description, &urgency, &due_time)?;
     emit_tasks_updated(&app, &db);
 
-    // Open a floating card for the new task
-    // Count existing incomplete tasks for proper stacking position
-    if let Ok(tasks) = db.get_incomplete_tasks() {
-        let index = tasks.iter().position(|t| t.id == task.id).unwrap_or(0);
-        let _ = window::open_task_card(&app, &task, index);
-    } else {
-        let _ = window::open_task_card(&app, &task, 0);
-    }
+    // Spawn window creation so we don't block the invoke response
+    let task_clone = task.clone();
+    let app_clone = app.clone();
+    let db_clone = Arc::clone(&*db);
+    std::thread::spawn(move || {
+        let index = db_clone
+            .get_incomplete_tasks()
+            .ok()
+            .and_then(|tasks| tasks.iter().position(|t| t.id == task_clone.id))
+            .unwrap_or(0);
+        let _ = window::open_task_card(&app_clone, &task_clone, index);
+    });
 
     Ok(task)
 }

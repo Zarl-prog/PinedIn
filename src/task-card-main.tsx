@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import TaskCard from "./components/TaskCard";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
-import "./index.css";
+import "./task-card.css";
 
 interface TaskData {
   id?: number | null;

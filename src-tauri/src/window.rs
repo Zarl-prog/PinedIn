@@ -27,6 +27,7 @@ pub fn open_task_card(app: &AppHandle, task: &Task, index: usize) -> Result<(), 
     .inner_size(280.0, 90.0)
     .resizable(false)
     .decorations(false)
+    .transparent(true)
     .always_on_top(true)
     .skip_taskbar(true)
     .focused(false)

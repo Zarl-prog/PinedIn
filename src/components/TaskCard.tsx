@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { LogicalSize } from "@tauri-apps/api/dpi";
 import { invoke } from "@tauri-apps/api/core";
 
 interface TaskCardProps {
@@ -10,6 +11,9 @@ interface TaskCardProps {
   urgency: string;
   dueTime: string;
 }
+
+const COLLAPSED_H = 90;
+const EXPANDED_H = 220;
 
 const URGENCY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   critical: { bg: "rgba(239,68,68,0.15)", text: "#ef4444", border: "rgba(239,68,68,0.3)" },
@@ -24,24 +28,23 @@ export default function TaskCard({ taskId, title, description, urgency, dueTime 
   const uc = URGENCY_COLORS[urgency] ?? URGENCY_COLORS.medium;
 
   const handleMouseDown = useCallback(async (e: React.MouseEvent) => {
-    // Capture starting position to distinguish click from drag
     mouseDownPos.current = { x: e.clientX, y: e.clientY };
-    // Don't initiate drag if clicking a button
     if ((e.target as HTMLElement).closest("button")) return;
     isDragging.current = true;
     await getCurrentWindow().startDragging();
     isDragging.current = false;
   }, []);
 
-  const handleClick = useCallback((e: React.MouseEvent) => {
+  const handleClick = useCallback(async (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
-    // Only toggle if the mouse didn't move — i.e., it was a click, not a drag
     const dx = Math.abs(e.clientX - mouseDownPos.current.x);
     const dy = Math.abs(e.clientY - mouseDownPos.current.y);
     if (dx < 5 && dy < 5) {
-      setExpanded((prev) => !prev);
+      const next = !expanded;
+      setExpanded(next);
+      await getCurrentWindow().setSize(new LogicalSize(280, next ? EXPANDED_H : COLLAPSED_H));
     }
-  }, []);
+  }, [expanded]);
 
   const handleDone = useCallback(async () => {
     await invoke("complete_task", { id: taskId });

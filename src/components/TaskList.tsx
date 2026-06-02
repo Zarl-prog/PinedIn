@@ -48,9 +48,9 @@ export default function TaskList() {
     );
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-4 flex shrink-0 items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Tasks</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
@@ -69,7 +69,7 @@ export default function TaskList() {
       </div>
 
       {/* Search */}
-      <div className="relative mb-4">
+      <div className="relative mb-3 shrink-0">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           type="text"
@@ -81,7 +81,7 @@ export default function TaskList() {
       </div>
 
       {/* Task list */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
         <AnimatePresence mode="popLayout">
           {incompleteTasks.length === 0 && completedTasks.length === 0 ? (
             <EmptyState onAdd={() => setAddTaskOpen(true)} />

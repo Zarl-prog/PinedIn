@@ -36,6 +36,8 @@ async function main() {
           description={task.description}
           urgency={task.urgency}
           dueTime={task.due_time}
+          recurrence={task.recurrence}
+          tags={task.tags}
         />
       </React.StrictMode>
     );

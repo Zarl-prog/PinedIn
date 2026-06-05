@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -9,6 +9,7 @@ import {
   Trash2,
   Edit3,
   Inbox,
+  X,
 } from "lucide-react";
 import UrgencyBadge from "./UrgencyBadge";
 import { useReminderStore } from "@/store/reminderStore";
@@ -16,9 +17,8 @@ import type { Task } from "@/lib/tauriCommands";
 import { cn } from "@/lib/utils";
 
 /**
- * TaskList - Full task manager view with sorting, filtering, and actions.
+ * TaskList - Full task manager view with sorting, filtering, tags, and actions.
  * Sorted by urgency then creation date.
- * Includes empty state illustration.
  */
 export default function TaskList() {
   const tasks = useReminderStore((s) => s.tasks);
@@ -26,26 +26,58 @@ export default function TaskList() {
   const removeTask = useReminderStore((s) => s.removeTask);
   const setAddTaskOpen = useReminderStore((s) => s.setAddTaskOpen);
   const setEditingTask = useReminderStore((s) => s.setEditingTask);
+  const activeTags = useReminderStore((s) => s.activeTags);
+  const setActiveTags = useReminderStore((s) => s.setActiveTags);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
 
-  // Filter and sort
-  const incompleteTasks = tasks
-    .filter((t) => !t.completed)
-    .filter(
-      (t) =>
-        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.description.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
+  // Collect all unique tags across tasks
+  const allTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    tasks.forEach((t) => {
+      if (t.tags) {
+        t.tags.split(",").forEach((tag) => {
+          const trimmed = tag.trim();
+          if (trimmed) tagSet.add(trimmed);
+        });
+      }
+    });
+    return Array.from(tagSet).sort();
+  }, [tasks]);
 
-  const completedTasks = tasks
-    .filter((t) => t.completed)
-    .filter(
-      (t) =>
-        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.description.toLowerCase().includes(searchQuery.toLowerCase()),
+  const toggleTag = (tag: string) => {
+    setActiveTags(
+      activeTags.includes(tag)
+        ? activeTags.filter((t) => t !== tag)
+        : [...activeTags, tag],
     );
+  };
+
+  const clearTags = () => setActiveTags([]);
+
+  // Filter and sort
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((t) => {
+      // Search filter
+      const matchesSearch =
+        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.description.toLowerCase().includes(searchQuery.toLowerCase());
+
+      // Tag filter (AND logic)
+      const matchesTags =
+        activeTags.length === 0 ||
+        (t.tags &&
+          activeTags.every((tag) =>
+            t.tags!.split(",").map((s) => s.trim()).includes(tag),
+          ));
+
+      return matchesSearch && matchesTags;
+    });
+  }, [tasks, searchQuery, activeTags]);
+
+  const incompleteTasks = filteredTasks.filter((t) => !t.completed);
+  const completedTasks = filteredTasks.filter((t) => t.completed);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -80,6 +112,35 @@ export default function TaskList() {
         />
       </div>
 
+      {/* Tag filter bar */}
+      {allTags.length > 0 && (
+        <div className="mb-3 flex shrink-0 flex-wrap items-center gap-1.5">
+          {allTags.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => toggleTag(tag)}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-all",
+                activeTags.includes(tag)
+                  ? "bg-primary/20 text-primary ring-1 ring-primary/40"
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              {tag}
+            </button>
+          ))}
+          {activeTags.length > 0 && (
+            <button
+              onClick={clearTags}
+              className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-muted-foreground/60 transition-colors hover:text-foreground"
+            >
+              <X className="h-3 w-3" />
+              Clear
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Task list */}
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
         <AnimatePresence mode="popLayout">
@@ -89,7 +150,7 @@ export default function TaskList() {
             <>
               {/* Incomplete tasks */}
               {incompleteTasks.map((task) => (
-                <TaskCard
+                <TaskCardItem
                   key={task.id}
                   task={task}
                   isOpen={openMenuId === task.id}
@@ -122,7 +183,7 @@ export default function TaskList() {
                     <div className="h-px flex-1 bg-border/50" />
                   </div>
                   {completedTasks.map((task) => (
-                    <TaskCard
+                    <TaskCardItem
                       key={task.id}
                       task={task}
                       isOpen={openMenuId === task.id}
@@ -156,7 +217,7 @@ export default function TaskList() {
 
 // ─── Task Card ────────────────────────────────────────────────────────────────
 
-interface TaskCardProps {
+interface TaskCardItemProps {
   task: Task;
   isOpen: boolean;
   onToggleMenu: () => void;
@@ -166,7 +227,7 @@ interface TaskCardProps {
   completed?: boolean;
 }
 
-function TaskCard({
+function TaskCardItem({
   task,
   isOpen,
   onToggleMenu,
@@ -174,9 +235,13 @@ function TaskCard({
   onEdit,
   onDelete,
   completed = false,
-}: TaskCardProps) {
+}: TaskCardItemProps) {
   const urgency = task.urgency as "low" | "medium" | "critical";
   const hasDueDate = task.due_time && task.due_time.length > 0;
+  const hasRecurrence = !!task.recurrence;
+  const tags = task.tags
+    ? task.tags.split(",").map((t) => t.trim()).filter(Boolean)
+    : [];
 
   return (
     <motion.div
@@ -214,18 +279,39 @@ function TaskCard({
             <div className="min-w-0 flex-1">
               <h3
                 className={cn(
-                  "truncate text-sm font-medium",
+                  "flex items-center gap-1.5 truncate text-sm font-medium",
                   completed
                     ? "text-muted-foreground line-through"
                     : "text-foreground",
                 )}
               >
                 {task.title}
+                {hasRecurrence && (
+                  <span
+                    className="inline-flex shrink-0 items-center text-xs text-primary/60"
+                    title={`Repeats ${task.recurrence}`}
+                  >
+                    ↻
+                  </span>
+                )}
               </h3>
               {task.description && (
                 <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground/70">
                   {task.description}
                 </p>
+              )}
+              {/* Tags */}
+              {tags.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary/70"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
             <UrgencyBadge urgency={urgency} className="shrink-0" />

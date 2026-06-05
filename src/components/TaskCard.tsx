@@ -10,6 +10,8 @@ interface TaskCardProps {
   description: string;
   urgency: string;
   dueTime: string;
+  recurrence?: string | null;
+  tags?: string | null;
 }
 
 const COLLAPSED_H = 90;
@@ -30,7 +32,7 @@ const BTN_CONFIG = [
   { label: "Remind", icon: "\uD83D\uDD14", color: "#a78bfa", glow: "rgba(167,139,250,0.27)", action: "remind" as const },
 ];
 
-export default function TaskCard({ taskId, title, description, urgency, dueTime }: TaskCardProps) {
+export default function TaskCard({ taskId, title, description, urgency, dueTime, recurrence, tags }: TaskCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showRemindPicker, setShowRemindPicker] = useState(false);
   const [visible, setVisible] = useState(true);
@@ -38,6 +40,10 @@ export default function TaskCard({ taskId, title, description, urgency, dueTime 
   const dragging = useRef(false);
 
   const uc = URGENCY_CONFIG[urgency] ?? URGENCY_CONFIG.medium;
+  const hasRecurrence = !!recurrence;
+  const tagList = tags
+    ? tags.split(",").map((t) => t.trim()).filter(Boolean)
+    : [];
 
   // Progress bar: how close the due date is (0-100%)
   const progressPercent = useMemo(() => {
@@ -163,9 +169,25 @@ export default function TaskCard({ taskId, title, description, urgency, dueTime 
               whiteSpace: "nowrap",
               flex: 1,
               marginRight: "8px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
             }}
           >
             {title}
+            {hasRecurrence && (
+              <span
+                title={`Repeats ${recurrence}`}
+                style={{
+                  fontSize: "12px",
+                  color: uc.color,
+                  opacity: 0.6,
+                  flexShrink: 0,
+                }}
+              >
+                ↻
+              </span>
+            )}
           </span>
           <span
             style={{
@@ -235,6 +257,30 @@ export default function TaskCard({ taskId, title, description, urgency, dueTime 
             {description && (
               <div style={{ padding: "8px 16px 6px 20px", fontSize: "12px", color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
                 {description}
+              </div>
+            )}
+
+            {/* Tags */}
+            {tagList.length > 0 && (
+              <div style={{ padding: "0 16px 8px 20px", display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                {tagList.map((tag) => (
+                  <span
+                    key={tag}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      padding: "1px 7px",
+                      borderRadius: "999px",
+                      background: "rgba(167,139,250,0.12)",
+                      color: "#a78bfa",
+                      fontSize: "10px",
+                      fontWeight: 500,
+                      lineHeight: "16px",
+                    }}
+                  >
+                    {tag}
+                  </span>
+                ))}
               </div>
             )}
 

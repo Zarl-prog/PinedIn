@@ -5,6 +5,7 @@ import AddTaskModal from "@/components/AddTaskModal";
 import SettingsPanel from "@/components/SettingsPanel";
 import { useReminders } from "@/hooks/useReminders";
 import { useReminderStore } from "@/store/reminderStore";
+import { checkForUpdates } from "@/lib/updater";
 
 /**
  * PinedIn - Main application window.
@@ -20,6 +21,19 @@ export default function App() {
   const setSettingsOpen = useReminderStore((s) => s.setSettingsOpen);
   const editingTask = useReminderStore((s) => s.editingTask);
   const setEditingTask = useReminderStore((s) => s.setEditingTask);
+
+  // Check for updates on startup
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      const result = await checkForUpdates();
+      if (result.available) {
+        console.log(
+          `Update v${result.version} available — open Settings to install`,
+        );
+      }
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Close modals on Escape key
   useEffect(() => {

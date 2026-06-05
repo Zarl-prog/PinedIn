@@ -54,8 +54,8 @@
         "displayLanguageSelector": false,
         "languages": ["English"],
         "installerIcon": "icons/icon.ico",
-        "headerImage": "icons/header.bmp",
-        "sidebarImage": "icons/sidebar.bmp"
+        "headerImage": "icons/installer-header.bmp",
+        "sidebarImage": "icons/installer-sidebar.bmp"
       }
     }
   },

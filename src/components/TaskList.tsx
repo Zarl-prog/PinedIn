@@ -92,7 +92,7 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                   }}
                 >
                   <div style={{ flex: 1, height: "1px", background: "#1a1a1a" }} />
-                  <span style={{ fontSize: "10px", color: "#333", flexShrink: 0 }}>
+                  <span style={{ fontSize: "11px", color: "#333", flexShrink: 0 }}>
                     Completed ({completedTasks.length})
                   </span>
                   <div style={{ flex: 1, height: "1px", background: "#1a1a1a" }} />
@@ -211,7 +211,7 @@ function TaskCardItem({
               <span
                 className="task-title"
                 style={{
-                  fontSize: "12px",
+                  fontSize: "13px",
                   fontWeight: 500,
                   color: completed ? "#444" : "#ededed",
                   overflow: "hidden",
@@ -222,7 +222,7 @@ function TaskCardItem({
                 {task.title}
               </span>
               {hasRecurrence && (
-                <span style={{ fontSize: "10px", color: "#444", flexShrink: 0 }} title={`Repeats ${task.recurrence}`}>
+                <span style={{ fontSize: "11px", color: "#444", flexShrink: 0 }} title={`Repeats ${task.recurrence}`}>
                   ↻
                 </span>
               )}
@@ -234,9 +234,9 @@ function TaskCardItem({
           {task.description && (
             <p
               style={{
-                fontSize: "11px",
+                fontSize: "12px",
                 color: "#444",
-                marginTop: "3px",
+                marginTop: "4px",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
@@ -253,12 +253,12 @@ function TaskCardItem({
                 <span
                   key={tag}
                   style={{
-                    fontSize: "10px",
-                    color: "#555",
+                    fontSize: "11px",
+                    color: "#666",
                     background: "#0d0d0d",
                     border: "1px solid #1e1e1e",
                     borderRadius: "999px",
-                    padding: "1px 6px",
+                    padding: "2px 8px",
                   }}
                 >
                   {tag}
@@ -275,11 +275,11 @@ function TaskCardItem({
                 alignItems: "center",
                 gap: "4px",
                 marginTop: "6px",
-                fontSize: "10px",
+                fontSize: "11px",
                 color: "#333",
               }}
             >
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                 <line x1="16" y1="2" x2="16" y2="6" />
                 <line x1="8" y1="2" x2="8" y2="6" />
@@ -324,7 +324,7 @@ function TaskCardItem({
               <button
                 className="v-action"
                 onClick={(e) => { e.stopPropagation(); onComplete(); }}
-                style={{ flex: 1, textAlign: "center" }}
+                style={{ flex: 1, textAlign: "center", padding: "8px 10px" }}
               >
                 ✓ Done
               </button>
@@ -332,7 +332,7 @@ function TaskCardItem({
               <button
                 className="v-action"
                 onClick={(e) => { e.stopPropagation(); onSnooze?.(); }}
-                style={{ flex: 1, textAlign: "center" }}
+                style={{ flex: 1, textAlign: "center", padding: "8px 10px" }}
               >
                 💤 Snooze
               </button>
@@ -340,7 +340,7 @@ function TaskCardItem({
               <button
                 className="v-action"
                 onClick={(e) => { e.stopPropagation(); onRemind?.(); }}
-                style={{ flex: 1, textAlign: "center" }}
+                style={{ flex: 1, textAlign: "center", padding: "8px 10px" }}
               >
                 🔔 Remind
               </button>
@@ -382,19 +382,19 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
         <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-14 0Z" />
         <circle cx="12" cy="9" r="2.5" fill="#333" stroke="none" />
       </svg>
-      <span style={{ fontSize: "13px", fontWeight: 600, color: "#444", marginBottom: "4px" }}>
+      <span style={{ fontSize: "14px", fontWeight: 600, color: "#555", marginBottom: "4px" }}>
         No tasks yet
       </span>
-      <span style={{ fontSize: "11px", color: "#333", textAlign: "center", marginBottom: "16px" }}>
+      <span style={{ fontSize: "12px", color: "#444", textAlign: "center", marginBottom: "16px" }}>
         Create your first task to get started
       </span>
       <button
         onClick={onAdd}
         style={{
-          fontSize: "11px",
+          fontSize: "12px",
           fontWeight: 600,
-          padding: "8px 18px",
-          borderRadius: "6px",
+          padding: "9px 20px",
+          borderRadius: "8px",
           background: "#fff",
           color: "#000",
           border: "none",

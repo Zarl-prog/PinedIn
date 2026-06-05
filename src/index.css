@@ -47,7 +47,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .v-card {
   background: #0a0a0a;
   border: 1px solid #1a1a1a;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 12px 12px 12px 14px;
   transition: all 0.15s ease;
   cursor: default;
@@ -71,8 +71,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .v-float {
   background: #080808;
   border: 1px solid #1a1a1a;
-  border-radius: 8px;
-  padding: 9px 10px;
+  border-radius: 14px;
+  padding: 12px 14px;
   transition: border-color 0.15s ease, background 0.15s ease;
   cursor: grab;
   user-select: none;
@@ -87,7 +87,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 /* ─── Button Styles (.v-btn) ────────────────────────────────────────────── */
 
 .v-btn {
-  font-size: 11px;
+  font-size: 12px;
   color: #888;
   border: 1px solid #222;
   background: transparent;
@@ -104,14 +104,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 /* ─── Action Button Styles (.v-action) ──────────────────────────────────── */
 
 .v-action {
-  font-size: 11px;
+  font-size: 12px;
   color: #666;
   border: 1px solid #222;
   background: transparent;
   transition: all 0.15s ease;
   cursor: pointer;
-  border-radius: 6px;
-  padding: 6px 12px;
+  border-radius: 8px;
+  padding: 8px 14px;
   font-family: 'Geist Mono', monospace;
 }
 
@@ -126,9 +126,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .badge {
   display: inline-flex;
   align-items: center;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 999px;
   background: #111;
   color: #666;
@@ -186,8 +186,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .toggle-track {
   position: relative;
   display: inline-flex;
-  height: 22px;
-  width: 38px;
+  height: 26px;
+  width: 44px;
   align-items: center;
   border-radius: 999px;
   background: #222;
@@ -202,8 +202,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .toggle-thumb {
   display: inline-block;
-  height: 16px;
-  width: 16px;
+  height: 20px;
+  width: 20px;
   transform: translateX(3px);
   border-radius: 999px;
   background: #000;
@@ -212,14 +212,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .toggle-thumb.active {
-  transform: translateX(19px);
+  transform: translateX(21px);
 }
 
 /* ─── Checkbox ──────────────────────────────────────────────────────────── */
 
 .checkbox-circle {
-  width: 17px;
-  height: 17px;
+  width: 20px;
+  height: 20px;
   border-radius: 999px;
   border: 1px solid #2a2a2a;
   background: transparent;
@@ -251,9 +251,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background: #0a0a0a;
   border: 1px solid #1a1a1a;
   color: #ededed;
-  border-radius: 6px;
-  padding: 10px 12px;
-  font-size: 12px;
+  border-radius: 8px;
+  padding: 11px 14px;
+  font-size: 13px;
   font-family: 'Geist Mono', monospace;
   outline: none;
   transition: border-color 0.15s ease;
@@ -270,8 +270,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 /* ─── Pill Toggle ───────────────────────────────────────────────────────── */
 
 .pill-toggle {
-  font-size: 11px;
-  padding: 6px 14px;
+  font-size: 12px;
+  padding: 8px 16px;
   border-radius: 999px;
   border: 1px solid #222;
   background: transparent;

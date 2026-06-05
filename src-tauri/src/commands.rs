@@ -144,6 +144,25 @@ pub fn complete_task(
     Ok(())
 }
 
+#[tauri::command]
+pub fn uncomplete_task(
+    app: tauri::AppHandle,
+    db: State<'_, Arc<DbHandle>>,
+    id: i64,
+) -> Result<(), String> {
+    db.uncomplete_task(id)?;
+
+    // Find the task and its position among incomplete tasks, then open its card
+    let task = db.get_task_by_id(id)?;
+    if let Ok(tasks) = db.get_incomplete_tasks() {
+        let index = tasks.iter().position(|t| t.id == Some(id)).unwrap_or(0);
+        let _ = window::open_task_card(&app, &task, index);
+    }
+
+    emit_tasks_updated(&app, &db);
+    Ok(())
+}
+
 /// Advance the due date by the given recurrence interval.
 fn advance_due_date(current_date: &str, recurrence: &str) -> String {
     let days = match recurrence {

@@ -6,6 +6,7 @@ import {
   updateTask,
   deleteTask,
   completeTask as completeTaskCmd,
+  uncompleteTask as uncompleteTaskCmd,
   getSettings,
   updateSetting,
 } from "@/lib/tauriCommands";
@@ -44,6 +45,7 @@ export interface OverlayState {
   ) => Promise<void>;
   removeTask: (id: number) => Promise<void>;
   completeTask: (id: number) => Promise<void>;
+  uncompleteTask: (id: number) => Promise<void>;
 
   // Actions - Settings
   fetchSettings: () => Promise<void>;
@@ -139,6 +141,20 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
       }));
     } catch (error) {
       console.error("Failed to complete task:", error);
+      throw error;
+    }
+  },
+
+  uncompleteTask: async (id) => {
+    try {
+      await uncompleteTaskCmd(id);
+      set((state) => ({
+        tasks: state.tasks.map((t) =>
+          t.id === id ? { ...t, completed: false } : t,
+        ),
+      }));
+    } catch (error) {
+      console.error("Failed to uncomplete task:", error);
       throw error;
     }
   },

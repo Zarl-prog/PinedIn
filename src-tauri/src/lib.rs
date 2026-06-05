@@ -60,6 +60,7 @@ pub fn run() {
             commands::update_task,
             commands::delete_task,
             commands::complete_task,
+            commands::uncomplete_task,
             commands::snooze_task,
             commands::remind_task,
             commands::enable_autostart,

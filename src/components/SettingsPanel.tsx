@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Monitor, Sun, Moon, Power } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 import { isAutostartEnabled, enableAutostart, disableAutostart } from "@/lib/tauriCommands";
-import { cn } from "@/lib/utils";
 
 interface SettingsPanelProps {
   open: boolean;
@@ -11,7 +9,8 @@ interface SettingsPanelProps {
 }
 
 /**
- * SettingsPanel - Simplified settings with just theme selection.
+ * SettingsPanel - Monochrome settings panel with theme pills and autostart toggle.
+ * All styling uses the exact palette: #0a0a0a, #1a1a1a, #ededed, #fff, etc.
  */
 export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
   const { settings, updateSetting } = useSettings();
@@ -48,70 +47,155 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
     await updateSetting("theme", theme);
   };
 
+  const themeOptions = [
+    { value: "light", label: "Light" },
+    { value: "dark", label: "Dark" },
+    { value: "system", label: "System" },
+  ];
+
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 100,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            transition={{ duration: 0.15 }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(0,0,0,0.6)",
+            }}
             onClick={onClose}
           />
 
           {/* Panel */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative z-10 w-full max-w-lg rounded-2xl border border-border/50 bg-card p-6 shadow-2xl"
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.15 }}
+            style={{
+              position: "relative",
+              zIndex: 10,
+              width: "100%",
+              maxWidth: "420px",
+              background: "#0a0a0a",
+              border: "1px solid #1a1a1a",
+              borderRadius: "8px",
+              padding: "20px",
+            }}
           >
             {/* Header */}
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-foreground">Settings</h2>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "20px",
+              }}
+            >
+              <span style={{ fontSize: "14px", fontWeight: 600, color: "#ededed" }}>
+                Settings
+              </span>
               <button
                 onClick={onClose}
-                className="rounded-full p-1.5 text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+                style={{
+                  width: "24px",
+                  height: "24px",
+                  borderRadius: "6px",
+                  border: "1px solid #222",
+                  background: "transparent",
+                  color: "#666",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "14px",
+                  transition: "all 0.15s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#111";
+                  e.currentTarget.style.color = "#fff";
+                  e.currentTarget.style.borderColor = "#444";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = "#666";
+                  e.currentTarget.style.borderColor = "#222";
+                }}
               >
-                <X className="h-5 w-5" />
+                ✕
               </button>
             </div>
 
-            <div className="space-y-6">
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
               {/* Launch at login */}
               <div>
-                <label className="mb-3 block text-sm font-medium text-foreground">
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "11px",
+                    fontWeight: 500,
+                    color: "#888",
+                    marginBottom: "8px",
+                  }}
+                >
                   Launch at login
                 </label>
-                <div className="flex items-center justify-between rounded-xl border border-border bg-background p-4">
-                  <div className="flex items-center gap-3">
-                    <Power className={cn("h-4 w-4", autostartOn ? "text-primary" : "text-muted-foreground")} />
-                    <div>
-                      <p className="text-sm font-medium text-foreground">
-                        {autostartOn ? "Enabled" : "Disabled"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Automatically start PinedIn when you log in
-                      </p>
-                    </div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    background: "#0a0a0a",
+                    border: "1px solid #1a1a1a",
+                    borderRadius: "6px",
+                    padding: "12px 14px",
+                  }}
+                >
+                  <div>
+                    <span
+                      style={{
+                        display: "block",
+                        fontSize: "12px",
+                        fontWeight: 500,
+                        color: "#ededed",
+                      }}
+                    >
+                      {autostartOn ? "Enabled" : "Disabled"}
+                    </span>
+                    <span
+                      style={{
+                        display: "block",
+                        fontSize: "10px",
+                        color: "#444",
+                        marginTop: "2px",
+                      }}
+                    >
+                      Automatically start PinedIn when you log in
+                    </span>
                   </div>
+                  {/* Custom toggle switch */}
                   <button
                     onClick={handleAutostartToggle}
                     disabled={autostartLoading}
-                    className={cn(
-                      "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30",
-                      autostartOn ? "bg-primary" : "bg-muted-foreground/30",
-                    )}
+                    className={`toggle-track${autostartOn ? " active" : ""}`}
+                    style={{ flexShrink: 0 }}
                   >
                     <span
-                      className={cn(
-                        "inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform",
-                        autostartOn ? "translate-x-[22px]" : "translate-x-[2px]",
-                      )}
+                      className={`toggle-thumb${autostartOn ? " active" : ""}`}
                     />
                   </button>
                 </div>
@@ -119,49 +203,61 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
 
               {/* Theme */}
               <div>
-                <label className="mb-3 block text-sm font-medium text-foreground">
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "11px",
+                    fontWeight: 500,
+                    color: "#888",
+                    marginBottom: "8px",
+                  }}
+                >
                   Theme
                 </label>
-                <div className="flex gap-2">
-                  {[
-                    {
-                      value: "light",
-                      label: "Light",
-                      icon: Sun,
-                    },
-                    {
-                      value: "dark",
-                      label: "Dark",
-                      icon: Moon,
-                    },
-                    {
-                      value: "system",
-                      label: "System",
-                      icon: Monitor,
-                    },
-                  ].map((option) => (
-                    <motion.button
+                <div style={{ display: "flex", gap: "6px" }}>
+                  {themeOptions.map((option) => (
+                    <button
                       key={option.value}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
                       onClick={() => handleThemeChange(option.value)}
-                      className={cn(
-                        "flex flex-1 flex-col items-center gap-2 rounded-xl border p-4 transition-all",
-                        settings.theme === option.value
-                          ? "border-primary/50 bg-primary/10 text-foreground"
-                          : "border-border bg-background text-muted-foreground hover:border-muted-foreground/30",
-                      )}
+                      className={`pill-toggle${settings.theme === option.value ? " selected" : ""}`}
+                      style={{
+                        flex: 1,
+                        textAlign: "center",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: "6px",
+                        padding: "12px 14px",
+                      }}
                     >
-                      <option.icon
-                        className={cn(
-                          "h-5 w-5",
-                          settings.theme === option.value && "text-primary",
-                        )}
-                      />
-                      <span className="text-xs font-medium">
-                        {option.label}
-                      </span>
-                    </motion.button>
+                      {/* Theme icon */}
+                      {option.value === "light" && (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="5" />
+                          <line x1="12" y1="1" x2="12" y2="3" />
+                          <line x1="12" y1="21" x2="12" y2="23" />
+                          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                          <line x1="1" y1="12" x2="3" y2="12" />
+                          <line x1="21" y1="12" x2="23" y2="12" />
+                          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                        </svg>
+                      )}
+                      {option.value === "dark" && (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                        </svg>
+                      )}
+                      {option.value === "system" && (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                          <line x1="8" y1="21" x2="16" y2="21" />
+                          <line x1="12" y1="17" x2="12" y2="21" />
+                        </svg>
+                      )}
+                      <span style={{ fontSize: "11px" }}>{option.label}</span>
+                    </button>
                   ))}
                 </div>
               </div>

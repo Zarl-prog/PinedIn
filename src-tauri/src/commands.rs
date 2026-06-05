@@ -18,8 +18,17 @@ pub fn create_task(
     description: String,
     urgency: String,
     due_time: String,
+    recurrence: Option<String>,
+    tags: Option<String>,
 ) -> Result<Task, String> {
-    let task = db.create_task(&title, &description, &urgency, &due_time)?;
+    let task = db.create_task_with_tags(
+        &title,
+        &description,
+        &urgency,
+        &due_time,
+        recurrence.as_deref(),
+        tags.as_deref(),
+    )?;
     emit_tasks_updated(&app, &db);
 
     // Spawn window creation so we don't block the invoke response
@@ -93,10 +102,70 @@ pub fn complete_task(
     db: State<'_, Arc<DbHandle>>,
     id: i64,
 ) -> Result<(), String> {
+    // Check if task has recurrence before completing
+    let task = db.get_task_by_id(id)?;
+
+    if let Some(ref recurrence) = task.recurrence {
+        // Advance the due date by the recurrence interval
+        let new_due = advance_due_date(&task.due_time, recurrence);
+
+        // Create a new task with the same properties but advanced due date
+        let new_task = db.create_task_with_tags(
+            &task.title,
+            &task.description,
+            &task.urgency,
+            &new_due,
+            Some(recurrence.as_str()),
+            task.tags.as_deref(),
+        )?;
+
+        // Mark the original as completed
+        db.complete_task(id)?;
+        window::close_task_card(&app, id);
+
+        // Open a new floating card for the recurred task
+        let app_clone = app.clone();
+        let db_clone = Arc::clone(&*db);
+        let new_task_clone = new_task.clone();
+        std::thread::spawn(move || {
+            if let Ok(tasks) = db_clone.get_incomplete_tasks() {
+                let index = tasks.iter().position(|t| t.id == new_task_clone.id).unwrap_or(0);
+                let _ = window::open_task_card(&app_clone, &new_task_clone, index);
+            }
+        });
+
+        emit_tasks_updated(&app, &db);
+        return Ok(());
+    }
+
     db.complete_task(id)?;
     window::close_task_card(&app, id);
     emit_tasks_updated(&app, &db);
     Ok(())
+}
+
+/// Advance the due date by the given recurrence interval.
+fn advance_due_date(current_date: &str, recurrence: &str) -> String {
+    let days = match recurrence {
+        "daily" => 1,
+        "weekly" => 7,
+        "monthly" => 30,
+        _ => return current_date.to_string(),
+    };
+
+    // Parse date and add days
+    if let Ok(parsed) = chrono::NaiveDate::parse_from_str(current_date, "%Y-%m-%d") {
+        let new_date = parsed + chrono::Duration::days(days);
+        return new_date.format("%Y-%m-%d").to_string();
+    }
+
+    // If due_time is empty, start from today
+    if let Ok(today) = chrono::Local::now().date_naive().format("%Y-%m-%d").to_string().parse::<chrono::NaiveDate>() {
+        let new_date = today + chrono::Duration::days(days);
+        return new_date.format("%Y-%m-%d").to_string();
+    }
+
+    current_date.to_string()
 }
 
 #[tauri::command]

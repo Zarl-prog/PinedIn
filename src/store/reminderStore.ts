@@ -23,6 +23,7 @@ export interface OverlayState {
   isAddTaskOpen: boolean;
   isSettingsOpen: boolean;
   editingTask: Task | null;
+  activeTags: string[];
 
   // Actions - Task management
   fetchTasks: () => Promise<void>;
@@ -31,6 +32,8 @@ export interface OverlayState {
     description: string,
     urgency: Task["urgency"],
     dueTime: string,
+    recurrence?: string | null,
+    tags?: string,
   ) => Promise<void>;
   editTask: (
     id: number,
@@ -45,6 +48,9 @@ export interface OverlayState {
   // Actions - Settings
   fetchSettings: () => Promise<void>;
   saveSetting: (key: string, value: string) => Promise<void>;
+
+  // Actions - Tags
+  setActiveTags: (tags: string[]) => void;
 
   // Actions - UI
   setAddTaskOpen: (open: boolean) => void;
@@ -66,6 +72,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
   isAddTaskOpen: false,
   isSettingsOpen: false,
   editingTask: null,
+  activeTags: [],
 
   // ─── Task Management ──────────────────────────────────────────────────
 
@@ -80,9 +87,9 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
     }
   },
 
-  addTask: async (title, description, urgency, dueTime) => {
+  addTask: async (title, description, urgency, dueTime, recurrence = null, tags = "") => {
     try {
-      const newTask = await createTask(title, description, urgency, dueTime);
+      const newTask = await createTask(title, description, urgency, dueTime, recurrence, tags || null);
       set((state) => ({
         tasks: [...state.tasks, newTask].sort(sortTasks),
       }));
@@ -162,6 +169,10 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
       throw error;
     }
   },
+
+  // ─── Tags ──────────────────────────────────────────────────────────────
+
+  setActiveTags: (tags) => set({ activeTags: tags }),
 
   // ─── UI ────────────────────────────────────────────────────────────────
 

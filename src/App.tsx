@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import TaskList from "@/components/TaskList";
 import AddTaskModal from "@/components/AddTaskModal";
 import SettingsPanel from "@/components/SettingsPanel";
 import { useReminders } from "@/hooks/useReminders";
 import { useReminderStore } from "@/store/reminderStore";
-import { checkForUpdates } from "@/lib/updater";
+import { checkForUpdates, checkAndInstall } from "@/lib/updater";
 
 /**
  * PinedIn - Main application window.
@@ -22,18 +23,31 @@ export default function App() {
   const editingTask = useReminderStore((s) => s.editingTask);
   const setEditingTask = useReminderStore((s) => s.setEditingTask);
 
-  // Check for updates on startup
+  // ─── Update notification state ────────────────────────────────────────
+  const [updateInfo, setUpdateInfo] = useState<{
+    version: string;
+    installing: boolean;
+  } | null>(null);
+
+  // Silent update check on startup — only shows UI when update is available
   useEffect(() => {
     const timer = setTimeout(async () => {
       const result = await checkForUpdates();
-      if (result.available) {
-        console.log(
-          `Update v${result.version} available — open Settings to install`,
-        );
+      if (result.available && result.version) {
+        setUpdateInfo({ version: result.version, installing: false });
       }
     }, 5000);
     return () => clearTimeout(timer);
   }, []);
+
+  const handleInstallUpdate = useCallback(async () => {
+    if (!updateInfo) return;
+    setUpdateInfo((prev) => (prev ? { ...prev, installing: true } : null));
+    const result = await checkAndInstall();
+    if (!result.installed) {
+      setUpdateInfo(null);
+    }
+  }, [updateInfo]);
 
   // Close modals on Escape key
   useEffect(() => {
@@ -320,6 +334,106 @@ export default function App() {
         open={isSettingsOpen}
         onClose={() => setSettingsOpen(false)}
       />
+
+      {/* ─── Update Available Toast ──────────────────────────────────── */}
+      <AnimatePresence>
+        {updateInfo && !updateInfo.installing && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              position: "fixed",
+              bottom: "16px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 200,
+              background: "#0a0a0a",
+              border: "1px solid #2a2a2a",
+              borderRadius: "10px",
+              padding: "14px 18px",
+              display: "flex",
+              alignItems: "center",
+              gap: "14px",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+              maxWidth: "400px",
+            }}
+          >
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: "13px", fontWeight: 600, color: "#ededed" }}>
+                Update v{updateInfo.version} available
+              </div>
+              <div style={{ fontSize: "11px", color: "#555", marginTop: "2px" }}>
+                A new version is ready to install
+              </div>
+            </div>
+            <button
+              onClick={handleInstallUpdate}
+              style={{
+                fontSize: "12px",
+                fontWeight: 600,
+                padding: "7px 14px",
+                borderRadius: "8px",
+                background: "#fff",
+                color: "#000",
+                border: "none",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                transition: "opacity 0.15s ease",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+            >
+              Update Now
+            </button>
+            <button
+              onClick={() => setUpdateInfo(null)}
+              style={{
+                fontSize: "14px",
+                color: "#555",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "2px",
+                lineHeight: 1,
+              }}
+            >
+              ✕
+            </button>
+          </motion.div>
+        )}
+
+        {/* Installing state */}
+        {updateInfo && updateInfo.installing && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              position: "fixed",
+              bottom: "16px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 200,
+              background: "#0a0a0a",
+              border: "1px solid #2a2a2a",
+              borderRadius: "10px",
+              padding: "14px 18px",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+            }}
+          >
+            <span style={{ fontSize: "13px", color: "#888" }}>⏳</span>
+            <span style={{ fontSize: "13px", color: "#ededed" }}>
+              Installing update…
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

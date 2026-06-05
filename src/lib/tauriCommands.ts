@@ -70,6 +70,10 @@ export async function completeTask(id: number): Promise<void> {
   return invoke("complete_task", { id });
 }
 
+export async function uncompleteTask(id: number): Promise<void> {
+  return invoke("uncomplete_task", { id });
+}
+
 // ─── Settings Commands ──────────────────────────────────────────────────────
 
 export async function getSettings(): Promise<AppSettings> {

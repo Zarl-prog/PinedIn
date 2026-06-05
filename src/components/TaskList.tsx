@@ -16,6 +16,7 @@ interface TaskListProps {
 export default function TaskList({ searchQuery }: TaskListProps) {
   const tasks = useReminderStore((s) => s.tasks);
   const completeTask = useReminderStore((s) => s.completeTask);
+  const uncompleteFromStore = useReminderStore((s) => s.uncompleteTask);
   const removeTask = useReminderStore((s) => s.removeTask);
   const setAddTaskOpen = useReminderStore((s) => s.setAddTaskOpen);
   const setEditingTask = useReminderStore((s) => s.setEditingTask);
@@ -106,7 +107,7 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                       setExpandedId(expandedId === task.id ? null : (task.id ?? null))
                     }
                     onComplete={() => {
-                      if (task.id) completeTask(task.id);
+                      if (task.id) uncompleteFromStore(task.id);
                       setExpandedId(null);
                     }}
                     onEdit={() => {

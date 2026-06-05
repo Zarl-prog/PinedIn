@@ -233,8 +233,13 @@ export default function TaskCard({
       if (action === "complete") handleDone();
       else if (action === "snooze") handleSnooze();
       else if (action === "remind") handleRemindClick(e);
+      else if (action === "edit") {
+        invoke("trigger_task_edit", { id: taskId });
+      } else if (action === "delete") {
+        invoke("delete_task", { id: taskId });
+      }
     },
-    [handleDone, handleSnooze, handleRemindClick],
+    [handleDone, handleSnooze, handleRemindClick, taskId],
   );
 
   return (
@@ -385,35 +390,67 @@ export default function TaskCard({
         <div
           style={{
             display: "flex",
+            flexDirection: "column",
             gap: "8px",
             paddingTop: "12px",
             borderTop: "1px solid #1a1a1a",
           }}
         >
-          {/* Done */}
-          <button
-            className="v-action"
-            onClick={(e) => handleAction("complete", e)}
-            style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 10px" }}
-          >
-            ✓ Done
-          </button>
-          {/* Snooze */}
-          <button
-            className="v-action"
-            onClick={(e) => handleAction("snooze", e)}
-            style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 10px" }}
-          >
-            💤 Snooze
-          </button>
-          {/* Remind */}
-          <button
-            className="v-action"
-            onClick={(e) => handleAction("remind", e)}
-            style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 10px" }}
-          >
-            🔔 Remind
-          </button>
+          {/* Row 1: Primary Actions */}
+          <div style={{ display: "flex", gap: "6px" }}>
+            <button
+              className="v-action"
+              onClick={(e) => handleAction("complete", e)}
+              style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0" }}
+            >
+              ✓ Done
+            </button>
+            <button
+              className="v-action"
+              onClick={(e) => handleAction("snooze", e)}
+              style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0" }}
+            >
+              💤 Snooze
+            </button>
+            <button
+              className="v-action"
+              onClick={(e) => handleAction("remind", e)}
+              style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0" }}
+            >
+              🔔 Remind
+            </button>
+          </div>
+
+          {/* Row 2: Management Actions */}
+          <div style={{ display: "flex", gap: "6px" }}>
+            <button
+              className="v-action"
+              onClick={(e) => handleAction("edit", e)}
+              style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0" }}
+            >
+              ✎ Edit
+            </button>
+            <button
+              className="v-action"
+              onClick={(e) => handleAction("delete", e)}
+              style={{ 
+                flex: 1, 
+                textAlign: "center", 
+                fontSize: "11px", 
+                padding: "8px 0",
+                color: "#ff4444",
+                borderColor: "#331111"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#220000";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+              }}
+            >
+              🗑 Delete
+            </button>
+          </div>
         </div>
 
         {/* Remind time picker */}

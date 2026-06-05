@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Calendar } from "lucide-react";
 import { useReminderStore } from "@/store/reminderStore";
 import type { Task } from "@/lib/tauriCommands";
-import { cn } from "@/lib/utils";
 
 interface AddTaskModalProps {
   open: boolean;
@@ -19,8 +17,8 @@ const RECURRENCE_OPTIONS = [
 ] as const;
 
 /**
- * AddTaskModal - Modal for creating or editing tasks.
- * Supports title, description, urgency, optional due date, recurrence, and tags.
+ * AddTaskModal - Monochrome modal for creating or editing tasks.
+ * All styling uses the exact palette from the spec: #0a0a0a, #1a1a1a, #ededed, etc.
  */
 export default function AddTaskModal({
   open,
@@ -49,13 +47,13 @@ export default function AddTaskModal({
       setTitle(editTask.title);
       setDescription(editTask.description);
       setUrgency(editTask.urgency as "low" | "medium" | "critical");
-      if (editTask.due_time) {
-        setDueDate(editTask.due_time);
-      } else {
-        setDueDate("");
-      }
+      setDueDate(editTask.due_time || "");
       setRecurrence(editTask.recurrence ?? null);
-      setTags(editTask.tags ? editTask.tags.split(",").map((t) => t.trim()).filter(Boolean) : []);
+      setTags(
+        editTask.tags
+          ? editTask.tags.split(",").map((t) => t.trim()).filter(Boolean)
+          : [],
+      );
     } else {
       resetForm();
     }
@@ -72,28 +70,34 @@ export default function AddTaskModal({
     setError(null);
   };
 
-  const addTag = useCallback((tag: string) => {
-    const trimmed = tag.trim().toLowerCase();
-    if (trimmed && !tags.includes(trimmed) && tags.length < 5) {
-      setTags((prev) => [...prev, trimmed]);
-    }
-    setTagInput("");
-  }, [tags]);
+  const addTag = useCallback(
+    (tag: string) => {
+      const trimmed = tag.trim().toLowerCase();
+      if (trimmed && !tags.includes(trimmed) && tags.length < 5) {
+        setTags((prev) => [...prev, trimmed]);
+      }
+      setTagInput("");
+    },
+    [tags],
+  );
 
   const removeTag = useCallback((tag: string) => {
     setTags((prev) => prev.filter((t) => t !== tag));
   }, []);
 
-  const handleTagKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" || e.key === ",") {
-      e.preventDefault();
-      if (tagInput.trim()) {
-        addTag(tagInput);
+  const handleTagKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter" || e.key === ",") {
+        e.preventDefault();
+        if (tagInput.trim()) {
+          addTag(tagInput);
+        }
+      } else if (e.key === "Backspace" && !tagInput && tags.length > 0) {
+        removeTag(tags[tags.length - 1]);
       }
-    } else if (e.key === "Backspace" && !tagInput && tags.length > 0) {
-      removeTag(tags[tags.length - 1]);
-    }
-  }, [tagInput, tags, addTag, removeTag]);
+    },
+    [tagInput, tags, addTag, removeTag],
+  );
 
   const handleSubmit = async () => {
     if (!title.trim()) {
@@ -144,58 +148,126 @@ export default function AddTaskModal({
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 100,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            transition={{ duration: 0.15 }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(0,0,0,0.6)",
+            }}
             onClick={handleClose}
           />
 
           {/* Modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative z-10 w-full max-w-lg rounded-2xl border border-border/50 bg-card p-6 shadow-2xl"
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.15 }}
+            style={{
+              position: "relative",
+              zIndex: 10,
+              width: "100%",
+              maxWidth: "420px",
+              background: "#0a0a0a",
+              border: "1px solid #1a1a1a",
+              borderRadius: "8px",
+              padding: "20px",
+            }}
           >
             {/* Header */}
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-foreground">
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "16px",
+              }}
+            >
+              <span style={{ fontSize: "14px", fontWeight: 600, color: "#ededed" }}>
                 {editTask ? "Edit Task" : "New Task"}
-              </h2>
+              </span>
               <button
                 onClick={handleClose}
-                className="rounded-full p-1.5 text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+                style={{
+                  width: "24px",
+                  height: "24px",
+                  borderRadius: "6px",
+                  border: "1px solid #222",
+                  background: "transparent",
+                  color: "#666",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "14px",
+                  transition: "all 0.15s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#111";
+                  e.currentTarget.style.color = "#fff";
+                  e.currentTarget.style.borderColor = "#444";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = "#666";
+                  e.currentTarget.style.borderColor = "#222";
+                }}
               >
-                <X className="h-5 w-5" />
+                ✕
               </button>
             </div>
 
             {/* Form */}
-            <div className="space-y-4">
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
               {/* Title */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">
-                  Title <span className="text-destructive">*</span>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "11px",
+                    fontWeight: 500,
+                    color: "#888",
+                    marginBottom: "5px",
+                  }}
+                >
+                  Title <span style={{ color: "#444" }}>*</span>
                 </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Enter task title..."
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  className="input-field"
                   autoFocus
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "11px",
+                    fontWeight: 500,
+                    color: "#888",
+                    marginBottom: "5px",
+                  }}
+                >
                   Description
                 </label>
                 <textarea
@@ -203,121 +275,173 @@ export default function AddTaskModal({
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Enter description (optional)..."
                   rows={3}
-                  className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  className="input-field"
+                  style={{ resize: "none", lineHeight: 1.5 }}
                 />
               </div>
 
               {/* Urgency */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "11px",
+                    fontWeight: 500,
+                    color: "#888",
+                    marginBottom: "5px",
+                  }}
+                >
                   Urgency
                 </label>
-                <div className="flex gap-2">
-                  {(
-                    [
-                      { value: "low", label: "Low", color: "bg-urgency-low" },
-                      {
-                        value: "medium",
-                        label: "Medium",
-                        color: "bg-urgency-medium",
-                      },
-                      {
-                        value: "critical",
-                        label: "Critical",
-                        color: "bg-urgency-critical",
-                      },
-                    ] as const
-                  ).map((opt) => (
-                    <motion.button
-                      key={opt.value}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() =>
-                        setUrgency(opt.value as "low" | "medium" | "critical")
-                      }
-                      className={cn(
-                        "flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all",
-                        urgency === opt.value
-                          ? `${opt.color}/15 border-${opt.value === "low" ? "urgency-low" : opt.value === "medium" ? "urgency-medium" : "urgency-critical"} text-foreground`
-                          : "border-border bg-background text-muted-foreground hover:border-muted-foreground/30",
-                      )}
+                <div style={{ display: "flex", gap: "6px" }}>
+                  {(["low", "medium", "critical"] as const).map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => setUrgency(opt)}
+                      className={`pill-toggle${urgency === opt ? " selected" : ""}`}
+                      style={{ flex: 1, textAlign: "center" }}
                     >
-                      <span
-                        className={cn(
-                          "mx-auto mb-1 h-2 w-2 rounded-full",
-                          opt.color,
-                        )}
-                      />
-                      {opt.label}
-                    </motion.button>
+                      {opt === "critical" ? "Critical" : opt === "medium" ? "Medium" : "Low"}
+                    </button>
                   ))}
                 </div>
               </div>
 
-              {/* Due Date - optional */}
+              {/* Due Date */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">
-                  Due Date <span className="text-muted-foreground/60">(optional)</span>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "11px",
+                    fontWeight: 500,
+                    color: "#888",
+                    marginBottom: "5px",
+                  }}
+                >
+                  Due Date{" "}
+                  <span style={{ color: "#444" }}>(optional)</span>
                 </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <div style={{ position: "relative" }}>
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#444"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{
+                      position: "absolute",
+                      left: "10px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
                   <input
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full rounded-lg border border-border bg-background px-10 py-2.5 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="input-field"
+                    style={{ paddingLeft: "32px" }}
                   />
                 </div>
-                <p className="mt-1 text-[11px] text-muted-foreground/50">
-                  Set a deadline for this task
-                </p>
               </div>
 
               {/* Repeat / Recurrence */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "11px",
+                    fontWeight: 500,
+                    color: "#888",
+                    marginBottom: "5px",
+                  }}
+                >
                   Repeat
                 </label>
-                <div className="flex gap-2">
+                <div style={{ display: "flex", gap: "6px" }}>
                   {RECURRENCE_OPTIONS.map((opt) => (
-                    <motion.button
+                    <button
                       key={opt.label}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
                       onClick={() => setRecurrence(opt.value)}
-                      className={cn(
-                        "flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all",
-                        recurrence === opt.value
-                          ? "border-primary/50 bg-primary/10 text-foreground"
-                          : "border-border bg-background text-muted-foreground hover:border-muted-foreground/30",
-                      )}
+                      className={`pill-toggle${recurrence === opt.value ? " selected" : ""}`}
+                      style={{ flex: 1, textAlign: "center" }}
                     >
                       {opt.label}
-                    </motion.button>
+                    </button>
                   ))}
                 </div>
-                <p className="mt-1 text-[11px] text-muted-foreground/50">
-                  Automatically recreate this task after completion
-                </p>
               </div>
 
               {/* Tags */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">
-                  Tags <span className="text-muted-foreground/60">(max 5)</span>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "11px",
+                    fontWeight: 500,
+                    color: "#888",
+                    marginBottom: "5px",
+                  }}
+                >
+                  Tags{" "}
+                  <span style={{ color: "#444" }}>(max 5)</span>
                 </label>
-                <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/30">
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                    gap: "4px",
+                    background: "#0a0a0a",
+                    border: "1px solid #1a1a1a",
+                    borderRadius: "6px",
+                    padding: "8px 10px",
+                    minHeight: "38px",
+                  }}
+                >
                   {tags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-medium text-primary"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "3px",
+                        fontSize: "10px",
+                        color: "#666",
+                        background: "#111",
+                        border: "1px solid #222",
+                        borderRadius: "999px",
+                        padding: "2px 8px",
+                      }}
                     >
                       {tag}
                       <button
                         onClick={() => removeTag(tag)}
-                        className="ml-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-primary/60 hover:bg-primary/20 hover:text-primary"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: "12px",
+                          height: "12px",
+                          borderRadius: "999px",
+                          border: "none",
+                          background: "transparent",
+                          color: "#444",
+                          cursor: "pointer",
+                          fontSize: "10px",
+                          padding: 0,
+                        }}
                       >
-                        <X className="h-2.5 w-2.5" />
+                        ✕
                       </button>
                     </span>
                   ))}
@@ -329,49 +453,69 @@ export default function AddTaskModal({
                     onKeyDown={handleTagKeyDown}
                     placeholder={tags.length < 5 ? "Add a tag..." : ""}
                     disabled={tags.length >= 5}
-                    className="min-w-[80px] flex-1 border-0 bg-transparent py-0.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none disabled:opacity-40"
+                    style={{
+                      minWidth: "80px",
+                      flex: 1,
+                      border: "none",
+                      background: "transparent",
+                      color: "#ededed",
+                      fontSize: "12px",
+                      fontFamily: "'Geist Mono', monospace",
+                      outline: "none",
+                    }}
                   />
                 </div>
-                <p className="mt-1 text-[11px] text-muted-foreground/50">
-                  Press Enter or comma to add a tag
-                </p>
               </div>
 
               {/* Error */}
               {error && (
-                <motion.p
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-sm text-destructive"
-                >
-                  {error}
-                </motion.p>
+                <p style={{ fontSize: "11px", color: "#888" }}>{error}</p>
               )}
 
               {/* Actions */}
-              <div className="flex gap-3 pt-2">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+              <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                <button
                   onClick={handleClose}
                   disabled={isSubmitting}
-                  className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+                  className="v-btn"
+                  style={{
+                    flex: 1,
+                    padding: "8px 0",
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                  }}
                 >
                   Cancel
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                </button>
+                <button
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/20 transition-colors hover:bg-primary/90 disabled:opacity-50"
+                  style={{
+                    flex: 1,
+                    padding: "8px 0",
+                    borderRadius: "6px",
+                    border: "none",
+                    background: "#fff",
+                    color: "#000",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    transition: "opacity 0.15s ease",
+                    opacity: isSubmitting ? 0.6 : 1,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSubmitting) e.currentTarget.style.opacity = "0.85";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSubmitting) e.currentTarget.style.opacity = "1";
+                  }}
                 >
                   {isSubmitting
                     ? "Saving..."
                     : editTask
                       ? "Save Changes"
                       : "Create Task"}
-                </motion.button>
+                </button>
               </div>
             </div>
           </motion.div>

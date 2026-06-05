@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { listen } from "@tauri-apps/api/event";
 import TaskList from "@/components/TaskList";
 import AddTaskModal from "@/components/AddTaskModal";
 import SettingsPanel from "@/components/SettingsPanel";
@@ -28,6 +29,20 @@ export default function App() {
     version: string;
     installing: boolean;
   } | null>(null);
+
+  // Listen for task edit triggers from floating cards
+  useEffect(() => {
+    const unlisten = listen<number>("open_edit_task", (event) => {
+      const taskId = event.payload;
+      const task = tasks.find((t) => t.id === taskId);
+      if (task) {
+        setEditingTask(task);
+      }
+    });
+    return () => {
+      unlisten.then((f) => f());
+    };
+  }, [tasks, setEditingTask]);
 
   // Silent update check on startup — only shows UI when update is available
   useEffect(() => {

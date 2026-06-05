@@ -82,10 +82,10 @@ export default function App() {
             </svg>
           </div>
           <div>
-            <span style={{ fontSize: "13px", fontWeight: 600, color: "#ededed", lineHeight: 1.2 }}>
+            <span style={{ fontSize: "15px", fontWeight: 600, color: "#ededed", lineHeight: 1.2 }}>
               PinedIn
             </span>
-            <div style={{ fontSize: "11px", color: "#444", lineHeight: 1.2, marginTop: "1px" }}>
+            <div style={{ fontSize: "12px", color: "#444", lineHeight: 1.2, marginTop: "2px" }}>
               Persistent task overlay
             </div>
           </div>
@@ -162,8 +162,8 @@ export default function App() {
           className="v-btn"
           onClick={() => setAddTaskOpen(true)}
           style={{
-            padding: "6px 12px",
-            borderRadius: "6px",
+            padding: "7px 14px",
+            borderRadius: "8px",
           }}
         >
           + Quick Add
@@ -172,8 +172,8 @@ export default function App() {
         <button
           className="v-btn"
           style={{
-            padding: "6px 12px",
-            borderRadius: "6px",
+            padding: "7px 14px",
+            borderRadius: "8px",
           }}
         >
           || Pause
@@ -183,8 +183,8 @@ export default function App() {
           className="v-btn"
           onClick={() => setSettingsOpen(true)}
           style={{
-            padding: "6px 12px",
-            borderRadius: "6px",
+            padding: "7px 14px",
+            borderRadius: "8px",
           }}
         >
           /\ Settings
@@ -213,20 +213,20 @@ export default function App() {
           }}
         >
           <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
-            <span style={{ fontSize: "14px", fontWeight: 600, color: "#ededed" }}>
+            <span style={{ fontSize: "16px", fontWeight: 600, color: "#ededed" }}>
               Tasks
             </span>
-            <span style={{ fontSize: "11px", color: "#444" }}>
+            <span style={{ fontSize: "12px", color: "#444" }}>
               {incompleteCount} task{incompleteCount !== 1 ? "s" : ""} remaining
             </span>
           </div>
           <button
             onClick={() => setAddTaskOpen(true)}
             style={{
-              fontSize: "11px",
+              fontSize: "12px",
               fontWeight: 600,
-              padding: "6px 14px",
-              borderRadius: "6px",
+              padding: "7px 16px",
+              borderRadius: "8px",
               background: "#fff",
               color: "#000",
               border: "none",
@@ -284,7 +284,7 @@ export default function App() {
           padding: "10px 16px",
           borderTop: "1px solid #1a1a1a",
           textAlign: "center",
-          fontSize: "11px",
+          fontSize: "12px",
           color: "#2a2a2a",
           flexShrink: 0,
         }}

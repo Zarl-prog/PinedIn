@@ -70,13 +70,15 @@ export default function TaskCard({
       x: [0, ...amplitude, 0],
       boxShadow: [
         "0 0 0px rgba(255,255,255,0)",
-        "0 0 16px rgba(255,255,255,0.6)",
-        "0 0 8px rgba(255,255,255,0.3)",
+        "0 0 20px rgba(255,255,255,0.4)",
+        "0 0 10px rgba(255,255,255,0.2)",
         "0 0 0px rgba(255,255,255,0)",
       ],
+      backgroundColor: ["#080808", "#121212", "#0a0a0a", "#080808"],
       transition: {
         x: { duration: 0.4, ease: "easeInOut" },
-        boxShadow: { duration: 0.5, ease: "easeInOut" },
+        boxShadow: { duration: 0.6, ease: "easeInOut" },
+        backgroundColor: { duration: 0.6, ease: "easeInOut" },
       },
     });
   }, [urgency, controls]);
@@ -195,10 +197,16 @@ export default function TaskCard({
   );
 
   const handleClick = useCallback(
-    (e: React.MouseEvent) => {
+    async (e: React.MouseEvent) => {
       if ((e.target as HTMLElement).closest("button")) return;
       if (dragging.current) return;
       const next = !expanded;
+      
+      // If expanding, increase window size to a safe target (slightly smaller to reduce glitch)
+      if (next) {
+        await getCurrentWindow().setSize(new LogicalSize(280, 350));
+      }
+      
       setExpanded(next);
       setShowRemindPicker(false);
     },
@@ -366,21 +374,29 @@ export default function TaskCard({
         </div>
       </div>
 
-      {/* Expandable content — motion.div animates height */}
+      {/* Expandable content — motion.div animates height, opacity and scale */}
       <motion.div
         ref={contentRef}
-        animate={{ height: expanded ? "auto" : 0 }}
-        initial={{ height: 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 28 }}
+        initial={false}
+        animate={{ 
+          height: expanded ? "auto" : 0,
+          opacity: expanded ? 1 : 0,
+          scale: expanded ? 1 : 0.98,
+          marginTop: expanded ? 12 : 0
+        }}
+        transition={{ 
+          height: { type: "spring", stiffness: 350, damping: 35 },
+          opacity: { duration: 0.15 },
+          scale: { duration: 0.15 }
+        }}
         onAnimationComplete={handleAnimationComplete}
-        style={{ overflow: "hidden" }}
+        style={{ overflow: "hidden", transformOrigin: "top" }}
       >
         <div
           style={{
             display: "flex",
-            gap: "6px",
-            marginTop: "10px",
-            paddingTop: "10px",
+            gap: "8px",
+            paddingTop: "12px",
             borderTop: "1px solid #1a1a1a",
           }}
         >
@@ -388,7 +404,7 @@ export default function TaskCard({
           <button
             className="v-action"
             onClick={(e) => handleAction("complete", e)}
-            style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "7px 10px" }}
+            style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 10px" }}
           >
             ✓ Done
           </button>
@@ -396,7 +412,7 @@ export default function TaskCard({
           <button
             className="v-action"
             onClick={(e) => handleAction("snooze", e)}
-            style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "7px 10px" }}
+            style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 10px" }}
           >
             💤 Snooze
           </button>
@@ -404,7 +420,7 @@ export default function TaskCard({
           <button
             className="v-action"
             onClick={(e) => handleAction("remind", e)}
-            style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "7px 10px" }}
+            style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 10px" }}
           >
             🔔 Remind
           </button>

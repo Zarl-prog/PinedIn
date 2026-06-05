@@ -25,6 +25,7 @@ export interface OverlayState {
   isSettingsOpen: boolean;
   editingTask: Task | null;
   activeTags: string[];
+  isPaused: boolean;
 
   // Actions - Task management
   fetchTasks: () => Promise<void>;
@@ -59,6 +60,7 @@ export interface OverlayState {
   setSettingsOpen: (open: boolean) => void;
   setEditingTask: (task: Task | null) => void;
   setOverlayVisible: (visible: boolean) => void;
+  togglePaused: () => void;
 }
 
 // ─── Store ──────────────────────────────────────────────────────────────────
@@ -75,6 +77,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
   isSettingsOpen: false,
   editingTask: null,
   activeTags: [],
+  isPaused: false,
 
   // ─── Task Management ──────────────────────────────────────────────────
 
@@ -196,6 +199,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
   setSettingsOpen: (open) => set({ isSettingsOpen: open }),
   setEditingTask: (task) => set({ editingTask: task, isAddTaskOpen: !!task }),
   setOverlayVisible: (visible) => set({ overlayVisible: visible }),
+  togglePaused: () => set((state) => ({ isPaused: !state.isPaused })),
 }));
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

@@ -120,26 +120,39 @@ export default function TaskCard({
 
   // Initial measurement and window sizing
   useEffect(() => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(async () => {
-        if (containerRef.current) {
-          const h = containerRef.current.offsetHeight;
-          await getCurrentWindow().setSize(new LogicalSize(280, Math.ceil(h)));
-        }
-      });
-    });
+    const measure = async () => {
+      if (containerRef.current) {
+        const h = containerRef.current.scrollHeight;
+        await getCurrentWindow().setSize(new LogicalSize(280, Math.ceil(h)));
+      }
+    };
+    measure();
   }, []);
 
-  // Zero-flash resize logic: shrink window before state change, expand after render
+  // Zero-flash resize logic: react to state changes and content mutations
   useEffect(() => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(async () => {
-        if (containerRef.current) {
-          const h = containerRef.current.offsetHeight;
-          await getCurrentWindow().setSize(new LogicalSize(280, Math.ceil(h)));
-        }
+    const measure = async () => {
+      if (containerRef.current) {
+        // Use scrollHeight to capture the full desired height even if clipped
+        const h = containerRef.current.scrollHeight;
+        await getCurrentWindow().setSize(new LogicalSize(280, Math.ceil(h)));
+      }
+    };
+
+    // Immediate measure for the "1px start"
+    measure();
+
+    // Also observe mutations (like the buttons appearing) to re-measure
+    const observer = new MutationObserver(measure);
+    if (containerRef.current) {
+      observer.observe(containerRef.current, { 
+        childList: true, 
+        subtree: true, 
+        attributes: true 
       });
-    });
+    }
+
+    return () => observer.disconnect();
   }, [expanded, showRemindPicker]);
 
   const handleMouseDown = useCallback(

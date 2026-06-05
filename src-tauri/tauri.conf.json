@@ -47,8 +47,7 @@
     "shortDescription": "Floating task overlay for your desktop",
     "longDescription": "PinedIn keeps your tasks floating on screen no matter what app you are using.",
     "windows": {
-      "wix": null,
-      "nsis": null
+      "wix": null
     },
     "nsis": {
       "displayLanguageSelector": false,

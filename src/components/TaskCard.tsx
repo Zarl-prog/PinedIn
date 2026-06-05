@@ -35,12 +35,11 @@ export default function TaskCard({
 }: TaskCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showRemindPicker, setShowRemindPicker] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const mouseDownPos = useRef({ x: 0, y: 0 });
   const dragging = useRef(false);
   const interacting = useRef(false);
-  const collapsedHeightRef = useRef<number>(0);
-  const prevExpanded = useRef(expanded);
   const expandedRef = useRef(expanded);
   // Keep the ref in sync so interval closures always read the latest value
   expandedRef.current = expanded;
@@ -119,54 +118,29 @@ export default function TaskCard({
     return Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
   }, [dueTime]);
 
-  // Measure and lock collapsed height once on mount
+  // Initial measurement and window sizing
   useEffect(() => {
-    const t = setTimeout(async () => {
-      if (contentRef.current) {
-        const el = contentRef.current.parentElement ?? contentRef.current;
-        const h = el.getBoundingClientRect().height;
-        collapsedHeightRef.current = h;
-        await getCurrentWindow().setSize(new LogicalSize(280, Math.ceil(h)));
-      }
-    }, 60);
-    return () => clearTimeout(t);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(async () => {
+        if (containerRef.current) {
+          const h = containerRef.current.offsetHeight;
+          await getCurrentWindow().setSize(new LogicalSize(280, Math.ceil(h)));
+        }
+      });
+    });
   }, []);
 
-  // After animation completes, resize window to match content
-  const handleAnimationComplete = useCallback(async () => {
-    if (expanded) {
-      // Expanded — measure full parent height now that animation is done
-      if (contentRef.current) {
-        const el = contentRef.current.parentElement ?? contentRef.current;
-        const h = el.getBoundingClientRect().height;
-        await getCurrentWindow().setSize(new LogicalSize(280, Math.ceil(h)));
-      }
-    } else {
-      // Collapsed — use the locked original height, never remeasure
-      if (collapsedHeightRef.current > 0) {
-        await getCurrentWindow().setSize(
-          new LogicalSize(280, Math.ceil(collapsedHeightRef.current)),
-        );
-      }
-    }
-  }, [expanded]);
-
-  // When remind picker toggles WHILE already expanded, re-measure after animation
+  // Zero-flash resize logic: shrink window before state change, expand after render
   useEffect(() => {
-    if (prevExpanded.current !== expanded) {
-      prevExpanded.current = expanded;
-      return;
-    }
-    if (!expanded) return;
-    const t = setTimeout(async () => {
-      if (contentRef.current) {
-        const el = contentRef.current.parentElement ?? contentRef.current;
-        const h = el.getBoundingClientRect().height;
-        await getCurrentWindow().setSize(new LogicalSize(280, Math.ceil(h)));
-      }
-    }, 160);
-    return () => clearTimeout(t);
-  }, [showRemindPicker, expanded]);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(async () => {
+        if (containerRef.current) {
+          const h = containerRef.current.offsetHeight;
+          await getCurrentWindow().setSize(new LogicalSize(280, Math.ceil(h)));
+        }
+      });
+    });
+  }, [expanded, showRemindPicker]);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -200,13 +174,13 @@ export default function TaskCard({
     async (e: React.MouseEvent) => {
       if ((e.target as HTMLElement).closest("button")) return;
       if (dragging.current) return;
+      
       const next = !expanded;
       
-      // If expanding, increase window size to a safe target (slightly smaller to reduce glitch)
-      if (next) {
-        await getCurrentWindow().setSize(new LogicalSize(280, 350));
-      }
+      // Step 1: immediately shrink window to near zero so no flash
+      await getCurrentWindow().setSize(new LogicalSize(280, 1));
       
+      // Step 2: update state
       setExpanded(next);
       setShowRemindPicker(false);
     },
@@ -223,8 +197,11 @@ export default function TaskCard({
   }, [taskId]);
 
   const handleRemindClick = useCallback(
-    (e: React.MouseEvent) => {
+    async (e: React.MouseEvent) => {
       e.stopPropagation();
+      // Step 1: immediately shrink window
+      await getCurrentWindow().setSize(new LogicalSize(280, 1));
+      // Step 2: toggle
       setShowRemindPicker((prev) => !prev);
     },
     [],
@@ -249,15 +226,16 @@ export default function TaskCard({
 
   return (
     <motion.div
+      ref={containerRef}
       data-tauri-drag-region
       onMouseDown={handleMouseDown}
       onClick={handleClick}
       className="v-float"
       animate={controls}
-      style={{ willChange: "transform" }}
+      style={{ willChange: "transform, background-color" }}
     >
       {/* Summary content — always visible */}
-      <div>
+      <div style={{ pointerEvents: "none" }}>
         {/* Title row */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <span
@@ -389,7 +367,6 @@ export default function TaskCard({
           opacity: { duration: 0.15 },
           scale: { duration: 0.15 }
         }}
-        onAnimationComplete={handleAnimationComplete}
         style={{ overflow: "hidden", transformOrigin: "top" }}
       >
         <div

@@ -21,6 +21,9 @@
     "core:event:default",
     "core:event:allow-listen",
     "core:event:allow-emit",
-    "notification:default"
+    "notification:default",
+    "autostart:allow-enable",
+    "autostart:allow-disable",
+    "autostart:allow-is-enabled"
   ]
 }

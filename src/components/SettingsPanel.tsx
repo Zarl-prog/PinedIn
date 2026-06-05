@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Monitor, Sun, Moon } from "lucide-react";
+import { X, Monitor, Sun, Moon, Power } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
+import { isAutostartEnabled, enableAutostart, disableAutostart } from "@/lib/tauriCommands";
 import { cn } from "@/lib/utils";
 
 interface SettingsPanelProps {
@@ -13,6 +15,34 @@ interface SettingsPanelProps {
  */
 export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
   const { settings, updateSetting } = useSettings();
+  const [autostartOn, setAutostartOn] = useState(false);
+  const [autostartLoading, setAutostartLoading] = useState(false);
+
+  // Load current autostart state on mount
+  useEffect(() => {
+    if (open) {
+      isAutostartEnabled()
+        .then(setAutostartOn)
+        .catch(() => {});
+    }
+  }, [open]);
+
+  const handleAutostartToggle = async () => {
+    setAutostartLoading(true);
+    try {
+      if (autostartOn) {
+        await disableAutostart();
+        setAutostartOn(false);
+      } else {
+        await enableAutostart();
+        setAutostartOn(true);
+      }
+    } catch (err) {
+      console.error("Failed to toggle autostart:", err);
+    } finally {
+      setAutostartLoading(false);
+    }
+  };
 
   const handleThemeChange = async (theme: string) => {
     await updateSetting("theme", theme);
@@ -52,6 +82,41 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
             </div>
 
             <div className="space-y-6">
+              {/* Launch at login */}
+              <div>
+                <label className="mb-3 block text-sm font-medium text-foreground">
+                  Launch at login
+                </label>
+                <div className="flex items-center justify-between rounded-xl border border-border bg-background p-4">
+                  <div className="flex items-center gap-3">
+                    <Power className={cn("h-4 w-4", autostartOn ? "text-primary" : "text-muted-foreground")} />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        {autostartOn ? "Enabled" : "Disabled"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Automatically start PinedIn when you log in
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleAutostartToggle}
+                    disabled={autostartLoading}
+                    className={cn(
+                      "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30",
+                      autostartOn ? "bg-primary" : "bg-muted-foreground/30",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform",
+                        autostartOn ? "translate-x-[22px]" : "translate-x-[2px]",
+                      )}
+                    />
+                  </button>
+                </div>
+              </div>
+
               {/* Theme */}
               <div>
                 <label className="mb-3 block text-sm font-medium text-foreground">

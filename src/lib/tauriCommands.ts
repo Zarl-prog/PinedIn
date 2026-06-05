@@ -86,3 +86,17 @@ export async function getTaskById(id: number): Promise<Task> {
 export async function snoozeTask(id: number): Promise<void> {
   return invoke("snooze_task", { id });
 }
+
+// ─── Autostart Commands ──────────────────────────────────────────────────────
+
+export async function enableAutostart(): Promise<void> {
+  return invoke("enable_autostart");
+}
+
+export async function disableAutostart(): Promise<void> {
+  return invoke("disable_autostart");
+}
+
+export async function isAutostartEnabled(): Promise<boolean> {
+  return invoke<boolean>("is_autostart_enabled");
+}

@@ -112,6 +112,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
   border-radius: 6px;
   padding: 6px 12px;
+  font-family: 'Geist Mono', monospace;
 }
 
 .v-action:hover {

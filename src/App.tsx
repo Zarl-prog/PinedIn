@@ -141,7 +141,7 @@ export default function App() {
               transition: "background 0.15s ease",
             }}
             title="Close"
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#e81123")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#444")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "#222")}
           />
         </div>

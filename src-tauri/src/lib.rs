@@ -1,16 +1,19 @@
 pub mod commands;
 pub mod db;
+pub mod notifications;
 pub mod tray;
 pub mod window;
 
 use db::DbHandle;
 use std::sync::Arc;
 use tauri::Manager;
+use tauri_plugin_notification::NotificationExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             let app_data_dir = app
                 .path()
@@ -39,6 +42,11 @@ pub fn run() {
             if let Ok(tasks) = db_handle.get_incomplete_tasks() {
                 window::open_all_task_cards(app.handle(), &tasks);
             }
+
+            // Request notification permission, then fire notifications for tasks due today
+            // and start the hourly background checker
+            let _ = app.handle().notification().request_permission();
+            notifications::start_notification_checker(app.handle().clone());
 
             Ok(())
         })

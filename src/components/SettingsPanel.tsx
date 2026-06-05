@@ -16,6 +16,11 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
   const { settings, updateSetting } = useSettings();
   const [autostartOn, setAutostartOn] = useState(false);
   const [autostartLoading, setAutostartLoading] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<{
+    state: "idle" | "checking" | "available" | "none" | "error";
+    version?: string;
+    error?: string;
+  }>({ state: "idle" });
 
   // Load current autostart state on mount
   useEffect(() => {
@@ -25,6 +30,29 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
         .catch(() => {});
     }
   }, [open]);
+
+  const handleCheckUpdates = async () => {
+    setUpdateStatus({ state: "checking" });
+    try {
+      const { checkAndInstall } = await import("@/lib/updater");
+      const result = await checkAndInstall();
+      if (result.installed) {
+        setUpdateStatus({ state: "idle" });
+      } else if (result.available) {
+        setUpdateStatus({
+          state: "available",
+          version: result.version,
+        });
+      } else {
+        setUpdateStatus({ state: "none" });
+      }
+    } catch (err) {
+      setUpdateStatus({
+        state: "error",
+        error: err instanceof Error ? err.message : "Update check failed",
+      });
+    }
+  };
 
   const handleAutostartToggle = async () => {
     setAutostartLoading(true);
@@ -259,6 +287,79 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                       <span style={{ fontSize: "12px" }}>{option.label}</span>
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Updates */}
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: 500,
+                    color: "#888",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Updates
+                </label>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    background: "#0a0a0a",
+                    border: "1px solid #1a1a1a",
+                    borderRadius: "8px",
+                    padding: "14px 16px",
+                  }}
+                >
+                  <div>
+                    <span
+                      style={{
+                        display: "block",
+                        fontSize: "13px",
+                        fontWeight: 500,
+                        color: "#ededed",
+                      }}
+                    >
+                      {updateStatus.state === "checking"
+                        ? "Checking…"
+                        : updateStatus.state === "available"
+                          ? `Update v${updateStatus.version} ready`
+                          : updateStatus.state === "none"
+                            ? "Up to date"
+                            : updateStatus.state === "error"
+                              ? "Update check failed"
+                              : "Auto-update installer"}
+                    </span>
+                    <span
+                      style={{
+                        display: "block",
+                        fontSize: "12px",
+                        color: "#444",
+                        marginTop: "2px",
+                      }}
+                    >
+                      {updateStatus.state === "error"
+                        ? updateStatus.error
+                        : updateStatus.state === "idle"
+                          ? "Checks for new versions on each build"
+                          : ""}
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleCheckUpdates}
+                    disabled={updateStatus.state === "checking"}
+                    className="v-action"
+                    style={{ flexShrink: 0, fontSize: "11px", padding: "6px 12px" }}
+                  >
+                    {updateStatus.state === "checking"
+                      ? "⏳"
+                      : updateStatus.state === "available"
+                        ? "Install"
+                        : "Check"}
+                  </button>
                 </div>
               </div>
             </div>

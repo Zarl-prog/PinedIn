@@ -14,6 +14,7 @@ pub struct Task {
     pub completed: bool,
     pub created_at: String,
     pub recurrence: Option<String>,
+    pub tags: Option<String>,
 }
 
 /// Represents app settings
@@ -159,7 +160,7 @@ impl DbHandle {
     pub fn get_all_tasks(&self) -> Result<Vec<Task>, String> {
         let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
         let mut stmt = conn.prepare(
-            "SELECT id, title, description, urgency, due_time, completed, created_at, recurrence
+            "SELECT id, title, description, urgency, due_time, completed, created_at, recurrence, tags
              FROM tasks
              ORDER BY
                 CASE urgency
@@ -180,6 +181,7 @@ impl DbHandle {
                 completed: row.get::<_, i32>(5)? != 0,
                 created_at: row.get(6)?,
                 recurrence: row.get(7)?,
+                tags: row.get(8)?,
             })
         }).map_err(|e| format!("Query error: {e}"))?
         .filter_map(|r| r.ok())
@@ -191,7 +193,7 @@ impl DbHandle {
     pub fn get_incomplete_tasks(&self) -> Result<Vec<Task>, String> {
         let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
         let mut stmt = conn.prepare(
-            "SELECT id, title, description, urgency, due_time, completed, created_at
+            "SELECT id, title, description, urgency, due_time, completed, created_at, recurrence, tags
              FROM tasks
              WHERE completed = 0
              ORDER BY
@@ -213,6 +215,7 @@ impl DbHandle {
                 completed: row.get::<_, i32>(5)? != 0,
                 created_at: row.get(6)?,
                 recurrence: row.get(7)?,
+                tags: row.get(8)?,
             })
         }).map_err(|e| format!("Query error: {e}"))?
         .filter_map(|r| r.ok())
@@ -224,7 +227,7 @@ impl DbHandle {
     pub fn get_task_by_id(&self, id: i64) -> Result<Task, String> {
         let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
         conn.query_row(
-            "SELECT id, title, description, urgency, due_time, completed, created_at
+            "SELECT id, title, description, urgency, due_time, completed, created_at, recurrence, tags
              FROM tasks WHERE id = ?1",
             rusqlite::params![id],
             |row| {
@@ -236,6 +239,8 @@ impl DbHandle {
                     due_time: row.get(4)?,
                     completed: row.get::<_, i32>(5)? != 0,
                     created_at: row.get(6)?,
+                    recurrence: row.get(7)?,
+                    tags: row.get(8)?,
                 })
             }
         ).map_err(|e| format!("Failed to get task by id: {e}"))

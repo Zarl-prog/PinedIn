@@ -108,6 +108,7 @@ pub fn delete_task(
 ) -> Result<(), String> {
     db.delete_task(id)?;
     window::close_task_card(&app, id);
+    window::restack_task_cards(&app);
     emit_tasks_updated(&app, &db);
     Ok(())
 }

@@ -1,7 +1,8 @@
 use std::sync::Arc;
 use crate::db::{DbHandle, Task};
 use crate::window;
-use tauri::{Emitter, Manager, State};
+use tauri::{AppHandle, Emitter, Manager, State};
+use tauri_plugin_autostart::ManagerExt;
 
 fn emit_tasks_updated(app: &tauri::AppHandle, db: &DbHandle) {
     if let Ok(tasks) = db.get_all_tasks() {
@@ -159,7 +160,25 @@ pub fn get_settings(
     db.get_settings()
 }
 
-// Re-export for the handler macro
+// ─── Autostart Commands ─────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn enable_autostart(app: AppHandle) -> Result<(), String> {
+    app.autolaunch().enable().map_err(|e| format!("Failed to enable autostart: {e}"))
+}
+
+#[tauri::command]
+pub fn disable_autostart(app: AppHandle) -> Result<(), String> {
+    app.autolaunch().disable().map_err(|e| format!("Failed to disable autostart: {e}"))
+}
+
+#[tauri::command]
+pub fn is_autostart_enabled(app: AppHandle) -> Result<bool, String> {
+    app.autolaunch().is_enabled().map_err(|e| format!("Failed to check autostart: {e}"))
+}
+
+// ─── Settings Commands ───────────────────────────────────────────────────────
+
 use crate::db::AppSettings;
 
 #[tauri::command]

@@ -7,6 +7,7 @@ pub mod window;
 use db::DbHandle;
 use std::sync::Arc;
 use tauri::Manager;
+use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_notification::NotificationExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -14,6 +15,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec![])))
         .setup(|app| {
             let app_data_dir = app
                 .path()
@@ -60,6 +62,9 @@ pub fn run() {
             commands::complete_task,
             commands::snooze_task,
             commands::remind_task,
+            commands::enable_autostart,
+            commands::disable_autostart,
+            commands::is_autostart_enabled,
             commands::get_settings,
             commands::update_setting,
         ])

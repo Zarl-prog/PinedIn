@@ -131,7 +131,11 @@ export default function TaskCard({
     measure();
   }, []);
 
-  // Zero-flash resize logic: react to state changes and content mutations
+  // Zero-flash resize logic: react to state changes and structural content
+  // mutations only. We deliberately do NOT observe attribute changes — the
+  // motion.div's animate controls mutate inline `style` on every frame of
+  // the shake animation, which would re-fire this effect and call
+  // setSize() in a feedback loop.
   useEffect(() => {
     const measure = async () => {
       if (containerRef.current) {
@@ -144,13 +148,12 @@ export default function TaskCard({
     // Immediate measure for the "1px start"
     measure();
 
-    // Also observe mutations (like the buttons appearing) to re-measure
     const observer = new MutationObserver(measure);
     if (containerRef.current) {
-      observer.observe(containerRef.current, { 
-        childList: true, 
-        subtree: true, 
-        attributes: true 
+      observer.observe(containerRef.current, {
+        childList: true,
+        subtree: true,
+        characterData: true,
       });
     }
 

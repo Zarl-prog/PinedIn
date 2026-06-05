@@ -66,15 +66,16 @@ export default function App() {
     }
   }, [updateInfo]);
 
-  // Close modals on Escape key
+  // Close any open modal on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (isAddTaskOpen) {
-          setAddTaskOpen(false);
-          setEditingTask(null);
-        }
-        if (isSettingsOpen) setSettingsOpen(false);
+      if (e.key !== "Escape") return;
+      if (isAddTaskOpen) {
+        setAddTaskOpen(false);
+        setEditingTask(null);
+      }
+      if (isSettingsOpen) {
+        setSettingsOpen(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { invoke } from "@tauri-apps/api/core";
 import { useReminderStore } from "@/store/reminderStore";
 import type { Task } from "@/lib/tauriCommands";
 import UrgencyBadge from "./UrgencyBadge";
@@ -60,6 +61,20 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                 }}
                 onDelete={() => {
                   if (task.id) removeTask(task.id);
+                  setExpandedId(null);
+                }}
+                onSnooze={async () => {
+                  if (!task.id) return;
+                  try {
+                    await invoke("snooze_task", { id: task.id });
+                  } catch {}
+                  setExpandedId(null);
+                }}
+                onRemind={async () => {
+                  if (!task.id) return;
+                  try {
+                    await invoke("remind_task", { id: task.id, minutes: 30 });
+                  } catch {}
                   setExpandedId(null);
                 }}
               />
@@ -123,6 +138,8 @@ interface TaskCardItemProps {
   onComplete: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onSnooze?: () => Promise<void>;
+  onRemind?: () => Promise<void>;
   completed?: boolean;
 }
 
@@ -133,6 +150,8 @@ function TaskCardItem({
   onComplete,
   onEdit,
   onDelete,
+  onSnooze,
+  onRemind,
   completed = false,
 }: TaskCardItemProps) {
   const urgency = task.urgency as "low" | "medium" | "critical";
@@ -309,21 +328,21 @@ function TaskCardItem({
               >
                 ✓ Done
               </button>
-              {/* Edit */}
+              {/* Snooze */}
               <button
                 className="v-action"
-                onClick={(e) => { e.stopPropagation(); onEdit(); }}
+                onClick={(e) => { e.stopPropagation(); onSnooze?.(); }}
                 style={{ flex: 1, textAlign: "center" }}
               >
-                ✎ Edit
+                💤 Snooze
               </button>
-              {/* Delete */}
+              {/* Remind */}
               <button
                 className="v-action"
-                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                onClick={(e) => { e.stopPropagation(); onRemind?.(); }}
                 style={{ flex: 1, textAlign: "center" }}
               >
-                ✕ Delete
+                🔔 Remind
               </button>
             </div>
           </motion.div>

@@ -61,7 +61,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "REPLACE_WITH_GENERATED_MINISIGN_PUBLIC_KEY",
+      "pubkey": "RWS038f7O6CsWZrOV/Ug84vdH3BVcSkbmgyVtZNFMepMwgPZoUh8koWh",
       "endpoints": ["https://github.com/Zarl-prog/PinedIn/releases/latest/download/update-{{target}}-{{arch}}.json"],
       "dangerousInsecureTransportProtocol": false
     }

@@ -3,6 +3,28 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Mutex;
 
+/// Return true if the named column exists on the named table. Used to
+/// make schema migrations idempotent.
+fn column_exists(conn: &Connection, table: &str, column: &str) -> bool {
+    let sql = format!("PRAGMA table_info({})", table);
+    let mut stmt = match conn.prepare(&sql) {
+        Ok(s) => s,
+        Err(_) => return false,
+    };
+    let mut rows = match stmt.query([]) {
+        Ok(r) => r,
+        Err(_) => return false,
+    };
+    while let Ok(Some(row)) = rows.next() {
+        if let Ok(name) = row.get::<_, String>(1) {
+            if name.eq_ignore_ascii_case(column) {
+                return true;
+            }
+        }
+    }
+    false
+}
+
 /// Represents a task in the database
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Task {
@@ -57,6 +79,7 @@ impl DbHandle {
 
     fn initialize(&self) -> Result<(), String> {
         let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+
         conn.execute_batch(
             "CREATE TABLE IF NOT EXISTS tasks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,7 +89,8 @@ impl DbHandle {
                 due_time TEXT NOT NULL DEFAULT '',
                 completed INTEGER NOT NULL DEFAULT 0,
                 created_at TEXT NOT NULL,
-                recurrence TEXT DEFAULT NULL
+                recurrence TEXT DEFAULT NULL,
+                tags TEXT DEFAULT NULL
             );
             CREATE TABLE IF NOT EXISTS settings (
                 key TEXT PRIMARY KEY,
@@ -77,13 +101,18 @@ impl DbHandle {
                 ('shake_interval', '30');"
         ).map_err(|e| format!("Failed to initialize database: {e}"))?;
 
-        // Migration: add recurrence column if missing (v0.1.0 -> v0.2.0)
-        let _ = conn.execute(
-            "ALTER TABLE tasks ADD COLUMN recurrence TEXT DEFAULT NULL",
-            [],
-        );
-        // Migration: add tags column if missing (v0.1.0 -> v0.3.0)
-        let _ = conn.execute("ALTER TABLE tasks ADD COLUMN tags TEXT DEFAULT NULL", []);
+        // Idempotent migration for pre-v0.3.0 databases that lack
+        // recurrence/tags. ALTER TABLE fails with "duplicate column" on
+        // already-updated schemas, which is the expected outcome.
+        if !column_exists(&conn, "tasks", "recurrence") {
+            let _ = conn.execute(
+                "ALTER TABLE tasks ADD COLUMN recurrence TEXT DEFAULT NULL",
+                [],
+            );
+        }
+        if !column_exists(&conn, "tasks", "tags") {
+            let _ = conn.execute("ALTER TABLE tasks ADD COLUMN tags TEXT DEFAULT NULL", []);
+        }
         Ok(())
     }
 

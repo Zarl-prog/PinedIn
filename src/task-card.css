@@ -31,8 +31,8 @@ html, body {
 .v-float {
   background: #080808;
   border: 1px solid #1a1a1a;
-  border-radius: 8px;
-  padding: 9px 10px;
+  border-radius: 14px;
+  padding: 12px 14px;
   transition: border-color 0.15s ease, background 0.15s ease;
   cursor: grab;
   user-select: none;
@@ -49,9 +49,9 @@ html, body {
 .badge {
   display: inline-flex;
   align-items: center;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 999px;
   background: #111;
   color: #666;
@@ -85,14 +85,14 @@ html, body {
 /* ─── Action Button Styles (.v-action) ──────────────────────────────────── */
 
 .v-action {
-  font-size: 11px;
+  font-size: 12px;
   color: #666;
   border: 1px solid #222;
   background: transparent;
   transition: all 0.15s ease;
   cursor: pointer;
-  border-radius: 6px;
-  padding: 6px 12px;
+  border-radius: 8px;
+  padding: 8px 14px;
   font-family: 'Geist Mono', monospace;
 }
 

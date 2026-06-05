@@ -14,8 +14,8 @@ interface TaskCardProps {
   tags?: string | null;
 }
 
-const COLLAPSED_H = 76;
-const EXPANDED_H = 180;
+const COLLAPSED_H = 90;
+const EXPANDED_H = 210;
 
 const REMIND_OPTIONS = [5, 15, 30, 60] as const;
 
@@ -151,7 +151,7 @@ export default function TaskCard({
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <span
             style={{
-              fontSize: "12px",
+              fontSize: "13px",
               fontWeight: 500,
               color: "#ededed",
               overflow: "hidden",
@@ -168,7 +168,7 @@ export default function TaskCard({
             {hasRecurrence && (
               <span
                 title={`Repeats ${recurrence}`}
-                style={{ fontSize: "10px", color: "#444", flexShrink: 0 }}
+                style={{ fontSize: "11px", color: "#444", flexShrink: 0 }}
               >
                 ↻
               </span>
@@ -184,13 +184,13 @@ export default function TaskCard({
         {description && (
           <p
             style={{
-              fontSize: "10px",
+              fontSize: "11px",
               color: "#444",
               marginTop: "4px",
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
-              maxWidth: "140px",
+              maxWidth: "160px",
             }}
           >
             {description}
@@ -204,12 +204,12 @@ export default function TaskCard({
               <span
                 key={tag}
                 style={{
-                  fontSize: "9px",
-                  color: "#555",
+                  fontSize: "10px",
+                  color: "#666",
                   background: "#0d0d0d",
                   border: "1px solid #1e1e1e",
                   borderRadius: "999px",
-                  padding: "1px 5px",
+                  padding: "2px 7px",
                 }}
               >
                 {tag}
@@ -225,12 +225,12 @@ export default function TaskCard({
               display: "flex",
               alignItems: "center",
               gap: "4px",
-              marginTop: "5px",
-              fontSize: "10px",
+              marginTop: "6px",
+              fontSize: "11px",
               color: "#333",
             }}
           >
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
               <line x1="16" y1="2" x2="16" y2="6" />
               <line x1="8" y1="2" x2="8" y2="6" />
@@ -286,7 +286,7 @@ export default function TaskCard({
               <button
                 className="v-action"
                 onClick={(e) => handleAction("complete", e)}
-                style={{ flex: 1, textAlign: "center", fontSize: "10px", padding: "5px 8px" }}
+                style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "7px 10px" }}
               >
                 ✓ Done
               </button>
@@ -294,7 +294,7 @@ export default function TaskCard({
               <button
                 className="v-action"
                 onClick={(e) => handleAction("snooze", e)}
-                style={{ flex: 1, textAlign: "center", fontSize: "10px", padding: "5px 8px" }}
+                style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "7px 10px" }}
               >
                 💤 Snooze
               </button>
@@ -302,7 +302,7 @@ export default function TaskCard({
               <button
                 className="v-action"
                 onClick={(e) => handleAction("remind", e)}
-                style={{ flex: 1, textAlign: "center", fontSize: "10px", padding: "5px 8px" }}
+                style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "7px 10px" }}
               >
                 🔔 Remind
               </button>
@@ -317,7 +317,7 @@ export default function TaskCard({
                 transition={{ duration: 0.1 }}
                 style={{ marginTop: "8px" }}
               >
-                <div style={{ fontSize: "10px", color: "#444", marginBottom: "6px" }}>
+                <div style={{ fontSize: "11px", color: "#444", marginBottom: "6px" }}>
                   Remind me in…
                 </div>
                 <div style={{ display: "flex", gap: "6px" }}>
@@ -332,8 +332,8 @@ export default function TaskCard({
                       style={{
                         flex: 1,
                         textAlign: "center",
-                        fontSize: "10px",
-                        padding: "5px 8px",
+                        fontSize: "11px",
+                        padding: "7px 10px",
                       }}
                     >
                       {mins < 60 ? `${mins}m` : "1h"}

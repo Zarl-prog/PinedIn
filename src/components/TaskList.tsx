@@ -21,6 +21,12 @@ export default function TaskList({ searchQuery }: TaskListProps) {
   const setAddTaskOpen = useReminderStore((s) => s.setAddTaskOpen);
   const setEditingTask = useReminderStore((s) => s.setEditingTask);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const reportError = (e: unknown) => {
+    setError(e instanceof Error ? e.message : String(e));
+    setTimeout(() => setError(null), 4000);
+  };
 
   // Filter by search
   const filteredTasks = useMemo(() => {
@@ -38,6 +44,22 @@ export default function TaskList({ searchQuery }: TaskListProps) {
 
   return (
     <div style={{ height: "100%", overflowY: "auto" }}>
+      {error && (
+        <div
+          role="alert"
+          style={{
+            padding: "8px 12px",
+            marginBottom: "8px",
+            background: "#1a1a1a",
+            border: "1px solid #2a2a2a",
+            borderRadius: "6px",
+            fontSize: "12px",
+            color: "#ccc",
+          }}
+        >
+          {error}
+        </div>
+      )}
       <AnimatePresence mode="popLayout">
         {incompleteTasks.length === 0 && completedTasks.length === 0 ? (
           <EmptyState onAdd={() => setAddTaskOpen(true)} />
@@ -53,7 +75,9 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                   setExpandedId(expandedId === task.id ? null : (task.id ?? null))
                 }
                 onComplete={() => {
-                  if (task.id) completeTask(task.id);
+                  if (task.id) {
+                    completeTask(task.id).catch(reportError);
+                  }
                   setExpandedId(null);
                 }}
                 onEdit={() => {
@@ -61,21 +85,27 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                   setExpandedId(null);
                 }}
                 onDelete={() => {
-                  if (task.id) removeTask(task.id);
+                  if (task.id) {
+                    removeTask(task.id).catch(reportError);
+                  }
                   setExpandedId(null);
                 }}
                 onSnooze={async () => {
                   if (!task.id) return;
                   try {
                     await invoke("snooze_task", { id: task.id });
-                  } catch {}
+                  } catch (e) {
+                    reportError(e);
+                  }
                   setExpandedId(null);
                 }}
                 onRemind={async () => {
                   if (!task.id) return;
                   try {
                     await invoke("remind_task", { id: task.id, minutes: 30 });
-                  } catch {}
+                  } catch (e) {
+                    reportError(e);
+                  }
                   setExpandedId(null);
                 }}
               />
@@ -106,10 +136,12 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                     onToggle={() =>
                       setExpandedId(expandedId === task.id ? null : (task.id ?? null))
                     }
-                    onComplete={() => {
-                      if (task.id) uncompleteFromStore(task.id);
-                      setExpandedId(null);
-                    }}
+                onComplete={() => {
+                  if (task.id) {
+                    uncompleteFromStore(task.id).catch(reportError);
+                  }
+                  setExpandedId(null);
+                }}
                     onEdit={() => {
                       setEditingTask(task);
                       setExpandedId(null);

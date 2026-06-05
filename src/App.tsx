@@ -1,21 +1,19 @@
-import { useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import TaskList from "@/components/TaskList";
 import AddTaskModal from "@/components/AddTaskModal";
 import SettingsPanel from "@/components/SettingsPanel";
-import TrayMenu from "@/components/TrayMenu";
 import { useReminders } from "@/hooks/useReminders";
 import { useReminderStore } from "@/store/reminderStore";
 
 /**
  * PinedIn - Main application window.
- * Full task management UI with add/edit/delete/complete operations.
+ * Full monochrome task management UI.
  */
 export default function App() {
-  // Initialize event listeners and fetch tasks/settings
   useReminders();
 
+  const tasks = useReminderStore((s) => s.tasks);
   const isAddTaskOpen = useReminderStore((s) => s.isAddTaskOpen);
   const setAddTaskOpen = useReminderStore((s) => s.setAddTaskOpen);
   const isSettingsOpen = useReminderStore((s) => s.isSettingsOpen);
@@ -38,94 +36,260 @@ export default function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isAddTaskOpen, isSettingsOpen, setAddTaskOpen, setSettingsOpen, setEditingTask]);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const incompleteCount = tasks.filter((t) => !t.completed).length;
+
   return (
-    <div className="flex h-screen flex-col bg-background text-foreground antialiased border border-primary/20 rounded-xl overflow-hidden ring-1 ring-primary/10">
-      {/* Custom title bar */}
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        background: "#000",
+        overflow: "hidden",
+      }}
+    >
+      {/* ─── Custom Titlebar ──────────────────────────────────────────── */}
       <div
         data-tauri-drag-region
-        className="flex h-9 shrink-0 items-center justify-between border-b border-border/20 bg-background/80 px-3"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "10px 16px 8px",
+          borderBottom: "1px solid #1a1a1a",
+          flexShrink: 0,
+        }}
       >
-        <div data-tauri-drag-region className="flex items-center gap-2 select-none">
-          <img src="/pinedin-icon.png" alt="" className="h-4 w-4 opacity-70" />
-          <span className="text-xs font-medium text-muted-foreground/60">PinedIn</span>
+        {/* Left: Logo + App Name + Subtitle */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          {/* Logo: white square with black pin icon */}
+          <div
+            style={{
+              width: "28px",
+              height: "28px",
+              background: "#fff",
+              borderRadius: "4px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-14 0Z" />
+              <circle cx="12" cy="9" r="2.5" fill="#000" stroke="none" />
+            </svg>
+          </div>
+          <div>
+            <span style={{ fontSize: "13px", fontWeight: 600, color: "#ededed", lineHeight: 1.2 }}>
+              PinedIn
+            </span>
+            <div style={{ fontSize: "11px", color: "#444", lineHeight: 1.2, marginTop: "1px" }}>
+              Persistent task overlay
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-1">
+
+        {/* Right: Window Control Dots */}
+        <div style={{ display: "flex", gap: "6px" }}>
           {/* Minimize */}
           <button
             onClick={() => getCurrentWindow().minimize()}
-            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
+            style={{
+              width: "11px",
+              height: "11px",
+              borderRadius: "999px",
+              border: "1px solid #2e2e2e",
+              background: "#222",
+              cursor: "pointer",
+              padding: 0,
+              transition: "background 0.15s ease",
+            }}
             title="Minimize"
-          >
-            <svg width="10" height="2" viewBox="0 0 10 2" fill="currentColor"><rect width="10" height="1.5" rx="0.75"/></svg>
-          </button>
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#333")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "#222")}
+          />
           {/* Maximize/Restore */}
           <button
             onClick={() => getCurrentWindow().toggleMaximize()}
-            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
+            style={{
+              width: "11px",
+              height: "11px",
+              borderRadius: "999px",
+              border: "1px solid #2e2e2e",
+              background: "#222",
+              cursor: "pointer",
+              padding: 0,
+              transition: "background 0.15s ease",
+            }}
             title="Maximize"
-          >
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="0.75" y="0.75" width="8.5" height="8.5" rx="1"/></svg>
-          </button>
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#333")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "#222")}
+          />
           {/* Close */}
           <button
             onClick={() => getCurrentWindow().close()}
-            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-destructive hover:text-white"
+            style={{
+              width: "11px",
+              height: "11px",
+              borderRadius: "999px",
+              border: "1px solid #2e2e2e",
+              background: "#222",
+              cursor: "pointer",
+              padding: 0,
+              transition: "background 0.15s ease",
+            }}
             title="Close"
-          >
-            <svg width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>
-          </button>
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#e81123")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "#222")}
+          />
         </div>
       </div>
-      {/* Main content */}
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-6">
-        {/* Header */}
-        <motion.header
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="mb-6"
+
+      {/* ─── Toolbar ──────────────────────────────────────────────────── */}
+      <div
+        style={{
+          display: "flex",
+          gap: "6px",
+          padding: "8px 16px",
+          borderBottom: "1px solid #1a1a1a",
+          flexShrink: 0,
+        }}
+      >
+        {/* Quick Add */}
+        <button
+          className="v-btn"
+          onClick={() => setAddTaskOpen(true)}
+          style={{
+            padding: "6px 12px",
+            borderRadius: "6px",
+          }}
         >
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
-              <img
-                src="/pinedin-icon.png"
-                alt="PinedIn"
-                className="h-7 w-7"
-              />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                PinedIn
-              </h1>
-              <p className="text-xs text-muted-foreground">
-                Persistent task overlay
-              </p>
-            </div>
+          + Quick Add
+        </button>
+        {/* Pause */}
+        <button
+          className="v-btn"
+          style={{
+            padding: "6px 12px",
+            borderRadius: "6px",
+          }}
+        >
+          || Pause
+        </button>
+        {/* Settings */}
+        <button
+          className="v-btn"
+          onClick={() => setSettingsOpen(true)}
+          style={{
+            padding: "6px 12px",
+            borderRadius: "6px",
+          }}
+        >
+          /\ Settings
+        </button>
+      </div>
+
+      {/* ─── Body ─────────────────────────────────────────────────────── */}
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          padding: "16px",
+          minHeight: 0,
+          overflow: "hidden",
+        }}
+      >
+        {/* Tasks Header */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "12px",
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
+            <span style={{ fontSize: "14px", fontWeight: 600, color: "#ededed" }}>
+              Tasks
+            </span>
+            <span style={{ fontSize: "11px", color: "#444" }}>
+              {incompleteCount} task{incompleteCount !== 1 ? "s" : ""} remaining
+            </span>
           </div>
+          <button
+            onClick={() => setAddTaskOpen(true)}
+            style={{
+              fontSize: "11px",
+              fontWeight: 600,
+              padding: "6px 14px",
+              borderRadius: "6px",
+              background: "#fff",
+              color: "#000",
+              border: "none",
+              cursor: "pointer",
+              transition: "opacity 0.15s ease",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+          >
+            + Add Task
+          </button>
+        </div>
 
-          {/* Tray Menu */}
-          <TrayMenu />
-        </motion.header>
+        {/* Search Bar */}
+        <div style={{ position: "relative", marginBottom: "12px", flexShrink: 0 }}>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#444"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{
+              position: "absolute",
+              left: "10px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              pointerEvents: "none",
+            }}
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            className="input-field"
+            type="text"
+            placeholder="Search tasks..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ paddingLeft: "32px" }}
+          />
+        </div>
 
-        {/* Main Task List */}
-        <motion.main
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-          className="flex-1"
-        >
-          <TaskList />
-        </motion.main>
+        {/* Task List */}
+        <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+          <TaskList searchQuery={searchQuery} />
+        </div>
+      </div>
 
-        {/* Footer */}
-        <motion.footer
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.3 }}
-          className="mt-8 border-t border-border/30 pt-4 text-center text-xs text-muted-foreground/40"
-        >
-          PinedIn v0.1.0 — Always-on-task overlay
-        </motion.footer>
+      {/* ─── Footer ───────────────────────────────────────────────────── */}
+      <div
+        style={{
+          padding: "10px 16px",
+          borderTop: "1px solid #1a1a1a",
+          textAlign: "center",
+          fontSize: "11px",
+          color: "#2a2a2a",
+          flexShrink: 0,
+        }}
+      >
+        PinedIn v0.1.0 — Always-on-task overlay
       </div>
 
       {/* Modals */}

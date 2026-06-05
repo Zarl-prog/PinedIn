@@ -1,117 +1,292 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&display=swap');
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 239 84% 67%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 239 84% 67%;
-    --radius: 0.75rem;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 6.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 6.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 239 84% 67%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 239 84% 67%;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-      "Helvetica Neue", Arial, sans-serif;
-    font-feature-settings: "rlig" 1, "calt" 1;
-  }
-}
-
-/* ─── Overlay window: force solid opaque background at every DOM level ─────── */
-
-html, body {
-  background: transparent !important;
+* {
   margin: 0;
   padding: 0;
-  height: 100%;
-  width: 100%;
+  box-sizing: border-box;
 }
 
-#root {
-  background: transparent;
-  height: 100%;
+html, body, #root {
+  background: #000000;
+  color: #ededed;
+  font-family: 'Geist Mono', monospace;
   width: 100%;
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Scrollbar styling */
+/* ─── Scrollbar ─────────────────────────────────────────────────────────── */
+
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 3px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #000000;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.2);
+  background: #1a1a1a;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.3);
+  background: #2a2a2a;
 }
 
-/* Date input styling */
+/* ─── Date Input ────────────────────────────────────────────────────────── */
+
 input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.5);
+  filter: invert(0.7);
   cursor: pointer;
 }
 
-.dark input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1);
+/* ─── Card Styles (.v-card) ─────────────────────────────────────────────── */
+
+.v-card {
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  border-radius: 8px;
+  padding: 12px 12px 12px 14px;
+  transition: all 0.15s ease;
+  cursor: default;
 }
 
-/* Overlay-specific styles */
-.overlay-scroll::-webkit-scrollbar {
-  width: 3px;
+.v-card:hover {
+  border-color: #2a2a2a;
+  background: #0d0d0d;
 }
 
-.overlay-scroll::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.15);
-  border-radius: 3px;
+.v-card.completed {
+  opacity: 0.35;
+}
+
+.v-card.completed .task-title {
+  text-decoration: line-through;
+}
+
+/* ─── Floating Card Styles (.v-float) ──────────────────────────────────── */
+
+.v-float {
+  background: #080808;
+  border: 1px solid #1a1a1a;
+  border-radius: 8px;
+  padding: 9px 10px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  cursor: grab;
+  user-select: none;
+  width: 100%;
+  position: relative;
+}
+
+.v-float:hover {
+  border-color: #2e2e2e;
+}
+
+/* ─── Button Styles (.v-btn) ────────────────────────────────────────────── */
+
+.v-btn {
+  font-size: 11px;
+  color: #888;
+  border: 1px solid #222;
+  background: transparent;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.v-btn:hover {
+  color: #fff;
+  border-color: #444;
+  background: #111;
+}
+
+/* ─── Action Button Styles (.v-action) ──────────────────────────────────── */
+
+.v-action {
+  font-size: 11px;
+  color: #666;
+  border: 1px solid #222;
+  background: transparent;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 6px 12px;
+}
+
+.v-action:hover {
+  color: #fff;
+  border-color: #444;
+  background: #111;
+}
+
+/* ─── Badge Styles (.badge) ─────────────────────────────────────────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #111;
+  color: #666;
+  border: 1px solid #222;
+}
+
+.badge.critical {
+  background: #111;
+  color: #fff;
+  border-color: #333;
+}
+
+.badge.high {
+  background: #111;
+  color: #aaa;
+  border-color: #2e2e2e;
+}
+
+.badge.medium {
+  background: #111;
+  color: #666;
+  border-color: #222;
+}
+
+.badge.low {
+  background: #111;
+  color: #444;
+  border-color: #1e1e1e;
+}
+
+/* ─── Progress Bar Styles ───────────────────────────────────────────────── */
+
+.progress-track {
+  width: 100%;
+  height: 1px;
+  background: #1a1a1a;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #ffffff;
+  transition: width 0.4s ease;
+  border-radius: 2px;
+}
+
+.progress-fill.float {
+  height: 1px;
+  background: #fff;
+}
+
+/* ─── Toggle Switch ─────────────────────────────────────────────────────── */
+
+.toggle-track {
+  position: relative;
+  display: inline-flex;
+  height: 22px;
+  width: 38px;
+  align-items: center;
+  border-radius: 999px;
+  background: #222;
+  transition: background 0.2s ease;
+  cursor: pointer;
+  border: none;
+}
+
+.toggle-track.active {
+  background: #fff;
+}
+
+.toggle-thumb {
+  display: inline-block;
+  height: 16px;
+  width: 16px;
+  transform: translateX(3px);
+  border-radius: 999px;
+  background: #000;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.toggle-thumb.active {
+  transform: translateX(19px);
+}
+
+/* ─── Checkbox ──────────────────────────────────────────────────────────── */
+
+.checkbox-circle {
+  width: 17px;
+  height: 17px;
+  border-radius: 999px;
+  border: 1px solid #2a2a2a;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.checkbox-circle:hover {
+  border-color: #444;
+}
+
+.checkbox-circle.checked {
+  background: #fff;
+  border-color: #fff;
+}
+
+.checkbox-circle.checked svg {
+  display: block;
+}
+
+/* ─── Input Styles ──────────────────────────────────────────────────────── */
+
+.input-field {
+  width: 100%;
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  color: #ededed;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-family: 'Geist Mono', monospace;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.input-field:focus {
+  border-color: #333;
+}
+
+.input-field::placeholder {
+  color: #444;
+}
+
+/* ─── Pill Toggle ───────────────────────────────────────────────────────── */
+
+.pill-toggle {
+  font-size: 11px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid #222;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: 'Geist Mono', monospace;
+}
+
+.pill-toggle:hover {
+  border-color: #333;
+  color: #888;
+}
+
+.pill-toggle.selected {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
 }

@@ -278,3 +278,23 @@ pub fn update_setting(
     db.update_setting(&key, &value)
 }
 
+#[tauri::command]
+pub fn get_shake_interval(
+    db: State<'_, Arc<DbHandle>>,
+) -> Result<u64, String> {
+    let map = db.get_settings_map()?;
+    let value = map.get("shake_interval").cloned().unwrap_or_else(|| "30".to_string());
+    value.parse::<u64>().map_err(|e| format!("Invalid shake_interval: {e}"))
+}
+
+#[tauri::command]
+pub fn set_shake_interval(
+    app: AppHandle,
+    db: State<'_, Arc<DbHandle>>,
+    seconds: u64,
+) -> Result<(), String> {
+    db.update_setting("shake_interval", &seconds.to_string())?;
+    let _ = app.emit("shake_interval_updated", seconds);
+    Ok(())
+}
+

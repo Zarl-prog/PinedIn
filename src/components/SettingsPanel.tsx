@@ -93,8 +93,8 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
               maxWidth: "420px",
               background: "#0a0a0a",
               border: "1px solid #1a1a1a",
-              borderRadius: "8px",
-              padding: "20px",
+              borderRadius: "10px",
+              padding: "24px",
             }}
           >
             {/* Header */}
@@ -106,7 +106,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                 marginBottom: "20px",
               }}
             >
-              <span style={{ fontSize: "14px", fontWeight: 600, color: "#ededed" }}>
+              <span style={{ fontSize: "16px", fontWeight: 600, color: "#ededed" }}>
                 Settings
               </span>
               <button
@@ -114,7 +114,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                 style={{
                   width: "24px",
                   height: "24px",
-                  borderRadius: "6px",
+                  borderRadius: "8px",
                   border: "1px solid #222",
                   background: "transparent",
                   color: "#666",
@@ -146,7 +146,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                 <label
                   style={{
                     display: "block",
-                    fontSize: "11px",
+                    fontSize: "12px",
                     fontWeight: 500,
                     color: "#888",
                     marginBottom: "8px",
@@ -161,15 +161,15 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                     justifyContent: "space-between",
                     background: "#0a0a0a",
                     border: "1px solid #1a1a1a",
-                    borderRadius: "6px",
-                    padding: "12px 14px",
+                    borderRadius: "8px",
+                    padding: "14px 16px",
                   }}
                 >
                   <div>
                     <span
                       style={{
                         display: "block",
-                        fontSize: "12px",
+                        fontSize: "13px",
                         fontWeight: 500,
                         color: "#ededed",
                       }}
@@ -179,9 +179,9 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                     <span
                       style={{
                         display: "block",
-                        fontSize: "10px",
-                        color: "#444",
-                        marginTop: "2px",
+                      fontSize: "12px",
+                      color: "#444",
+                      marginTop: "2px",
                       }}
                     >
                       Automatically start PinedIn when you log in
@@ -206,7 +206,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                 <label
                   style={{
                     display: "block",
-                    fontSize: "11px",
+                    fontSize: "12px",
                     fontWeight: 500,
                     color: "#888",
                     marginBottom: "8px",
@@ -256,7 +256,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                           <line x1="12" y1="17" x2="12" y2="21" />
                         </svg>
                       )}
-                      <span style={{ fontSize: "11px" }}>{option.label}</span>
+                      <span style={{ fontSize: "12px" }}>{option.label}</span>
                     </button>
                   ))}
                 </div>

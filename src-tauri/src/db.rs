@@ -72,7 +72,8 @@ impl DbHandle {
                 value TEXT NOT NULL
             );
             INSERT OR IGNORE INTO settings (key, value) VALUES
-                ('theme', 'dark');"
+                ('theme', 'dark'),
+                ('shake_interval', '30');"
         ).map_err(|e| format!("Failed to initialize database: {e}"))?;
 
         // Migration: add recurrence column if missing (v0.1.0 -> v0.2.0)

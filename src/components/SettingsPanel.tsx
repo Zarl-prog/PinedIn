@@ -1,7 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSettings } from "@/hooks/useSettings";
-import { isAutostartEnabled, enableAutostart, disableAutostart } from "@/lib/tauriCommands";
+import {
+  isAutostartEnabled,
+  enableAutostart,
+  disableAutostart,
+  getShakeInterval,
+  setShakeInterval,
+} from "@/lib/tauriCommands";
 
 interface SettingsPanelProps {
   open: boolean;
@@ -21,6 +27,47 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
     version?: string;
     error?: string;
   }>({ state: "idle" });
+
+  const [shakeInterval, setShakeIntervalLocal] = useState(30);
+  const [customInput, setCustomInput] = useState("");
+  const [savedFeedback, setSavedFeedback] = useState(false);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Load shake interval on mount
+  useEffect(() => {
+    if (open) {
+      getShakeInterval().then(setShakeIntervalLocal).catch(() => {});
+    }
+  }, [open]);
+
+  const handleShakeIntervalChange = useCallback(async (seconds: number) => {
+    clearTimeout(savedTimerRef.current);
+    setShakeIntervalLocal(seconds);
+    setCustomInput("");
+    try {
+      await setShakeInterval(seconds);
+      setSavedFeedback(true);
+      savedTimerRef.current = setTimeout(() => setSavedFeedback(false), 1500);
+    } catch {}
+  }, []);
+
+  const handleCustomSubmit = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key !== "Enter") return;
+      const val = parseInt(customInput, 10);
+      if (!isNaN(val) && val > 0 && val <= 86400) {
+        handleShakeIntervalChange(val);
+      }
+    },
+    [customInput, handleShakeIntervalChange],
+  );
+
+  const SHAKE_PRESETS = [10, 15, 30, 60, 120, 300];
+
+  function formatPresetLabel(s: number): string {
+    if (s < 60) return `${s}s`;
+    return `${s / 60}m`;
+  }
 
   // Load current autostart state on mount
   useEffect(() => {
@@ -360,6 +407,118 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                         ? "Install"
                         : "Check"}
                   </button>
+                </div>
+              </div>
+
+              {/* Card Shake Interval */}
+              <div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: "8px",
+                  }}
+                >
+                  <label
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: 500,
+                      color: "#888",
+                    }}
+                  >
+                    Card Shake Interval
+                  </label>
+                  <AnimatePresence mode="wait">
+                    {savedFeedback && (
+                      <motion.span
+                        key="saved"
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        style={{
+                          fontSize: "11px",
+                          color: "#888",
+                        }}
+                      >
+                        Saved
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <div
+                  style={{
+                    background: "#0a0a0a",
+                    border: "1px solid #1a1a1a",
+                    borderRadius: "8px",
+                    padding: "12px 14px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px",
+                  }}
+                >
+                  {/* Preset pills */}
+                  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                    {SHAKE_PRESETS.map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => handleShakeIntervalChange(s)}
+                        style={{
+                          flex: "0 0 auto",
+                          fontSize: "12px",
+                          fontWeight: 500,
+                          padding: "6px 14px",
+                          borderRadius: "999px",
+                          border: "1px solid #1a1a1a",
+                          cursor: "pointer",
+                          transition: "all 0.15s ease",
+                          background:
+                            shakeInterval === s ? "#fff" : "transparent",
+                          color: shakeInterval === s ? "#000" : "#888",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (shakeInterval !== s) {
+                            e.currentTarget.style.background = "#111";
+                            e.currentTarget.style.color = "#ededed";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (shakeInterval !== s) {
+                            e.currentTarget.style.background = "transparent";
+                            e.currentTarget.style.color = "#888";
+                          }
+                        }}
+                      >
+                        {formatPresetLabel(s)}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Custom input */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ fontSize: "11px", color: "#555" }}>Custom</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={86400}
+                      placeholder="30"
+                      value={customInput}
+                      onChange={(e) => setCustomInput(e.target.value)}
+                      onKeyDown={handleCustomSubmit}
+                      style={{
+                        width: "64px",
+                        fontSize: "12px",
+                        padding: "5px 8px",
+                        borderRadius: "6px",
+                        border: "1px solid #1a1a1a",
+                        background: "#0d0d0d",
+                        color: "#ededed",
+                        outline: "none",
+                      }}
+                    />
+                    <span style={{ fontSize: "11px", color: "#555" }}>seconds</span>
+                  </div>
                 </div>
               </div>
             </div>

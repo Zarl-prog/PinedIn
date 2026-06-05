@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { LogicalSize } from "@tauri-apps/api/dpi";
 import { invoke } from "@tauri-apps/api/core";
@@ -36,6 +36,8 @@ export default function TaskCard({
   const contentRef = useRef<HTMLDivElement>(null);
   const mouseDownPos = useRef({ x: 0, y: 0 });
   const dragging = useRef(false);
+  const collapsedHeightRef = useRef<number>(0);
+  const prevExpanded = useRef(expanded);
 
   const hasRecurrence = !!recurrence;
   const tagList = tags
@@ -54,22 +56,54 @@ export default function TaskCard({
     return Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
   }, [dueTime]);
 
-  const resizeToContent = useCallback(async () => {
-    // Wait 2 frames for the DOM + any CSS transitions to settle
-    await new Promise((r) => requestAnimationFrame(r));
-    await new Promise((r) => requestAnimationFrame(r));
-    if (contentRef.current) {
-      // Measure the v-float parent to include its border
-      const el = contentRef.current.parentElement ?? contentRef.current;
-      const height = el.getBoundingClientRect().height;
-      await getCurrentWindow().setSize(new LogicalSize(280, Math.ceil(height)));
-    }
+  // Measure and lock collapsed height once on mount
+  useEffect(() => {
+    const t = setTimeout(async () => {
+      if (contentRef.current) {
+        const el = contentRef.current.parentElement ?? contentRef.current;
+        const h = el.getBoundingClientRect().height;
+        collapsedHeightRef.current = h;
+        await getCurrentWindow().setSize(new LogicalSize(280, Math.ceil(h)));
+      }
+    }, 60);
+    return () => clearTimeout(t);
   }, []);
 
-  // Resize on mount, after expand/collapse, and after remind picker toggle
+  // After animation completes, resize window to match content
+  const handleAnimationComplete = useCallback(async () => {
+    if (expanded) {
+      // Expanded — measure full parent height now that animation is done
+      if (contentRef.current) {
+        const el = contentRef.current.parentElement ?? contentRef.current;
+        const h = el.getBoundingClientRect().height;
+        await getCurrentWindow().setSize(new LogicalSize(280, Math.ceil(h)));
+      }
+    } else {
+      // Collapsed — use the locked original height, never remeasure
+      if (collapsedHeightRef.current > 0) {
+        await getCurrentWindow().setSize(
+          new LogicalSize(280, Math.ceil(collapsedHeightRef.current)),
+        );
+      }
+    }
+  }, [expanded]);
+
+  // When remind picker toggles WHILE already expanded, re-measure after animation
   useEffect(() => {
-    resizeToContent();
-  }, [expanded, showRemindPicker]);
+    if (prevExpanded.current !== expanded) {
+      prevExpanded.current = expanded;
+      return;
+    }
+    if (!expanded) return;
+    const t = setTimeout(async () => {
+      if (contentRef.current) {
+        const el = contentRef.current.parentElement ?? contentRef.current;
+        const h = el.getBoundingClientRect().height;
+        await getCurrentWindow().setSize(new LogicalSize(280, Math.ceil(h)));
+      }
+    }, 160);
+    return () => clearTimeout(t);
+  }, [showRemindPicker, expanded]);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -148,9 +182,9 @@ export default function TaskCard({
       onMouseDown={handleMouseDown}
       onClick={handleClick}
       className="v-float"
-      style={{ marginBottom: 0 }}
     >
-      <div ref={contentRef}>
+      {/* Summary content — always visible */}
+      <div>
         {/* Title row */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <span
@@ -265,90 +299,86 @@ export default function TaskCard({
             }}
           />
         </div>
-
-        {/* Expanded: Action buttons */}
-        <AnimatePresence>
-          {expanded && (
-            <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6, height: 0 }}
-              transition={{ duration: 0.12 }}
-              style={{ overflow: "hidden" }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  gap: "6px",
-                  marginTop: "10px",
-                  paddingTop: "10px",
-                  borderTop: "1px solid #1a1a1a",
-                }}
-              >
-                {/* Done */}
-                <button
-                  className="v-action"
-                  onClick={(e) => handleAction("complete", e)}
-                  style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "7px 10px" }}
-                >
-                  ✓ Done
-                </button>
-                {/* Snooze */}
-                <button
-                  className="v-action"
-                  onClick={(e) => handleAction("snooze", e)}
-                  style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "7px 10px" }}
-                >
-                  💤 Snooze
-                </button>
-                {/* Remind */}
-                <button
-                  className="v-action"
-                  onClick={(e) => handleAction("remind", e)}
-                  style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "7px 10px" }}
-                >
-                  🔔 Remind
-                </button>
-              </div>
-
-              {/* Remind time picker */}
-              {showRemindPicker && (
-                <motion.div
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.1 }}
-                  style={{ marginTop: "8px" }}
-                >
-                  <div style={{ fontSize: "11px", color: "#444", marginBottom: "6px" }}>
-                    Remind me in…
-                  </div>
-                  <div style={{ display: "flex", gap: "6px" }}>
-                    {REMIND_OPTIONS.map((mins) => (
-                      <button
-                        key={mins}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemindConfirm(mins);
-                        }}
-                        className="v-action"
-                        style={{
-                          flex: 1,
-                          textAlign: "center",
-                          fontSize: "11px",
-                          padding: "7px 10px",
-                        }}
-                      >
-                        {mins < 60 ? `${mins}m` : "1h"}
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
+
+      {/* Expandable content — motion.div animates height */}
+      <motion.div
+        ref={contentRef}
+        animate={{ height: expanded ? "auto" : 0 }}
+        initial={{ height: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 28 }}
+        onAnimationComplete={handleAnimationComplete}
+        style={{ overflow: "hidden" }}
+      >
+        <div
+          style={{
+            display: "flex",
+            gap: "6px",
+            marginTop: "10px",
+            paddingTop: "10px",
+            borderTop: "1px solid #1a1a1a",
+          }}
+        >
+          {/* Done */}
+          <button
+            className="v-action"
+            onClick={(e) => handleAction("complete", e)}
+            style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "7px 10px" }}
+          >
+            ✓ Done
+          </button>
+          {/* Snooze */}
+          <button
+            className="v-action"
+            onClick={(e) => handleAction("snooze", e)}
+            style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "7px 10px" }}
+          >
+            💤 Snooze
+          </button>
+          {/* Remind */}
+          <button
+            className="v-action"
+            onClick={(e) => handleAction("remind", e)}
+            style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "7px 10px" }}
+          >
+            🔔 Remind
+          </button>
+        </div>
+
+        {/* Remind time picker */}
+        {showRemindPicker && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.1 }}
+            style={{ marginTop: "8px" }}
+          >
+            <div style={{ fontSize: "11px", color: "#444", marginBottom: "6px" }}>
+              Remind me in…
+            </div>
+            <div style={{ display: "flex", gap: "6px" }}>
+              {REMIND_OPTIONS.map((mins) => (
+                <button
+                  key={mins}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemindConfirm(mins);
+                  }}
+                  className="v-action"
+                  style={{
+                    flex: 1,
+                    textAlign: "center",
+                    fontSize: "11px",
+                    padding: "7px 10px",
+                  }}
+                >
+                  {mins < 60 ? `${mins}m` : "1h"}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </motion.div>
     </div>
   );
 }

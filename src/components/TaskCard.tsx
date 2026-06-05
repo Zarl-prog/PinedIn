@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { LogicalSize } from "@tauri-apps/api/dpi";
@@ -14,8 +14,8 @@ interface TaskCardProps {
   tags?: string | null;
 }
 
-const COLLAPSED_H = 90;
-const EXPANDED_H = 210;
+const COLLAPSED_HEIGHT = 90;
+const EXPANDED_HEIGHT = 220;
 
 const REMIND_OPTIONS = [5, 15, 30, 60] as const;
 
@@ -55,6 +55,11 @@ export default function TaskCard({
     if (total <= 0) return 100;
     return Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
   }, [dueTime]);
+
+  // Set window to correct collapsed size on mount
+  useEffect(() => {
+    getCurrentWindow().setSize(new LogicalSize(280, COLLAPSED_HEIGHT));
+  }, []);
 
   const resize = useCallback(
     (h: number) => {
@@ -96,7 +101,7 @@ export default function TaskCard({
       const next = !expanded;
       setExpanded(next);
       setShowRemindPicker(false);
-      resize(next ? EXPANDED_H : COLLAPSED_H);
+      resize(next ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT);
     },
     [expanded, resize],
   );
@@ -115,7 +120,7 @@ export default function TaskCard({
       e.stopPropagation();
       const next = !showRemindPicker;
       setShowRemindPicker(next);
-      resize(next ? EXPANDED_H + 60 : EXPANDED_H);
+      resize(next ? EXPANDED_HEIGHT + 60 : EXPANDED_HEIGHT);
     },
     [showRemindPicker, resize],
   );

@@ -55,8 +55,9 @@ export default function TaskCard({
   }, [dueTime]);
 
   const resizeToContent = useCallback(async () => {
-    // Wait for DOM to settle after state change
-    await new Promise((r) => setTimeout(r, 10));
+    // Wait 2 frames for the DOM + any CSS transitions to settle
+    await new Promise((r) => requestAnimationFrame(r));
+    await new Promise((r) => requestAnimationFrame(r));
     if (contentRef.current) {
       // Measure the v-float parent to include its border
       const el = contentRef.current.parentElement ?? contentRef.current;
@@ -269,9 +270,9 @@ export default function TaskCard({
         <AnimatePresence>
           {expanded && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6, height: 0 }}
               transition={{ duration: 0.12 }}
               style={{ overflow: "hidden" }}
             >

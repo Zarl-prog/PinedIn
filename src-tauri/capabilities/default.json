@@ -20,6 +20,7 @@
     "core:window:allow-toggle-maximize",
     "core:event:default",
     "core:event:allow-listen",
-    "core:event:allow-emit"
+    "core:event:allow-emit",
+    "notification:default"
   ]
 }

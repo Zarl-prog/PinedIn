@@ -103,12 +103,15 @@ export async function getShakeInterval(): Promise<number> {
   return invoke<number>("get_shake_interval");
 }
 
-export async function setShakeInterval(seconds: number): Promise<void> {
+export async function setShakeInterval(seconds: number): Promise<void> {       
   return invoke("set_shake_interval", { seconds });
 }
 
-// ─── Autostart Commands ──────────────────────────────────────────────────────
+export async function triggerTaskEdit(id: number): Promise<void> {
+  return invoke("trigger_task_edit", { id });
+}
 
+// ─── Autostart Commands ──────────────────────────────────────────────────────
 export async function enableAutostart(): Promise<void> {
   return invoke("enable_autostart");
 }

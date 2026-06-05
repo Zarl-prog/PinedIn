@@ -43,6 +43,8 @@ export interface OverlayState {
     description: string,
     urgency: Task["urgency"],
     dueTime: string,
+    recurrence?: string | null,
+    tags?: string | null,
   ) => Promise<void>;
   removeTask: (id: number) => Promise<void>;
   completeTask: (id: number) => Promise<void>;
@@ -104,14 +106,22 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
     }
   },
 
-  editTask: async (id, title, description, urgency, dueTime) => {
+  editTask: async (id, title, description, urgency, dueTime, recurrence = null, tags = null) => {
     try {
-      await updateTask(id, title, description, urgency, dueTime);
+      await updateTask(id, title, description, urgency, dueTime, recurrence, tags);
       set((state) => ({
         tasks: state.tasks
           .map((t) =>
             t.id === id
-              ? { ...t, title, description, urgency: urgency as Task["urgency"], due_time: dueTime }
+              ? {
+                  ...t,
+                  title,
+                  description,
+                  urgency: urgency as Task["urgency"],
+                  due_time: dueTime,
+                  recurrence,
+                  tags,
+                }
               : t,
           )
           .sort(sortTasks),

@@ -118,6 +118,8 @@ export default function AddTaskModal({
           description.trim(),
           urgency,
           dueDate || "",
+          recurrence,
+          tagsString || null,
         );
       } else {
         await addTask(

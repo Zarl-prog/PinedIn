@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, useAnimation } from "framer-motion";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { LogicalSize } from "@tauri-apps/api/dpi";
 import { invoke } from "@tauri-apps/api/core";
@@ -38,6 +38,57 @@ export default function TaskCard({
   const dragging = useRef(false);
   const collapsedHeightRef = useRef<number>(0);
   const prevExpanded = useRef(expanded);
+  const expandedRef = useRef(expanded);
+  // Keep the ref in sync so interval closures always read the latest value
+  expandedRef.current = expanded;
+
+  // ─── Shake & Flash animation controls ──────────────────────────────────
+  const shakeControls = useAnimation();
+  const flashControls = useAnimation();
+
+  const playShake = useCallback(async () => {
+    const amplitude = urgency === "critical" ? [-12, 12, -10, 10, -6, 6] : [-8, 8, -6, 6, -4, 4];
+    await shakeControls.start({
+      x: [0, ...amplitude, 0],
+      transition: { duration: 0.5, ease: "easeInOut" },
+    });
+  }, [urgency, shakeControls]);
+
+  const playFlash = useCallback(async () => {
+    await flashControls.start({
+      boxShadow: [
+        "0 0 0px rgba(255,255,255,0)",
+        "0 0 16px rgba(255,255,255,0.6)",
+        "0 0 8px rgba(255,255,255,0.3)",
+        "0 0 0px rgba(255,255,255,0)",
+      ],
+      borderColor: ["#1a1a1a", "#ffffff", "#888888", "#1a1a1a"],
+      transition: { duration: 0.6, ease: "easeInOut" },
+    });
+  }, [flashControls]);
+
+  const playAttention = useCallback(async () => {
+    await Promise.all([playShake(), playFlash()]);
+  }, [playShake, playFlash]);
+
+  // Periodic attention-grabber — every 30s (15s for critical), skip tick if expanded
+  useEffect(() => {
+    const intervalMs = urgency === "critical" ? 15000 : 30000;
+    const interval = setInterval(() => {
+      if (!expandedRef.current) {
+        playAttention();
+      }
+    }, intervalMs);
+    return () => clearInterval(interval);
+  }, [urgency, playAttention]);
+
+  // First attention trigger — 3 seconds after mount
+  useEffect(() => {
+    const t = setTimeout(() => {
+      playAttention();
+    }, 3000);
+    return () => clearTimeout(t);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const hasRecurrence = !!recurrence;
   const tagList = tags
@@ -183,6 +234,20 @@ export default function TaskCard({
       onClick={handleClick}
       className="v-float"
     >
+      <motion.div
+        animate={shakeControls}
+        style={{ width: "100%", height: "100%" }}
+      >
+        <motion.div
+          animate={flashControls}
+          style={{
+            background: "#0a0a0a",
+            border: "1px solid #1a1a1a",
+            borderRadius: "8px",
+            width: "100%",
+            height: "100%",
+          }}
+        >
       {/* Summary content — always visible */}
       <div>
         {/* Title row */}
@@ -378,6 +443,8 @@ export default function TaskCard({
             </div>
           </motion.div>
         )}
+      </motion.div>
+        </motion.div>
       </motion.div>
     </div>
   );

@@ -13,6 +13,7 @@ pub struct Task {
     pub due_time: String,
     pub completed: bool,
     pub created_at: String,
+    pub recurrence: Option<String>,
 }
 
 /// Represents app settings
@@ -54,8 +55,7 @@ impl DbHandle {
     }
 
     fn initialize(&self) -> Result<(), String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
-        conn.execute_batch(
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;        conn.execute_batch(
             "CREATE TABLE IF NOT EXISTS tasks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL,
@@ -63,7 +63,8 @@ impl DbHandle {
                 urgency TEXT NOT NULL DEFAULT 'medium' CHECK(urgency IN ('low', 'medium', 'critical')),
                 due_time TEXT NOT NULL DEFAULT '',
                 completed INTEGER NOT NULL DEFAULT 0,
-                created_at TEXT NOT NULL
+                created_at TEXT NOT NULL,
+                recurrence TEXT DEFAULT NULL
             );
             CREATE TABLE IF NOT EXISTS settings (
                 key TEXT PRIMARY KEY,
@@ -72,6 +73,11 @@ impl DbHandle {
             INSERT OR IGNORE INTO settings (key, value) VALUES
                 ('theme', 'dark');"
         ).map_err(|e| format!("Failed to initialize database: {e}"))?;
+
+        // Migration: add recurrence column if missing (v0.1.0 -> v0.2.0)
+        let _ = conn.execute("ALTER TABLE tasks ADD COLUMN recurrence TEXT DEFAULT NULL", []);
+        // Migration: add tags column if missing (v0.1.0 -> v0.3.0)
+        let _ = conn.execute("ALTER TABLE tasks ADD COLUMN tags TEXT DEFAULT NULL", []);
         Ok(())
     }
 
@@ -84,13 +90,24 @@ impl DbHandle {
         urgency: &str,
         due_time: &str,
     ) -> Result<Task, String> {
+        self.create_task_with_recurrence(title, description, urgency, due_time, None)
+    }
+
+    pub fn create_task_with_recurrence(
+        &self,
+        title: &str,
+        description: &str,
+        urgency: &str,
+        due_time: &str,
+        recurrence: Option<&str>,
+    ) -> Result<Task, String> {
         let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
         let now = chrono::Utc::now().to_rfc3339();
 
         conn.execute(
-            "INSERT INTO tasks (title, description, urgency, due_time, completed, created_at)
-             VALUES (?1, ?2, ?3, ?4, 0, ?5)",
-            rusqlite::params![title, description, urgency, due_time, now],
+            "INSERT INTO tasks (title, description, urgency, due_time, completed, created_at, recurrence)
+             VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6)",
+            rusqlite::params![title, description, urgency, due_time, now, recurrence],
         ).map_err(|e| format!("Failed to create task: {e}"))?;
 
         let id = conn.last_insert_rowid();
@@ -102,13 +119,47 @@ impl DbHandle {
             due_time: due_time.to_string(),
             completed: false,
             created_at: now,
+            recurrence: recurrence.map(|s| s.to_string()),
+            tags: None,
+        })
+    }
+
+    pub fn create_task_with_tags(
+        &self,
+        title: &str,
+        description: &str,
+        urgency: &str,
+        due_time: &str,
+        recurrence: Option<&str>,
+        tags: Option<&str>,
+    ) -> Result<Task, String> {
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let now = chrono::Utc::now().to_rfc3339();
+
+        conn.execute(
+            "INSERT INTO tasks (title, description, urgency, due_time, completed, created_at, recurrence, tags)
+             VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6, ?7)",
+            rusqlite::params![title, description, urgency, due_time, now, recurrence, tags],
+        ).map_err(|e| format!("Failed to create task: {e}"))?;
+
+        let id = conn.last_insert_rowid();
+        Ok(Task {
+            id: Some(id),
+            title: title.to_string(),
+            description: description.to_string(),
+            urgency: urgency.to_string(),
+            due_time: due_time.to_string(),
+            completed: false,
+            created_at: now,
+            recurrence: recurrence.map(|s| s.to_string()),
+            tags: tags.map(|s| s.to_string()),
         })
     }
 
     pub fn get_all_tasks(&self) -> Result<Vec<Task>, String> {
         let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
         let mut stmt = conn.prepare(
-            "SELECT id, title, description, urgency, due_time, completed, created_at
+            "SELECT id, title, description, urgency, due_time, completed, created_at, recurrence
              FROM tasks
              ORDER BY
                 CASE urgency
@@ -128,6 +179,7 @@ impl DbHandle {
                 due_time: row.get(4)?,
                 completed: row.get::<_, i32>(5)? != 0,
                 created_at: row.get(6)?,
+                recurrence: row.get(7)?,
             })
         }).map_err(|e| format!("Query error: {e}"))?
         .filter_map(|r| r.ok())
@@ -160,6 +212,7 @@ impl DbHandle {
                 due_time: row.get(4)?,
                 completed: row.get::<_, i32>(5)? != 0,
                 created_at: row.get(6)?,
+                recurrence: row.get(7)?,
             })
         }).map_err(|e| format!("Query error: {e}"))?
         .filter_map(|r| r.ok())

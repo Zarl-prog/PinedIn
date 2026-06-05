@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Calendar } from "lucide-react";
 import { useReminderStore } from "@/store/reminderStore";
@@ -11,9 +11,16 @@ interface AddTaskModalProps {
   editTask?: Task | null;
 }
 
+const RECURRENCE_OPTIONS = [
+  { value: null, label: "None" },
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+] as const;
+
 /**
  * AddTaskModal - Modal for creating or editing tasks.
- * Supports title, description, urgency, and optional due date.
+ * Supports title, description, urgency, optional due date, recurrence, and tags.
  */
 export default function AddTaskModal({
   open,
@@ -29,8 +36,12 @@ export default function AddTaskModal({
     "medium",
   );
   const [dueDate, setDueDate] = useState("");
+  const [recurrence, setRecurrence] = useState<string | null>(null);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const tagInputRef = useRef<HTMLInputElement>(null);
 
   // Populate form when editing
   useEffect(() => {
@@ -38,12 +49,13 @@ export default function AddTaskModal({
       setTitle(editTask.title);
       setDescription(editTask.description);
       setUrgency(editTask.urgency as "low" | "medium" | "critical");
-      // due_time might be just a date string or empty
       if (editTask.due_time) {
         setDueDate(editTask.due_time);
       } else {
         setDueDate("");
       }
+      setRecurrence(editTask.recurrence ?? null);
+      setTags(editTask.tags ? editTask.tags.split(",").map((t) => t.trim()).filter(Boolean) : []);
     } else {
       resetForm();
     }
@@ -54,11 +66,36 @@ export default function AddTaskModal({
     setDescription("");
     setUrgency("medium");
     setDueDate("");
+    setRecurrence(null);
+    setTags([]);
+    setTagInput("");
     setError(null);
   };
 
+  const addTag = useCallback((tag: string) => {
+    const trimmed = tag.trim().toLowerCase();
+    if (trimmed && !tags.includes(trimmed) && tags.length < 5) {
+      setTags((prev) => [...prev, trimmed]);
+    }
+    setTagInput("");
+  }, [tags]);
+
+  const removeTag = useCallback((tag: string) => {
+    setTags((prev) => prev.filter((t) => t !== tag));
+  }, []);
+
+  const handleTagKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      if (tagInput.trim()) {
+        addTag(tagInput);
+      }
+    } else if (e.key === "Backspace" && !tagInput && tags.length > 0) {
+      removeTag(tags[tags.length - 1]);
+    }
+  }, [tagInput, tags, addTag, removeTag]);
+
   const handleSubmit = async () => {
-    // Title is the only required field
     if (!title.trim()) {
       setError("Title is required");
       return;
@@ -66,6 +103,8 @@ export default function AddTaskModal({
 
     setIsSubmitting(true);
     setError(null);
+
+    const tagsString = tags.length > 0 ? tags.join(",") : "";
 
     try {
       if (editTask?.id) {
@@ -82,6 +121,8 @@ export default function AddTaskModal({
           description.trim(),
           urgency,
           dueDate || "",
+          recurrence,
+          tagsString,
         );
       }
       onClose();
@@ -229,6 +270,70 @@ export default function AddTaskModal({
                 </div>
                 <p className="mt-1 text-[11px] text-muted-foreground/50">
                   Set a deadline for this task
+                </p>
+              </div>
+
+              {/* Repeat / Recurrence */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">
+                  Repeat
+                </label>
+                <div className="flex gap-2">
+                  {RECURRENCE_OPTIONS.map((opt) => (
+                    <motion.button
+                      key={opt.label}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setRecurrence(opt.value)}
+                      className={cn(
+                        "flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all",
+                        recurrence === opt.value
+                          ? "border-primary/50 bg-primary/10 text-foreground"
+                          : "border-border bg-background text-muted-foreground hover:border-muted-foreground/30",
+                      )}
+                    >
+                      {opt.label}
+                    </motion.button>
+                  ))}
+                </div>
+                <p className="mt-1 text-[11px] text-muted-foreground/50">
+                  Automatically recreate this task after completion
+                </p>
+              </div>
+
+              {/* Tags */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">
+                  Tags <span className="text-muted-foreground/60">(max 5)</span>
+                </label>
+                <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/30">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-medium text-primary"
+                    >
+                      {tag}
+                      <button
+                        onClick={() => removeTag(tag)}
+                        className="ml-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-primary/60 hover:bg-primary/20 hover:text-primary"
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    ref={tagInputRef}
+                    type="text"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleTagKeyDown}
+                    placeholder={tags.length < 5 ? "Add a tag..." : ""}
+                    disabled={tags.length >= 5}
+                    className="min-w-[80px] flex-1 border-0 bg-transparent py-0.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none disabled:opacity-40"
+                  />
+                </div>
+                <p className="mt-1 text-[11px] text-muted-foreground/50">
+                  Press Enter or comma to add a tag
                 </p>
               </div>
 

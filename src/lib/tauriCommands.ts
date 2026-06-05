@@ -10,6 +10,8 @@ export interface Task {
   due_time: string;
   completed: boolean;
   created_at: string;
+  recurrence: string | null;
+  tags: string | null;
 }
 
 export interface AppSettings {
@@ -23,12 +25,16 @@ export async function createTask(
   description: string,
   urgency: string,
   due_time: string,
+  recurrence?: string | null,
+  tags?: string | null,
 ): Promise<Task> {
   return invoke<Task>("create_task", {
     title,
     description,
     urgency,
     dueTime: due_time,
+    recurrence: recurrence ?? null,
+    tags: tags ?? null,
   });
 }
 

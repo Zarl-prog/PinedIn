@@ -35,3 +35,8 @@ yarn-error.log*
 
 # TypeScript
 *.tsbuildinfo
+
+# Tauri updater signing keys (NEVER commit the private key)
+src-tauri/keys/
+.tauri-keys/
+priv.key

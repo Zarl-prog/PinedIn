@@ -8,6 +8,7 @@ import {
   getShakeInterval,
   setShakeInterval,
 } from "@/lib/tauriCommands";
+import { checkAndInstall } from "@/lib/updater";
 
 interface SettingsPanelProps {
   open: boolean;
@@ -81,7 +82,6 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
   const handleCheckUpdates = async () => {
     setUpdateStatus({ state: "checking" });
     try {
-      const { checkAndInstall } = await import("@/lib/updater");
       const result = await checkAndInstall();
       if (result.installed) {
         setUpdateStatus({ state: "idle" });

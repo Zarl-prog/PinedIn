@@ -85,6 +85,20 @@ pub fn update_task(
 }
 
 #[tauri::command]
+pub fn trigger_task_edit(
+    app: AppHandle,
+    id: i64,
+) -> Result<(), String> {
+    if let Some(main_window) = app.get_webview_window("main") {
+        let _ = main_window.show();
+        let _ = main_window.unminimize();
+        let _ = main_window.set_focus();
+        let _ = app.emit("open_edit_task", id);
+    }
+    Ok(())
+}
+
+#[tauri::command]
 pub fn delete_task(
     app: tauri::AppHandle,
     db: State<'_, Arc<DbHandle>>,

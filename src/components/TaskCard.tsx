@@ -5,6 +5,8 @@ import { LogicalSize } from "@tauri-apps/api/dpi";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getShakeInterval } from "@/lib/tauriCommands";
+import { useReminderStore } from "@/store/reminderStore";
+import UrgencyBadge from "./UrgencyBadge";
 
 interface TaskCardProps {
   taskId: number;
@@ -23,6 +25,21 @@ const URGENCY_LABEL: Record<string, string> = {
   medium: "Medium",
   low: "Low",
 };
+
+function formatCardDate(dateStr: string): string {
+  if (!dateStr) return "";
+  const due = new Date(dateStr + "T00:00:00");
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffTime = due.getTime() - today.getTime();
+  if (diffTime === 0) return "Today";
+  if (diffTime === 86400000) return "Tomorrow";
+  if (diffTime === -86400000) return "Yesterday";
+  const diffDays = Math.round(diffTime / 86400000);
+  if (diffDays < -1) return `${Math.abs(diffDays)}d overdue`;
+  if (diffDays > 1) return `In ${diffDays}d`;
+  return due.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
 
 export default function TaskCard({
   taskId,
@@ -82,20 +99,21 @@ export default function TaskCard({
     });
   }, [urgency, controls]);
 
-  // Periodic attention-grabber — uses setting from DB, skip tick if expanded
+  // Periodic attention-grabber — uses setting from DB, skip tick if expanded or paused
   useEffect(() => {
     const intervalMs = intervalSeconds * 1000;
     const interval = setInterval(() => {
-      if (!expandedRef.current) {
-        playAttention();
-      }
+      if (expandedRef.current) return;
+      if (useReminderStore.getState().isPaused) return;
+      playAttention();
     }, intervalMs);
     return () => clearInterval(interval);
   }, [intervalSeconds, playAttention]);
 
-  // First attention trigger — 3 seconds after mount
+  // First attention trigger — 3 seconds after mount (skipped if paused)
   useEffect(() => {
     const t = setTimeout(() => {
+      if (useReminderStore.getState().isPaused) return;
       playAttention();
     }, 3000);
     return () => clearTimeout(t);
@@ -129,7 +147,11 @@ export default function TaskCard({
     measure();
   }, []);
 
-  // Zero-flash resize logic: react to state changes and content mutations
+  // Zero-flash resize logic: react to state changes and structural content
+  // mutations only. We deliberately do NOT observe attribute changes — the
+  // motion.div's animate controls mutate inline `style` on every frame of
+  // the shake animation, which would re-fire this effect and call
+  // setSize() in a feedback loop.
   useEffect(() => {
     const measure = async () => {
       if (containerRef.current) {
@@ -142,13 +164,12 @@ export default function TaskCard({
     // Immediate measure for the "1px start"
     measure();
 
-    // Also observe mutations (like the buttons appearing) to re-measure
     const observer = new MutationObserver(measure);
     if (containerRef.current) {
-      observer.observe(containerRef.current, { 
-        childList: true, 
-        subtree: true, 
-        attributes: true 
+      observer.observe(containerRef.current, {
+        childList: true,
+        subtree: true,
+        characterData: true,
       });
     }
 
@@ -282,9 +303,7 @@ export default function TaskCard({
             )}
           </span>
           {/* Urgency badge */}
-          <span className={`badge ${urgency === "critical" ? "critical" : urgency === "medium" ? "medium" : "low"}`}>
-            {URGENCY_LABEL[urgency] ?? urgency}
-          </span>
+          <UrgencyBadge urgency={(urgency as "low" | "medium" | "critical")} />
         </div>
 
         {/* Description */}
@@ -343,7 +362,7 @@ export default function TaskCard({
               <line x1="8" y1="2" x2="8" y2="6" />
               <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
-            <span>{dueTime}</span>
+            <span>{formatCardDate(dueTime)}</span>
           </div>
         )}
 

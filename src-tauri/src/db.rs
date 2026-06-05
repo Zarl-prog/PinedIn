@@ -3,6 +3,28 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Mutex;
 
+/// Return true if the named column exists on the named table. Used to
+/// make schema migrations idempotent.
+fn column_exists(conn: &Connection, table: &str, column: &str) -> bool {
+    let sql = format!("PRAGMA table_info({})", table);
+    let mut stmt = match conn.prepare(&sql) {
+        Ok(s) => s,
+        Err(_) => return false,
+    };
+    let mut rows = match stmt.query([]) {
+        Ok(r) => r,
+        Err(_) => return false,
+    };
+    while let Ok(Some(row)) = rows.next() {
+        if let Ok(name) = row.get::<_, String>(1) {
+            if name.eq_ignore_ascii_case(column) {
+                return true;
+            }
+        }
+    }
+    false
+}
+
 /// Represents a task in the database
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Task {
@@ -42,8 +64,8 @@ impl DbHandle {
             .map_err(|e| format!("Failed to create app data directory: {e}"))?;
 
         let db_path = app_data_dir.join("pinedin.db");
-        let conn = Connection::open(&db_path)
-            .map_err(|e| format!("Failed to open database: {e}"))?;
+        let conn =
+            Connection::open(&db_path).map_err(|e| format!("Failed to open database: {e}"))?;
 
         conn.execute_batch("PRAGMA journal_mode=WAL;")
             .map_err(|e| format!("Failed to set journal mode: {e}"))?;
@@ -56,7 +78,9 @@ impl DbHandle {
     }
 
     fn initialize(&self) -> Result<(), String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;        conn.execute_batch(
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+
+        conn.execute_batch(
             "CREATE TABLE IF NOT EXISTS tasks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL,
@@ -65,7 +89,8 @@ impl DbHandle {
                 due_time TEXT NOT NULL DEFAULT '',
                 completed INTEGER NOT NULL DEFAULT 0,
                 created_at TEXT NOT NULL,
-                recurrence TEXT DEFAULT NULL
+                recurrence TEXT DEFAULT NULL,
+                tags TEXT DEFAULT NULL
             );
             CREATE TABLE IF NOT EXISTS settings (
                 key TEXT PRIMARY KEY,
@@ -76,10 +101,18 @@ impl DbHandle {
                 ('shake_interval', '30');"
         ).map_err(|e| format!("Failed to initialize database: {e}"))?;
 
-        // Migration: add recurrence column if missing (v0.1.0 -> v0.2.0)
-        let _ = conn.execute("ALTER TABLE tasks ADD COLUMN recurrence TEXT DEFAULT NULL", []);
-        // Migration: add tags column if missing (v0.1.0 -> v0.3.0)
-        let _ = conn.execute("ALTER TABLE tasks ADD COLUMN tags TEXT DEFAULT NULL", []);
+        // Idempotent migration for pre-v0.3.0 databases that lack
+        // recurrence/tags. ALTER TABLE fails with "duplicate column" on
+        // already-updated schemas, which is the expected outcome.
+        if !column_exists(&conn, "tasks", "recurrence") {
+            let _ = conn.execute(
+                "ALTER TABLE tasks ADD COLUMN recurrence TEXT DEFAULT NULL",
+                [],
+            );
+        }
+        if !column_exists(&conn, "tasks", "tags") {
+            let _ = conn.execute("ALTER TABLE tasks ADD COLUMN tags TEXT DEFAULT NULL", []);
+        }
         Ok(())
     }
 
@@ -172,21 +205,23 @@ impl DbHandle {
                 created_at ASC"
         ).map_err(|e| format!("Failed to prepare query: {e}"))?;
 
-        let tasks = stmt.query_map([], |row| {
-            Ok(Task {
-                id: Some(row.get(0)?),
-                title: row.get(1)?,
-                description: row.get(2)?,
-                urgency: row.get(3)?,
-                due_time: row.get(4)?,
-                completed: row.get::<_, i32>(5)? != 0,
-                created_at: row.get(6)?,
-                recurrence: row.get(7)?,
-                tags: row.get(8)?,
+        let tasks = stmt
+            .query_map([], |row| {
+                Ok(Task {
+                    id: Some(row.get(0)?),
+                    title: row.get(1)?,
+                    description: row.get(2)?,
+                    urgency: row.get(3)?,
+                    due_time: row.get(4)?,
+                    completed: row.get::<_, i32>(5)? != 0,
+                    created_at: row.get(6)?,
+                    recurrence: row.get(7)?,
+                    tags: row.get(8)?,
+                })
             })
-        }).map_err(|e| format!("Query error: {e}"))?
-        .filter_map(|r| r.ok())
-        .collect();
+            .map_err(|e| format!("Query error: {e}"))?
+            .filter_map(|r| r.ok())
+            .collect();
 
         Ok(tasks)
     }
@@ -206,21 +241,23 @@ impl DbHandle {
                 created_at ASC"
         ).map_err(|e| format!("Failed to prepare query: {e}"))?;
 
-        let tasks = stmt.query_map([], |row| {
-            Ok(Task {
-                id: Some(row.get(0)?),
-                title: row.get(1)?,
-                description: row.get(2)?,
-                urgency: row.get(3)?,
-                due_time: row.get(4)?,
-                completed: row.get::<_, i32>(5)? != 0,
-                created_at: row.get(6)?,
-                recurrence: row.get(7)?,
-                tags: row.get(8)?,
+        let tasks = stmt
+            .query_map([], |row| {
+                Ok(Task {
+                    id: Some(row.get(0)?),
+                    title: row.get(1)?,
+                    description: row.get(2)?,
+                    urgency: row.get(3)?,
+                    due_time: row.get(4)?,
+                    completed: row.get::<_, i32>(5)? != 0,
+                    created_at: row.get(6)?,
+                    recurrence: row.get(7)?,
+                    tags: row.get(8)?,
+                })
             })
-        }).map_err(|e| format!("Query error: {e}"))?
-        .filter_map(|r| r.ok())
-        .collect();
+            .map_err(|e| format!("Query error: {e}"))?
+            .filter_map(|r| r.ok())
+            .collect();
 
         Ok(tasks)
     }
@@ -254,11 +291,13 @@ impl DbHandle {
         description: &str,
         urgency: &str,
         due_time: &str,
+        recurrence: Option<&str>,
+        tags: Option<&str>,
     ) -> Result<(), String> {
         let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
         conn.execute(
-            "UPDATE tasks SET title=?1, description=?2, urgency=?3, due_time=?4 WHERE id=?5",
-            rusqlite::params![title, description, urgency, due_time, id],
+            "UPDATE tasks SET title=?1, description=?2, urgency=?3, due_time=?4, recurrence=?5, tags=?6 WHERE id=?7",
+            rusqlite::params![title, description, urgency, due_time, recurrence, tags, id],
         ).map_err(|e| format!("Failed to update task: {e}"))?;
         Ok(())
     }
@@ -272,15 +311,21 @@ impl DbHandle {
 
     pub fn complete_task(&self, id: i64) -> Result<(), String> {
         let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
-        conn.execute("UPDATE tasks SET completed=1 WHERE id=?1", rusqlite::params![id])
-            .map_err(|e| format!("Failed to complete task: {e}"))?;
+        conn.execute(
+            "UPDATE tasks SET completed=1 WHERE id=?1",
+            rusqlite::params![id],
+        )
+        .map_err(|e| format!("Failed to complete task: {e}"))?;
         Ok(())
     }
 
     pub fn uncomplete_task(&self, id: i64) -> Result<(), String> {
         let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
-        conn.execute("UPDATE tasks SET completed=0 WHERE id=?1", rusqlite::params![id])
-            .map_err(|e| format!("Failed to uncomplete task: {e}"))?;
+        conn.execute(
+            "UPDATE tasks SET completed=0 WHERE id=?1",
+            rusqlite::params![id],
+        )
+        .map_err(|e| format!("Failed to uncomplete task: {e}"))?;
         Ok(())
     }
 
@@ -288,13 +333,16 @@ impl DbHandle {
 
     pub fn get_settings_map(&self) -> Result<std::collections::HashMap<String, String>, String> {
         let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
-        let mut stmt = conn.prepare("SELECT key, value FROM settings")
+        let mut stmt = conn
+            .prepare("SELECT key, value FROM settings")
             .map_err(|e| format!("Failed to prepare: {e}"))?;
 
         let mut map = std::collections::HashMap::new();
-        let rows = stmt.query_map([], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-        }).map_err(|e| format!("Query error: {e}"))?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            })
+            .map_err(|e| format!("Query error: {e}"))?;
 
         for row in rows {
             if let Ok((key, value)) = row {
@@ -306,13 +354,16 @@ impl DbHandle {
 
     pub fn get_settings(&self) -> Result<AppSettings, String> {
         let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
-        let mut stmt = conn.prepare("SELECT key, value FROM settings")
+        let mut stmt = conn
+            .prepare("SELECT key, value FROM settings")
             .map_err(|e| format!("Failed to prepare: {e}"))?;
 
         let mut map = std::collections::HashMap::new();
-        let rows = stmt.query_map([], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-        }).map_err(|e| format!("Query error: {e}"))?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            })
+            .map_err(|e| format!("Query error: {e}"))?;
 
         for row in rows {
             if let Ok((key, value)) = row {
@@ -321,7 +372,10 @@ impl DbHandle {
         }
 
         Ok(AppSettings {
-            theme: map.get("theme").cloned().unwrap_or_else(|| "dark".to_string()),
+            theme: map
+                .get("theme")
+                .cloned()
+                .unwrap_or_else(|| "dark".to_string()),
         })
     }
 
@@ -330,7 +384,8 @@ impl DbHandle {
         conn.execute(
             "INSERT OR REPLACE INTO settings (key, value) VALUES (?1, ?2)",
             rusqlite::params![key, value],
-        ).map_err(|e| format!("Failed to update setting: {e}"))?;
+        )
+        .map_err(|e| format!("Failed to update setting: {e}"))?;
         Ok(())
     }
 }

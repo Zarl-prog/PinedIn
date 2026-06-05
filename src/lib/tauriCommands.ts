@@ -52,6 +52,8 @@ export async function updateTask(
   description: string,
   urgency: string,
   due_time: string,
+  recurrence?: string | null,
+  tags?: string | null,
 ): Promise<void> {
   return invoke("update_task", {
     id,
@@ -59,6 +61,8 @@ export async function updateTask(
     description,
     urgency,
     dueTime: due_time,
+    recurrence: recurrence ?? null,
+    tags: tags ?? null,
   });
 }
 

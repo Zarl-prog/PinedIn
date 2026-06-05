@@ -25,6 +25,7 @@ export interface OverlayState {
   isSettingsOpen: boolean;
   editingTask: Task | null;
   activeTags: string[];
+  isPaused: boolean;
 
   // Actions - Task management
   fetchTasks: () => Promise<void>;
@@ -42,6 +43,8 @@ export interface OverlayState {
     description: string,
     urgency: Task["urgency"],
     dueTime: string,
+    recurrence?: string | null,
+    tags?: string | null,
   ) => Promise<void>;
   removeTask: (id: number) => Promise<void>;
   completeTask: (id: number) => Promise<void>;
@@ -59,6 +62,7 @@ export interface OverlayState {
   setSettingsOpen: (open: boolean) => void;
   setEditingTask: (task: Task | null) => void;
   setOverlayVisible: (visible: boolean) => void;
+  togglePaused: () => void;
 }
 
 // ─── Store ──────────────────────────────────────────────────────────────────
@@ -75,6 +79,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
   isSettingsOpen: false,
   editingTask: null,
   activeTags: [],
+  isPaused: false,
 
   // ─── Task Management ──────────────────────────────────────────────────
 
@@ -101,14 +106,22 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
     }
   },
 
-  editTask: async (id, title, description, urgency, dueTime) => {
+  editTask: async (id, title, description, urgency, dueTime, recurrence = null, tags = null) => {
     try {
-      await updateTask(id, title, description, urgency, dueTime);
+      await updateTask(id, title, description, urgency, dueTime, recurrence, tags);
       set((state) => ({
         tasks: state.tasks
           .map((t) =>
             t.id === id
-              ? { ...t, title, description, urgency: urgency as Task["urgency"], due_time: dueTime }
+              ? {
+                  ...t,
+                  title,
+                  description,
+                  urgency: urgency as Task["urgency"],
+                  due_time: dueTime,
+                  recurrence,
+                  tags,
+                }
               : t,
           )
           .sort(sortTasks),
@@ -196,6 +209,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
   setSettingsOpen: (open) => set({ isSettingsOpen: open }),
   setEditingTask: (task) => set({ editingTask: task, isAddTaskOpen: !!task }),
   setOverlayVisible: (visible) => set({ overlayVisible: visible }),
+  togglePaused: () => set((state) => ({ isPaused: !state.isPaused })),
 }));
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

@@ -41,7 +41,9 @@ export default function AddTaskModal({
   const [error, setError] = useState<string | null>(null);
   const tagInputRef = useRef<HTMLInputElement>(null);
 
-  // Populate form when editing
+  // Populate form when editing. Key the effect on editTask id (not the
+  // whole object) so a store re-render that produces a new reference
+  // for the same task doesn't reset the form mid-edit.
   useEffect(() => {
     if (editTask) {
       setTitle(editTask.title);
@@ -57,7 +59,8 @@ export default function AddTaskModal({
     } else {
       resetForm();
     }
-  }, [editTask, open]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editTask?.id, open]);
 
   const resetForm = () => {
     setTitle("");
@@ -118,6 +121,8 @@ export default function AddTaskModal({
           description.trim(),
           urgency,
           dueDate || "",
+          recurrence,
+          tagsString || null,
         );
       } else {
         await addTask(

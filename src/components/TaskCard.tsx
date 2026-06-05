@@ -6,6 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getShakeInterval } from "@/lib/tauriCommands";
 import { useReminderStore } from "@/store/reminderStore";
+import UrgencyBadge from "./UrgencyBadge";
 
 interface TaskCardProps {
   taskId: number;
@@ -302,9 +303,7 @@ export default function TaskCard({
             )}
           </span>
           {/* Urgency badge */}
-          <span className={`badge ${urgency === "critical" ? "critical" : urgency === "medium" ? "medium" : "low"}`}>
-            {URGENCY_LABEL[urgency] ?? urgency}
-          </span>
+          <UrgencyBadge urgency={(urgency as "low" | "medium" | "critical")} />
         </div>
 
         {/* Description */}

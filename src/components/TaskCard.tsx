@@ -5,6 +5,7 @@ import { LogicalSize } from "@tauri-apps/api/dpi";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getShakeInterval } from "@/lib/tauriCommands";
+import { useReminderStore } from "@/store/reminderStore";
 
 interface TaskCardProps {
   taskId: number;
@@ -82,20 +83,21 @@ export default function TaskCard({
     });
   }, [urgency, controls]);
 
-  // Periodic attention-grabber — uses setting from DB, skip tick if expanded
+  // Periodic attention-grabber — uses setting from DB, skip tick if expanded or paused
   useEffect(() => {
     const intervalMs = intervalSeconds * 1000;
     const interval = setInterval(() => {
-      if (!expandedRef.current) {
-        playAttention();
-      }
+      if (expandedRef.current) return;
+      if (useReminderStore.getState().isPaused) return;
+      playAttention();
     }, intervalMs);
     return () => clearInterval(interval);
   }, [intervalSeconds, playAttention]);
 
-  // First attention trigger — 3 seconds after mount
+  // First attention trigger — 3 seconds after mount (skipped if paused)
   useEffect(() => {
     const t = setTimeout(() => {
+      if (useReminderStore.getState().isPaused) return;
       playAttention();
     }, 3000);
     return () => clearTimeout(t);

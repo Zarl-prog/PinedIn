@@ -1,4 +1,5 @@
 use crate::db::{DbHandle, Task};
+use crate::notifications;
 use crate::window;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter, Manager, State};
@@ -30,6 +31,7 @@ pub fn create_task(
         tags.as_deref(),
     )?;
     emit_tasks_updated(&app, &db);
+    notifications::check_due_notifications(&app);
 
     // Spawn window creation so we don't block the invoke response
     let task_clone = task.clone();
@@ -167,16 +169,19 @@ pub fn uncomplete_task(
     db: State<'_, Arc<DbHandle>>,
     id: i64,
 ) -> Result<(), String> {
-    db.uncomplete_task(id)?;
-
-    // Find the task and its position among incomplete tasks, then open its card
     let task = db.get_task_by_id(id)?;
-    if let Ok(tasks) = db.get_incomplete_tasks() {
-        let index = tasks.iter().position(|t| t.id == Some(id)).unwrap_or(0);
-        let _ = window::open_task_card(&app, &task, index);
-    }
+    if task.completed {
+        db.uncomplete_task(id)?;
 
-    emit_tasks_updated(&app, &db);
+        // Find the task and its position among incomplete tasks, then open its card
+        if let Ok(tasks) = db.get_incomplete_tasks() {
+            let index = tasks.iter().position(|t| t.id == Some(id)).unwrap_or(0);
+            let _ = window::open_task_card(&app, &task, index);
+        }
+
+        emit_tasks_updated(&app, &db);
+        notifications::check_due_notifications(&app);
+    }
     Ok(())
 }
 

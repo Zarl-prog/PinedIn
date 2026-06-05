@@ -27,9 +27,9 @@ const URGENCY_CONFIG: Record<string, { color: string; glow: string; bg: string; 
 };
 
 const BTN_CONFIG = [
-  { label: "Done", icon: "\u2713", color: "#22c55e", glow: "rgba(34,197,94,0.27)", action: "complete" as const },
-  { label: "Snooze", icon: "\uD83D\uDCA4", color: "#f59e0b", glow: "rgba(245,158,11,0.27)", action: "snooze" as const },
-  { label: "Remind", icon: "\uD83D\uDD14", color: "#a78bfa", glow: "rgba(167,139,250,0.27)", action: "remind" as const },
+  { label: "Done", icon: "\u2713", color: "#22c55e", glow: "rgba(34,197,94,0.27)", bg: "rgba(34,197,94,0.12)", border: "rgba(34,197,94,0.3)", action: "complete" as const },
+  { label: "Snooze", icon: "\uD83D\uDCA4", color: "#f59e0b", glow: "rgba(245,158,11,0.27)", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.3)", action: "snooze" as const },
+  { label: "Remind", icon: "\uD83D\uDD14", color: "#a78bfa", glow: "rgba(167,139,250,0.27)", bg: "rgba(167,139,250,0.12)", border: "rgba(167,139,250,0.3)", action: "remind" as const },
 ];
 
 export default function TaskCard({ taskId, title, description, urgency, dueTime, recurrence, tags }: TaskCardProps) {

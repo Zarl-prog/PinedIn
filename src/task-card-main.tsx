@@ -13,6 +13,8 @@ interface TaskData {
   due_time: string;
   completed: boolean;
   created_at: string;
+  recurrence: string | null;
+  tags: string | null;
 }
 
 async function main() {

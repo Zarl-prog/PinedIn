@@ -276,6 +276,13 @@ impl DbHandle {
         Ok(())
     }
 
+    pub fn uncomplete_task(&self, id: i64) -> Result<(), String> {
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        conn.execute("UPDATE tasks SET completed=0 WHERE id=?1", rusqlite::params![id])
+            .map_err(|e| format!("Failed to uncomplete task: {e}"))?;
+        Ok(())
+    }
+
     // ─── Settings ────────────────────────────────────────────────────────
 
     pub fn get_settings_map(&self) -> Result<std::collections::HashMap<String, String>, String> {

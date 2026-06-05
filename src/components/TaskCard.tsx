@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback } from "react";
-import { motion } from "framer-motion";
+import { useState, useRef, useCallback, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { LogicalSize } from "@tauri-apps/api/dpi";
 import { invoke } from "@tauri-apps/api/core";
@@ -18,18 +18,39 @@ const REMIND_H = 270;
 
 const REMIND_OPTIONS = [5, 15, 30, 60] as const;
 
-const URGENCY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  critical: { bg: "rgba(239,68,68,0.15)", text: "#ef4444", border: "rgba(239,68,68,0.3)" },
-  medium: { bg: "rgba(245,158,11,0.15)", text: "#f59e0b", border: "rgba(245,158,11,0.3)" },
-  low: { bg: "rgba(34,197,94,0.15)", text: "#22c55e", border: "rgba(34,197,94,0.3)" },
+const URGENCY_CONFIG: Record<string, { color: string; glow: string; bg: string; border: string }> = {
+  critical: { color: "#ef4444", glow: "rgba(239,68,68,0.27)", bg: "rgba(239,68,68,0.12)", border: "rgba(239,68,68,0.3)" },
+  medium: { color: "#f59e0b", glow: "rgba(245,158,11,0.27)", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.3)" },
+  low: { color: "#22c55e", glow: "rgba(34,197,94,0.27)", bg: "rgba(34,197,94,0.12)", border: "rgba(34,197,94,0.3)" },
 };
+
+const BTN_CONFIG = [
+  { label: "Done", icon: "\u2713", color: "#22c55e", glow: "rgba(34,197,94,0.27)", action: "complete" as const },
+  { label: "Snooze", icon: "\uD83D\uDCA4", color: "#f59e0b", glow: "rgba(245,158,11,0.27)", action: "snooze" as const },
+  { label: "Remind", icon: "\uD83D\uDD14", color: "#a78bfa", glow: "rgba(167,139,250,0.27)", action: "remind" as const },
+];
 
 export default function TaskCard({ taskId, title, description, urgency, dueTime }: TaskCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showRemindPicker, setShowRemindPicker] = useState(false);
+  const [visible, setVisible] = useState(true);
   const mouseDownPos = useRef({ x: 0, y: 0 });
   const dragging = useRef(false);
-  const uc = URGENCY_COLORS[urgency] ?? URGENCY_COLORS.medium;
+
+  const uc = URGENCY_CONFIG[urgency] ?? URGENCY_CONFIG.medium;
+
+  // Progress bar: how close the due date is (0-100%)
+  const progressPercent = useMemo(() => {
+    if (!dueTime) return 0;
+    const due = new Date(dueTime + "T23:59:59").getTime();
+    const now = Date.now();
+    const created = now - 7 * 24 * 60 * 60 * 1000; // assume created ~7 days ago if not available
+    const total = due - created;
+    const elapsed = now - created;
+    if (total <= 0) return 100;
+    const pct = Math.min(100, Math.max(0, (elapsed / total) * 100));
+    return Math.round(pct);
+  }, [dueTime]);
 
   const resize = useCallback((h: number) => {
     getCurrentWindow().setSize(new LogicalSize(280, h));
@@ -87,16 +108,25 @@ export default function TaskCard({ taskId, title, description, urgency, dueTime 
     await invoke("remind_task", { id: taskId, minutes });
   }, [taskId]);
 
+  const handleAction = useCallback((action: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (action === "complete") handleDone();
+    else if (action === "snooze") handleSnooze();
+    else if (action === "remind") handleRemindClick(e);
+  }, [handleDone, handleSnooze, handleRemindClick]);
+
   return (
     <motion.div
-      animate={{ height: showRemindPicker ? REMIND_H : expanded ? EXPANDED_H : COLLAPSED_H }}
-      transition={{ type: "spring", stiffness: 300, damping: 28 }}
+      initial={{ opacity: 0, x: 60 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
       onMouseDown={handleMouseDown}
       onClick={handleClick}
       style={{
+        position: "relative",
         background: "#16161a",
         borderRadius: "14px",
-        border: "1px solid rgba(255,255,255,0.07)",
+        border: "1px solid rgba(255,255,255,0.06)",
         boxShadow: "0 4px 24px rgba(0,0,0,0.6)",
         overflow: "hidden",
         width: "280px",
@@ -106,74 +136,203 @@ export default function TaskCard({ taskId, title, description, urgency, dueTime 
         flexDirection: "column",
       }}
     >
-      {/* Collapsed header — always visible */}
-      <div style={{ padding: "14px 16px", flexShrink: 0 }}>
+      {/* Left accent bar */}
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          width: "4px",
+          height: "100%",
+          background: uc.color,
+          borderRadius: "14px 0 0 14px",
+        }}
+      />
+
+      {/* Collapsed header */}
+      <div style={{ padding: "14px 16px 14px 20px", flexShrink: 0 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <span style={{ fontSize: "14px", fontWeight: 700, color: "#ffffff", lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <span
+            style={{
+              fontSize: "14px",
+              fontWeight: 600,
+              color: "#ffffff",
+              lineHeight: 1.3,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              flex: 1,
+              marginRight: "8px",
+            }}
+          >
             {title}
           </span>
-          <span style={{ fontSize: "10px", padding: "2px 7px", borderRadius: "999px", marginLeft: "8px", flexShrink: 0, background: uc.bg, color: uc.text, border: `1px solid ${uc.border}` }}>
+          <span
+            style={{
+              fontSize: "10px",
+              padding: "2px 10px",
+              borderRadius: "999px",
+              flexShrink: 0,
+              background: uc.bg,
+              color: uc.color,
+              border: `1px solid ${uc.border}`,
+              fontWeight: 600,
+              letterSpacing: "0.3px",
+              textTransform: "uppercase",
+            }}
+          >
             {urgency}
           </span>
         </div>
         {description && (
-          <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.38)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", display: "block", marginTop: "4px" }}>
+          <span
+            style={{
+              fontSize: "12px",
+              color: "rgba(255,255,255,0.38)",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              display: "block",
+              marginTop: "4px",
+              paddingRight: "4px",
+            }}
+          >
             {description}
           </span>
         )}
       </div>
 
+      {/* Bottom progress bar */}
+      <div
+        style={{
+          width: "100%",
+          height: "3px",
+          background: "rgba(255,255,255,0.04)",
+          flexShrink: 0,
+        }}
+      >
+        <div
+          style={{
+            width: `${progressPercent}%`,
+            height: "100%",
+            background: uc.color,
+            transition: "width 0.6s ease",
+            borderRadius: "0 2px 2px 0",
+            opacity: 0.7,
+          }}
+        />
+      </div>
+
       {/* Expanded content */}
-      {expanded && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }}>
-          {dueTime && (
-            <div style={{ padding: "0 16px 10px", fontSize: "11px", color: "rgba(255,255,255,0.25)" }}>
-              📅 {dueTime}
-            </div>
-          )}
-
-          {/* Action buttons */}
-          <div style={{ display: "flex", gap: "8px", padding: "0 14px 14px" }}>
-            <button onClick={(e) => { e.stopPropagation(); handleDone(); }} style={btnStyle("rgba(34,197,94,0.12)", "#22c55e", "rgba(34,197,94,0.25)")}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(34,197,94,0.22)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(34,197,94,0.12)"; }}>
-              ✓ Done
-            </button>
-            <button onClick={(e) => { e.stopPropagation(); handleSnooze(); }} style={btnStyle("rgba(245,158,11,0.12)", "#f59e0b", "rgba(245,158,11,0.25)")}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(245,158,11,0.22)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(245,158,11,0.12)"; }}>
-              💤 Snooze
-            </button>
-            <button onClick={handleRemindClick} style={btnStyle("rgba(139,92,246,0.12)", "#8b5cf6", "rgba(139,92,246,0.25)")}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(139,92,246,0.22)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(139,92,246,0.12)"; }}>
-              🔔 Remind
-            </button>
-          </div>
-
-          {/* Remind time picker */}
-          {showRemindPicker && (
-            <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.12 }}
-              style={{ padding: "0 14px 14px" }}>
-              <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", marginBottom: "6px" }}>Remind me in…</div>
-              <div style={{ display: "flex", gap: "6px" }}>
-                {REMIND_OPTIONS.map((mins) => (
-                  <button key={mins} onClick={(e) => { e.stopPropagation(); handleRemindConfirm(mins); }}
-                    style={{ flex: 1, padding: "6px 0", borderRadius: "7px", background: "rgba(139,92,246,0.1)", color: "#8b5cf6", border: "1px solid rgba(139,92,246,0.2)", fontSize: "11px", fontWeight: 600, cursor: "pointer" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(139,92,246,0.25)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(139,92,246,0.1)"; }}>
-                    {mins < 60 ? `${mins}m` : "1h"}
-                  </button>
-                ))}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            {description && (
+              <div style={{ padding: "8px 16px 6px 20px", fontSize: "12px", color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
+                {description}
               </div>
-            </motion.div>
-          )}
-        </motion.div>
-      )}
+            )}
+
+            {dueTime && (
+              <div style={{ padding: "0 16px 10px 20px", fontSize: "11px", color: "rgba(255,255,255,0.25)", display: "flex", alignItems: "center", gap: "5px" }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                {dueTime}
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div style={{ display: "flex", gap: "8px", padding: "0 14px 14px 18px" }}>
+              {BTN_CONFIG.map((btn) => (
+                <button
+                  key={btn.action}
+                  onClick={(e) => handleAction(btn.action, e)}
+                  style={{
+                    flex: 1,
+                    padding: "8px 0",
+                    borderRadius: "8px",
+                    background: btn.bg,
+                    color: btn.color,
+                    border: `1px solid ${btn.border}`,
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "4px",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = `${btn.glow}55`;
+                    e.currentTarget.style.boxShadow = `0 0 12px ${btn.glow}`;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = btn.bg;
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
+                  {btn.icon} {btn.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Remind time picker */}
+            {showRemindPicker && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.12 }}
+                style={{ padding: "0 14px 14px 18px" }}
+              >
+                <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", marginBottom: "6px" }}>
+                  Remind me in…
+                </div>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  {REMIND_OPTIONS.map((mins) => (
+                    <button
+                      key={mins}
+                      onClick={(e) => { e.stopPropagation(); handleRemindConfirm(mins); }}
+                      style={{
+                        flex: 1,
+                        padding: "6px 0",
+                        borderRadius: "7px",
+                        background: "rgba(167,139,250,0.1)",
+                        color: "#a78bfa",
+                        border: "1px solid rgba(167,139,250,0.2)",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        transition: "all 0.12s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "rgba(167,139,250,0.25)";
+                        e.currentTarget.style.boxShadow = "0 0 10px rgba(167,139,250,0.25)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "rgba(167,139,250,0.1)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
+                    >
+                      {mins < 60 ? `${mins}m` : "1h"}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
-}
-
-function btnStyle(bg: string, color: string, border: string): React.CSSProperties {
-  return { flex: 1, padding: "8px", borderRadius: "8px", background: bg, color, border: `1px solid ${border}`, fontSize: "12px", fontWeight: 600, cursor: "pointer", transition: "background 0.15s ease" };
 }

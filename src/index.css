@@ -71,17 +71,20 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .v-float {
   background: #080808;
   border: 1px solid #1a1a1a;
-  border-radius: 14px;
-  padding: 12px 14px;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  border-radius: 20px;
+  padding: 14px 16px;
+  transition: border-color 0.2s ease, background 0.2s ease;
   cursor: grab;
   user-select: none;
   width: 100%;
   position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
 }
 
 .v-float:hover {
   border-color: #2e2e2e;
+  background: #0a0a0a;
 }
 
 /* ─── Button Styles (.v-btn) ────────────────────────────────────────────── */

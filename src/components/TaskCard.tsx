@@ -25,6 +25,21 @@ const URGENCY_LABEL: Record<string, string> = {
   low: "Low",
 };
 
+function formatCardDate(dateStr: string): string {
+  if (!dateStr) return "";
+  const due = new Date(dateStr + "T00:00:00");
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffTime = due.getTime() - today.getTime();
+  if (diffTime === 0) return "Today";
+  if (diffTime === 86400000) return "Tomorrow";
+  if (diffTime === -86400000) return "Yesterday";
+  const diffDays = Math.round(diffTime / 86400000);
+  if (diffDays < -1) return `${Math.abs(diffDays)}d overdue`;
+  if (diffDays > 1) return `In ${diffDays}d`;
+  return due.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
 export default function TaskCard({
   taskId,
   title,
@@ -348,7 +363,7 @@ export default function TaskCard({
               <line x1="8" y1="2" x2="8" y2="6" />
               <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
-            <span>{dueTime}</span>
+            <span>{formatCardDate(dueTime)}</span>
           </div>
         )}
 

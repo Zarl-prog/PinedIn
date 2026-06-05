@@ -216,11 +216,21 @@ pub fn snooze_task(
 
     // Spawn a thread to reopen the card after 30 minutes
     let app_clone = app.clone();
+    let db_clone = Arc::clone(&*db);
     std::thread::spawn(move || {
         std::thread::sleep(std::time::Duration::from_secs(30 * 60));
 
+        // Bail if the task was deleted, completed, or already has a card
+        let still_present = db_clone
+            .get_task_by_id(id)
+            .map(|t| !t.completed)
+            .unwrap_or(false);
+        if !still_present {
+            return;
+        }
+
         // Find the task's position among incomplete tasks
-        if let Ok(tasks) = app_clone.state::<Arc<DbHandle>>().get_incomplete_tasks() {
+        if let Ok(tasks) = db_clone.get_incomplete_tasks() {
             let index = tasks.iter().position(|t| t.id == Some(id)).unwrap_or(0);
             let _ = window::open_task_card(&app_clone, &task, index);
         } else {
@@ -245,6 +255,13 @@ pub fn remind_task(
     let db_clone = Arc::clone(&*db);
     std::thread::spawn(move || {
         std::thread::sleep(std::time::Duration::from_secs(minutes * 60));
+        let still_present = db_clone
+            .get_task_by_id(id)
+            .map(|t| !t.completed)
+            .unwrap_or(false);
+        if !still_present {
+            return;
+        }
         if let Ok(tasks) = db_clone.get_incomplete_tasks() {
             let index = tasks.iter().position(|t| t.id == Some(id)).unwrap_or(0);
             let _ = window::open_task_card(&app_clone, &task, index);

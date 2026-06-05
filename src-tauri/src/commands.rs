@@ -182,31 +182,19 @@ pub fn uncomplete_task(
 
 /// Advance the due date by the given recurrence interval.
 fn advance_due_date(current_date: &str, recurrence: &str) -> String {
-    let days = match recurrence {
-        "daily" => 1,
-        "weekly" => 7,
-        "monthly" => 30,
+    let base_date = chrono::NaiveDate::parse_from_str(current_date, "%Y-%m-%d")
+        .unwrap_or_else(|_| chrono::Local::now().date_naive());
+
+    let new_date = match recurrence {
+        "daily" => base_date + chrono::Duration::days(1),
+        "weekly" => base_date + chrono::Duration::days(7),
+        "monthly" => base_date
+            .checked_add_months(chrono::Months::new(1))
+            .unwrap_or(base_date + chrono::Duration::days(30)),
         _ => return current_date.to_string(),
     };
 
-    // Parse date and add days
-    if let Ok(parsed) = chrono::NaiveDate::parse_from_str(current_date, "%Y-%m-%d") {
-        let new_date = parsed + chrono::Duration::days(days);
-        return new_date.format("%Y-%m-%d").to_string();
-    }
-
-    // If due_time is empty, start from today
-    if let Ok(today) = chrono::Local::now()
-        .date_naive()
-        .format("%Y-%m-%d")
-        .to_string()
-        .parse::<chrono::NaiveDate>()
-    {
-        let new_date = today + chrono::Duration::days(days);
-        return new_date.format("%Y-%m-%d").to_string();
-    }
-
-    current_date.to_string()
+    new_date.format("%Y-%m-%d").to_string()
 }
 
 #[tauri::command]

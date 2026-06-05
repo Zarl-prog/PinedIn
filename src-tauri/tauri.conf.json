@@ -61,8 +61,8 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDk0RTJFMDc5RUU3Q0YxNzEKUldSeDhYenVlZURpbEQ0aWdnZ3dKMDdsZDBrcGw2bGJwVmJzdFo3ODFENFNoVmQvd1BCV3JBcHkK",
-      "endpoints": ["https://github.com/YOUR_USERNAME/PinedIn/releases/latest/download/update-{{target}}-{{arch}}.json"],
+      "pubkey": "REPLACE_WITH_GENERATED_MINISIGN_PUBLIC_KEY",
+      "endpoints": ["https://github.com/Zarl-prog/PinedIn/releases/latest/download/update-{{target}}-{{arch}}.json"],
       "dangerousInsecureTransportProtocol": false
     }
   }

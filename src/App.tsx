@@ -23,6 +23,8 @@ export default function App() {
   const setSettingsOpen = useReminderStore((s) => s.setSettingsOpen);
   const editingTask = useReminderStore((s) => s.editingTask);
   const setEditingTask = useReminderStore((s) => s.setEditingTask);
+  const isPaused = useReminderStore((s) => s.isPaused);
+  const togglePaused = useReminderStore((s) => s.togglePaused);
 
   // ─── Update notification state ────────────────────────────────────────
   const [updateInfo, setUpdateInfo] = useState<{
@@ -64,15 +66,16 @@ export default function App() {
     }
   }, [updateInfo]);
 
-  // Close modals on Escape key
+  // Close any open modal on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (isAddTaskOpen) {
-          setAddTaskOpen(false);
-          setEditingTask(null);
-        }
-        if (isSettingsOpen) setSettingsOpen(false);
+      if (e.key !== "Escape") return;
+      if (isAddTaskOpen) {
+        setAddTaskOpen(false);
+        setEditingTask(null);
+      }
+      if (isSettingsOpen) {
+        setSettingsOpen(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -81,6 +84,7 @@ export default function App() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const incompleteCount = tasks.filter((t) => !t.completed).length;
+  const isAnyModalOpen = isAddTaskOpen || isSettingsOpen;
 
   return (
     <div
@@ -214,12 +218,18 @@ export default function App() {
         {/* Pause */}
         <button
           className="v-btn"
+          onClick={togglePaused}
+          aria-pressed={isPaused}
+          disabled={isAnyModalOpen}
+          title={isPaused ? "Resume card animations" : "Pause card animations"}
           style={{
             padding: "7px 14px",
             borderRadius: "8px",
+            color: isPaused ? "#fff" : undefined,
+            borderColor: isPaused ? "#444" : undefined,
           }}
         >
-          || Pause
+          {isPaused ? "▶ Resume" : "|| Pause"}
         </button>
         {/* Settings */}
         <button

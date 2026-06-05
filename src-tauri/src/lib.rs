@@ -72,6 +72,7 @@ pub fn run() {
             commands::update_setting,
             commands::get_shake_interval,
             commands::set_shake_interval,
+            commands::trigger_task_edit,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

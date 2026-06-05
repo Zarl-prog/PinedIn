@@ -3,6 +3,8 @@ import { motion, useAnimation } from "framer-motion";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { LogicalSize } from "@tauri-apps/api/dpi";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { getShakeInterval } from "@/lib/tauriCommands";
 
 interface TaskCardProps {
   taskId: number;
@@ -36,51 +38,59 @@ export default function TaskCard({
   const contentRef = useRef<HTMLDivElement>(null);
   const mouseDownPos = useRef({ x: 0, y: 0 });
   const dragging = useRef(false);
+  const interacting = useRef(false);
   const collapsedHeightRef = useRef<number>(0);
   const prevExpanded = useRef(expanded);
   const expandedRef = useRef(expanded);
   // Keep the ref in sync so interval closures always read the latest value
   expandedRef.current = expanded;
 
-  // ─── Shake & Flash animation controls ──────────────────────────────────
-  const shakeControls = useAnimation();
-  const flashControls = useAnimation();
+  // ─── Shake interval — loaded from DB, updated live via event ────────────
+  const [intervalSeconds, setIntervalSeconds] = useState(30);
 
-  const playShake = useCallback(async () => {
-    const amplitude = urgency === "critical" ? [-12, 12, -10, 10, -6, 6] : [-8, 8, -6, 6, -4, 4];
-    await shakeControls.start({
-      x: [0, ...amplitude, 0],
-      transition: { duration: 0.5, ease: "easeInOut" },
+  useEffect(() => {
+    getShakeInterval()
+      .then((s) => setIntervalSeconds(s))
+      .catch(() => {});
+    const unlisten = listen<number>("shake_interval_updated", (e) => {
+      setIntervalSeconds(e.payload);
     });
-  }, [urgency, shakeControls]);
+    return () => {
+      unlisten.then((f) => f());
+    };
+  }, []);
 
-  const playFlash = useCallback(async () => {
-    await flashControls.start({
+  // ─── Single animation control for both shake (x) and flash (boxShadow) ──
+  const controls = useAnimation();
+
+  const playAttention = useCallback(async () => {
+    if (interacting.current) return;
+    const amplitude = urgency === "critical" ? [-12, 12, -10, 10, -6, 6] : [-8, 8, -6, 6, -4, 4];
+    await controls.start({
+      x: [0, ...amplitude, 0],
       boxShadow: [
         "0 0 0px rgba(255,255,255,0)",
         "0 0 16px rgba(255,255,255,0.6)",
         "0 0 8px rgba(255,255,255,0.3)",
         "0 0 0px rgba(255,255,255,0)",
       ],
-      borderColor: ["#1a1a1a", "#ffffff", "#888888", "#1a1a1a"],
-      transition: { duration: 0.6, ease: "easeInOut" },
+      transition: {
+        x: { duration: 0.4, ease: "easeInOut" },
+        boxShadow: { duration: 0.5, ease: "easeInOut" },
+      },
     });
-  }, [flashControls]);
+  }, [urgency, controls]);
 
-  const playAttention = useCallback(async () => {
-    await Promise.all([playShake(), playFlash()]);
-  }, [playShake, playFlash]);
-
-  // Periodic attention-grabber — every 30s (15s for critical), skip tick if expanded
+  // Periodic attention-grabber — uses setting from DB, skip tick if expanded
   useEffect(() => {
-    const intervalMs = urgency === "critical" ? 15000 : 30000;
+    const intervalMs = intervalSeconds * 1000;
     const interval = setInterval(() => {
       if (!expandedRef.current) {
         playAttention();
       }
     }, intervalMs);
     return () => clearInterval(interval);
-  }, [urgency, playAttention]);
+  }, [intervalSeconds, playAttention]);
 
   // First attention trigger — 3 seconds after mount
   useEffect(() => {
@@ -159,6 +169,7 @@ export default function TaskCard({
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if ((e.target as HTMLElement).closest("button")) return;
+      interacting.current = true;
       mouseDownPos.current = { x: e.clientX, y: e.clientY };
       dragging.current = false;
 
@@ -173,6 +184,7 @@ export default function TaskCard({
         }
       };
       const onUp = () => {
+        interacting.current = false;
         window.removeEventListener("mousemove", onMove);
         window.removeEventListener("mouseup", onUp);
       };
@@ -228,26 +240,14 @@ export default function TaskCard({
   );
 
   return (
-    <div
+    <motion.div
       data-tauri-drag-region
       onMouseDown={handleMouseDown}
       onClick={handleClick}
       className="v-float"
+      animate={controls}
+      style={{ willChange: "transform" }}
     >
-      <motion.div
-        animate={shakeControls}
-        style={{ width: "100%", height: "100%" }}
-      >
-        <motion.div
-          animate={flashControls}
-          style={{
-            background: "#0a0a0a",
-            border: "1px solid #1a1a1a",
-            borderRadius: "8px",
-            width: "100%",
-            height: "100%",
-          }}
-        >
       {/* Summary content — always visible */}
       <div>
         {/* Title row */}
@@ -444,8 +444,6 @@ export default function TaskCard({
           </motion.div>
         )}
       </motion.div>
-        </motion.div>
-      </motion.div>
-    </div>
+    </motion.div>
   );
 }

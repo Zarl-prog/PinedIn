@@ -345,6 +345,20 @@ function TaskCardItem({
               >
                 🔔 Remind
               </button>
+              {/* Delete */}
+              <button
+                className="v-action"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (window.confirm("Delete this task?")) {
+                    onDelete();
+                  }
+                }}
+                title="Delete task"
+                style={{ flex: 1, textAlign: "center", padding: "8px 10px", color: "#888" }}
+              >
+                🗑
+              </button>
             </div>
           </motion.div>
         )}

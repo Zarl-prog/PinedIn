@@ -203,7 +203,7 @@ export default function AddTaskModal({
                 marginBottom: "16px",
               }}
             >
-              <span style={{ fontSize: "16px", fontWeight: 600, color: "#ededed" }}>
+              <span style={{ fontSize: "17px", fontWeight: 600, color: "#ededed" }}>
                 {editTask ? "Edit Task" : "New Task"}
               </span>
               <button
@@ -219,7 +219,7 @@ export default function AddTaskModal({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: "14px",
+                  fontSize: "15px",
                   transition: "all 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
@@ -244,7 +244,7 @@ export default function AddTaskModal({
                 <label
                   style={{
                     display: "block",
-                    fontSize: "12px",
+                    fontSize: "13px",
                     fontWeight: 500,
                     color: "#888",
                     marginBottom: "6px",
@@ -267,7 +267,7 @@ export default function AddTaskModal({
                 <label
                   style={{
                     display: "block",
-                    fontSize: "12px",
+                    fontSize: "13px",
                     fontWeight: 500,
                     color: "#888",
                     marginBottom: "6px",
@@ -290,7 +290,7 @@ export default function AddTaskModal({
                 <label
                   style={{
                     display: "block",
-                    fontSize: "12px",
+                    fontSize: "13px",
                     fontWeight: 500,
                     color: "#888",
                     marginBottom: "6px",
@@ -317,7 +317,7 @@ export default function AddTaskModal({
                 <label
                   style={{
                     display: "block",
-                    fontSize: "12px",
+                    fontSize: "13px",
                     fontWeight: 500,
                     color: "#888",
                     marginBottom: "6px",
@@ -364,7 +364,7 @@ export default function AddTaskModal({
                 <label
                   style={{
                     display: "block",
-                    fontSize: "12px",
+                    fontSize: "13px",
                     fontWeight: 500,
                     color: "#888",
                     marginBottom: "6px",
@@ -391,7 +391,7 @@ export default function AddTaskModal({
                 <label
                   style={{
                     display: "block",
-                    fontSize: "12px",
+                    fontSize: "13px",
                     fontWeight: 500,
                     color: "#888",
                     marginBottom: "6px",
@@ -420,7 +420,7 @@ export default function AddTaskModal({
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "3px",
-                        fontSize: "11px",
+                        fontSize: "12px",
                         color: "#666",
                         background: "#111",
                         border: "1px solid #222",
@@ -442,7 +442,7 @@ export default function AddTaskModal({
                           background: "transparent",
                           color: "#444",
                           cursor: "pointer",
-                          fontSize: "10px",
+                          fontSize: "11px",
                           padding: 0,
                         }}
                       >
@@ -464,7 +464,7 @@ export default function AddTaskModal({
                       border: "none",
                       background: "transparent",
                       color: "#ededed",
-                    fontSize: "13px",
+                    fontSize: "14px",
                     fontFamily: "'Geist Mono', monospace",
                     outline: "none",
                   }}
@@ -474,7 +474,7 @@ export default function AddTaskModal({
 
               {/* Error */}
               {error && (
-                <p style={{ fontSize: "12px", color: "#888" }}>{error}</p>
+                <p style={{ fontSize: "13px", color: "#888" }}>{error}</p>
               )}
 
               {/* Actions */}
@@ -487,7 +487,7 @@ export default function AddTaskModal({
                     flex: 1,
                     padding: "8px 0",
                     borderRadius: "8px",
-                    fontSize: "13px",
+                    fontSize: "14px",
                   }}
                 >
                   Cancel
@@ -502,7 +502,7 @@ export default function AddTaskModal({
                     border: "none",
                     background: "#fff",
                     color: "#000",
-                    fontSize: "13px",
+                    fontSize: "14px",
                     fontWeight: 600,
                     cursor: "pointer",
                     transition: "opacity 0.15s ease",

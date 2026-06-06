@@ -8,6 +8,7 @@ import { useReminderStore } from "@/store/reminderStore";
  */
 export function useReminders() {
   const fetchTasks = useReminderStore((s) => s.fetchTasks);
+  const fetchScheduledTasks = useReminderStore((s) => s.fetchScheduledTasks);
 
   useEffect(() => {
     const unlisteners: UnlistenFn[] = [];
@@ -18,6 +19,10 @@ export function useReminders() {
       const unlisten1 = await listen("tasks-updated", () => {
         if (!mounted) return;
         fetchTasks();
+        // Also refresh the scheduled list. The Rust backend already
+        // excludes pre-scheduled tasks from get_all_tasks, so this
+        // gives the main Scheduled section its own independent view.
+        fetchScheduledTasks();
       });
       unlisteners.push(unlisten1);
 
@@ -31,6 +36,7 @@ export function useReminders() {
 
     setup();
     fetchTasks();
+    fetchScheduledTasks();
 
     return () => {
       mounted = false;
@@ -38,5 +44,5 @@ export function useReminders() {
         unlisten();
       }
     };
-  }, [fetchTasks]);
+  }, [fetchTasks, fetchScheduledTasks]);
 }

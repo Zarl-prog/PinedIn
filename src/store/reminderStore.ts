@@ -9,6 +9,8 @@ import {
   uncompleteTask as uncompleteTaskCmd,
   getSettings,
   updateSetting,
+  addPrescheduledTask as addPrescheduledTaskCmd,
+  getPrescheduledTasks as getPrescheduledTasksCmd,
 } from "@/lib/tauriCommands";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -16,6 +18,7 @@ import {
 export interface OverlayState {
   // Data
   tasks: Task[];
+  scheduledTasks: Task[];
   settings: AppSettings;
   overlayVisible: boolean;
 
@@ -52,6 +55,19 @@ export interface OverlayState {
   completeTask: (id: number) => Promise<void>;
   uncompleteTask: (id: number) => Promise<void>;
 
+  // Actions - Pre-scheduled tasks
+  fetchScheduledTasks: () => Promise<void>;
+  addPrescheduledTask: (
+    title: string,
+    body: string,
+    urgency: string,
+    scheduledAt: string,
+    dueDate: string | null,
+    timeLimitMinutes: number | null,
+    tags: string | null,
+  ) => Promise<number>;
+  removeScheduledTask: (id: number) => Promise<void>;
+
   // Actions - Settings
   fetchSettings: () => Promise<void>;
   saveSetting: (key: string, value: string) => Promise<void>;
@@ -72,6 +88,7 @@ export interface OverlayState {
 export const useReminderStore = create<OverlayState>()((set, get) => ({
   // Initial state
   tasks: [],
+  scheduledTasks: [],
   settings: {
     theme: "dark",
   },
@@ -205,6 +222,59 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
       }));
     } catch (error) {
       console.error("Failed to uncomplete task:", error);
+      throw error;
+    }
+  },
+
+  // ─── Pre-Scheduled Tasks ───────────────────────────────────────────────
+
+  fetchScheduledTasks: async () => {
+    try {
+      const scheduledTasks = await getPrescheduledTasksCmd();
+      set({ scheduledTasks });
+    } catch (error) {
+      console.error("Failed to fetch pre-scheduled tasks:", error);
+    }
+  },
+
+  addPrescheduledTask: async (
+    title,
+    body,
+    urgency,
+    scheduledAt,
+    dueDate,
+    timeLimitMinutes,
+    tags,
+  ) => {
+    try {
+      const id = await addPrescheduledTaskCmd(
+        title,
+        body,
+        urgency,
+        scheduledAt,
+        dueDate,
+        timeLimitMinutes,
+        tags,
+      );
+      // Refresh the scheduled list so the new entry shows up in the
+      // Scheduled section of the main task view immediately.
+      const scheduledTasks = await getPrescheduledTasksCmd();
+      set({ scheduledTasks });
+      return id;
+    } catch (error) {
+      console.error("Failed to create pre-scheduled task:", error);
+      throw error;
+    }
+  },
+
+  removeScheduledTask: async (id) => {
+    try {
+      await deleteTask(id);
+      set((state) => ({
+        scheduledTasks: state.scheduledTasks.filter((t) => t.id !== id),
+      }));
+    } catch (error) {
+      console.error("Failed to delete pre-scheduled task:", error);
       throw error;
     }
   },

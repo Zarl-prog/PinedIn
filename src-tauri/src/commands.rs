@@ -5,7 +5,7 @@ use std::sync::Arc;
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_autostart::ManagerExt;
 
-fn emit_tasks_updated(app: &tauri::AppHandle, db: &DbHandle) {
+pub fn emit_tasks_updated(app: &tauri::AppHandle, db: &DbHandle) {
     if let Ok(tasks) = db.get_all_tasks() {
         let _ = app.emit("tasks-updated", serde_json::json!({ "tasks": tasks }));
     }
@@ -404,4 +404,36 @@ pub fn fire_time_limit_notification(
         .show()
         .map_err(|e| e.to_string())?;
     Ok(())
+}
+
+// ─── Pre-Scheduled Tasks ────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn add_presceduled_task(
+    app: AppHandle,
+    db: State<'_, Arc<DbHandle>>,
+    title: String,
+    body: String,
+    urgency: String,
+    scheduled_at: String,
+    due_date: Option<String>,
+    time_limit_minutes: Option<i64>,
+    tags: Option<String>,
+) -> Result<i64, String> {
+    let id = db.create_presceduled_task(
+        &title,
+        &body,
+        &urgency,
+        &scheduled_at,
+        due_date.as_deref().unwrap_or(""),
+        time_limit_minutes,
+        tags.as_deref(),
+    )?;
+    emit_tasks_updated(&app, &db);
+    Ok(id)
+}
+
+#[tauri::command]
+pub fn get_presceduled_tasks(db: State<'_, Arc<DbHandle>>) -> Result<Vec<Task>, String> {
+    db.get_presceduled_tasks()
 }

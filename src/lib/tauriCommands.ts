@@ -14,6 +14,8 @@ export interface Task {
   tags: string | null;
   time_limit_minutes: number | null;
   started_at: string | null;
+  is_presceduled: number;
+  scheduled_at: string | null;
 }
 
 export interface AppSettings {
@@ -152,4 +154,30 @@ export interface DigestData {
 
 export async function getDailyDigest(): Promise<DigestData> {
   return invoke<DigestData>("get_daily_digest");
+}
+
+// ─── Pre-Schedule Commands ──────────────────────────────────────────────────
+
+export async function addPrescheduledTask(
+  title: string,
+  body: string,
+  urgency: string,
+  scheduledAt: string,
+  dueDate: string | null,
+  timeLimitMinutes: number | null,
+  tags: string | null,
+): Promise<number> {
+  return invoke<number>("add_presceduled_task", {
+    title,
+    body,
+    urgency,
+    scheduledAt,
+    dueDate,
+    timeLimitMinutes,
+    tags,
+  });
+}
+
+export async function getPrescheduledTasks(): Promise<Task[]> {
+  return invoke<Task[]>("get_presceduled_tasks");
 }

@@ -39,6 +39,8 @@ pub struct Task {
     pub tags: Option<String>,
     pub time_limit_minutes: Option<i64>,
     pub started_at: Option<String>,
+    pub is_presceduled: i32,
+    pub scheduled_at: Option<String>,
 }
 
 /// Represents app settings
@@ -94,7 +96,9 @@ impl DbHandle {
                 recurrence TEXT DEFAULT NULL,
                 tags TEXT DEFAULT NULL,
                 time_limit_minutes INTEGER DEFAULT NULL,
-                started_at TEXT DEFAULT NULL
+                started_at TEXT DEFAULT NULL,
+                is_presceduled INTEGER DEFAULT 0,
+                scheduled_at TEXT DEFAULT NULL
             );
             CREATE TABLE IF NOT EXISTS settings (
                 key TEXT PRIMARY KEY,
@@ -106,10 +110,11 @@ impl DbHandle {
         ).map_err(|e| format!("Failed to initialize database: {e}"))?;
 
         // Idempotent migrations for pre-v0.3.0 databases that lack
-        // recurrence/tags, and for pre-time-limit databases that lack
-        // time_limit_minutes/started_at. ALTER TABLE fails with
-        // "duplicate column" on already-updated schemas, which is the
-        // expected outcome.
+        // recurrence/tags, for pre-time-limit databases that lack
+        // time_limit_minutes/started_at, and for pre-pre-schedule
+        // databases that lack is_presceduled/scheduled_at. ALTER TABLE
+        // fails with "duplicate column" on already-updated schemas,
+        // which is the expected outcome.
         if !column_exists(&conn, "tasks", "recurrence") {
             let _ = conn.execute(
                 "ALTER TABLE tasks ADD COLUMN recurrence TEXT DEFAULT NULL",
@@ -128,6 +133,18 @@ impl DbHandle {
         if !column_exists(&conn, "tasks", "started_at") {
             let _ = conn.execute(
                 "ALTER TABLE tasks ADD COLUMN started_at TEXT DEFAULT NULL",
+                [],
+            );
+        }
+        if !column_exists(&conn, "tasks", "is_presceduled") {
+            let _ = conn.execute(
+                "ALTER TABLE tasks ADD COLUMN is_presceduled INTEGER DEFAULT 0",
+                [],
+            );
+        }
+        if !column_exists(&conn, "tasks", "scheduled_at") {
+            let _ = conn.execute(
+                "ALTER TABLE tasks ADD COLUMN scheduled_at TEXT DEFAULT NULL",
                 [],
             );
         }
@@ -187,8 +204,8 @@ impl DbHandle {
         };
 
         conn.execute(
-            "INSERT INTO tasks (title, description, urgency, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at)
-             VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6, ?7, ?8, ?9)",
+            "INSERT INTO tasks (title, description, urgency, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at)
+             VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6, ?7, ?8, ?9, 0, NULL)",
             rusqlite::params![
                 title,
                 description,
@@ -215,25 +232,69 @@ impl DbHandle {
             tags: tags.map(|s| s.to_string()),
             time_limit_minutes,
             started_at,
+            is_presceduled: 0,
+            scheduled_at: None,
         })
     }
 
-    pub fn get_all_tasks(&self) -> Result<Vec<Task>, String> {
+    /// Insert a pre-scheduled task. Sets `is_presceduled = 1` and
+    /// `scheduled_at` to the given ISO datetime. Pre-scheduled tasks
+    /// are hidden from the normal active task lists until the
+    /// scheduler activates them.
+    pub fn create_presceduled_task(
+        &self,
+        title: &str,
+        description: &str,
+        urgency: &str,
+        scheduled_at: &str,
+        due_time: &str,
+        time_limit_minutes: Option<i64>,
+        tags: Option<&str>,
+    ) -> Result<i64, String> {
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let started_at = if time_limit_minutes.is_some() {
+            Some(chrono::Local::now().to_rfc3339())
+        } else {
+            None
+        };
+
+        conn.execute(
+            "INSERT INTO tasks (title, description, urgency, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at)
+             VALUES (?1, ?2, ?3, ?4, 0, ?5, NULL, ?6, ?7, ?8, 1, ?9)",
+            rusqlite::params![
+                title,
+                description,
+                urgency,
+                due_time,
+                now,
+                tags,
+                time_limit_minutes,
+                started_at,
+                scheduled_at
+            ],
+        ).map_err(|e| format!("Failed to create pre-scheduled task: {e}"))?;
+
+        Ok(conn.last_insert_rowid())
+    }
+
+    /// Returns all pre-scheduled tasks whose `scheduled_at` has passed
+    /// and that are not yet completed. Used by the scheduler to
+    /// determine which tasks to activate.
+    pub fn get_due_presceduled_tasks(&self, now: &str) -> Result<Vec<Task>, String> {
         let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
         let mut stmt = conn.prepare(
-            "SELECT id, title, description, urgency, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at
+            "SELECT id, title, description, urgency, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at
              FROM tasks
-             ORDER BY
-                CASE urgency
-                    WHEN 'critical' THEN 0
-                    WHEN 'medium' THEN 1
-                    WHEN 'low' THEN 2
-                END,
-                created_at ASC"
-        ).map_err(|e| format!("Failed to prepare query: {e}"))?;
+             WHERE is_presceduled = 1
+               AND scheduled_at IS NOT NULL
+               AND scheduled_at <= ?1
+               AND completed = 0
+             ORDER BY scheduled_at ASC"
+        ).map_err(|e| format!("Failed to prepare due presceduled query: {e}"))?;
 
         let tasks = stmt
-            .query_map([], |row| {
+            .query_map(rusqlite::params![now], |row| {
                 Ok(Task {
                     id: Some(row.get(0)?),
                     title: row.get(1)?,
@@ -246,6 +307,8 @@ impl DbHandle {
                     tags: row.get(8)?,
                     time_limit_minutes: row.get(9)?,
                     started_at: row.get(10)?,
+                    is_presceduled: row.get(11)?,
+                    scheduled_at: row.get(12)?,
                 })
             })
             .map_err(|e| format!("Query error: {e}"))?
@@ -255,12 +318,64 @@ impl DbHandle {
         Ok(tasks)
     }
 
-    pub fn get_incomplete_tasks(&self) -> Result<Vec<Task>, String> {
+    /// Returns all currently-pending pre-scheduled tasks (not yet due
+    /// or due but not yet activated by the scheduler). Surfaced in the
+    /// main app's Scheduled section so users can see and cancel them.
+    pub fn get_presceduled_tasks(&self) -> Result<Vec<Task>, String> {
         let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
         let mut stmt = conn.prepare(
-            "SELECT id, title, description, urgency, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at
+            "SELECT id, title, description, urgency, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at
              FROM tasks
-             WHERE completed = 0
+             WHERE is_presceduled = 1 AND completed = 0
+             ORDER BY scheduled_at ASC"
+        ).map_err(|e| format!("Failed to prepare presceduled query: {e}"))?;
+
+        let tasks = stmt
+            .query_map([], |row| {
+                Ok(Task {
+                    id: Some(row.get(0)?),
+                    title: row.get(1)?,
+                    description: row.get(2)?,
+                    urgency: row.get(3)?,
+                    due_time: row.get(4)?,
+                    completed: row.get::<_, i32>(5)? != 0,
+                    created_at: row.get(6)?,
+                    recurrence: row.get(7)?,
+                    tags: row.get(8)?,
+                    time_limit_minutes: row.get(9)?,
+                    started_at: row.get(10)?,
+                    is_presceduled: row.get(11)?,
+                    scheduled_at: row.get(12)?,
+                })
+            })
+            .map_err(|e| format!("Query error: {e}"))?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        Ok(tasks)
+    }
+
+    /// Sets `is_presceduled = 0` for the given task id, turning it into
+    /// a normal active task. Called by the scheduler when a pre-scheduled
+    /// task's datetime arrives.
+    pub fn activate_presceduled_task(&self, id: i64) -> Result<(), String> {
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        conn.execute(
+            "UPDATE tasks SET is_presceduled = 0 WHERE id = ?1",
+            rusqlite::params![id],
+        )
+        .map_err(|e| format!("Failed to activate pre-scheduled task: {e}"))?;
+        Ok(())
+    }
+
+    /// Active (non-prescheduled) tasks only — used for the main list
+    /// and for opening floating cards on startup.
+    pub fn get_all_tasks(&self) -> Result<Vec<Task>, String> {
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let mut stmt = conn.prepare(
+            "SELECT id, title, description, urgency, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at
+             FROM tasks
+             WHERE is_presceduled = 0
              ORDER BY
                 CASE urgency
                     WHEN 'critical' THEN 0
@@ -284,6 +399,50 @@ impl DbHandle {
                     tags: row.get(8)?,
                     time_limit_minutes: row.get(9)?,
                     started_at: row.get(10)?,
+                    is_presceduled: row.get(11)?,
+                    scheduled_at: row.get(12)?,
+                })
+            })
+            .map_err(|e| format!("Query error: {e}"))?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        Ok(tasks)
+    }
+
+    /// Active (non-prescheduled) incomplete tasks only — used to drive
+    /// the floating card stack and the due-date notification checker.
+    pub fn get_incomplete_tasks(&self) -> Result<Vec<Task>, String> {
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let mut stmt = conn.prepare(
+            "SELECT id, title, description, urgency, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at
+             FROM tasks
+             WHERE completed = 0 AND is_presceduled = 0
+             ORDER BY
+                CASE urgency
+                    WHEN 'critical' THEN 0
+                    WHEN 'medium' THEN 1
+                    WHEN 'low' THEN 2
+                END,
+                created_at ASC"
+        ).map_err(|e| format!("Failed to prepare query: {e}"))?;
+
+        let tasks = stmt
+            .query_map([], |row| {
+                Ok(Task {
+                    id: Some(row.get(0)?),
+                    title: row.get(1)?,
+                    description: row.get(2)?,
+                    urgency: row.get(3)?,
+                    due_time: row.get(4)?,
+                    completed: row.get::<_, i32>(5)? != 0,
+                    created_at: row.get(6)?,
+                    recurrence: row.get(7)?,
+                    tags: row.get(8)?,
+                    time_limit_minutes: row.get(9)?,
+                    started_at: row.get(10)?,
+                    is_presceduled: row.get(11)?,
+                    scheduled_at: row.get(12)?,
                 })
             })
             .map_err(|e| format!("Query error: {e}"))?
@@ -296,7 +455,7 @@ impl DbHandle {
     pub fn get_task_by_id(&self, id: i64) -> Result<Task, String> {
         let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
         conn.query_row(
-            "SELECT id, title, description, urgency, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at
+            "SELECT id, title, description, urgency, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at
              FROM tasks WHERE id = ?1",
             rusqlite::params![id],
             |row| {
@@ -312,6 +471,8 @@ impl DbHandle {
                     tags: row.get(8)?,
                     time_limit_minutes: row.get(9)?,
                     started_at: row.get(10)?,
+                    is_presceduled: row.get(11)?,
+                    scheduled_at: row.get(12)?,
                 })
             }
         ).map_err(|e| format!("Failed to get task by id: {e}"))
@@ -371,7 +532,7 @@ impl DbHandle {
         let n: i64 = conn
             .query_row(
                 "SELECT COUNT(*) FROM tasks
-                 WHERE due_time != '' AND due_time < ?1 AND completed = 0",
+                 WHERE due_time != '' AND due_time < ?1 AND completed = 0 AND is_presceduled = 0",
                 rusqlite::params![today],
                 |row| row.get(0),
             )
@@ -385,7 +546,7 @@ impl DbHandle {
         let n: i64 = conn
             .query_row(
                 "SELECT COUNT(*) FROM tasks
-                 WHERE due_time = ?1 AND completed = 0",
+                 WHERE due_time = ?1 AND completed = 0 AND is_presceduled = 0",
                 rusqlite::params![today],
                 |row| row.get(0),
             )
@@ -400,7 +561,7 @@ impl DbHandle {
         let n: i64 = conn
             .query_row(
                 "SELECT COUNT(*) FROM tasks
-                 WHERE due_time = ?1 AND completed = 0",
+                 WHERE due_time = ?1 AND completed = 0 AND is_presceduled = 0",
                 rusqlite::params![date],
                 |row| row.get(0),
             )
@@ -413,7 +574,7 @@ impl DbHandle {
         let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
         let n: i64 = conn
             .query_row(
-                "SELECT COUNT(*) FROM tasks WHERE completed = 0",
+                "SELECT COUNT(*) FROM tasks WHERE completed = 0 AND is_presceduled = 0",
                 [],
                 |row| row.get(0),
             )

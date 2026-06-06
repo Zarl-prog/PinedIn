@@ -1,6 +1,7 @@
 pub mod commands;
 pub mod db;
 pub mod notifications;
+pub mod scheduler;
 pub mod tray;
 pub mod window;
 
@@ -69,6 +70,13 @@ pub fn run() {
             let _ = app.handle().notification().request_permission();
             notifications::start_notification_checker(app.handle().clone());
 
+            // Start the pre-schedule checker. Wakes every 30s, finds any
+            // pre-scheduled tasks whose time has arrived, activates them
+            // and spawns a floating card. Also runs once immediately on
+            // startup so tasks whose time arrived while the app was
+            // closed get caught up.
+            scheduler::start_scheduler(app.handle().clone());
+
             // Register global hotkey: Ctrl+Shift+Space opens quick-add popup from anywhere,
             // even when the main window is minimized or not focused.
             app.global_shortcut().on_shortcut(
@@ -118,6 +126,8 @@ pub fn run() {
             commands::install_update,
             commands::get_daily_digest,
             commands::fire_time_limit_notification,
+            commands::add_presceduled_task,
+            commands::get_presceduled_tasks,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

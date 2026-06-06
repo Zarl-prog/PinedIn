@@ -15,9 +15,11 @@ interface TaskListProps {
  */
 export default function TaskList({ searchQuery }: TaskListProps) {
   const tasks = useReminderStore((s) => s.tasks);
+  const scheduledTasks = useReminderStore((s) => s.scheduledTasks);
   const completeTask = useReminderStore((s) => s.completeTask);
   const uncompleteFromStore = useReminderStore((s) => s.uncompleteTask);
   const removeTask = useReminderStore((s) => s.removeTask);
+  const removeScheduledTask = useReminderStore((s) => s.removeScheduledTask);
   const setAddTaskOpen = useReminderStore((s) => s.setAddTaskOpen);
   const setEditingTask = useReminderStore((s) => s.setEditingTask);
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -38,6 +40,16 @@ export default function TaskList({ searchQuery }: TaskListProps) {
         t.description.toLowerCase().includes(q),
     );
   }, [tasks, searchQuery]);
+
+  const filteredScheduledTasks = useMemo(() => {
+    if (!searchQuery.trim()) return scheduledTasks;
+    const q = searchQuery.toLowerCase();
+    return scheduledTasks.filter(
+      (t) =>
+        t.title.toLowerCase().includes(q) ||
+        t.description.toLowerCase().includes(q),
+    );
+  }, [scheduledTasks, searchQuery]);
 
   const incompleteTasks = filteredTasks.filter((t) => !t.completed);
   const completedTasks = filteredTasks.filter((t) => t.completed);
@@ -61,7 +73,9 @@ export default function TaskList({ searchQuery }: TaskListProps) {
         </div>
       )}
       <AnimatePresence mode="popLayout">
-        {incompleteTasks.length === 0 && completedTasks.length === 0 ? (
+        {incompleteTasks.length === 0 &&
+        completedTasks.length === 0 &&
+        filteredScheduledTasks.length === 0 ? (
           <EmptyState onAdd={() => setAddTaskOpen(true)} />
         ) : (
           <>
@@ -151,6 +165,37 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                       setExpandedId(null);
                     }}
                     completed
+                  />
+                ))}
+              </>
+            )}
+
+            {/* Scheduled divider */}
+            {filteredScheduledTasks.length > 0 && (
+              <>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    margin: "16px 0 8px",
+                  }}
+                >
+                  <div style={{ flex: 1, height: "1px", background: "#1a1a1a" }} />
+                  <span style={{ fontSize: "12px", color: "#333", flexShrink: 0 }}>
+                    Scheduled ({filteredScheduledTasks.length})
+                  </span>
+                  <div style={{ flex: 1, height: "1px", background: "#1a1a1a" }} />
+                </div>
+                {filteredScheduledTasks.map((task) => (
+                  <ScheduledRow
+                    key={task.id}
+                    task={task}
+                    onCancel={() => {
+                      if (task.id) {
+                        removeScheduledTask(task.id).catch(reportError);
+                      }
+                    }}
                   />
                 ))}
               </>
@@ -399,6 +444,87 @@ function TaskCardItem({
   );
 }
 
+// ─── Scheduled Row ───────────────────────────────────────────────────────────
+
+function ScheduledRow({ task, onCancel }: { task: Task; onCancel: () => void }) {
+  const urgency = task.urgency as "low" | "medium" | "critical";
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8, height: 0, marginBottom: 0 }}
+      transition={{ duration: 0.15 }}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        padding: "10px 12px",
+        background: "#0a0a0a",
+        border: "1px solid #1a1a1a",
+        borderRadius: "8px",
+        marginBottom: "6px",
+      }}
+    >
+      <span style={{ fontSize: "12px", color: "#555", flexShrink: 0 }}>⏰</span>
+      <span
+        style={{
+          fontSize: "13px",
+          color: "#888",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          flex: 1,
+          minWidth: 0,
+        }}
+      >
+        {task.title}
+      </span>
+      <UrgencyBadge urgency={urgency} />
+      <span
+        style={{
+          fontSize: "12px",
+          color: "#444",
+          flexShrink: 0,
+        }}
+      >
+        {formatScheduledTime(task.scheduled_at)}
+      </span>
+      <button
+        onClick={onCancel}
+        title="Cancel scheduled task"
+        style={{
+          width: "22px",
+          height: "22px",
+          borderRadius: "6px",
+          border: "1px solid #222",
+          background: "transparent",
+          color: "#666",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "12px",
+          flexShrink: 0,
+          transition: "all 0.15s ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "#111";
+          e.currentTarget.style.color = "#fff";
+          e.currentTarget.style.borderColor = "#444";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "transparent";
+          e.currentTarget.style.color = "#666";
+          e.currentTarget.style.borderColor = "#222";
+        }}
+      >
+        ✕
+      </button>
+    </motion.div>
+  );
+}
+
 // ─── Empty State ─────────────────────────────────────────────────────────────
 
 function EmptyState({ onAdd }: { onAdd: () => void }) {
@@ -483,4 +609,19 @@ function formatTaskDate(dateStr: string): string {
     month: "short",
     day: "numeric",
   });
+}
+
+function formatScheduledTime(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const dateStr = d.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+  const timeStr = d.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return `${dateStr} at ${timeStr}`;
 }

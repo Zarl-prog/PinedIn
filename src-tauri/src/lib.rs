@@ -8,6 +8,7 @@ use db::DbHandle;
 use std::sync::Arc;
 use tauri::Manager;
 use tauri_plugin_autostart::MacosLauncher;
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
 use tauri_plugin_notification::NotificationExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -15,18 +16,21 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_notification::init())
-        .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec![])))
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            Some(vec![]),
+        ))
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_global_shortcut::init())
         .setup(|app| {
             let app_data_dir = app
                 .path()
                 .app_data_dir()
                 .expect("Failed to get app data directory");
 
-            let db_handle = Arc::new(
-                DbHandle::new(app_data_dir).expect("Failed to initialize database"),
-            );
+            let db_handle =
+                Arc::new(DbHandle::new(app_data_dir).expect("Failed to initialize database"));
 
             app.manage(db_handle.clone());
 
@@ -51,6 +55,15 @@ pub fn run() {
             // and start the hourly background checker
             let _ = app.handle().notification().request_permission();
             notifications::start_notification_checker(app.handle().clone());
+
+            // Register global hotkey: Ctrl+Shift+Space opens quick-add popup from anywhere,
+            // even when the main window is minimized or not focused.
+            app.global_shortcut().on_shortcut(
+                Shortcut::new(Some(Modifiers::CTRL | Modifiers::SHIFT), Code::Space),
+                |app, _shortcut, _event| {
+                    window::open_quick_add_window(app);
+                },
+            )?;
 
             Ok(())
         })

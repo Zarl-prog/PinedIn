@@ -176,3 +176,27 @@ pub fn open_quick_add_window(app: &AppHandle) {
         .build()
         .expect("Failed to open quick add window");
 }
+
+/// Open the small always-on-top Daily Digest popup (420x220) that
+/// summarizes the user's day. The window is centered, non-focusable
+/// (so it doesn't steal focus from the main app), and skipped from the
+/// taskbar. If it's already open, just focus it.
+pub fn open_daily_digest_window(app: &AppHandle) {
+    let label = "daily_digest";
+
+    if let Some(w) = app.get_webview_window(label) {
+        let _ = w.set_focus();
+        return;
+    }
+
+    WebviewWindowBuilder::new(app, label, WebviewUrl::App("daily-digest.html".into()))
+        .inner_size(420.0, 220.0)
+        .resizable(false)
+        .decorations(false)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .focused(false)
+        .center()
+        .build()
+        .expect("Failed to open daily digest window");
+}

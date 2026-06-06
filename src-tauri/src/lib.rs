@@ -71,6 +71,16 @@ pub fn run() {
                 check_for_updates(handle).await;
             });
 
+            // Open the daily digest popup 2s after launch so the main
+            // window has time to render first. Using spawn_blocking with
+            // std::thread::sleep avoids pulling in a tokio dep just for
+            // a one-shot timer.
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn_blocking(move || {
+                std::thread::sleep(std::time::Duration::from_secs(2));
+                window::open_daily_digest_window(&handle);
+            });
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -93,6 +103,7 @@ pub fn run() {
             commands::set_shake_interval,
             commands::trigger_task_edit,
             commands::install_update,
+            commands::get_daily_digest,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

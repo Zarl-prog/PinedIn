@@ -127,3 +127,16 @@ export async function disableAutostart(): Promise<void> {
 export async function isAutostartEnabled(): Promise<boolean> {
   return invoke<boolean>("is_autostart_enabled");
 }
+
+// ─── Daily Digest Commands ──────────────────────────────────────────────────
+
+export interface DigestData {
+  overdue: number;
+  due_today: number;
+  unfinished_yesterday: number;
+  total_active: number;
+}
+
+export async function getDailyDigest(): Promise<DigestData> {
+  return invoke<DigestData>("get_daily_digest");
+}

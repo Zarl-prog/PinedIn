@@ -329,6 +329,65 @@ impl DbHandle {
         Ok(())
     }
 
+    // ─── Daily Digest Queries ──────────────────────────────────────────────
+
+    /// Count tasks due strictly before `today` that are still incomplete.
+    /// Tasks with an empty due_time are excluded (never scheduled).
+    pub fn count_overdue_tasks(&self, today: &str) -> Result<i64, String> {
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let n: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM tasks
+                 WHERE due_time != '' AND due_time < ?1 AND completed = 0",
+                rusqlite::params![today],
+                |row| row.get(0),
+            )
+            .map_err(|e| format!("Failed to count overdue tasks: {e}"))?;
+        Ok(n)
+    }
+
+    /// Count incomplete tasks whose due_time is exactly `today`.
+    pub fn count_due_today(&self, today: &str) -> Result<i64, String> {
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let n: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM tasks
+                 WHERE due_time = ?1 AND completed = 0",
+                rusqlite::params![today],
+                |row| row.get(0),
+            )
+            .map_err(|e| format!("Failed to count tasks due today: {e}"))?;
+        Ok(n)
+    }
+
+    /// Count incomplete tasks whose due_time is exactly `date` — used
+    /// to surface items that were due yesterday and still aren't done.
+    pub fn count_unfinished_from_date(&self, date: &str) -> Result<i64, String> {
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let n: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM tasks
+                 WHERE due_time = ?1 AND completed = 0",
+                rusqlite::params![date],
+                |row| row.get(0),
+            )
+            .map_err(|e| format!("Failed to count unfinished tasks: {e}"))?;
+        Ok(n)
+    }
+
+    /// Count every incomplete task, regardless of due date.
+    pub fn count_active_tasks(&self) -> Result<i64, String> {
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let n: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM tasks WHERE completed = 0",
+                [],
+                |row| row.get(0),
+            )
+            .map_err(|e| format!("Failed to count active tasks: {e}"))?;
+        Ok(n)
+    }
+
     // ─── Settings ────────────────────────────────────────────────────────
 
     pub fn get_settings_map(&self) -> Result<std::collections::HashMap<String, String>, String> {

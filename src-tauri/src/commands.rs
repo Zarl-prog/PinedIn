@@ -354,3 +354,33 @@ pub async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
     }
     Ok(())
 }
+
+// ─── Daily Digest ──────────────────────────────────────────────────────────
+
+#[derive(serde::Serialize)]
+pub struct DigestData {
+    pub overdue: i64,
+    pub due_today: i64,
+    pub unfinished_yesterday: i64,
+    pub total_active: i64,
+}
+
+#[tauri::command]
+pub fn get_daily_digest(db: State<'_, Arc<DbHandle>>) -> Result<DigestData, String> {
+    let today = chrono::Local::now().date_naive().to_string();
+    let yesterday = (chrono::Local::now() - chrono::Duration::days(1))
+        .date_naive()
+        .to_string();
+
+    let overdue = db.count_overdue_tasks(&today)?;
+    let due_today = db.count_due_today(&today)?;
+    let unfinished_yesterday = db.count_unfinished_from_date(&yesterday)?;
+    let total_active = db.count_active_tasks()?;
+
+    Ok(DigestData {
+        overdue,
+        due_today,
+        unfinished_yesterday,
+        total_active,
+    })
+}

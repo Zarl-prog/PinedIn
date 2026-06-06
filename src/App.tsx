@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen } from "@tauri-apps/api/event";
@@ -85,6 +85,32 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const incompleteCount = tasks.filter((t) => !t.completed).length;
   const isAnyModalOpen = isAddTaskOpen || isSettingsOpen;
+
+  // ─── Live status dot — slow green pulse, hourly red alert for 1 min ─────
+  const liveDotRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const dot = liveDotRef.current;
+    if (!dot) return;
+
+    let alertTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const startAlert = () => {
+      dot.classList.remove("live");
+      dot.classList.add("alert");
+      alertTimeout = setTimeout(() => {
+        dot.classList.remove("alert");
+        dot.classList.add("live");
+        alertTimeout = null;
+      }, 60_000);
+    };
+
+    const interval = setInterval(startAlert, 60 * 60 * 1000);
+    return () => {
+      clearInterval(interval);
+      if (alertTimeout) clearTimeout(alertTimeout);
+    };
+  }, []);
 
   return (
     <div
@@ -265,7 +291,14 @@ export default function App() {
             flexShrink: 0,
           }}
         >
-          <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span
+              ref={liveDotRef}
+              id="live-dot"
+              className="dot live"
+              aria-label="App heartbeat"
+              title="App heartbeat — blinks red once an hour"
+            />
             <span style={{ fontSize: "16px", fontWeight: 600, color: "#ededed" }}>
               Tasks
             </span>

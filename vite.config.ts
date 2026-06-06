@@ -10,7 +10,8 @@ export default defineConfig(async () => ({
     rollupOptions: {
       input: {
         main: "index.html",
-        "task-card": "task-card.html",
+        taskCard: "task-card.html",
+        quickAdd: "quick-add.html"
       }
     }
   },

@@ -20,6 +20,9 @@ interface TaskCardProps {
 
 const REMIND_OPTIONS = [5, 15, 30, 60] as const;
 
+const COLLAPSED_HEIGHT = 120;
+const EXPANDED_HEIGHT = 220;
+
 const URGENCY_LABEL: Record<string, string> = {
   critical: "Critical",
   medium: "Medium",
@@ -53,7 +56,7 @@ export default function TaskCard({
   const [expanded, setExpanded] = useState(false);
   const [showRemindPicker, setShowRemindPicker] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
+  const liveDotRef = useRef<HTMLSpanElement>(null);
   const mouseDownPos = useRef({ x: 0, y: 0 });
   const dragging = useRef(false);
   const interacting = useRef(false);
@@ -136,45 +139,36 @@ export default function TaskCard({
     return Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
   }, [dueTime]);
 
-  // Initial measurement and window sizing
+  // Set initial window size to collapsed on mount. Two fixed sizes only —
+  // zero measurement, zero dynamic resizing. Click toggles between these
+  // exact sizes in handleClick below.
   useEffect(() => {
-    const measure = async () => {
-      if (containerRef.current) {
-        const h = containerRef.current.scrollHeight;
-        await getCurrentWindow().setSize(new LogicalSize(280, Math.ceil(h)));
-      }
-    };
-    measure();
+    getCurrentWindow().setSize(new LogicalSize(280, COLLAPSED_HEIGHT));
   }, []);
 
-  // Zero-flash resize logic: react to state changes and structural content
-  // mutations only. We deliberately do NOT observe attribute changes — the
-  // motion.div's animate controls mutate inline `style` on every frame of
-  // the shake animation, which would re-fire this effect and call
-  // setSize() in a feedback loop.
+  // ─── Live status dot — slow green pulse, hourly red alert for 1 min ─────
   useEffect(() => {
-    const measure = async () => {
-      if (containerRef.current) {
-        // Use scrollHeight to capture the full desired height even if clipped
-        const h = containerRef.current.scrollHeight;
-        await getCurrentWindow().setSize(new LogicalSize(280, Math.ceil(h)));
-      }
+    const dot = liveDotRef.current;
+    if (!dot) return;
+
+    let alertTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const startAlert = () => {
+      dot.classList.remove("live");
+      dot.classList.add("alert");
+      alertTimeout = setTimeout(() => {
+        dot.classList.remove("alert");
+        dot.classList.add("live");
+        alertTimeout = null;
+      }, 60_000);
     };
 
-    // Immediate measure for the "1px start"
-    measure();
-
-    const observer = new MutationObserver(measure);
-    if (containerRef.current) {
-      observer.observe(containerRef.current, {
-        childList: true,
-        subtree: true,
-        characterData: true,
-      });
-    }
-
-    return () => observer.disconnect();
-  }, [expanded, showRemindPicker]);
+    const interval = setInterval(startAlert, 60 * 60 * 1000);
+    return () => {
+      clearInterval(interval);
+      if (alertTimeout) clearTimeout(alertTimeout);
+    };
+  }, []);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -208,15 +202,13 @@ export default function TaskCard({
     async (e: React.MouseEvent) => {
       if ((e.target as HTMLElement).closest("button")) return;
       if (dragging.current) return;
-      
+
       const next = !expanded;
-      
-      // Step 1: immediately shrink window to near zero so no flash
-      await getCurrentWindow().setSize(new LogicalSize(280, 1));
-      
-      // Step 2: update state
       setExpanded(next);
       setShowRemindPicker(false);
+      await getCurrentWindow().setSize(
+        new LogicalSize(280, next ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT)
+      );
     },
     [expanded],
   );
@@ -231,11 +223,8 @@ export default function TaskCard({
   }, [taskId]);
 
   const handleRemindClick = useCallback(
-    async (e: React.MouseEvent) => {
+    (e: React.MouseEvent) => {
       e.stopPropagation();
-      // Step 1: immediately shrink window
-      await getCurrentWindow().setSize(new LogicalSize(280, 1));
-      // Step 2: toggle
       setShowRemindPicker((prev) => !prev);
     },
     [],
@@ -281,7 +270,7 @@ export default function TaskCard({
             style={{
               fontSize: "13px",
               fontWeight: 500,
-              color: "#ededed",
+              color: "#ffffff",
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
@@ -296,14 +285,22 @@ export default function TaskCard({
             {hasRecurrence && (
               <span
                 title={`Repeats ${recurrence}`}
-                style={{ fontSize: "11px", color: "#444", flexShrink: 0 }}
+                style={{ fontSize: "11px", color: "#888888", flexShrink: 0 }}
               >
                 ↻
               </span>
             )}
           </span>
-          {/* Urgency badge */}
-          <UrgencyBadge urgency={(urgency as "low" | "medium" | "critical")} />
+          {/* Urgency badge + live dot */}
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+            <span
+              ref={liveDotRef}
+              className="dot live"
+              aria-label="Task heartbeat"
+              title="Task heartbeat — blinks red once an hour"
+            />
+            <UrgencyBadge urgency={(urgency as "low" | "medium" | "critical")} />
+          </div>
         </div>
 
         {/* Description */}
@@ -311,7 +308,7 @@ export default function TaskCard({
           <p
             style={{
               fontSize: "11px",
-              color: "#444",
+              color: "#888888",
               marginTop: "4px",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -331,7 +328,7 @@ export default function TaskCard({
                 key={tag}
                 style={{
                   fontSize: "10px",
-                  color: "#666",
+                  color: "#888888",
                   background: "#0d0d0d",
                   border: "1px solid #1e1e1e",
                   borderRadius: "999px",
@@ -353,10 +350,10 @@ export default function TaskCard({
               gap: "4px",
               marginTop: "6px",
               fontSize: "11px",
-              color: "#333",
+              color: "#888888",
             }}
           >
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#888888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
               <line x1="16" y1="2" x2="16" y2="6" />
               <line x1="8" y1="2" x2="8" y2="6" />
@@ -391,7 +388,6 @@ export default function TaskCard({
 
       {/* Expandable content — motion.div animates height, opacity and scale */}
       <motion.div
-        ref={contentRef}
         initial={false}
         animate={{ 
           height: expanded ? "auto" : 0,
@@ -412,7 +408,7 @@ export default function TaskCard({
             flexDirection: "column",
             gap: "8px",
             paddingTop: "12px",
-            borderTop: "1px solid #1a1a1a",
+            borderTop: "1px solid #2a2a2a",
           }}
         >
           {/* Row 1: Primary Actions */}
@@ -480,7 +476,7 @@ export default function TaskCard({
             transition={{ duration: 0.1 }}
             style={{ marginTop: "8px" }}
           >
-            <div style={{ fontSize: "11px", color: "#444", marginBottom: "6px" }}>
+            <div style={{ fontSize: "11px", color: "#888888", marginBottom: "6px" }}>
               Remind me in…
             </div>
             <div style={{ display: "flex", gap: "6px" }}>

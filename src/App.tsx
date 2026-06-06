@@ -155,10 +155,10 @@ export default function App() {
             </svg>
           </div>
           <div>
-            <span style={{ fontSize: "15px", fontWeight: 600, color: "#ededed", lineHeight: 1.2 }}>
+            <span style={{ fontSize: "16px", fontWeight: 600, color: "#ededed", lineHeight: 1.2 }}>
               PinedIn
             </span>
-            <div style={{ fontSize: "12px", color: "#444", lineHeight: 1.2, marginTop: "2px" }}>
+            <div style={{ fontSize: "13px", color: "#444", lineHeight: 1.2, marginTop: "2px" }}>
               Persistent task overlay
             </div>
           </div>
@@ -299,17 +299,17 @@ export default function App() {
               aria-label="App heartbeat"
               title="App heartbeat — blinks red once an hour"
             />
-            <span style={{ fontSize: "16px", fontWeight: 600, color: "#ededed" }}>
+            <span style={{ fontSize: "17px", fontWeight: 600, color: "#ededed" }}>
               Tasks
             </span>
-            <span style={{ fontSize: "12px", color: "#444" }}>
+            <span style={{ fontSize: "13px", color: "#444" }}>
               {incompleteCount} task{incompleteCount !== 1 ? "s" : ""} remaining
             </span>
           </div>
           <button
             onClick={() => setAddTaskOpen(true)}
             style={{
-              fontSize: "12px",
+              fontSize: "13px",
               fontWeight: 600,
               padding: "7px 16px",
               borderRadius: "8px",
@@ -370,7 +370,7 @@ export default function App() {
           padding: "10px 16px",
           borderTop: "1px solid #1a1a1a",
           textAlign: "center",
-          fontSize: "12px",
+          fontSize: "13px",
           color: "#2a2a2a",
           flexShrink: 0,
         }}
@@ -419,17 +419,17 @@ export default function App() {
             }}
           >
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: "13px", fontWeight: 600, color: "#ededed" }}>
+              <div style={{ fontSize: "14px", fontWeight: 600, color: "#ededed" }}>
                 Update v{updateInfo.version} available
               </div>
-              <div style={{ fontSize: "11px", color: "#555", marginTop: "2px" }}>
+              <div style={{ fontSize: "12px", color: "#555", marginTop: "2px" }}>
                 A new version is ready to install
               </div>
             </div>
             <button
               onClick={handleInstallUpdate}
               style={{
-                fontSize: "12px",
+                fontSize: "13px",
                 fontWeight: 600,
                 padding: "7px 14px",
                 borderRadius: "8px",
@@ -448,7 +448,7 @@ export default function App() {
             <button
               onClick={() => setUpdateInfo(null)}
               style={{
-                fontSize: "14px",
+                fontSize: "15px",
                 color: "#555",
                 background: "none",
                 border: "none",
@@ -485,8 +485,8 @@ export default function App() {
               boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
             }}
           >
-            <span style={{ fontSize: "13px", color: "#888" }}>⏳</span>
-            <span style={{ fontSize: "13px", color: "#ededed" }}>
+            <span style={{ fontSize: "14px", color: "#888" }}>⏳</span>
+            <span style={{ fontSize: "14px", color: "#ededed" }}>
               Installing update…
             </span>
           </motion.div>

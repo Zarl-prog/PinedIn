@@ -6,7 +6,7 @@ pub mod window;
 
 use db::DbHandle;
 use std::sync::Arc;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
 use tauri_plugin_notification::NotificationExt;
@@ -65,6 +65,12 @@ pub fn run() {
                 },
             )?;
 
+            // Spawn a background update check on startup - silent unless one is found
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                check_for_updates(handle).await;
+            });
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -86,7 +92,15 @@ pub fn run() {
             commands::get_shake_interval,
             commands::set_shake_interval,
             commands::trigger_task_edit,
+            commands::install_update,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+async fn check_for_updates(app: tauri::AppHandle) {
+    use tauri_plugin_updater::UpdaterExt;
+    if let Ok(Some(update)) = app.updater().check().await {
+        app.emit("update_available", update.version.clone()).ok();
+    }
 }

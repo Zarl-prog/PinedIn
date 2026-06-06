@@ -337,3 +337,20 @@ pub fn set_shake_interval(
     let _ = app.emit("shake_interval_updated", seconds);
     Ok(())
 }
+
+// ─── Update Commands ───────────────────────────────────────────────────────
+
+#[tauri::command]
+pub async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
+    use tauri_plugin_process::ProcessExt;
+    use tauri_plugin_updater::UpdaterExt;
+
+    if let Ok(Some(update)) = app.updater().check().await {
+        update
+            .download_and_install(|_, _| {}, || {})
+            .await
+            .map_err(|e| e.to_string())?;
+        app.restart();
+    }
+    Ok(())
+}

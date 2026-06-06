@@ -53,7 +53,7 @@ pub fn run() {
             main_window.on_window_event(move |event| {
                 if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                     api.prevent_close();
-                    main_window_clone.hide().unwrap();
+                    main_window_clone.hide().ok();
                 }
             });
 

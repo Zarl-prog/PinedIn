@@ -12,6 +12,8 @@ export interface Task {
   created_at: string;
   recurrence: string | null;
   tags: string | null;
+  time_limit_minutes: number | null;
+  started_at: string | null;
 }
 
 export interface AppSettings {
@@ -27,6 +29,7 @@ export async function createTask(
   due_time: string,
   recurrence?: string | null,
   tags?: string | null,
+  timeLimitMinutes?: number | null,
 ): Promise<Task> {
   return invoke<Task>("create_task", {
     title,
@@ -35,6 +38,7 @@ export async function createTask(
     dueTime: due_time,
     recurrence: recurrence ?? null,
     tags: tags ?? null,
+    timeLimitMinutes: timeLimitMinutes ?? null,
   });
 }
 
@@ -54,6 +58,7 @@ export async function updateTask(
   due_time: string,
   recurrence?: string | null,
   tags?: string | null,
+  timeLimitMinutes?: number | null,
 ): Promise<void> {
   return invoke("update_task", {
     id,
@@ -63,6 +68,7 @@ export async function updateTask(
     dueTime: due_time,
     recurrence: recurrence ?? null,
     tags: tags ?? null,
+    timeLimitMinutes: timeLimitMinutes ?? null,
   });
 }
 
@@ -101,13 +107,20 @@ export async function snoozeTask(id: number): Promise<void> {
   return invoke("snooze_task", { id });
 }
 
+export async function fireTimeLimitNotification(
+  taskId: number,
+  taskTitle: string,
+): Promise<void> {
+  return invoke("fire_time_limit_notification", { taskId, taskTitle });
+}
+
 // ─── Shake Interval Commands ─────────────────────────────────────────────────
 
 export async function getShakeInterval(): Promise<number> {
   return invoke<number>("get_shake_interval");
 }
 
-export async function setShakeInterval(seconds: number): Promise<void> {       
+export async function setShakeInterval(seconds: number): Promise<void> {
   return invoke("set_shake_interval", { seconds });
 }
 

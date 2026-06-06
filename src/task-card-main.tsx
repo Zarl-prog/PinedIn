@@ -15,6 +15,8 @@ interface TaskData {
   created_at: string;
   recurrence: string | null;
   tags: string | null;
+  time_limit_minutes: number | null;
+  started_at: string | null;
 }
 
 async function main() {
@@ -40,6 +42,8 @@ async function main() {
           dueTime={task.due_time}
           recurrence={task.recurrence}
           tags={task.tags}
+          timeLimitMinutes={task.time_limit_minutes}
+          startedAt={task.started_at}
         />
       </React.StrictMode>
     );

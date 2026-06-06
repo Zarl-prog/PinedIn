@@ -36,6 +36,7 @@ export interface OverlayState {
     dueTime: string,
     recurrence?: string | null,
     tags?: string,
+    timeLimitMinutes?: number | null,
   ) => Promise<void>;
   editTask: (
     id: number,
@@ -45,6 +46,7 @@ export interface OverlayState {
     dueTime: string,
     recurrence?: string | null,
     tags?: string | null,
+    timeLimitMinutes?: number | null,
   ) => Promise<void>;
   removeTask: (id: number) => Promise<void>;
   completeTask: (id: number) => Promise<void>;
@@ -94,9 +96,25 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
     }
   },
 
-  addTask: async (title, description, urgency, dueTime, recurrence = null, tags = "") => {
+  addTask: async (
+    title,
+    description,
+    urgency,
+    dueTime,
+    recurrence = null,
+    tags = "",
+    timeLimitMinutes = null,
+  ) => {
     try {
-      const newTask = await createTask(title, description, urgency, dueTime, recurrence, tags || null);
+      const newTask = await createTask(
+        title,
+        description,
+        urgency,
+        dueTime,
+        recurrence,
+        tags || null,
+        timeLimitMinutes,
+      );
       set((state) => ({
         tasks: [...state.tasks, newTask].sort(sortTasks),
       }));
@@ -106,9 +124,27 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
     }
   },
 
-  editTask: async (id, title, description, urgency, dueTime, recurrence = null, tags = null) => {
+  editTask: async (
+    id,
+    title,
+    description,
+    urgency,
+    dueTime,
+    recurrence = null,
+    tags = null,
+    timeLimitMinutes = null,
+  ) => {
     try {
-      await updateTask(id, title, description, urgency, dueTime, recurrence, tags);
+      await updateTask(
+        id,
+        title,
+        description,
+        urgency,
+        dueTime,
+        recurrence,
+        tags,
+        timeLimitMinutes,
+      );
       set((state) => ({
         tasks: state.tasks
           .map((t) =>
@@ -121,6 +157,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
                   due_time: dueTime,
                   recurrence,
                   tags,
+                  time_limit_minutes: timeLimitMinutes,
                 }
               : t,
           )

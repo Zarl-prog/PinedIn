@@ -43,6 +43,19 @@ pub fn run() {
                 let _ = win.show();
             }
 
+            // Intercept the main window's close button: hide instead of
+            // exiting. The process keeps running in the tray so floating
+            // task cards, the global hotkey, and background work all
+            // stay alive. The user brings the window back via the tray.
+            let main_window = app.get_webview_window("main").unwrap();
+            let main_window_clone = main_window.clone();
+            main_window.on_window_event(move |event| {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    main_window_clone.hide().unwrap();
+                }
+            });
+
             // Setup system tray
             tray::setup_tray(app.handle())?;
 

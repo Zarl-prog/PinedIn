@@ -63,7 +63,7 @@
     "updater": {
       "active": true,
       "dialog": false,
-      "pubkey": "RWSx8XzeueDilD4igggwJ07ld0kpl6lbpVbsTZ781D4ShV/wPBWrApy",
+      "pubkey": "RWQa2aKABpwwgFjBWqhpPaTA5QKnQ0xkuH7MIDr1fgC32EOkLEN5NIxf",
       "endpoints": [
         "https://github.com/Zarl-prog/PinedIn/releases/latest/download/latest.json"
       ],

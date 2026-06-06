@@ -16,6 +16,13 @@ const RECURRENCE_OPTIONS = [
   { value: "monthly", label: "Monthly" },
 ] as const;
 
+const TIME_LIMIT_UNITS = [
+  { value: "minutes", label: "minutes" },
+  { value: "hours", label: "hours" },
+] as const;
+
+type TimeLimitUnit = (typeof TIME_LIMIT_UNITS)[number]["value"];
+
 /**
  * AddTaskModal - Monochrome modal for creating or editing tasks.
  * All styling uses the exact palette from the spec: #0a0a0a, #1a1a1a, #ededed, etc.
@@ -37,6 +44,8 @@ export default function AddTaskModal({
   const [recurrence, setRecurrence] = useState<string | null>(null);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
+  const [timeLimitValue, setTimeLimitValue] = useState("");
+  const [timeLimitUnit, setTimeLimitUnit] = useState<TimeLimitUnit>("minutes");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const tagInputRef = useRef<HTMLInputElement>(null);
@@ -56,6 +65,18 @@ export default function AddTaskModal({
           ? editTask.tags.split(",").map((t) => t.trim()).filter(Boolean)
           : [],
       );
+      if (editTask.time_limit_minutes && editTask.time_limit_minutes > 0) {
+        if (editTask.time_limit_minutes % 60 === 0) {
+          setTimeLimitUnit("hours");
+          setTimeLimitValue(String(editTask.time_limit_minutes / 60));
+        } else {
+          setTimeLimitUnit("minutes");
+          setTimeLimitValue(String(editTask.time_limit_minutes));
+        }
+      } else {
+        setTimeLimitUnit("minutes");
+        setTimeLimitValue("");
+      }
     } else {
       resetForm();
     }
@@ -70,6 +91,8 @@ export default function AddTaskModal({
     setRecurrence(null);
     setTags([]);
     setTagInput("");
+    setTimeLimitValue("");
+    setTimeLimitUnit("minutes");
     setError(null);
   };
 
@@ -112,6 +135,11 @@ export default function AddTaskModal({
     setError(null);
 
     const tagsString = tags.length > 0 ? tags.join(",") : "";
+    const timeLimitMinutes = timeLimitValue
+      ? parseInt(timeLimitValue, 10) * (timeLimitUnit === "hours" ? 60 : 1)
+      : null;
+    const safeTimeLimit =
+      timeLimitMinutes && timeLimitMinutes > 0 ? timeLimitMinutes : null;
 
     try {
       if (editTask?.id) {
@@ -123,6 +151,7 @@ export default function AddTaskModal({
           dueDate || "",
           recurrence,
           tagsString || null,
+          safeTimeLimit,
         );
       } else {
         await addTask(
@@ -132,6 +161,7 @@ export default function AddTaskModal({
           dueDate || "",
           recurrence,
           tagsString,
+          safeTimeLimit,
         );
       }
       onClose();
@@ -356,6 +386,61 @@ export default function AddTaskModal({
                     className="input-field"
                     style={{ paddingLeft: "32px" }}
                   />
+                </div>
+              </div>
+
+              {/* Time Limit */}
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    color: "#888",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Time Limit{" "}
+                  <span style={{ color: "#555" }}>(optional)</span>
+                </label>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="No limit"
+                    value={timeLimitValue}
+                    onChange={(e) => setTimeLimitValue(e.target.value)}
+                    style={{
+                      width: "100px",
+                      background: "#0a0a0a",
+                      border: "1px solid #1a1a1a",
+                      borderRadius: "6px",
+                      padding: "8px 10px",
+                      color: "#ffffff",
+                      fontSize: "12px",
+                      fontFamily: "'Geist Mono', monospace",
+                    }}
+                  />
+                  <select
+                    value={timeLimitUnit}
+                    onChange={(e) => setTimeLimitUnit(e.target.value as TimeLimitUnit)}
+                    style={{
+                      background: "#0a0a0a",
+                      border: "1px solid #1a1a1a",
+                      borderRadius: "6px",
+                      padding: "8px 10px",
+                      color: "#ffffff",
+                      fontSize: "12px",
+                      fontFamily: "'Geist Mono', monospace",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {TIME_LIMIT_UNITS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

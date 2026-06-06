@@ -104,6 +104,7 @@ pub fn run() {
             commands::trigger_task_edit,
             commands::install_update,
             commands::get_daily_digest,
+            commands::fire_time_limit_notification,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

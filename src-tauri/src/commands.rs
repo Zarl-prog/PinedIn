@@ -21,6 +21,7 @@ pub fn create_task(
     due_time: String,
     recurrence: Option<String>,
     tags: Option<String>,
+    time_limit_minutes: Option<i64>,
 ) -> Result<Task, String> {
     let task = db.create_task_with_tags(
         &title,
@@ -29,6 +30,7 @@ pub fn create_task(
         &due_time,
         recurrence.as_deref(),
         tags.as_deref(),
+        time_limit_minutes,
     )?;
     emit_tasks_updated(&app, &db);
     notifications::check_due_notifications(&app);
@@ -134,6 +136,7 @@ pub fn complete_task(
             &new_due,
             Some(recurrence.as_str()),
             task.tags.as_deref(),
+            task.time_limit_minutes,
         )?;
 
         // Mark the original as completed
@@ -383,4 +386,22 @@ pub fn get_daily_digest(db: State<'_, Arc<DbHandle>>) -> Result<DigestData, Stri
         unfinished_yesterday,
         total_active,
     })
+}
+
+// ─── Time Limit Notifications ────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn fire_time_limit_notification(
+    app: AppHandle,
+    _task_id: i64,
+    task_title: String,
+) -> Result<(), String> {
+    use tauri_plugin_notification::NotificationExt;
+    app.notification()
+        .builder()
+        .title("Time's up — PinedIn")
+        .body(format!("Time limit reached for: {}", task_title))
+        .show()
+        .map_err(|e| e.to_string())?;
+    Ok(())
 }

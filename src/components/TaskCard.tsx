@@ -4,7 +4,10 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { LogicalSize } from "@tauri-apps/api/dpi";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { getShakeInterval } from "@/lib/tauriCommands";
+import {
+  getShakeInterval,
+  fireTimeLimitNotification,
+} from "@/lib/tauriCommands";
 import { useReminderStore } from "@/store/reminderStore";
 import UrgencyBadge from "./UrgencyBadge";
 
@@ -16,6 +19,8 @@ interface TaskCardProps {
   dueTime: string;
   recurrence?: string | null;
   tags?: string | null;
+  timeLimitMinutes?: number | null;
+  startedAt?: string | null;
 }
 
 const REMIND_OPTIONS = [5, 15, 30, 60] as const;
@@ -52,6 +57,8 @@ export default function TaskCard({
   dueTime,
   recurrence,
   tags,
+  timeLimitMinutes,
+  startedAt,
 }: TaskCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showRemindPicker, setShowRemindPicker] = useState(false);
@@ -138,6 +145,51 @@ export default function TaskCard({
     if (total <= 0) return 100;
     return Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
   }, [dueTime]);
+
+  // ─── Live countdown progress bar for the time limit feature ─────────────
+  const [progress, setProgress] = useState(100);
+  const [barColor, setBarColor] = useState("#ffffff");
+  const [flash, setFlash] = useState(false);
+  const notifiedRef = useRef(false);
+
+  useEffect(() => {
+    if (!timeLimitMinutes || !startedAt) return;
+
+    function calculate() {
+      const totalMs = timeLimitMinutes! * 60 * 1000;
+      const startedAtMs = new Date(startedAt!).getTime();
+      const now = Date.now();
+      const elapsed = now - startedAtMs;
+      const remaining = Math.max(0, totalMs - elapsed);
+      const pct = (remaining / totalMs) * 100;
+
+      setProgress(pct);
+
+      if (pct > 50) setBarColor("#ffffff");
+      else if (pct > 25) setBarColor("#f59e0b");
+      else setBarColor("#ef4444");
+
+      if (pct === 0 && !notifiedRef.current) {
+        notifiedRef.current = true;
+        fireTimeLimitNotification(taskId, title).catch(() => {});
+      }
+    }
+
+    calculate();
+    const interval = setInterval(calculate, 1000);
+    return () => clearInterval(interval);
+  }, [timeLimitMinutes, startedAt, taskId, title]);
+
+  useEffect(() => {
+    if (progress <= 10 && progress > 0) {
+      const t = setInterval(() => setFlash((f) => !f), 500);
+      return () => clearInterval(t);
+    }
+    setFlash(false);
+  }, [progress]);
+
+  const finalBarColor = progress <= 10 ? (flash ? "#ef4444" : "#7f1d1d") : barColor;
+  const showTimeLimitBar = !!timeLimitMinutes && !!startedAt;
 
   // Set initial window size to collapsed on mount. Two fixed sizes only —
   // zero measurement, zero dynamic resizing. Click toggles between these
@@ -260,7 +312,7 @@ export default function TaskCard({
       onClick={handleClick}
       className="v-float"
       animate={controls}
-      style={{ willChange: "transform, background-color" }}
+      style={{ position: "relative", willChange: "transform, background-color" }}
     >
       {/* Summary content — always visible */}
       <div style={{ pointerEvents: "none" }}>
@@ -389,13 +441,13 @@ export default function TaskCard({
       {/* Expandable content — motion.div animates height, opacity and scale */}
       <motion.div
         initial={false}
-        animate={{ 
+        animate={{
           height: expanded ? "auto" : 0,
           opacity: expanded ? 1 : 0,
           scale: expanded ? 1 : 0.98,
           marginTop: expanded ? 12 : 0
         }}
-        transition={{ 
+        transition={{
           height: { type: "spring", stiffness: 350, damping: 35 },
           opacity: { duration: 0.15 },
           scale: { duration: 0.15 }
@@ -448,10 +500,10 @@ export default function TaskCard({
             <button
               className="v-action"
               onClick={(e) => handleAction("delete", e)}
-              style={{ 
-                flex: 1, 
-                textAlign: "center", 
-                fontSize: "11px", 
+              style={{
+                flex: 1,
+                textAlign: "center",
+                fontSize: "11px",
                 padding: "8px 0",
                 color: "#ff4444",
                 borderColor: "#331111"
@@ -502,6 +554,37 @@ export default function TaskCard({
           </motion.div>
         )}
       </motion.div>
+
+      {/* Time limit progress bar — absolute-positioned at bottom of card,
+          full width, 4px tall. Always visible in both collapsed and expanded
+          states. The outer container has position:relative so this sits flush. */}
+      {showTimeLimitBar && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: "4px",
+            background: "#1a1a1a",
+            borderRadius: "0 0 8px 8px",
+            overflow: "hidden",
+            pointerEvents: "none",
+          }}
+        >
+          <motion.div
+            animate={{
+              width: `${progress}%`,
+              backgroundColor: finalBarColor,
+            }}
+            transition={{ duration: 0.8, ease: "linear" }}
+            style={{
+              height: "100%",
+              borderRadius: "0 0 8px 8px",
+            }}
+          />
+        </div>
+      )}
     </motion.div>
   );
 }

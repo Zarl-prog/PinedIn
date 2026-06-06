@@ -61,8 +61,12 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "RWS038f7O6CsWZrOV/Ug84vdH3BVcSkbmgyVtZNFMepMwgPZoUh8koWh",
-      "endpoints": ["https://github.com/Zarl-prog/PinedIn/releases/latest/download/update-{{target}}-{{arch}}.json"],
+      "active": true,
+      "dialog": false,
+      "pubkey": "RWSx8XzeueDilD4igggwJ07ld0kpl6lbpVbsTZ781D4ShV/wPBWrApy",
+      "endpoints": [
+        "https://github.com/Zarl-prog/PinedIn/releases/latest/download/latest.json"
+      ],
       "dangerousInsecureTransportProtocol": false
     }
   }

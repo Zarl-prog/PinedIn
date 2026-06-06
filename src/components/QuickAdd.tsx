@@ -28,14 +28,18 @@ export default function QuickAdd() {
   async function handleSubmit() {
     const title = value.trim();
     if (!title) return;
-    await invoke("create_task", {
+
+    const today = new Date().toISOString().split("T")[0]; // gives "2026-06-06"
+
+    await invoke("add_task", {
       title,
-      description: "",
-      urgency: "medium",
-      dueDate: "",
+      body: "",
+      urgency: "critical",
+      dueDate: today,
       recurrence: null,
-      tags: null,
+      tags: null
     });
+
     getCurrentWindow().close();
   }
 
@@ -57,7 +61,7 @@ export default function QuickAdd() {
         value={value}
         onChange={e => setValue(e.target.value)}
         onKeyDown={e => e.key === "Enter" && handleSubmit()}
-        placeholder="Add a task and hit Enter..."
+        placeholder="Task name — Enter to add as Critical due today..."
         style={{
           flex: 1,
           background: "transparent",

@@ -22,7 +22,7 @@ pub fn run() {
         ))
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
-        .plugin(tauri_plugin_global_shortcut::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .setup(|app| {
             let app_data_dir = app
                 .path()
@@ -59,7 +59,7 @@ pub fn run() {
             // Register global hotkey: Ctrl+Shift+Space opens quick-add popup from anywhere,
             // even when the main window is minimized or not focused.
             app.global_shortcut().on_shortcut(
-                Shortcut::new(Some(Modifiers::CTRL | Modifiers::SHIFT), Code::Space),
+                Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::Space),
                 |app, _shortcut, _event| {
                     window::open_quick_add_window(app);
                 },
@@ -111,7 +111,9 @@ pub fn run() {
 
 async fn check_for_updates(app: tauri::AppHandle) {
     use tauri_plugin_updater::UpdaterExt;
-    if let Ok(Some(update)) = app.updater().check().await {
-        app.emit("update_available", update.version.clone()).ok();
+    if let Ok(updater) = app.updater() {
+        if let Ok(Some(update)) = updater.check().await {
+            let _ = app.emit("update_available", update.version.clone());
+        }
     }
 }

@@ -312,10 +312,15 @@ export default function TaskCard({
       onClick={handleClick}
       className="v-float"
       animate={controls}
-      style={{ position: "relative", willChange: "transform, background-color" }}
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        padding: 0,
+        willChange: "transform, background-color",
+      }}
     >
-      {/* Summary content — always visible */}
-      <div style={{ pointerEvents: "none" }}>
+      {/* Summary content — always visible, padded inside the card */}
+      <div style={{ padding: "12px 14px", pointerEvents: "none" }}>
         {/* Title row */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <span
@@ -459,7 +464,7 @@ export default function TaskCard({
             display: "flex",
             flexDirection: "column",
             gap: "8px",
-            paddingTop: "12px",
+            padding: "12px 14px 14px",
             borderTop: "1px solid #2a2a2a",
           }}
         >
@@ -526,7 +531,7 @@ export default function TaskCard({
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.1 }}
-            style={{ marginTop: "8px" }}
+            style={{ marginTop: "8px", padding: "0 14px 14px" }}
           >
             <div style={{ fontSize: "11px", color: "#888888", marginBottom: "6px" }}>
               Remind me in…
@@ -555,21 +560,16 @@ export default function TaskCard({
         )}
       </motion.div>
 
-      {/* Time limit progress bar — absolute-positioned at bottom of card,
-          full width, 4px tall. Always visible in both collapsed and expanded
-          states. The outer container has position:relative so this sits flush. */}
+      {/* Time limit progress bar — last child of the card, no padding,
+          flows naturally at the inner bottom edge. The outer card has
+          overflow:hidden so this 4px strip is clipped to the card's
+          rounded corners without any extra work. */}
       {showTimeLimitBar && (
         <div
           style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
+            width: "100%",
             height: "4px",
             background: "#1a1a1a",
-            borderRadius: "0 0 8px 8px",
-            overflow: "hidden",
-            pointerEvents: "none",
           }}
         >
           <motion.div
@@ -578,10 +578,7 @@ export default function TaskCard({
               backgroundColor: finalBarColor,
             }}
             transition={{ duration: 0.8, ease: "linear" }}
-            style={{
-              height: "100%",
-              borderRadius: "0 0 8px 8px",
-            }}
+            style={{ height: "100%" }}
           />
         </div>
       )}

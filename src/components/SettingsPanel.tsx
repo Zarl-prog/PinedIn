@@ -181,7 +181,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                 marginBottom: "20px",
               }}
             >
-              <span style={{ fontSize: "16px", fontWeight: 600, color: "#ededed" }}>
+              <span style={{ fontSize: "17px", fontWeight: 600, color: "#ededed" }}>
                 Settings
               </span>
               <button
@@ -197,7 +197,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: "14px",
+                  fontSize: "15px",
                   transition: "all 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
@@ -221,7 +221,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                 <label
                   style={{
                     display: "block",
-                    fontSize: "12px",
+                    fontSize: "13px",
                     fontWeight: 500,
                     color: "#888",
                     marginBottom: "8px",
@@ -244,7 +244,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                     <span
                       style={{
                         display: "block",
-                        fontSize: "13px",
+                        fontSize: "14px",
                         fontWeight: 500,
                         color: "#ededed",
                       }}
@@ -254,7 +254,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                     <span
                       style={{
                         display: "block",
-                      fontSize: "12px",
+                      fontSize: "13px",
                       color: "#444",
                       marginTop: "2px",
                       }}
@@ -281,7 +281,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                 <label
                   style={{
                     display: "block",
-                    fontSize: "12px",
+                    fontSize: "13px",
                     fontWeight: 500,
                     color: "#888",
                     marginBottom: "8px",
@@ -342,7 +342,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                 <label
                   style={{
                     display: "block",
-                    fontSize: "12px",
+                    fontSize: "13px",
                     fontWeight: 500,
                     color: "#888",
                     marginBottom: "8px",
@@ -365,7 +365,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                     <span
                       style={{
                         display: "block",
-                        fontSize: "13px",
+                        fontSize: "14px",
                         fontWeight: 500,
                         color: "#ededed",
                       }}
@@ -383,7 +383,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                     <span
                       style={{
                         display: "block",
-                        fontSize: "12px",
+                        fontSize: "13px",
                         color: "#444",
                         marginTop: "2px",
                       }}
@@ -399,7 +399,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                     onClick={handleCheckUpdates}
                     disabled={updateStatus.state === "checking"}
                     className="v-action"
-                    style={{ flexShrink: 0, fontSize: "11px", padding: "6px 12px" }}
+                    style={{ flexShrink: 0, fontSize: "12px", padding: "6px 12px" }}
                   >
                     {updateStatus.state === "checking"
                       ? "⏳"
@@ -422,7 +422,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                 >
                   <label
                     style={{
-                      fontSize: "12px",
+                      fontSize: "13px",
                       fontWeight: 500,
                       color: "#888",
                     }}
@@ -438,7 +438,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
                         style={{
-                          fontSize: "11px",
+                          fontSize: "12px",
                           color: "#888",
                         }}
                       >
@@ -466,7 +466,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                         onClick={() => handleShakeIntervalChange(s)}
                         style={{
                           flex: "0 0 auto",
-                          fontSize: "12px",
+                          fontSize: "13px",
                           fontWeight: 500,
                           padding: "6px 14px",
                           borderRadius: "999px",
@@ -497,7 +497,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
 
                   {/* Custom input */}
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ fontSize: "11px", color: "#555" }}>Custom</span>
+                    <span style={{ fontSize: "12px", color: "#555" }}>Custom</span>
                     <input
                       type="number"
                       min={1}
@@ -508,7 +508,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                       onKeyDown={handleCustomSubmit}
                       style={{
                         width: "64px",
-                        fontSize: "12px",
+                        fontSize: "13px",
                         padding: "5px 8px",
                         borderRadius: "6px",
                         border: "1px solid #1a1a1a",
@@ -517,7 +517,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                         outline: "none",
                       }}
                     />
-                    <span style={{ fontSize: "11px", color: "#555" }}>seconds</span>
+                    <span style={{ fontSize: "12px", color: "#555" }}>seconds</span>
                   </div>
                 </div>
               </div>

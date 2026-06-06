@@ -53,7 +53,7 @@ export default function TaskList({ searchQuery }: TaskListProps) {
             background: "#1a1a1a",
             border: "1px solid #2a2a2a",
             borderRadius: "6px",
-            fontSize: "12px",
+            fontSize: "13px",
             color: "#ccc",
           }}
         >
@@ -123,7 +123,7 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                   }}
                 >
                   <div style={{ flex: 1, height: "1px", background: "#1a1a1a" }} />
-                  <span style={{ fontSize: "11px", color: "#333", flexShrink: 0 }}>
+                  <span style={{ fontSize: "12px", color: "#333", flexShrink: 0 }}>
                     Completed ({completedTasks.length})
                   </span>
                   <div style={{ flex: 1, height: "1px", background: "#1a1a1a" }} />
@@ -244,7 +244,7 @@ function TaskCardItem({
               <span
                 className="task-title"
                 style={{
-                  fontSize: "13px",
+                  fontSize: "14px",
                   fontWeight: 500,
                   color: completed ? "#444" : "#ededed",
                   overflow: "hidden",
@@ -255,7 +255,7 @@ function TaskCardItem({
                 {task.title}
               </span>
               {hasRecurrence && (
-                <span style={{ fontSize: "11px", color: "#444", flexShrink: 0 }} title={`Repeats ${task.recurrence}`}>
+                <span style={{ fontSize: "12px", color: "#444", flexShrink: 0 }} title={`Repeats ${task.recurrence}`}>
                   ↻
                 </span>
               )}
@@ -267,7 +267,7 @@ function TaskCardItem({
           {task.description && (
             <p
               style={{
-                fontSize: "12px",
+                fontSize: "13px",
                 color: "#444",
                 marginTop: "4px",
                 overflow: "hidden",
@@ -286,7 +286,7 @@ function TaskCardItem({
                 <span
                   key={tag}
                   style={{
-                    fontSize: "11px",
+                    fontSize: "12px",
                     color: "#666",
                     background: "#0d0d0d",
                     border: "1px solid #1e1e1e",
@@ -308,7 +308,7 @@ function TaskCardItem({
                 alignItems: "center",
                 gap: "4px",
                 marginTop: "6px",
-                fontSize: "11px",
+                fontSize: "12px",
                 color: "#333",
               }}
             >
@@ -429,16 +429,16 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
         <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-14 0Z" />
         <circle cx="12" cy="9" r="2.5" fill="#333" stroke="none" />
       </svg>
-      <span style={{ fontSize: "14px", fontWeight: 600, color: "#555", marginBottom: "4px" }}>
+      <span style={{ fontSize: "15px", fontWeight: 600, color: "#555", marginBottom: "4px" }}>
         No tasks yet
       </span>
-      <span style={{ fontSize: "12px", color: "#444", textAlign: "center", marginBottom: "16px" }}>
+      <span style={{ fontSize: "13px", color: "#444", textAlign: "center", marginBottom: "16px" }}>
         Create your first task to get started
       </span>
       <button
         onClick={onAdd}
         style={{
-          fontSize: "12px",
+          fontSize: "13px",
           fontWeight: 600,
           padding: "9px 20px",
           borderRadius: "8px",

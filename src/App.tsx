@@ -5,6 +5,7 @@ import TaskList from "@/components/TaskList";
 import AddTaskModal from "@/components/AddTaskModal";
 import SettingsPanel from "@/components/SettingsPanel";
 import PreScheduleModal from "@/components/PreScheduleModal";
+import ShinyText from "@/components/ui/ShinyText";
 import UpdateBanner from "@/components/UpdateBanner";
 import { useReminders } from "@/hooks/useReminders";
 import { useReminderStore } from "@/store/reminderStore";
@@ -156,9 +157,7 @@ export default function App() {
             </svg>
           </div>
           <div>
-            <span style={{ fontSize: "16px", fontWeight: 600, color: "#ededed", lineHeight: 1.2 }}>
-              PinedIn
-            </span>
+            <ShinyText text="PinedIn" speed={4} className="text-white font-semibold text-sm" />
             <div style={{ fontSize: "13px", color: "#444", lineHeight: 1.2, marginTop: "2px" }}>
               Persistent task overlay
             </div>
@@ -321,12 +320,8 @@ export default function App() {
               aria-label="App heartbeat"
               title="App heartbeat — blinks red once an hour"
             />
-            <span style={{ fontSize: "17px", fontWeight: 600, color: "#ededed" }}>
-              Tasks
-            </span>
-            <span style={{ fontSize: "13px", color: "#444" }}>
-              {incompleteCount} task{incompleteCount !== 1 ? "s" : ""} remaining
-            </span>
+            <ShinyText text="Tasks" speed={3} className="text-white text-lg font-semibold" />
+            <ShinyText text={`${incompleteCount} task${incompleteCount !== 1 ? "s" : ""} remaining`} speed={5} className="text-sm" />
           </div>
           <div style={{ display: "flex", gap: "6px" }}>
             <button

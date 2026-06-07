@@ -1,3 +1,5 @@
+<img width="1408" height="768" alt="Gemini_Generated_Image_iowz08iowz08iowz" src="https://github.com/user-attachments/assets/dd300361-89b7-44e7-8c77-34389521dcac" />
+
 <div align="center">
 
 # <img src="public/pinedin-icon.png" alt="PinedIn Logo" width="40" style="vertical-align: middle; margin-right: 10px;"/> PinedIn

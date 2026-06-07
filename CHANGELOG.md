@@ -16,7 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Daily-digest popup and floating-card stack now exclude pre-scheduled tasks (they are surfaced separately in the Scheduled section).
 - Tray icon click now toggles the main window instead of always showing it.
 
-## [Unreleased]
+## [0.2.1] - 2026-06-07
+
+### Fixed
+- **Quick Add**: pressing Enter in the Quick Add window now correctly saves the task to the database, opens the floating card, and closes the window. Previously, the window's blur-to-close handler fired the moment the input became disabled during submit, killing the window before the `create_task` invoke could complete — Enter appeared to do nothing.
+- **App icon**: regenerated every icon asset (16/32/48/64/128/256/512 PNG, multi-size ICO, and the NSIS installer header + sidebar BMPs) from the latest `icon.svg`. Header and sidebar BMPs match the original 150×57 and 164×314 dimensions exactly so the NSIS template needs no change.
 
 ### Added
 - Comprehensive README.md with detailed documentation
@@ -26,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Added window dragging permission (`core:window:allow-start-dragging`) for improved UX
+
+## [Unreleased]
 
 ## [0.1.0] - Initial Release
 

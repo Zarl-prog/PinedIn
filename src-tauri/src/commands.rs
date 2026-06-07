@@ -92,6 +92,12 @@ pub fn update_task(
 }
 
 #[tauri::command]
+pub fn close_task_card(app: tauri::AppHandle, task_id: i64) -> Result<(), String> {
+    window::close_task_card(&app, task_id);
+    Ok(())
+}
+
+#[tauri::command]
 pub fn trigger_task_edit(app: AppHandle, id: i64) -> Result<(), String> {
     if let Some(main_window) = app.get_webview_window("main") {
         let _ = main_window.show();

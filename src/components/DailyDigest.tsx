@@ -14,13 +14,20 @@ export default function DailyDigest() {
   const [data, setData] = useState<DigestData | null>(null);
   const [visible, setVisible] = useState(true);
   const [countdown, setCountdown] = useState(10);
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     invoke<DigestData>("get_daily_digest").then(setData);
   }, []);
 
-  // Countdown timer
+  // Countdown timer — starts only after the digest data has arrived
+  // (otherwise a slow backend leaves the user staring at "Loading..."
+  // for the whole 10 seconds) and stops the moment the user dismisses
+  // (otherwise the next tick calls getCurrentWindow().close() on a
+  // window that's already gone).
   useEffect(() => {
+    if (!data) return;
+    if (dismissed) return;
     const interval = setInterval(() => {
       setCountdown(c => {
         if (c <= 1) {
@@ -31,9 +38,13 @@ export default function DailyDigest() {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+    // handleDismiss is stable enough — it only reads state setters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, dismissed]);
 
   async function handleDismiss() {
+    if (dismissed) return;
+    setDismissed(true);
     setVisible(false);
     await new Promise(r => setTimeout(r, 300));
     await getCurrentWindow().close();

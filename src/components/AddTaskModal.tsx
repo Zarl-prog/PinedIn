@@ -22,10 +22,10 @@ const TIME_LIMIT_UNITS = [
 ] as const;
 
 type TimeLimitUnit = (typeof TIME_LIMIT_UNITS)[number]["value"];
-type Mode = "immediate" | "preschedule";
 
 /**
- * AddTaskModal - Monochrome modal for creating, editing, or pre-scheduling tasks.
+ * AddTaskModal - Monochrome modal for creating or editing an *immediate* task.
+ * Pre-schedule lives in its own dedicated PreScheduleModal — no toggle here.
  * All styling uses the exact palette from the spec: #0a0a0a, #1a1a1a, #ededed, etc.
  */
 export default function AddTaskModal({
@@ -35,9 +35,7 @@ export default function AddTaskModal({
 }: AddTaskModalProps) {
   const addTask = useReminderStore((s) => s.addTask);
   const editTaskAction = useReminderStore((s) => s.editTask);
-  const addPrescheduledTask = useReminderStore((s) => s.addPrescheduledTask);
 
-  const [mode, setMode] = useState<Mode>("immediate");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [urgency, setUrgency] = useState<"low" | "medium" | "critical">(
@@ -49,18 +47,12 @@ export default function AddTaskModal({
   const [tagInput, setTagInput] = useState("");
   const [timeLimitValue, setTimeLimitValue] = useState("");
   const [timeLimitUnit, setTimeLimitUnit] = useState<TimeLimitUnit>("minutes");
-  const [scheduledDate, setScheduledDate] = useState("");
-  const [scheduledTime, setScheduledTime] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const tagInputRef = useRef<HTMLInputElement>(null);
 
-  // Populate form when editing. Key the effect on editTask id (not the
-  // whole object) so a store re-render that produces a new reference
-  // for the same task doesn't reset the form mid-edit.
   useEffect(() => {
     if (editTask) {
-      setMode("immediate");
       setTitle(editTask.title);
       setDescription(editTask.description);
       setUrgency(editTask.urgency as "low" | "medium" | "critical");
@@ -90,7 +82,6 @@ export default function AddTaskModal({
   }, [editTask?.id, open]);
 
   const resetForm = () => {
-    setMode("immediate");
     setTitle("");
     setDescription("");
     setUrgency("medium");
@@ -100,14 +91,6 @@ export default function AddTaskModal({
     setTagInput("");
     setTimeLimitValue("");
     setTimeLimitUnit("minutes");
-    const defaultDate = new Date();
-    defaultDate.setHours(defaultDate.getHours() + 1, 0, 0, 0);
-    setScheduledDate(defaultDate.toISOString().split("T")[0]);
-    setScheduledTime(
-      `${String(defaultDate.getHours()).padStart(2, "0")}:${String(
-        defaultDate.getMinutes(),
-      ).padStart(2, "0")}`,
-    );
     setError(null);
   };
 
@@ -150,30 +133,14 @@ export default function AddTaskModal({
     setError(null);
 
     try {
-      if (mode === "preschedule" && !editTask) {
-        if (!scheduledDate || !scheduledTime) {
-          setError("Pick a date and time to schedule for");
-          setIsSubmitting(false);
-          return;
-        }
-        const scheduledAt = `${scheduledDate}T${scheduledTime}:00`;
-        await addPrescheduledTask(
-          title.trim(),
-          description.trim(),
-          urgency,
-          scheduledAt,
-          scheduledDate,
-          null,
-          null,
-        );
-      } else if (editTask?.id) {
-        const tagsString = tags.length > 0 ? tags.join(",") : "";
-        const timeLimitMinutes = timeLimitValue
-          ? parseInt(timeLimitValue, 10) * (timeLimitUnit === "hours" ? 60 : 1)
-          : null;
-        const safeTimeLimit =
-          timeLimitMinutes && timeLimitMinutes > 0 ? timeLimitMinutes : null;
+      const tagsString = tags.length > 0 ? tags.join(",") : "";
+      const timeLimitMinutes = timeLimitValue
+        ? parseInt(timeLimitValue, 10) * (timeLimitUnit === "hours" ? 60 : 1)
+        : null;
+      const safeTimeLimit =
+        timeLimitMinutes && timeLimitMinutes > 0 ? timeLimitMinutes : null;
 
+      if (editTask?.id) {
         await editTaskAction(
           editTask.id,
           title.trim(),
@@ -185,13 +152,6 @@ export default function AddTaskModal({
           safeTimeLimit,
         );
       } else {
-        const tagsString = tags.length > 0 ? tags.join(",") : "";
-        const timeLimitMinutes = timeLimitValue
-          ? parseInt(timeLimitValue, 10) * (timeLimitUnit === "hours" ? 60 : 1)
-          : null;
-        const safeTimeLimit =
-          timeLimitMinutes && timeLimitMinutes > 0 ? timeLimitMinutes : null;
-
         await addTask(
           title.trim(),
           description.trim(),
@@ -218,8 +178,6 @@ export default function AddTaskModal({
     }
   };
 
-  const todayStr = new Date().toISOString().split("T")[0];
-
   return (
     <AnimatePresence>
       {open && (
@@ -233,7 +191,6 @@ export default function AddTaskModal({
             justifyContent: "center",
           }}
         >
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -247,7 +204,6 @@ export default function AddTaskModal({
             onClick={handleClose}
           />
 
-          {/* Modal */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -264,7 +220,6 @@ export default function AddTaskModal({
               padding: "24px",
             }}
           >
-            {/* Header */}
             <div
               style={{
                 display: "flex",
@@ -274,11 +229,7 @@ export default function AddTaskModal({
               }}
             >
               <span style={{ fontSize: "17px", fontWeight: 600, color: "#ededed" }}>
-                {editTask
-                  ? "Edit Task"
-                  : mode === "preschedule"
-                    ? "Pre-Schedule Task"
-                    : "New Task"}
+                {editTask ? "Edit Task" : "New Task"}
               </span>
               <button
                 onClick={handleClose}
@@ -311,25 +262,7 @@ export default function AddTaskModal({
               </button>
             </div>
 
-            {/* Mode toggle — only when creating a new task */}
-            {!editTask && (
-              <div style={{ display: "flex", gap: "6px", marginBottom: "16px" }}>
-                {(["immediate", "preschedule"] as const).map((opt) => (
-                  <button
-                    key={opt}
-                    onClick={() => setMode(opt)}
-                    className={`pill-toggle${mode === opt ? " selected" : ""}`}
-                    style={{ flex: 1, textAlign: "center" }}
-                  >
-                    {opt === "immediate" ? "Immediate" : "Pre-Schedule"}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Form */}
             <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              {/* Title */}
               <div>
                 <label
                   style={{
@@ -352,7 +285,6 @@ export default function AddTaskModal({
                 />
               </div>
 
-              {/* Description */}
               <div>
                 <label
                   style={{
@@ -375,7 +307,6 @@ export default function AddTaskModal({
                 />
               </div>
 
-              {/* Urgency */}
               <div>
                 <label
                   style={{
@@ -402,275 +333,221 @@ export default function AddTaskModal({
                 </div>
               </div>
 
-              {/* Pre-Schedule: Schedule For (date + time) */}
-              {mode === "preschedule" && !editTask && (
-                <div>
-                  <label
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    color: "#888",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Due Date{" "}
+                  <span style={{ color: "#555" }}>(optional)</span>
+                </label>
+                <div style={{ position: "relative" }}>
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#444"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                     style={{
-                      display: "block",
-                      fontSize: "13px",
-                      fontWeight: 500,
-                      color: "#888",
-                      marginBottom: "6px",
+                      position: "absolute",
+                      left: "10px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      pointerEvents: "none",
                     }}
                   >
-                    Schedule For
-                  </label>
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <input
-                      type="date"
-                      value={scheduledDate}
-                      min={todayStr}
-                      onChange={(e) => setScheduledDate(e.target.value)}
-                      className="input-field"
-                      style={{ flex: 1 }}
-                    />
-                    <input
-                      type="time"
-                      value={scheduledTime}
-                      onChange={(e) => setScheduledTime(e.target.value)}
-                      className="input-field"
-                      style={{ flex: 1 }}
-                    />
-                  </div>
-                  <p
-                    style={{
-                      fontSize: "12px",
-                      color: "#444",
-                      marginTop: "6px",
-                    }}
-                  >
-                    Task will appear in your task list at the scheduled time.
-                  </p>
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                  <input
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                    className="input-field"
+                    style={{ paddingLeft: "32px" }}
+                  />
                 </div>
-              )}
+              </div>
 
-              {/* Immediate-only fields: Due Date, Time Limit, Repeat, Tags */}
-              {mode === "immediate" && (
-                <>
-                  {/* Due Date */}
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "13px",
-                        fontWeight: 500,
-                        color: "#888",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Due Date{" "}
-                      <span style={{ color: "#555" }}>(optional)</span>
-                    </label>
-                    <div style={{ position: "relative" }}>
-                      <svg
-                        width="13"
-                        height="13"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#444"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        style={{
-                          position: "absolute",
-                          left: "10px",
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                          pointerEvents: "none",
-                        }}
-                      >
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                        <line x1="16" y1="2" x2="16" y2="6" />
-                        <line x1="8" y1="2" x2="8" y2="6" />
-                        <line x1="3" y1="10" x2="21" y2="10" />
-                      </svg>
-                      <input
-                        type="date"
-                        value={dueDate}
-                        onChange={(e) => setDueDate(e.target.value)}
-                        className="input-field"
-                        style={{ paddingLeft: "32px" }}
-                      />
-                    </div>
-                  </div>
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    color: "#888",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Time Limit{" "}
+                  <span style={{ color: "#555" }}>(optional)</span>
+                </label>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="No limit"
+                    value={timeLimitValue}
+                    onChange={(e) => setTimeLimitValue(e.target.value)}
+                    style={{
+                      width: "100px",
+                      background: "#0a0a0a",
+                      border: "1px solid #1a1a1a",
+                      borderRadius: "6px",
+                      padding: "8px 10px",
+                      color: "#ffffff",
+                      fontSize: "12px",
+                      fontFamily: "'Geist Mono', monospace",
+                    }}
+                  />
+                  <select
+                    value={timeLimitUnit}
+                    onChange={(e) => setTimeLimitUnit(e.target.value as TimeLimitUnit)}
+                    style={{
+                      background: "#0a0a0a",
+                      border: "1px solid #1a1a1a",
+                      borderRadius: "6px",
+                      padding: "8px 10px",
+                      color: "#ffffff",
+                      fontSize: "12px",
+                      fontFamily: "'Geist Mono', monospace",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {TIME_LIMIT_UNITS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-                  {/* Time Limit */}
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "13px",
-                        fontWeight: 500,
-                        color: "#888",
-                        marginBottom: "6px",
-                      }}
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    color: "#888",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Repeat
+                </label>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  {RECURRENCE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.label}
+                      onClick={() => setRecurrence(opt.value)}
+                      className={`pill-toggle${recurrence === opt.value ? " selected" : ""}`}
+                      style={{ flex: 1, textAlign: "center" }}
                     >
-                      Time Limit{" "}
-                      <span style={{ color: "#555" }}>(optional)</span>
-                    </label>
-                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                      <input
-                        type="number"
-                        min="1"
-                        placeholder="No limit"
-                        value={timeLimitValue}
-                        onChange={(e) => setTimeLimitValue(e.target.value)}
-                        style={{
-                          width: "100px",
-                          background: "#0a0a0a",
-                          border: "1px solid #1a1a1a",
-                          borderRadius: "6px",
-                          padding: "8px 10px",
-                          color: "#ffffff",
-                          fontSize: "12px",
-                          fontFamily: "'Geist Mono', monospace",
-                        }}
-                      />
-                      <select
-                        value={timeLimitUnit}
-                        onChange={(e) => setTimeLimitUnit(e.target.value as TimeLimitUnit)}
-                        style={{
-                          background: "#0a0a0a",
-                          border: "1px solid #1a1a1a",
-                          borderRadius: "6px",
-                          padding: "8px 10px",
-                          color: "#ffffff",
-                          fontSize: "12px",
-                          fontFamily: "'Geist Mono', monospace",
-                          cursor: "pointer",
-                        }}
-                      >
-                        {TIME_LIMIT_UNITS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-                  {/* Repeat / Recurrence */}
-                  <div>
-                    <label
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    color: "#888",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Tags{" "}
+                  <span style={{ color: "#444" }}>(max 5)</span>
+                </label>
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                    gap: "4px",
+                    background: "#0a0a0a",
+                    border: "1px solid #1a1a1a",
+                    borderRadius: "8px",
+                    padding: "10px 12px",
+                    minHeight: "42px",
+                  }}
+                >
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
                       style={{
-                        display: "block",
-                        fontSize: "13px",
-                        fontWeight: 500,
-                        color: "#888",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Repeat
-                    </label>
-                    <div style={{ display: "flex", gap: "6px" }}>
-                      {RECURRENCE_OPTIONS.map((opt) => (
-                        <button
-                          key={opt.label}
-                          onClick={() => setRecurrence(opt.value)}
-                          className={`pill-toggle${recurrence === opt.value ? " selected" : ""}`}
-                          style={{ flex: 1, textAlign: "center" }}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Tags */}
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "13px",
-                        fontWeight: 500,
-                        color: "#888",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Tags{" "}
-                      <span style={{ color: "#444" }}>(max 5)</span>
-                    </label>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexWrap: "wrap",
+                        display: "inline-flex",
                         alignItems: "center",
-                        gap: "4px",
-                        background: "#0a0a0a",
-                        border: "1px solid #1a1a1a",
-                        borderRadius: "8px",
-                        padding: "10px 12px",
-                        minHeight: "42px",
+                        gap: "3px",
+                        fontSize: "12px",
+                        color: "#666",
+                        background: "#111",
+                        border: "1px solid #222",
+                        borderRadius: "999px",
+                        padding: "3px 10px",
                       }}
                     >
-                      {tags.map((tag) => (
-                        <span
-                          key={tag}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "3px",
-                            fontSize: "12px",
-                            color: "#666",
-                            background: "#111",
-                            border: "1px solid #222",
-                            borderRadius: "999px",
-                            padding: "3px 10px",
-                          }}
-                        >
-                          {tag}
-                          <button
-                            onClick={() => removeTag(tag)}
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              width: "12px",
-                              height: "12px",
-                              borderRadius: "999px",
-                              border: "none",
-                              background: "transparent",
-                              color: "#444",
-                              cursor: "pointer",
-                              fontSize: "11px",
-                              padding: 0,
-                            }}
-                          >
-                            ✕
-                          </button>
-                        </span>
-                      ))}
-                      <input
-                        ref={tagInputRef}
-                        type="text"
-                        value={tagInput}
-                        onChange={(e) => setTagInput(e.target.value)}
-                        onKeyDown={handleTagKeyDown}
-                        placeholder={tags.length < 5 ? "Add a tag..." : ""}
-                        disabled={tags.length >= 5}
+                      {tag}
+                      <button
+                        onClick={() => removeTag(tag)}
                         style={{
-                          minWidth: "80px",
-                          flex: 1,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: "12px",
+                          height: "12px",
+                          borderRadius: "999px",
                           border: "none",
                           background: "transparent",
-                          color: "#ededed",
-                          fontSize: "14px",
-                          fontFamily: "'Geist Mono', monospace",
-                          outline: "none",
+                          color: "#444",
+                          cursor: "pointer",
+                          fontSize: "11px",
+                          padding: 0,
                         }}
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    ref={tagInputRef}
+                    type="text"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleTagKeyDown}
+                    placeholder={tags.length < 5 ? "Add a tag..." : ""}
+                    disabled={tags.length >= 5}
+                    style={{
+                      minWidth: "80px",
+                      flex: 1,
+                      border: "none",
+                      background: "transparent",
+                      color: "#ededed",
+                      fontSize: "14px",
+                      fontFamily: "'Geist Mono', monospace",
+                      outline: "none",
+                    }}
+                  />
+                </div>
+              </div>
 
-              {/* Error */}
               {error && (
                 <p style={{ fontSize: "13px", color: "#888" }}>{error}</p>
               )}
 
-              {/* Actions */}
               <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
                 <button
                   onClick={handleClose}
@@ -712,9 +589,7 @@ export default function AddTaskModal({
                     ? "Saving..."
                     : editTask
                       ? "Save Changes"
-                      : mode === "preschedule"
-                        ? "Schedule"
-                        : "Create Task"}
+                      : "Create Task"}
                 </button>
               </div>
             </div>

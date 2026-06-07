@@ -6,16 +6,33 @@ pub mod tray;
 pub mod window;
 
 use db::DbHandle;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tauri::{Emitter, Manager};
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
 use tauri_plugin_notification::NotificationExt;
+use tauri_plugin_window_state::StateFlags;
+
+/// Shared flag flipped to `true` when the user explicitly chooses to quit
+/// (via the tray menu). The main window's close handler checks this so
+/// that the *next* close actually kills the process instead of
+/// minimizing to tray. This is what lets the user fully close the app
+/// after it's been living in the tray.
+#[derive(Default)]
+pub struct QuitFlag(pub Arc<AtomicBool>);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(
+            tauri_plugin_window_state::Builder::default()
+                // Deny-list the main window: we own its close behaviour
+                // (minimize-to-tray), and the plugin's own close handler
+                // would otherwise race with ours and destroy the window.
+                .with_denylist(&["main"])
+                .build(),
+        )
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,
@@ -25,6 +42,11 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .setup(|app| {
+            // Register the quit flag in app state so the tray menu and
+            // the close handler can both reach it.
+            let quit_flag = QuitFlag::default();
+            app.manage(quit_flag);
+
             let app_data_dir = app
                 .path()
                 .app_data_dir()
@@ -35,27 +57,38 @@ pub fn run() {
 
             app.manage(db_handle.clone());
 
-            // Force remove native decorations — must run after window-state plugin
-            // restores its state, so we post it to the event loop
+            let main_window = app.get_webview_window("main").unwrap();
+            let main_window_clone = main_window.clone();
+
+            // Register the close-to-tray handler FIRST, before any
+            // hide()/show() dance. Tauri delivers WindowEvent to handlers
+            // attached to the window; re-creating the window visually
+            // (hide+show) is safe but doing it before the handler is
+            // bound opens a brief window where a real close could slip
+            // through. Bind first, decorate second.
+            let quit_flag_handle = app.state::<QuitFlag>().0.clone();
+            main_window.on_window_event(move |event| {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    // If the user picked "Quit PinedIn" from the tray,
+                    // the flag is set — let the close go through so the
+                    // process actually exits.
+                    if quit_flag_handle.load(Ordering::SeqCst) {
+                        return;
+                    }
+                    api.prevent_close();
+                    let _ = main_window_clone.hide();
+                }
+            });
+
+            // Force remove native decorations — must run after the
+            // window-state plugin restores its state, so we post it to
+            // the event loop. Hide + show forces Windows to redraw
+            // without the native frame.
             if let Some(win) = app.get_webview_window("main") {
                 let _ = win.set_decorations(false);
-                // Also hide and re-show to force Windows to redraw without native frame
                 let _ = win.hide();
                 let _ = win.show();
             }
-
-            // Intercept the main window's close button: hide instead of
-            // exiting. The process keeps running in the tray so floating
-            // task cards, the global hotkey, and background work all
-            // stay alive. The user brings the window back via the tray.
-            let main_window = app.get_webview_window("main").unwrap();
-            let main_window_clone = main_window.clone();
-            main_window.on_window_event(move |event| {
-                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                    api.prevent_close();
-                    main_window_clone.hide().ok();
-                }
-            });
 
             // Setup system tray
             tray::setup_tray(app.handle())?;
@@ -141,3 +174,7 @@ async fn check_for_updates(app: tauri::AppHandle) {
         }
     }
 }
+
+// Suppress unused-import warning when the StateFlags import is dropped.
+#[allow(dead_code)]
+const _STATE_FLAGS: StateFlags = StateFlags::all();

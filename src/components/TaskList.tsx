@@ -1,8 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { invoke } from "@tauri-apps/api/core";
 import { useReminderStore } from "@/store/reminderStore";
-import type { Task } from "@/lib/tauriCommands";
+import {
+  type Task,
+  closeTaskCard,
+} from "@/lib/tauriCommands";
 import UrgencyBadge from "./UrgencyBadge";
 
 interface TaskListProps {
@@ -23,6 +26,7 @@ export default function TaskList({ searchQuery }: TaskListProps) {
   const setAddTaskOpen = useReminderStore((s) => s.setAddTaskOpen);
   const setEditingTask = useReminderStore((s) => s.setEditingTask);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const reportError = (e: unknown) => {
@@ -30,7 +34,14 @@ export default function TaskList({ searchQuery }: TaskListProps) {
     setTimeout(() => setError(null), 4000);
   };
 
-  // Filter by search
+  // Close the three-dot menu on any outside click
+  useEffect(() => {
+    if (menuOpenId === null) return;
+    const handleClick = () => setMenuOpenId(null);
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, [menuOpenId]);
+
   const filteredTasks = useMemo(() => {
     if (!searchQuery.trim()) return tasks;
     const q = searchQuery.toLowerCase();
@@ -53,6 +64,21 @@ export default function TaskList({ searchQuery }: TaskListProps) {
 
   const incompleteTasks = filteredTasks.filter((t) => !t.completed);
   const completedTasks = filteredTasks.filter((t) => t.completed);
+
+  const handleDelete = async (task: Task) => {
+    if (!task.id) return;
+    if (!window.confirm(`Delete "${task.title}"?`)) return;
+    try {
+      await removeTask(task.id);
+      // Explicitly close the floating card window in case the task
+      // had one open. removeTask → deleteTask already does this in
+      // the backend, but the explicit invoke keeps the call site
+      // self-documenting and survives any future backend change.
+      await closeTaskCard(task.id).catch(() => {});
+    } catch (e) {
+      reportError(e);
+    }
+  };
 
   return (
     <div style={{ height: "100%", overflowY: "auto" }}>
@@ -79,14 +105,17 @@ export default function TaskList({ searchQuery }: TaskListProps) {
           <EmptyState onAdd={() => setAddTaskOpen(true)} />
         ) : (
           <>
-            {/* Incomplete tasks */}
             {incompleteTasks.map((task) => (
               <TaskCardItem
                 key={task.id}
                 task={task}
                 expanded={expandedId === task.id}
+                menuOpen={menuOpenId === task.id}
                 onToggle={() =>
                   setExpandedId(expandedId === task.id ? null : (task.id ?? null))
+                }
+                onToggleMenu={() =>
+                  setMenuOpenId(menuOpenId === task.id ? null : (task.id ?? null))
                 }
                 onComplete={() => {
                   if (task.id) {
@@ -97,12 +126,12 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                 onEdit={() => {
                   setEditingTask(task);
                   setExpandedId(null);
+                  setMenuOpenId(null);
                 }}
                 onDelete={() => {
-                  if (task.id) {
-                    removeTask(task.id).catch(reportError);
-                  }
+                  handleDelete(task);
                   setExpandedId(null);
+                  setMenuOpenId(null);
                 }}
                 onSnooze={async () => {
                   if (!task.id) return;
@@ -125,7 +154,6 @@ export default function TaskList({ searchQuery }: TaskListProps) {
               />
             ))}
 
-            {/* Completed divider */}
             {completedTasks.length > 0 && (
               <>
                 <div
@@ -147,22 +175,28 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                     key={task.id}
                     task={task}
                     expanded={expandedId === task.id}
+                    menuOpen={menuOpenId === task.id}
                     onToggle={() =>
                       setExpandedId(expandedId === task.id ? null : (task.id ?? null))
                     }
-                onComplete={() => {
-                  if (task.id) {
-                    uncompleteFromStore(task.id).catch(reportError);
-                  }
-                  setExpandedId(null);
-                }}
+                    onToggleMenu={() =>
+                      setMenuOpenId(menuOpenId === task.id ? null : (task.id ?? null))
+                    }
+                    onComplete={() => {
+                      if (task.id) {
+                        uncompleteFromStore(task.id).catch(reportError);
+                      }
+                      setExpandedId(null);
+                    }}
                     onEdit={() => {
                       setEditingTask(task);
                       setExpandedId(null);
+                      setMenuOpenId(null);
                     }}
                     onDelete={() => {
-                      if (task.id) removeTask(task.id);
+                      handleDelete(task);
                       setExpandedId(null);
+                      setMenuOpenId(null);
                     }}
                     completed
                   />
@@ -170,7 +204,6 @@ export default function TaskList({ searchQuery }: TaskListProps) {
               </>
             )}
 
-            {/* Scheduled divider */}
             {filteredScheduledTasks.length > 0 && (
               <>
                 <div
@@ -212,7 +245,9 @@ export default function TaskList({ searchQuery }: TaskListProps) {
 interface TaskCardItemProps {
   task: Task;
   expanded: boolean;
+  menuOpen: boolean;
   onToggle: () => void;
+  onToggleMenu: () => void;
   onComplete: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -224,7 +259,9 @@ interface TaskCardItemProps {
 function TaskCardItem({
   task,
   expanded,
+  menuOpen,
   onToggle,
+  onToggleMenu,
   onComplete,
   onEdit,
   onDelete,
@@ -238,8 +275,8 @@ function TaskCardItem({
   const tags = task.tags
     ? task.tags.split(",").map((t) => t.trim()).filter(Boolean)
     : [];
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  // Compute simple progress from due date
   const progressPercent = useMemo(() => {
     if (!task.due_time) return 0;
     const due = new Date(task.due_time + "T23:59:59").getTime();
@@ -262,10 +299,9 @@ function TaskCardItem({
       onClick={() => {
         if (!completed) onToggle();
       }}
-      style={{ marginBottom: "8px", cursor: completed ? "default" : "pointer" }}
+      style={{ marginBottom: "8px", cursor: completed ? "default" : "pointer", position: "relative" }}
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
-        {/* Checkbox */}
         <button
           className={`checkbox-circle${completed ? " checked" : ""}`}
           onClick={(e) => {
@@ -281,9 +317,7 @@ function TaskCardItem({
           )}
         </button>
 
-        {/* Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Title row */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0, flex: 1 }}>
               <span
@@ -306,9 +340,121 @@ function TaskCardItem({
               )}
             </div>
             <UrgencyBadge urgency={urgency} />
+            {/* Three-dot context menu trigger */}
+            <div ref={menuRef} style={{ position: "relative", flexShrink: 0 }}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleMenu();
+                }}
+                title="More actions"
+                style={{
+                  width: "22px",
+                  height: "22px",
+                  borderRadius: "6px",
+                  border: "1px solid #222",
+                  background: "transparent",
+                  color: "#666",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "14px",
+                  lineHeight: 1,
+                  padding: 0,
+                  letterSpacing: "1px",
+                  transition: "all 0.15s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#111";
+                  e.currentTarget.style.color = "#fff";
+                  e.currentTarget.style.borderColor = "#444";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = "#666";
+                  e.currentTarget.style.borderColor = "#222";
+                }}
+              >
+                ⋯
+              </button>
+
+              <AnimatePresence>
+                {menuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -4, scale: 0.96 }}
+                    transition={{ duration: 0.1 }}
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      position: "absolute",
+                      top: "calc(100% + 4px)",
+                      right: 0,
+                      zIndex: 50,
+                      minWidth: "120px",
+                      background: "#0a0a0a",
+                      border: "1px solid #1a1a1a",
+                      borderRadius: "8px",
+                      padding: "4px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "2px",
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+                    }}
+                  >
+                    <button
+                      onClick={onEdit}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        padding: "7px 10px",
+                        background: "transparent",
+                        border: "none",
+                        borderRadius: "6px",
+                        color: "#ededed",
+                        fontSize: "13px",
+                        fontFamily: "'Geist Mono', monospace",
+                        cursor: "pointer",
+                        textAlign: "left",
+                        width: "100%",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "#161616")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    >
+                      <span style={{ color: "#888", fontSize: "12px", width: "12px" }}>✎</span>
+                      Edit
+                    </button>
+                    <button
+                      onClick={onDelete}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        padding: "7px 10px",
+                        background: "transparent",
+                        border: "none",
+                        borderRadius: "6px",
+                        color: "#ff5555",
+                        fontSize: "13px",
+                        fontFamily: "'Geist Mono', monospace",
+                        cursor: "pointer",
+                        textAlign: "left",
+                        width: "100%",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "#1a0a0a")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    >
+                      <span style={{ color: "#ff5555", fontSize: "12px", width: "12px" }}>🗑</span>
+                      Delete
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
-          {/* Description */}
           {task.description && (
             <p
               style={{
@@ -324,7 +470,6 @@ function TaskCardItem({
             </p>
           )}
 
-          {/* Tags */}
           {tags.length > 0 && !completed && (
             <div style={{ display: "flex", gap: "4px", marginTop: "6px", flexWrap: "wrap" }}>
               {tags.map((tag) => (
@@ -345,7 +490,6 @@ function TaskCardItem({
             </div>
           )}
 
-          {/* Meta row */}
           {hasDueDate && !completed && (
             <div
               style={{
@@ -367,7 +511,6 @@ function TaskCardItem({
             </div>
           )}
 
-          {/* Progress bar */}
           {!completed && (
             <div className="progress-track" style={{ marginTop: "8px" }}>
               <div
@@ -379,7 +522,6 @@ function TaskCardItem({
         </div>
       </div>
 
-      {/* Expanded actions */}
       <AnimatePresence>
         {expanded && !completed && (
           <motion.div
@@ -398,7 +540,6 @@ function TaskCardItem({
                 borderTop: "1px solid #1a1a1a",
               }}
             >
-              {/* Done */}
               <button
                 className="v-action"
                 onClick={(e) => { e.stopPropagation(); onComplete(); }}
@@ -406,7 +547,6 @@ function TaskCardItem({
               >
                 ✓ Done
               </button>
-              {/* Snooze */}
               <button
                 className="v-action"
                 onClick={(e) => { e.stopPropagation(); onSnooze?.(); }}
@@ -414,27 +554,12 @@ function TaskCardItem({
               >
                 💤 Snooze
               </button>
-              {/* Remind */}
               <button
                 className="v-action"
                 onClick={(e) => { e.stopPropagation(); onRemind?.(); }}
                 style={{ flex: 1, textAlign: "center", padding: "8px 10px" }}
               >
                 🔔 Remind
-              </button>
-              {/* Delete */}
-              <button
-                className="v-action"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (window.confirm("Delete this task?")) {
-                    onDelete();
-                  }
-                }}
-                title="Delete task"
-                style={{ flex: 1, textAlign: "center", padding: "8px 10px", color: "#888" }}
-              >
-                🗑
               </button>
             </div>
           </motion.div>

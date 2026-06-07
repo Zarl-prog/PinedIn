@@ -26,6 +26,7 @@ export interface OverlayState {
   isLoading: boolean;
   isAddTaskOpen: boolean;
   isSettingsOpen: boolean;
+  isPreScheduleOpen: boolean;
   editingTask: Task | null;
   activeTags: string[];
   isPaused: boolean;
@@ -78,6 +79,7 @@ export interface OverlayState {
   // Actions - UI
   setAddTaskOpen: (open: boolean) => void;
   setSettingsOpen: (open: boolean) => void;
+  setPreScheduleOpen: (open: boolean) => void;
   setEditingTask: (task: Task | null) => void;
   setOverlayVisible: (visible: boolean) => void;
   togglePaused: () => void;
@@ -96,6 +98,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
   isLoading: false,
   isAddTaskOpen: false,
   isSettingsOpen: false,
+  isPreScheduleOpen: false,
   editingTask: null,
   activeTags: [],
   isPaused: false,
@@ -295,8 +298,14 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
     try {
       await updateSetting(key, value);
       const { settings } = get();
-      const updated = { ...settings, [key]: value };
-      set({ settings: updated as AppSettings });
+      // Build the typed object explicitly so we don't widen AppSettings
+      // with arbitrary keys via a cast. Only "theme" is part of the
+      // type today; if more get added, update this switch.
+      const updated: AppSettings =
+        key === "theme"
+          ? { ...settings, theme: value as AppSettings["theme"] }
+          : settings;
+      set({ settings: updated });
       if (key === "theme") {
         applyTheme(value);
       }
@@ -312,9 +321,10 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
 
   // ─── UI ────────────────────────────────────────────────────────────────
 
-  setAddTaskOpen: (open) => set({ isAddTaskOpen: open, editingTask: open ? get().editingTask : null }),
-  setSettingsOpen: (open) => set({ isSettingsOpen: open }),
-  setEditingTask: (task) => set({ editingTask: task, isAddTaskOpen: !!task }),
+  setAddTaskOpen: (open: boolean) => set({ isAddTaskOpen: open, editingTask: open ? get().editingTask : null }),
+  setSettingsOpen: (open: boolean) => set({ isSettingsOpen: open }),
+  setPreScheduleOpen: (open: boolean) => set({ isPreScheduleOpen: open }),
+  setEditingTask: (task: Task | null) => set({ editingTask: task, isAddTaskOpen: !!task }),
   setOverlayVisible: (visible) => set({ overlayVisible: visible }),
   togglePaused: () => set((state) => ({ isPaused: !state.isPaused })),
 }));

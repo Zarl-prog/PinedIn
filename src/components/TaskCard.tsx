@@ -26,7 +26,7 @@ interface TaskCardProps {
 const REMIND_OPTIONS = [5, 15, 30, 60] as const;
 
 const COLLAPSED_HEIGHT = 120;
-const EXPANDED_HEIGHT = 220;
+const EXPANDED_HEIGHT = 180;
 
 const URGENCY_LABEL: Record<string, string> = {
   critical: "Critical",
@@ -68,7 +68,6 @@ export default function TaskCard({
   const dragging = useRef(false);
   const interacting = useRef(false);
   const expandedRef = useRef(expanded);
-  // Keep the ref in sync so interval closures always read the latest value
   expandedRef.current = expanded;
 
   // ─── Shake interval — loaded from DB, updated live via event ────────────
@@ -86,7 +85,6 @@ export default function TaskCard({
     };
   }, []);
 
-  // ─── Single animation control for both shake (x) and flash (boxShadow) ──
   const controls = useAnimation();
 
   const playAttention = useCallback(async () => {
@@ -109,7 +107,6 @@ export default function TaskCard({
     });
   }, [urgency, controls]);
 
-  // Periodic attention-grabber — uses setting from DB, skip tick if expanded or paused
   useEffect(() => {
     const intervalMs = intervalSeconds * 1000;
     const interval = setInterval(() => {
@@ -120,7 +117,6 @@ export default function TaskCard({
     return () => clearInterval(interval);
   }, [intervalSeconds, playAttention]);
 
-  // First attention trigger — 3 seconds after mount (skipped if paused)
   useEffect(() => {
     const t = setTimeout(() => {
       if (useReminderStore.getState().isPaused) return;
@@ -134,7 +130,6 @@ export default function TaskCard({
     ? tags.split(",").map((t) => t.trim()).filter(Boolean)
     : [];
 
-  // Progress bar: how close the due date is (0-100%)
   const progressPercent = useMemo(() => {
     if (!dueTime) return 0;
     const due = new Date(dueTime + "T23:59:59").getTime();
@@ -146,7 +141,6 @@ export default function TaskCard({
     return Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
   }, [dueTime]);
 
-  // ─── Live countdown progress bar for the time limit feature ─────────────
   const [progress, setProgress] = useState(100);
   const [barColor, setBarColor] = useState("#ffffff");
   const [flash, setFlash] = useState(false);
@@ -191,14 +185,10 @@ export default function TaskCard({
   const finalBarColor = progress <= 10 ? (flash ? "#ef4444" : "#7f1d1d") : barColor;
   const showTimeLimitBar = !!timeLimitMinutes && !!startedAt;
 
-  // Set initial window size to collapsed on mount. Two fixed sizes only —
-  // zero measurement, zero dynamic resizing. Click toggles between these
-  // exact sizes in handleClick below.
   useEffect(() => {
     getCurrentWindow().setSize(new LogicalSize(280, COLLAPSED_HEIGHT));
   }, []);
 
-  // ─── Live status dot — slow green pulse, hourly red alert for 1 min ─────
   useEffect(() => {
     const dot = liveDotRef.current;
     if (!dot) return;
@@ -289,21 +279,6 @@ export default function TaskCard({
     [taskId],
   );
 
-  const handleAction = useCallback(
-    (action: string, e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (action === "complete") handleDone();
-      else if (action === "snooze") handleSnooze();
-      else if (action === "remind") handleRemindClick(e);
-      else if (action === "edit") {
-        invoke("trigger_task_edit", { id: taskId });
-      } else if (action === "delete") {
-        invoke("delete_task", { id: taskId });
-      }
-    },
-    [handleDone, handleSnooze, handleRemindClick, taskId],
-  );
-
   return (
     <motion.div
       ref={containerRef}
@@ -319,9 +294,7 @@ export default function TaskCard({
         willChange: "transform, background-color",
       }}
     >
-      {/* Summary content — always visible, padded inside the card */}
       <div style={{ padding: "12px 14px", pointerEvents: "none" }}>
-        {/* Title row */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <span
             style={{
@@ -348,7 +321,6 @@ export default function TaskCard({
               </span>
             )}
           </span>
-          {/* Urgency badge + live dot */}
           <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
             <span
               ref={liveDotRef}
@@ -360,7 +332,6 @@ export default function TaskCard({
           </div>
         </div>
 
-        {/* Description */}
         {description && (
           <p
             style={{
@@ -377,7 +348,6 @@ export default function TaskCard({
           </p>
         )}
 
-        {/* Tags */}
         {tagList.length > 0 && (
           <div style={{ display: "flex", gap: "4px", marginTop: "6px", flexWrap: "wrap" }}>
             {tagList.map((tag) => (
@@ -398,7 +368,6 @@ export default function TaskCard({
           </div>
         )}
 
-        {/* Due date */}
         {dueTime && (
           <div
             style={{
@@ -420,7 +389,6 @@ export default function TaskCard({
           </div>
         )}
 
-        {/* Bottom progress bar */}
         <div
           style={{
             width: "100%",
@@ -443,7 +411,6 @@ export default function TaskCard({
         </div>
       </div>
 
-      {/* Expandable content — motion.div animates height, opacity and scale */}
       <motion.div
         initial={false}
         animate={{
@@ -462,76 +429,39 @@ export default function TaskCard({
         <div
           style={{
             display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-            padding: "12px 14px 14px",
-            borderTop: "1px solid #2a2a2a",
+            gap: "6px",
+            padding: "0 14px 14px",
           }}
         >
-          {/* Row 1: Primary Actions */}
-          <div style={{ display: "flex", gap: "6px" }}>
-            <button
-              className="v-action"
-              onClick={(e) => handleAction("complete", e)}
-              style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0" }}
-            >
-              ✓ Done
-            </button>
-            <button
-              className="v-action"
-              onClick={(e) => handleAction("snooze", e)}
-              style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0" }}
-            >
-              💤 Snooze
-            </button>
-            <button
-              className="v-action"
-              onClick={(e) => handleAction("remind", e)}
-              style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0" }}
-            >
-              🔔 Remind
-            </button>
-          </div>
-
-          {/* Row 2: Management Actions */}
-          <div style={{ display: "flex", gap: "6px" }}>
-            <button
-              className="v-action"
-              onClick={(e) => handleAction("edit", e)}
-              style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0" }}
-            >
-              ✎ Edit
-            </button>
-            <button
-              className="v-action"
-              onClick={(e) => handleAction("delete", e)}
-              style={{
-                flex: 1,
-                textAlign: "center",
-                fontSize: "11px",
-                padding: "8px 0",
-                color: "#ff4444",
-                borderColor: "#331111"
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#220000";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-              }}
-            >
-              🗑 Delete
-            </button>
-          </div>
+          <button
+            className="v-action"
+            onClick={(e) => { e.stopPropagation(); handleDone(); }}
+            style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0" }}
+          >
+            ✓ Done
+          </button>
+          <button
+            className="v-action"
+            onClick={(e) => { e.stopPropagation(); handleSnooze(); }}
+            style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0" }}
+          >
+            💤 Snooze
+          </button>
+          <button
+            className="v-action"
+            onClick={(e) => { e.stopPropagation(); handleRemindClick(e); }}
+            style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0" }}
+          >
+            🔔 Remind
+          </button>
         </div>
 
-        {/* Remind time picker */}
         {showRemindPicker && (
           <motion.div
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.1 }}
-            style={{ marginTop: "8px", padding: "0 14px 14px" }}
+            style={{ marginTop: "4px", padding: "0 14px 14px" }}
           >
             <div style={{ fontSize: "11px", color: "#888888", marginBottom: "6px" }}>
               Remind me in…
@@ -560,10 +490,6 @@ export default function TaskCard({
         )}
       </motion.div>
 
-      {/* Time limit progress bar — last child of the card, no padding,
-          flows naturally at the inner bottom edge. The outer card has
-          overflow:hidden so this 4px strip is clipped to the card's
-          rounded corners without any extra work. */}
       {showTimeLimitBar && (
         <div
           style={{

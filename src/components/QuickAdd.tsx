@@ -1,16 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
+import type { Task } from "../lib/tauriCommands";
+import { localDateStr } from "../lib/utils";
 
 export default function QuickAdd() {
   const [value, setValue] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Focus input immediately on mount
     inputRef.current?.focus();
 
-    // Close on Escape
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") getCurrentWindow().close();
     };
@@ -18,62 +20,78 @@ export default function QuickAdd() {
     return () => window.removeEventListener("keydown", handleKey);
   }, []);
 
-  // Close when focus leaves the window
-  useEffect(() => {
-    const handleBlur = () => getCurrentWindow().close();
-    window.addEventListener("blur", handleBlur);
-    return () => window.removeEventListener("blur", handleBlur);
-  }, []);
-
   async function handleSubmit() {
     const title = value.trim();
-    if (!title) return;
+    if (!title || status === "loading") return;
 
-    const today = new Date().toISOString().split("T")[0]; // gives "2026-06-06"
+    setStatus("loading");
+    setErrorMsg("");
 
-    await invoke("add_task", {
-      title,
-      body: "",
-      urgency: "critical",
-      dueDate: today,
-      recurrence: null,
-      tags: null
-    });
-
-    getCurrentWindow().close();
+    try {
+      const today = localDateStr();
+      await invoke<Task>("create_task", {
+        title,
+        description: "",
+        urgency: "critical",
+        dueTime: today,
+        recurrence: null,
+        tags: null,
+        timeLimitMinutes: null,
+      });
+      getCurrentWindow().close();
+    } catch (e) {
+      console.error("[QuickAdd] create_task failed:", e);
+      setStatus("error");
+      setErrorMsg(typeof e === "string" ? e : String(e));
+      inputRef.current?.focus();
+    }
   }
 
+  const accent = status === "error" ? "#ff5555" : "#333";
+
   return (
-    <div style={{
-      width: "480px",
-      height: "64px",
-      background: "#000",
-      border: "1px solid #222",
-      borderRadius: "12px",
-      display: "flex",
-      alignItems: "center",
-      padding: "0 16px",
-      gap: "12px"
-    }}>
-      <span style={{ color: "#333", fontSize: "16px" }}>+</span>
+    <div
+      style={{
+        width: "480px",
+        height: "64px",
+        background: "#000",
+        border: `1px solid ${status === "error" ? "#ff5555" : "#222"}`,
+        borderRadius: "12px",
+        display: "flex",
+        alignItems: "center",
+        padding: "0 16px",
+        gap: "12px",
+      }}
+    >
+      <span style={{ color: accent, fontSize: "16px" }}>+</span>
       <input
         ref={inputRef}
         value={value}
-        onChange={e => setValue(e.target.value)}
-        onKeyDown={e => e.key === "Enter" && handleSubmit()}
-        placeholder="Task name — Enter to add as Critical due today..."
+        disabled={status === "loading"}
+        onChange={(e) => {
+          setValue(e.target.value);
+          if (status === "error") setStatus("idle");
+        }}
+        onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+        placeholder={
+          status === "error"
+            ? errorMsg || "Failed — try again"
+            : "Task name — Enter to add as Critical due today..."
+        }
         style={{
           flex: 1,
           background: "transparent",
           border: "none",
           outline: "none",
-          color: "#ffffff",
+          color: status === "error" ? "#ff5555" : "#ffffff",
           fontSize: "14px",
           fontFamily: "'Geist Mono', monospace",
-          caretColor: "#ffffff"
+          caretColor: "#ffffff",
         }}
       />
-      <span style={{ fontSize: "11px", color: "#333" }}>esc to close</span>
+      <span style={{ fontSize: "11px", color: accent }}>
+        {status === "loading" ? "..." : "esc to close"}
+      </span>
     </div>
   );
 }

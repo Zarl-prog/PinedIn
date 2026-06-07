@@ -78,6 +78,10 @@ export async function deleteTask(id: number): Promise<void> {
   return invoke("delete_task", { id });
 }
 
+export async function closeTaskCard(taskId: number): Promise<void> {
+  return invoke("close_task_card", { taskId });
+}
+
 export async function completeTask(id: number): Promise<void> {
   return invoke("complete_task", { id });
 }

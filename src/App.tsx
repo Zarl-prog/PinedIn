@@ -4,9 +4,13 @@ import { listen } from "@tauri-apps/api/event";
 import TaskList from "@/components/TaskList";
 import AddTaskModal from "@/components/AddTaskModal";
 import SettingsPanel from "@/components/SettingsPanel";
+import PreScheduleModal from "@/components/PreScheduleModal";
 import UpdateBanner from "@/components/UpdateBanner";
 import { useReminders } from "@/hooks/useReminders";
 import { useReminderStore } from "@/store/reminderStore";
+import { getShakeInterval, setShakeInterval } from "@/lib/tauriCommands";
+
+const SHAKE_OPTIONS = [10, 15, 30, 60, 120, 300];
 
 /**
  * PinedIn - Main application window.
@@ -20,6 +24,8 @@ export default function App() {
   const setAddTaskOpen = useReminderStore((s) => s.setAddTaskOpen);
   const isSettingsOpen = useReminderStore((s) => s.isSettingsOpen);
   const setSettingsOpen = useReminderStore((s) => s.setSettingsOpen);
+  const isPreScheduleOpen = useReminderStore((s) => s.isPreScheduleOpen);
+  const setPreScheduleOpen = useReminderStore((s) => s.setPreScheduleOpen);
   const editingTask = useReminderStore((s) => s.editingTask);
   const setEditingTask = useReminderStore((s) => s.setEditingTask);
   const isPaused = useReminderStore((s) => s.isPaused);
@@ -50,14 +56,38 @@ export default function App() {
       if (isSettingsOpen) {
         setSettingsOpen(false);
       }
+      if (isPreScheduleOpen) {
+        setPreScheduleOpen(false);
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isAddTaskOpen, isSettingsOpen, setAddTaskOpen, setSettingsOpen, setEditingTask]);
+  }, [
+    isAddTaskOpen,
+    isSettingsOpen,
+    isPreScheduleOpen,
+    setAddTaskOpen,
+    setSettingsOpen,
+    setPreScheduleOpen,
+    setEditingTask,
+  ]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const incompleteCount = tasks.filter((t) => !t.completed).length;
-  const isAnyModalOpen = isAddTaskOpen || isSettingsOpen;
+  const isAnyModalOpen = isAddTaskOpen || isSettingsOpen || isPreScheduleOpen;
+
+  // ─── Shake interval — loaded from DB on mount, saved immediately on change ─
+  const [shakeInterval, setShakeIntervalLocal] = useState<number>(30);
+  useEffect(() => {
+    getShakeInterval()
+      .then((s) => setShakeIntervalLocal(s))
+      .catch(() => {});
+  }, []);
+
+  const handleShakeChange = (value: number) => {
+    setShakeIntervalLocal(value);
+    setShakeInterval(value).catch(() => {});
+  };
 
   // ─── Live status dot — slow green pulse, hourly red alert for 1 min ─────
   const liveDotRef = useRef<HTMLSpanElement>(null);
@@ -107,9 +137,7 @@ export default function App() {
           flexShrink: 0,
         }}
       >
-        {/* Left: Logo + App Name + Subtitle */}
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          {/* Logo: white square with black pin icon */}
           <div
             style={{
               width: "28px",
@@ -137,9 +165,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Right: Window Control Dots */}
         <div style={{ display: "flex", gap: "6px" }}>
-          {/* Minimize */}
           <button
             onClick={() => getCurrentWindow().minimize()}
             style={{
@@ -156,7 +182,6 @@ export default function App() {
             onMouseEnter={(e) => (e.currentTarget.style.background = "#333")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "#222")}
           />
-          {/* Maximize/Restore */}
           <button
             onClick={() => getCurrentWindow().toggleMaximize()}
             style={{
@@ -173,7 +198,6 @@ export default function App() {
             onMouseEnter={(e) => (e.currentTarget.style.background = "#333")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "#222")}
           />
-          {/* Close */}
           <button
             onClick={() => getCurrentWindow().close()}
             style={{
@@ -201,9 +225,9 @@ export default function App() {
           padding: "8px 16px",
           borderBottom: "1px solid #1a1a1a",
           flexShrink: 0,
+          alignItems: "center",
         }}
       >
-        {/* Quick Add */}
         <button
           className="v-btn"
           onClick={() => setAddTaskOpen(true)}
@@ -214,7 +238,6 @@ export default function App() {
         >
           + Quick Add
         </button>
-        {/* Pause */}
         <button
           className="v-btn"
           onClick={togglePaused}
@@ -230,7 +253,6 @@ export default function App() {
         >
           {isPaused ? "▶ Resume" : "|| Pause"}
         </button>
-        {/* Settings */}
         <button
           className="v-btn"
           onClick={() => setSettingsOpen(true)}
@@ -241,6 +263,31 @@ export default function App() {
         >
           /\ Settings
         </button>
+
+        {/* Shake interval — compact inline control, always visible */}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "auto" }}>
+          <span style={{ fontSize: "11px", color: "#444" }}>Shake every</span>
+          <select
+            value={shakeInterval}
+            onChange={(e) => handleShakeChange(Number(e.target.value))}
+            style={{
+              background: "#0a0a0a",
+              border: "1px solid #1a1a1a",
+              borderRadius: "5px",
+              padding: "4px 8px",
+              color: "#888",
+              fontSize: "11px",
+              fontFamily: "'Geist Mono', monospace",
+              cursor: "pointer",
+            }}
+          >
+            {SHAKE_OPTIONS.map((s) => (
+              <option key={s} value={s}>
+                {s < 60 ? `${s}s` : s === 60 ? "1m" : s === 120 ? "2m" : "5m"}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* ─── Body ─────────────────────────────────────────────────────── */}
@@ -281,24 +328,53 @@ export default function App() {
               {incompleteCount} task{incompleteCount !== 1 ? "s" : ""} remaining
             </span>
           </div>
-          <button
-            onClick={() => setAddTaskOpen(true)}
-            style={{
-              fontSize: "13px",
-              fontWeight: 600,
-              padding: "7px 16px",
-              borderRadius: "8px",
-              background: "#fff",
-              color: "#000",
-              border: "none",
-              cursor: "pointer",
-              transition: "opacity 0.15s ease",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-          >
-            + Add Task
-          </button>
+          <div style={{ display: "flex", gap: "6px" }}>
+            <button
+              onClick={() => setPreScheduleOpen(true)}
+              style={{
+                background: "transparent",
+                border: "1px solid #222",
+                borderRadius: "5px",
+                padding: "6px 12px",
+                color: "#888",
+                fontSize: "11px",
+                fontFamily: "'Geist Mono', monospace",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#0a0a0a";
+                e.currentTarget.style.borderColor = "#333";
+                e.currentTarget.style.color = "#ededed";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.borderColor = "#222";
+                e.currentTarget.style.color = "#888";
+              }}
+            >
+              + Pre-Schedule
+            </button>
+            <button
+              onClick={() => setAddTaskOpen(true)}
+              style={{
+                background: "#ffffff",
+                border: "none",
+                borderRadius: "5px",
+                padding: "6px 12px",
+                color: "#000000",
+                fontSize: "11px",
+                fontWeight: 600,
+                fontFamily: "'Geist Mono', monospace",
+                cursor: "pointer",
+                transition: "opacity 0.15s ease",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+            >
+              + Add Task
+            </button>
+          </div>
         </div>
 
         {/* Search Bar */}
@@ -361,6 +437,11 @@ export default function App() {
           setEditingTask(null);
         }}
         editTask={editingTask}
+      />
+
+      <PreScheduleModal
+        open={isPreScheduleOpen}
+        onClose={() => setPreScheduleOpen(false)}
       />
 
       <SettingsPanel

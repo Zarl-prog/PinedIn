@@ -161,6 +161,7 @@ pub fn run() {
             commands::fire_time_limit_notification,
             commands::add_presceduled_task,
             commands::get_presceduled_tasks,
+            commands::close_task_card,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

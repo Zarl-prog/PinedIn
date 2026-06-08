@@ -109,7 +109,7 @@ const ShinyText = ({
   }, [pauseOnHover]);
 
   const gradientStyle = {
-    backgroundImage: `linear-gradient(${spread}deg, ${color} 0%, ${color} 35%, ${shineColor} 50%, ${color} 65%, ${color} 100%)`,
+    backgroundImage: `linear-gradient(${spread}deg, ${color} 0%, ${color} 43%, ${shineColor} 50%, ${color} 57%, ${color} 100%)`,
     backgroundSize: '200% auto',
     WebkitBackgroundClip: 'text',
     backgroundClip: 'text',

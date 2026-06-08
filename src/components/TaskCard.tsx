@@ -79,7 +79,6 @@ export default function TaskCard({
   const expandedRef = useRef(expanded);
   expandedRef.current = expanded;
   const interacting = useRef(false);
-  expandedRef.current = expanded;
 
   // ─── Shake interval — loaded from DB, updated live via event ────────────
   const [intervalSeconds, setIntervalSeconds] = useState(30);

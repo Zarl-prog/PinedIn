@@ -1,5 +1,104 @@
 @import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&display=swap');
 
+:root {
+  --bg-app: #ffffff;
+  --bg-card: #f5f5f5;
+  --bg-card-hover: #f0f0f0;
+  --bg-float: #ffffff;
+  --bg-float-hover: #fafafa;
+  --bg-input: #ffffff;
+  --bg-hover: #e8e8e8;
+  --bg-badge: #e8e8e8;
+  --bg-overlay: rgba(0,0,0,0.3);
+  --bg-toggle: #d0d0d0;
+  --bg-modal: #ffffff;
+  --bg-update: #f5f5f5;
+  --bg-menu: #ffffff;
+  --bg-menu-hover: #f0f0f0;
+  --bg-delete-hover: #ffe8e8;
+  --bg-dropdown: #ffffff;
+  --bg-scheduled: #f5f5f5;
+  --bg-date-icon: #999999;
+  --bg-tag: #e8e8e8;
+
+  --border: #e0e0e0;
+  --border-light: #d0d0d0;
+  --border-hover: #aaaaaa;
+  --border-strong: #cccccc;
+
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --text-dim: #cccccc;
+  --text-inverse: #ffffff;
+  --text-danger: #cc0000;
+  --text-on-white: #000000;
+
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 0 16px rgba(0,0,0,0.06);
+  --shadow-menu: 0 8px 24px rgba(0,0,0,0.12);
+
+  --scrollbar-track: #f0f0f0;
+  --scrollbar-thumb: #cccccc;
+  --scrollbar-thumb-hover: #aaaaaa;
+
+  --divider: #e0e0e0;
+
+  --progress-track: #e0e0e0;
+  --progress-fill: #1a1a1a;
+
+  --calendar-picker-filter: none;
+}
+
+.dark {
+  --bg-app: #000000;
+  --bg-card: #0a0a0a;
+  --bg-card-hover: #0d0d0d;
+  --bg-float: #080808;
+  --bg-float-hover: #0a0a0a;
+  --bg-input: #0a0a0a;
+  --bg-hover: #141414;
+  --bg-badge: #111111;
+  --bg-overlay: rgba(0,0,0,0.6);
+  --bg-toggle: #222222;
+  --bg-modal: #0a0a0a;
+  --bg-update: #0a0a0a;
+  --bg-menu: #0a0a0a;
+  --bg-menu-hover: #161616;
+  --bg-delete-hover: #1a0a0a;
+  --bg-dropdown: #0a0a0a;
+  --bg-scheduled: #0a0a0a;
+  --bg-tag: #111111;
+
+  --border: #1a1a1a;
+  --border-light: #222222;
+  --border-hover: #2e2e2e;
+  --border-strong: #2e2e2e;
+
+  --text-primary: #ededed;
+  --text-secondary: #888888;
+  --text-muted: #444444;
+  --text-dim: #2a2a2a;
+  --text-inverse: #000000;
+  --text-danger: #ff5555;
+  --text-on-white: #ffffff;
+
+  --shadow-card: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow-hover: 0 0 20px rgba(255,255,255,0.04);
+  --shadow-menu: 0 8px 24px rgba(0,0,0,0.5);
+
+  --scrollbar-track: #000000;
+  --scrollbar-thumb: #1a1a1a;
+  --scrollbar-thumb-hover: #2a2a2a;
+
+  --divider: #1a1a1a;
+
+  --progress-track: #1a1a1a;
+  --progress-fill: #ffffff;
+
+  --calendar-picker-filter: invert(0.7);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -7,8 +106,8 @@
 }
 
 html, body, #root {
-  background: #000000;
-  color: #ededed;
+  background: var(--bg-app);
+  color: var(--text-primary);
   font-family: 'Geist Mono', monospace;
   width: 100%;
   height: 100%;
@@ -23,30 +122,30 @@ html, body, #root {
 }
 
 ::-webkit-scrollbar-track {
-  background: #000000;
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1a1a1a;
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2a2a2a;
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* ─── Date Input ────────────────────────────────────────────────────────── */
 
 input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.7);
+  filter: var(--calendar-picker-filter);
   cursor: pointer;
 }
 
 /* ─── Card Styles (.v-card) ─────────────────────────────────────────────── */
 
 .v-card {
-  background: #0a0a0a;
-  border: 1px solid #1a1a1a;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 12px 12px 12px 14px;
   transition: all 0.15s ease;
@@ -54,8 +153,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .v-card:hover {
-  border-color: #2a2a2a;
-  background: #0d0d0d;
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
 }
 
 .v-card.completed {
@@ -69,8 +168,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 /* ─── Floating Card Styles (.v-float) ──────────────────────────────────── */
 
 .v-float {
-  background: #080808;
-  border: 1px solid #1a1a1a;
+  background: var(--bg-float);
+  border: 1px solid var(--border);
   border-radius: 20px;
   padding: 14px 16px;
   transition: border-color 0.2s ease, background 0.2s ease;
@@ -79,30 +178,30 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   width: 100%;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  box-shadow: var(--shadow-card);
 }
 
 .v-float:hover {
-  border-color: #2e2e2e;
-  background: #0a0a0a;
+  border-color: var(--border-hover);
+  background: var(--bg-float-hover);
 }
 
 /* ─── Button Styles (.v-btn) ────────────────────────────────────────────── */
 
 .v-btn {
   font-size: 13px;
-  color: #888;
-  border: 1px solid #222;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
   background: transparent;
   transition: all 0.15s ease;
   cursor: pointer;
 }
 
 .v-btn:hover {
-  color: #fff;
+  color: var(--text-primary);
   border-color: #555;
-  background: #141414;
-  box-shadow: 0 0 20px rgba(255,255,255,0.04);
+  background: var(--bg-hover);
+  box-shadow: var(--shadow-hover);
   transform: scale(1.02);
 }
 
@@ -110,8 +209,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .v-action {
   font-size: 13px;
-  color: #666;
-  border: 1px solid #222;
+  color: var(--text-muted);
+  border: 1px solid var(--border-light);
   background: transparent;
   transition: all 0.15s ease;
   cursor: pointer;
@@ -121,10 +220,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .v-action:hover {
-  color: #fff;
+  color: var(--text-primary);
   border-color: #555;
-  background: #141414;
-  box-shadow: 0 0 20px rgba(255,255,255,0.04);
+  background: var(--bg-hover);
+  box-shadow: var(--shadow-hover);
   transform: scale(1.02);
 }
 
@@ -137,33 +236,33 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-weight: 500;
   padding: 3px 10px;
   border-radius: 999px;
-  background: #111;
-  color: #666;
-  border: 1px solid #222;
+  background: var(--bg-badge);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
 }
 
 .badge.critical {
-  background: #111;
-  color: #fff;
-  border-color: #333;
+  background: var(--bg-badge);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
 }
 
 .badge.high {
-  background: #111;
-  color: #aaa;
-  border-color: #2e2e2e;
+  background: var(--bg-badge);
+  color: var(--text-secondary);
+  border-color: var(--border-hover);
 }
 
 .badge.medium {
-  background: #111;
-  color: #666;
-  border-color: #222;
+  background: var(--bg-badge);
+  color: var(--text-muted);
+  border-color: var(--border-light);
 }
 
 .badge.low {
-  background: #111;
-  color: #444;
-  border-color: #1e1e1e;
+  background: var(--bg-badge);
+  color: var(--text-muted);
+  border-color: var(--border);
 }
 
 /* ─── Progress Bar Styles ───────────────────────────────────────────────── */
@@ -171,21 +270,21 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .progress-track {
   width: 100%;
   height: 1px;
-  background: #1a1a1a;
+  background: var(--progress-track);
   border-radius: 2px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: #ffffff;
+  background: var(--progress-fill);
   transition: width 0.4s ease;
   border-radius: 2px;
 }
 
 .progress-fill.float {
   height: 1px;
-  background: #fff;
+  background: var(--progress-fill);
 }
 
 /* ─── Toggle Switch ─────────────────────────────────────────────────────── */
@@ -197,14 +296,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   width: 44px;
   align-items: center;
   border-radius: 999px;
-  background: #222;
+  background: var(--bg-toggle);
   transition: background 0.2s ease;
   cursor: pointer;
   border: none;
 }
 
 .toggle-track.active {
-  background: #fff;
+  background: var(--text-primary);
 }
 
 .toggle-thumb {
@@ -213,7 +312,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   width: 20px;
   transform: translateX(3px);
   border-radius: 999px;
-  background: #000;
+  background: var(--text-inverse);
   transition: transform 0.2s ease;
   box-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
@@ -228,7 +327,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   width: 20px;
   height: 20px;
   border-radius: 999px;
-  border: 1px solid #2a2a2a;
+  border: 1px solid var(--border-light);
   background: transparent;
   display: flex;
   align-items: center;
@@ -239,12 +338,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .checkbox-circle:hover {
-  border-color: #444;
+  border-color: var(--border-hover);
 }
 
 .checkbox-circle.checked {
-  background: #fff;
-  border-color: #fff;
+  background: var(--text-primary);
+  border-color: var(--text-primary);
 }
 
 .checkbox-circle.checked svg {
@@ -255,9 +354,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .input-field {
   width: 100%;
-  background: #0a0a0a;
-  border: 1px solid #1a1a1a;
-  color: #ededed;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
   border-radius: 8px;
   padding: 11px 14px;
   font-size: 14px;
@@ -267,11 +366,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .input-field:focus {
-  border-color: #333;
+  border-color: var(--text-muted);
 }
 
 .input-field::placeholder {
-  color: #444;
+  color: var(--text-muted);
 }
 
 /* ─── Pill Toggle ───────────────────────────────────────────────────────── */
@@ -280,23 +379,23 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-size: 13px;
   padding: 8px 16px;
   border-radius: 999px;
-  border: 1px solid #222;
+  border: 1px solid var(--border-light);
   background: transparent;
-  color: #666;
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.15s ease;
   font-family: 'Geist Mono', monospace;
 }
 
 .pill-toggle:hover {
-  border-color: #333;
-  color: #888;
+  border-color: var(--border-strong);
+  color: var(--text-secondary);
 }
 
 .pill-toggle.selected {
-  background: #fff;
-  color: #000;
-  border-color: #fff;
+  background: var(--text-primary);
+  color: var(--text-inverse);
+  border-color: var(--text-primary);
 }
 
 /* ─── Live Status Dot ──────────────────────────────────────────────────── */

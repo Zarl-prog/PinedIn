@@ -1,5 +1,35 @@
 @import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&display=swap');
 
+:root {
+  --bg-float-card: #ffffff;
+  --bg-float-card-hover: #fafafa;
+  --bg-badge-card: #e8e8e8;
+  --border-card: #e0e0e0;
+  --border-card-hover: #aaaaaa;
+  --border-card-light: #d0d0d0;
+  --border-card-strong: #aaaaaa;
+  --text-primary-card: #1a1a1a;
+  --text-secondary-card: #666666;
+  --text-muted-card: #999999;
+  --text-dim-card: #cccccc;
+  --shadow-hover-card: 0 0 16px rgba(0,0,0,0.06);
+}
+
+.dark {
+  --bg-float-card: #080808;
+  --bg-float-card-hover: #0a0a0a;
+  --bg-badge-card: #111111;
+  --border-card: #1a1a1a;
+  --border-card-hover: #2e2e2e;
+  --border-card-light: #222222;
+  --border-card-strong: #333333;
+  --text-primary-card: #ffffff;
+  --text-secondary-card: #aaaaaa;
+  --text-muted-card: #777777;
+  --text-dim-card: #888888;
+  --shadow-hover-card: 0 0 20px rgba(255,255,255,0.04);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -14,7 +44,7 @@ html, body, #root {
 }
 
 body {
-  color: #ffffff;
+  color: var(--text-primary-card);
   font-family: 'Geist Mono', monospace;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -28,8 +58,8 @@ body {
 /* ─── Floating Card Styles (.v-float) ──────────────────────────────────── */
 
 .v-float {
-  background: #080808;
-  border: 1px solid #1a1a1a;
+  background: var(--bg-float-card);
+  border: 1px solid var(--border-card);
   border-radius: 14px;
   padding: 12px 14px;
   transition: border-color 0.15s ease, background 0.15s ease;
@@ -40,7 +70,8 @@ body {
 }
 
 .v-float:hover {
-  border-color: #2e2e2e;
+  border-color: var(--border-card-hover);
+  background: var(--bg-float-card-hover);
 }
 
 /* ─── Badge Styles (.badge) ─────────────────────────────────────────────── */
@@ -52,41 +83,41 @@ body {
   font-weight: 500;
   padding: 3px 10px;
   border-radius: 999px;
-  background: #111;
-  color: #666;
-  border: 1px solid #222;
+  background: var(--bg-badge-card);
+  color: var(--text-secondary-card);
+  border: 1px solid var(--border-card-light);
 }
 
 .badge.critical {
-  background: #111;
-  color: #fff;
-  border-color: #333;
+  background: var(--bg-badge-card);
+  color: var(--text-primary-card);
+  border-color: var(--border-card-strong);
 }
 
 .badge.high {
-  background: #111;
-  color: #aaa;
-  border-color: #2e2e2e;
+  background: var(--bg-badge-card);
+  color: var(--text-secondary-card);
+  border-color: var(--border-card-hover);
 }
 
 .badge.medium {
-  background: #111;
-  color: #aaaaaa;
-  border-color: #222;
+  background: var(--bg-badge-card);
+  color: var(--text-secondary-card);
+  border-color: var(--border-card-light);
 }
 
 .badge.low {
-  background: #111;
-  color: #777777;
-  border-color: #1e1e1e;
+  background: var(--bg-badge-card);
+  color: var(--text-muted-card);
+  border-color: var(--border-card);
 }
 
 /* ─── Action Button Styles (.v-action) ──────────────────────────────────── */
 
 .v-action {
   font-size: 12px;
-  color: #999999;
-  border: 1px solid #222;
+  color: var(--text-dim-card);
+  border: 1px solid var(--border-card-light);
   background: transparent;
   transition: all 0.15s ease;
   cursor: pointer;
@@ -96,10 +127,10 @@ body {
 }
 
 .v-action:hover {
-  color: #fff;
+  color: var(--text-primary-card);
   border-color: #555;
-  background: #141414;
-  box-shadow: 0 0 20px rgba(255,255,255,0.04);
+  background: var(--bg-float-card-hover);
+  box-shadow: var(--shadow-hover-card);
   transform: scale(1.02);
 }
 

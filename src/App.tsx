@@ -272,6 +272,7 @@ export default function App() {
           /\ Settings
         </button>
         <button
+          className="v-btn"
           onClick={toggleZenMode}
           style={{
             fontFamily: "'Geist Mono', monospace",
@@ -291,6 +292,7 @@ export default function App() {
           {zenMode ? "◎ Zen On" : "◎ Zen"}
         </button>
         <button
+          className="v-btn"
           onClick={() => snapAllCardsToGrid()}
           style={{
             fontFamily: "'Geist Mono', monospace",

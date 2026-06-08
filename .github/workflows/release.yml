@@ -76,49 +76,61 @@ jobs:
           find "$BUNDLE_DIR" -type f \( -name "*.exe" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \) \
             -exec gh release upload "$RELEASE_TAG" {} --repo "$PUBLIC_REPO" --clobber \;
 
-          # Upload signed update archives (.tar.gz) — these are what the
-          # updater plugin actually downloads and verifies. Without them
-          # in the public repo, auto-update fails on ALL platforms.
-          find "$BUNDLE_DIR" -type f -name "*.tar.gz" \
+          # Upload updater archives — v1Compatible generates .tar.gz (macOS/Linux)
+          # and .zip (Windows) in bundle/updater/ or alongside bundles
+          UPDATER_DIR="$BUNDLE_DIR/updater"
+          if [ -d "$UPDATER_DIR" ]; then
+            find "$UPDATER_DIR" -type f \( -name "*.tar.gz" -o -name "*.zip" \) \
+              -exec gh release upload "$RELEASE_TAG" {} --repo "$PUBLIC_REPO" --clobber \;
+            # Upload .sig signature files alongside the archives
+            find "$UPDATER_DIR" -type f -name "*.sig" \
+              -exec gh release upload "$RELEASE_TAG" {} --repo "$PUBLIC_REPO" --clobber \;
+          fi
+
+          # Also look for .sig files alongside installers (for non-v1Compatible)
+          find "$BUNDLE_DIR" -type f -name "*.sig" \
             -exec gh release upload "$RELEASE_TAG" {} --repo "$PUBLIC_REPO" --clobber \;
 
-          # Generate latest.json with URLs pointing to the public repo.
-          # Without this, the app can't find the update manifest.
-          LATEST_JSON="$(dirname "$BUNDLE_DIR")/latest.json"
-          if [ -f "$LATEST_JSON" ]; then
-            # Rewrite URLs from private to public repo
-            sed "s|Zarl-prog/PinedIn/releases|Zarl-prog/PinedIn-Releases/releases|g" "$LATEST_JSON" > /tmp/latest.json
+          # Generate latest.json from the updater archives that were uploaded
+          echo "Generating latest.json from updater artifacts..."
+          PLATFORMS=""
+          for f in $(find "$UPDATER_DIR" -type f \( -name "*.tar.gz" -o -name "*.zip" \) 2>/dev/null); do
+            BASENAME=$(basename "$f")
+            # Extract platform from updater archive filename (Tauri v2 v1Compatible naming)
+            case "$BASENAME" in
+              *x64-setup.nsis.zip*)  PLAT="windows-x86_64" ;;
+              *x64-setup.mui.zip*)   PLAT="windows-x86_64" ;;
+              *x86_64-setup.nsis.zip*) PLAT="windows-x86_64" ;;
+              *x86_64-setup.mui.zip*) PLAT="windows-x86_64" ;;
+              *x86_64.AppImage.tar.gz*) PLAT="linux-x86_64" ;;
+              *amd64.AppImage.tar.gz*)  PLAT="linux-x86_64" ;;
+              *x86_64.dmg.tar.gz*)    PLAT="darwin-x86_64" ;;
+              *aarch64.dmg.tar.gz*)   PLAT="darwin-aarch64" ;;
+              *x86_64.app.tar.gz*)    PLAT="darwin-x86_64" ;;
+              *aarch64.app.tar.gz*)   PLAT="darwin-aarch64" ;;
+              *)                      continue ;;
+            esac
+            # Read the .sig file that sits right next to the archive
+            SIG_FILE="${f}.sig"
+            SIGNATURE=""
+            [ -f "$SIG_FILE" ] && SIGNATURE=$(cat "$SIG_FILE")
+            URL="https://github.com/$PUBLIC_REPO/releases/download/$RELEASE_TAG/$BASENAME"
+            PLATFORMS="$PLATFORMS,\"$PLAT\":{\"signature\":\"$SIGNATURE\",\"url\":\"$URL\"}"
+          done
+
+          if [ -n "$PLATFORMS" ]; then
+            PLATFORMS="{${PLATFORMS:1}}"
+            cat > /tmp/latest.json <<EOF
+        {
+          "version": "$RELEASE_TAG",
+          "notes": "See the main repo for changelog.",
+          "pub_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "platforms": $PLATFORMS
+        }
+        EOF
+            echo "Uploading latest.json..."
             gh release upload "$RELEASE_TAG" /tmp/latest.json \
               --repo "$PUBLIC_REPO" --clobber
           else
-            # Fallback: generate latest.json from the archives we uploaded
-            echo "No latest.json found — generating one from build artifacts"
-            PLATFORMS=""
-            for f in $(find "$BUNDLE_DIR" -type f -name "*.tar.gz"); do
-              BASENAME=$(basename "$f")
-              # Extract platform from the filename (tauri naming convention)
-              case "$BASENAME" in
-                *x64-setup*)      PLAT="windows-x86_64" ;;
-                *x64.dmg*)        PLAT="darwin-x86_64" ;;
-                *aarch64.dmg*)    PLAT="darwin-aarch64" ;;
-                *amd64.AppImage*) PLAT="linux-x86_64" ;;
-                *amd64.deb*)      PLAT="linux-x86_64" ;;
-                *)                continue ;;
-              esac
-              SIGNATURE=""
-              [ -f "${f}.sig" ] && SIGNATURE=$(cat "${f}.sig")
-              URL="https://github.com/$PUBLIC_REPO/releases/download/$RELEASE_TAG/$BASENAME"
-              PLATFORMS="$PLATFORMS,\"$PLAT\":{\"signature\":\"$SIGNATURE\",\"url\":\"$URL\"}"
-            done
-            PLATFORMS="{${PLATFORMS:1}}"
-            cat > /tmp/latest.json <<EOF
-          {
-            "version": "$RELEASE_TAG",
-            "notes": "See the main repo for changelog.",
-            "pub_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "platforms": $PLATFORMS
-          }
-          EOF
-            gh release upload "$RELEASE_TAG" /tmp/latest.json \
-              --repo "$PUBLIC_REPO" --clobber
+            echo "WARNING: No updater archives found — latest.json not generated!"
           fi

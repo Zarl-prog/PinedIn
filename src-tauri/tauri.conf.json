@@ -48,7 +48,7 @@
     "category": "Productivity",
     "shortDescription": "Floating task overlay for your desktop",
     "longDescription": "PinedIn keeps your tasks floating on screen no matter what app you are using.",
-    "createUpdaterArtifacts": true,
+    "createUpdaterArtifacts": "v1Compatible",
     "windows": {
       "wix": null,
       "nsis": {

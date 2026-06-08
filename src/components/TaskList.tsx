@@ -27,6 +27,7 @@ export default function TaskList({ searchQuery }: TaskListProps) {
   const setEditingTask = useReminderStore((s) => s.setEditingTask);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
+  const [completedExpanded, setCompletedExpanded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const reportError = (e: unknown) => {
@@ -156,50 +157,106 @@ export default function TaskList({ searchQuery }: TaskListProps) {
             {completedTasks.length > 0 && (
               <>
                 <div
+                  onClick={() => setCompletedExpanded((p) => !p)}
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "8px",
+                    gap: "6px",
                     margin: "16px 0 8px",
+                    cursor: "pointer",
+                    userSelect: "none",
                   }}
                 >
                   <div style={{ flex: 1, height: "1px", background: "var(--divider)" }} />
-                  <span style={{ fontSize: "12px", color: "var(--text-muted)", flexShrink: 0 }}>
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--text-muted)",
+                      flexShrink: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    <span style={{
+                      display: "inline-block",
+                      transition: "transform 0.15s ease",
+                      transform: completedExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                    }}>
+                      ›
+                    </span>
                     Completed ({completedTasks.length})
                   </span>
+                  {completedExpanded && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        Promise.all(
+                          completedTasks.map((t) =>
+                            t.id ? removeTask(t.id).catch(reportError) : Promise.resolve()
+                          )
+                        ).then(() => setCompletedExpanded(false));
+                      }}
+                      title="Delete all completed tasks"
+                      style={{
+                        fontSize: "11px",
+                        color: "var(--text-muted)",
+                        background: "transparent",
+                        border: "1px solid var(--border-light)",
+                        borderRadius: "4px",
+                        padding: "2px 6px",
+                        cursor: "pointer",
+                        fontFamily: "'Geist Mono', monospace",
+                        transition: "all 0.15s ease",
+                        flexShrink: 0,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = "var(--text-danger)";
+                        e.currentTarget.style.borderColor = "var(--text-danger)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = "var(--text-muted)";
+                        e.currentTarget.style.borderColor = "var(--border-light)";
+                      }}
+                    >
+                      Clear All
+                    </button>
+                  )}
                   <div style={{ flex: 1, height: "1px", background: "var(--divider)" }} />
                 </div>
-                {completedTasks.map((task) => (
-                  <TaskCardItem
-                    key={task.id}
-                    task={task}
-                    expanded={expandedId === task.id}
-                    menuOpen={menuOpenId === task.id}
-                    onToggle={() =>
-                      setExpandedId(expandedId === task.id ? null : (task.id ?? null))
-                    }
-                    onToggleMenu={() =>
-                      setMenuOpenId(menuOpenId === task.id ? null : (task.id ?? null))
-                    }
-                    onComplete={() => {
-                      if (task.id) {
-                        uncompleteFromStore(task.id).catch(reportError);
+                <AnimatePresence>
+                  {completedExpanded && completedTasks.map((task) => (
+                    <TaskCardItem
+                      key={task.id}
+                      task={task}
+                      expanded={expandedId === task.id}
+                      menuOpen={menuOpenId === task.id}
+                      onToggle={() =>
+                        setExpandedId(expandedId === task.id ? null : (task.id ?? null))
                       }
-                      setExpandedId(null);
-                    }}
-                    onEdit={() => {
-                      setEditingTask(task);
-                      setExpandedId(null);
-                      setMenuOpenId(null);
-                    }}
-                    onDelete={() => {
-                      handleDelete(task);
-                      setExpandedId(null);
-                      setMenuOpenId(null);
-                    }}
-                    completed
-                  />
-                ))}
+                      onToggleMenu={() =>
+                        setMenuOpenId(menuOpenId === task.id ? null : (task.id ?? null))
+                      }
+                      onComplete={() => {
+                        if (task.id) {
+                          uncompleteFromStore(task.id).catch(reportError);
+                        }
+                        setExpandedId(null);
+                      }}
+                      onEdit={() => {
+                        setEditingTask(task);
+                        setExpandedId(null);
+                        setMenuOpenId(null);
+                      }}
+                      onDelete={() => {
+                        handleDelete(task);
+                        setExpandedId(null);
+                        setMenuOpenId(null);
+                      }}
+                      completed
+                    />
+                  ))}
+                </AnimatePresence>
               </>
             )}
 

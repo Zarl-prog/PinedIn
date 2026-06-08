@@ -222,15 +222,4 @@ export async function deleteWorkspace(workspaceId: number): Promise<void> {
   return invoke("delete_workspace", { workspaceId });
 }
 
-// ─── Archive Zone ─────────────────────────────────────────────────────────────
-export async function showArchiveZone(): Promise<void> {
-  return invoke("show_archive_zone");
-}
 
-export async function hideArchiveZone(): Promise<void> {
-  return invoke("hide_archive_zone");
-}
-
-export async function checkDropOnArchive(taskId: number): Promise<boolean> {
-  return invoke("check_drop_on_archive", { taskId });
-}

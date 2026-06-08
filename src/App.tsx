@@ -8,6 +8,7 @@ import PreScheduleModal from "@/components/PreScheduleModal";
 import ShinyText from "@/components/ui/ShinyText";
 import UpdateBanner from "@/components/UpdateBanner";
 import WorkspacesView from "@/components/WorkspacesView";
+import WorkspaceDetailView from "@/components/WorkspaceDetailView";
 import { useReminders } from "@/hooks/useReminders";
 import { useReminderStore } from "@/store/reminderStore";
 import { getShakeInterval, setShakeInterval, setZenMode, snapAllCardsToGrid } from "@/lib/tauriCommands";
@@ -30,7 +31,12 @@ export default function App() {
   const isPaused = useReminderStore((s) => s.isPaused);
   const togglePaused = useReminderStore((s) => s.togglePaused);
 
-  const [view, setView] = useState<"tasks" | "workspaces">("tasks");
+  type AppView =
+    | { type: "tasks" }
+    | { type: "workspaces" }
+    | { type: "workspace-detail"; workspaceId: number; workspaceName: string };
+
+  const [view, setView] = useState<AppView>({ type: "tasks" });
 
   // Listen for task edit triggers from floating cards
   useEffect(() => {
@@ -324,22 +330,7 @@ export default function App() {
           ⊞ Align
         </button>
 
-        <button
-          className="v-btn"
-          onClick={() => setView((v) => (v === "workspaces" ? "tasks" : "workspaces"))}
-          style={{
-            fontFamily: "'Geist Mono', monospace",
-            fontSize: "11px",
-            borderRadius: "5px",
-            padding: "5px 10px",
-            cursor: "pointer",
-            color: view === "workspaces" ? "var(--text-primary)" : undefined,
-            background: view === "workspaces" ? "var(--border)" : undefined,
-            borderColor: view === "workspaces" ? "var(--text-muted)" : undefined,
-          }}
-        >
-          {view === "workspaces" ? "← Tasks" : "⊡ Workspaces"}
-        </button>
+
 
         {/* Shake interval — compact inline control, always visible */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "auto" }}>
@@ -373,14 +364,12 @@ export default function App() {
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          padding: view === "workspaces" ? 0 : "16px",
+          padding: view.type === "workspaces" || view.type === "workspace-detail" ? 0 : "16px",
           minHeight: 0,
           overflow: "hidden",
         }}
       >
-        {view === "workspaces" ? (
-          <WorkspacesView onBack={() => setView("tasks")} />
-        ) : (
+        {view.type === "tasks" && (
           <>
             <UpdateBanner />
 
@@ -405,7 +394,22 @@ export default function App() {
                 <ShinyText text="Tasks" speed={3} className="text-lg font-semibold" />
                 <ShinyText text={`${incompleteCount} task${incompleteCount !== 1 ? "s" : ""} remaining`} speed={5} className="text-sm" />
               </div>
-              <div style={{ display: "flex", gap: "6px" }}>
+              <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                <button
+                  onClick={() => setView({ type: "workspaces" })}
+                  style={{
+                    fontFamily: "'Geist Mono', monospace",
+                    fontSize: "11px",
+                    color: "#888888",
+                    background: "transparent",
+                    border: "1px solid #222",
+                    borderRadius: "5px",
+                    padding: "6px 12px",
+                    cursor: "pointer",
+                  }}
+                >
+                  ⊡ Workspaces
+                </button>
                 <button
                   className="v-btn"
                   onClick={() => setPreScheduleOpen(true)}
@@ -478,6 +482,19 @@ export default function App() {
               <TaskList searchQuery={searchQuery} />
             </div>
           </>
+        )}
+        {view.type === "workspaces" && (
+          <WorkspacesView
+            onOpen={(id, name) => setView({ type: "workspace-detail", workspaceId: id, workspaceName: name })}
+            onBack={() => setView({ type: "tasks" })}
+          />
+        )}
+        {view.type === "workspace-detail" && (
+          <WorkspaceDetailView
+            workspaceId={view.workspaceId}
+            workspaceName={view.workspaceName}
+            onBack={() => setView({ type: "workspaces" })}
+          />
         )}
       </div>
 

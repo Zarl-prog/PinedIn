@@ -17,10 +17,11 @@ function formatDate(dateStr: string): string {
 }
 
 interface WorkspacesViewProps {
+  onOpen?: (id: number, name: string) => void;
   onBack: () => void;
 }
 
-export default function WorkspacesView({ onBack }: WorkspacesViewProps) {
+export default function WorkspacesView({ onOpen, onBack }: WorkspacesViewProps) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
@@ -37,9 +38,13 @@ export default function WorkspacesView({ onBack }: WorkspacesViewProps) {
     getWorkspaces().then(setWorkspaces);
   }
 
-  async function handleLoad(id: number) {
-    await loadWorkspace(id);
-    onBack();
+  async function handleOpen(id: number, name: string) {
+    if (onOpen) {
+      onOpen(id, name);
+    } else {
+      await loadWorkspace(id);
+      onBack();
+    }
   }
 
   async function handleDelete(e: React.MouseEvent, id: number) {
@@ -218,7 +223,7 @@ export default function WorkspacesView({ onBack }: WorkspacesViewProps) {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.15 }}
-                  onClick={() => handleLoad(ws.id)}
+                  onClick={() => handleOpen(ws.id, ws.name)}
                   style={{
                     background: "var(--bg-card)",
                     border: "1px solid var(--border)",

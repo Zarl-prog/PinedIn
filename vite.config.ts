@@ -12,7 +12,8 @@ export default defineConfig(async () => ({
         main: "index.html",
         taskCard: "task-card.html",
         quickAdd: "quick-add.html",
-        dailyDigest: "daily-digest.html"
+        dailyDigest: "daily-digest.html",
+        archiveZone: "archive-zone.html"
       }
     }
   },

@@ -40,6 +40,7 @@ async function main() {
           description={task.description}
           urgency={task.urgency}
           dueTime={task.due_time}
+          createdAt={task.created_at}
           recurrence={task.recurrence}
           tags={task.tags}
           timeLimitMinutes={task.time_limit_minutes}

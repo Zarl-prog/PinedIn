@@ -7,17 +7,13 @@ import SettingsPanel from "@/components/SettingsPanel";
 import PreScheduleModal from "@/components/PreScheduleModal";
 import ShinyText from "@/components/ui/ShinyText";
 import UpdateBanner from "@/components/UpdateBanner";
+import WorkspacesView from "@/components/WorkspacesView";
 import { useReminders } from "@/hooks/useReminders";
 import { useReminderStore } from "@/store/reminderStore";
 import { getShakeInterval, setShakeInterval, setZenMode, snapAllCardsToGrid } from "@/lib/tauriCommands";
-import WorkspacePanel from "@/components/WorkspacePanel";
 
 const SHAKE_OPTIONS = [10, 15, 30, 60, 120, 300];
 
-/**
- * PinedIn - Main application window.
- * Full monochrome task management UI.
- */
 export default function App() {
   useReminders();
 
@@ -34,6 +30,8 @@ export default function App() {
   const isPaused = useReminderStore((s) => s.isPaused);
   const togglePaused = useReminderStore((s) => s.togglePaused);
 
+  const [view, setView] = useState<"tasks" | "workspaces">("tasks");
+
   // Listen for task edit triggers from floating cards
   useEffect(() => {
     const unlisten = listen<number>("open_edit_task", (event) => {
@@ -49,7 +47,6 @@ export default function App() {
   }, [tasks, setEditingTask]);
 
   // Refresh task list when backend emits tasks-updated
-  // (e.g. after floating card completes a task)
   useEffect(() => {
     const unlisten = listen("tasks-updated", () => {
       fetchTasks();
@@ -98,7 +95,6 @@ export default function App() {
   const incompleteCount = tasks.filter((t) => !t.completed).length;
   const isAnyModalOpen = isAddTaskOpen || isSettingsOpen || isPreScheduleOpen;
 
-  // ─── Shake interval — loaded from DB on mount, saved immediately on change ─
   const [shakeInterval, setShakeIntervalLocal] = useState<number>(30);
   useEffect(() => {
     getShakeInterval()
@@ -111,7 +107,6 @@ export default function App() {
     setShakeInterval(value).catch(() => {});
   };
 
-  // ─── Live status dot — slow green pulse, hourly red alert for 1 min ─────
   const liveDotRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -180,29 +175,6 @@ export default function App() {
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <ShinyText text="PinedIn" speed={4} className="text-white font-semibold text-sm" />
-              <button
-                onClick={() => setSettingsOpen(true)}
-                title="Settings"
-                style={{
-                  background: "none",
-                  border: "none",
-                  padding: "2px",
-                  cursor: "pointer",
-                  borderRadius: "3px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "var(--text-muted)",
-                  transition: "color 0.15s ease",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-secondary)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; }}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                </svg>
-              </button>
             </div>
             <div style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.2, marginTop: "2px" }}>
               Persistent task overlay
@@ -210,7 +182,36 @@ export default function App() {
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <button
+            onClick={() => setSettingsOpen(true)}
+            title="Settings"
+            style={{
+              background: "none",
+              border: "none",
+              padding: "4px",
+              cursor: "pointer",
+              borderRadius: "4px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "var(--text-secondary)",
+              transition: "color 0.15s ease, background 0.15s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "var(--text-primary)";
+              e.currentTarget.style.background = "var(--bg-hover)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "var(--text-secondary)";
+              e.currentTarget.style.background = "none";
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </button>
           <button
             onClick={() => getCurrentWindow().minimize()}
             style={{
@@ -317,12 +318,28 @@ export default function App() {
             fontSize: "11px",
             borderRadius: "5px",
             padding: "5px 10px",
-            cursor: "pointer"
+            cursor: "pointer",
           }}
         >
           ⊞ Align
         </button>
-        <WorkspacePanel />
+
+        <button
+          className="v-btn"
+          onClick={() => setView((v) => (v === "workspaces" ? "tasks" : "workspaces"))}
+          style={{
+            fontFamily: "'Geist Mono', monospace",
+            fontSize: "11px",
+            borderRadius: "5px",
+            padding: "5px 10px",
+            cursor: "pointer",
+            color: view === "workspaces" ? "var(--text-primary)" : undefined,
+            background: view === "workspaces" ? "var(--border)" : undefined,
+            borderColor: view === "workspaces" ? "var(--text-muted)" : undefined,
+          }}
+        >
+          {view === "workspaces" ? "← Tasks" : "⊡ Workspaces"}
+        </button>
 
         {/* Shake interval — compact inline control, always visible */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "auto" }}>
@@ -356,106 +373,112 @@ export default function App() {
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          padding: "16px",
+          padding: view === "workspaces" ? 0 : "16px",
           minHeight: 0,
           overflow: "hidden",
         }}
       >
-        <UpdateBanner />
+        {view === "workspaces" ? (
+          <WorkspacesView onBack={() => setView("tasks")} />
+        ) : (
+          <>
+            <UpdateBanner />
 
-        {/* Tasks Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "12px",
-            flexShrink: 0,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span
-              ref={liveDotRef}
-              id="live-dot"
-              className="dot live"
-              aria-label="App heartbeat"
-              title="App heartbeat — blinks red once an hour"
-            />
-            <ShinyText text="Tasks" speed={3} className="text-lg font-semibold" />
-            <ShinyText text={`${incompleteCount} task${incompleteCount !== 1 ? "s" : ""} remaining`} speed={5} className="text-sm" />
-          </div>
-          <div style={{ display: "flex", gap: "6px" }}>
-            <button
-              className="v-btn"
-              onClick={() => setPreScheduleOpen(true)}
+            {/* Tasks Header */}
+            <div
               style={{
-                borderRadius: "5px",
-                padding: "6px 12px",
-                fontSize: "11px",
-                fontFamily: "'Geist Mono', monospace",
-                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "12px",
+                flexShrink: 0,
               }}
             >
-              + Pre-Schedule
-            </button>
-            <button
-              onClick={() => setAddTaskOpen(true)}
-              style={{
-                background: "var(--text-primary)",
-                border: "none",
-                borderRadius: "5px",
-                padding: "6px 12px",
-                color: "var(--text-inverse)",
-                fontSize: "11px",
-                fontWeight: 600,
-                fontFamily: "'Geist Mono', monospace",
-                cursor: "pointer",
-                transition: "opacity 0.15s ease",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-            >
-              + Add Task
-            </button>
-          </div>
-        </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span
+                  ref={liveDotRef}
+                  id="live-dot"
+                  className="dot live"
+                  aria-label="App heartbeat"
+                  title="App heartbeat — blinks red once an hour"
+                />
+                <ShinyText text="Tasks" speed={3} className="text-lg font-semibold" />
+                <ShinyText text={`${incompleteCount} task${incompleteCount !== 1 ? "s" : ""} remaining`} speed={5} className="text-sm" />
+              </div>
+              <div style={{ display: "flex", gap: "6px" }}>
+                <button
+                  className="v-btn"
+                  onClick={() => setPreScheduleOpen(true)}
+                  style={{
+                    borderRadius: "5px",
+                    padding: "6px 12px",
+                    fontSize: "11px",
+                    fontFamily: "'Geist Mono', monospace",
+                    cursor: "pointer",
+                  }}
+                >
+                  + Pre-Schedule
+                </button>
+                <button
+                  onClick={() => setAddTaskOpen(true)}
+                  style={{
+                    background: "var(--text-primary)",
+                    border: "none",
+                    borderRadius: "5px",
+                    padding: "6px 12px",
+                    color: "var(--text-inverse)",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    fontFamily: "'Geist Mono', monospace",
+                    cursor: "pointer",
+                    transition: "opacity 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                >
+                  + Add Task
+                </button>
+              </div>
+            </div>
 
-        {/* Search Bar */}
-        <div style={{ position: "relative", marginBottom: "12px", flexShrink: 0 }}>
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="var(--text-muted)"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            style={{
-              position: "absolute",
-              left: "10px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              pointerEvents: "none",
-            }}
-          >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input
-            className="input-field"
-            type="text"
-            placeholder="Search tasks..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ paddingLeft: "32px" }}
-          />
-        </div>
+            {/* Search Bar */}
+            <div style={{ position: "relative", marginBottom: "12px", flexShrink: 0 }}>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="var(--text-muted)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{
+                  position: "absolute",
+                  left: "10px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  pointerEvents: "none",
+                }}
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                className="input-field"
+                type="text"
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ paddingLeft: "32px" }}
+              />
+            </div>
 
-        {/* Task List */}
-        <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
-          <TaskList searchQuery={searchQuery} />
-        </div>
+            {/* Task List */}
+            <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+              <TaskList searchQuery={searchQuery} />
+            </div>
+          </>
+        )}
       </div>
 
       {/* ─── Footer ───────────────────────────────────────────────────── */}

@@ -67,7 +67,6 @@ export default function TaskList({ searchQuery }: TaskListProps) {
 
   const handleDelete = async (task: Task) => {
     if (!task.id) return;
-    if (!window.confirm(`Delete "${task.title}"?`)) return;
     try {
       await removeTask(task.id);
       // Explicitly close the floating card window in case the task

@@ -36,9 +36,9 @@ export default function WorkspacePanel() {
         style={{
           fontFamily: "'Geist Mono', monospace",
           fontSize: "11px",
-          color: open ? "#ffffff" : "#888888",
-          background: open ? "#1a1a1a" : "transparent",
-          border: open ? "1px solid #444" : "1px solid #222",
+          color: open ? "var(--text-primary)" : "var(--text-secondary)",
+          background: open ? "var(--border)" : "transparent",
+          border: open ? "1px solid var(--text-muted)" : "1px solid var(--border-light)",
           borderRadius: "5px",
           padding: "5px 10px",
           cursor: "pointer"
@@ -59,8 +59,8 @@ export default function WorkspacePanel() {
               top: "36px",
               left: 0,
               width: "240px",
-              background: "#0a0a0a",
-              border: "1px solid #1a1a1a",
+              background: "var(--bg-dropdown)",
+              border: "1px solid var(--border)",
               borderRadius: "8px",
               padding: "12px",
               zIndex: 1000,
@@ -77,11 +77,11 @@ export default function WorkspacePanel() {
                 placeholder="Workspace name..."
                 style={{
                   flex: 1,
-                  background: "#000",
-                  border: "1px solid #1a1a1a",
+                  background: "var(--bg-app)",
+                  border: "1px solid var(--border)",
                   borderRadius: "5px",
                   padding: "5px 8px",
-                  color: "#fff",
+                  color: "var(--text-primary)",
                   fontSize: "11px",
                   fontFamily: "'Geist Mono', monospace"
                 }}
@@ -89,8 +89,8 @@ export default function WorkspacePanel() {
               <button
                 onClick={handleSave}
                 style={{
-                  background: "#ffffff",
-                  color: "#000",
+                  background: "var(--text-primary)",
+                  color: "var(--text-inverse)",
                   border: "none",
                   borderRadius: "5px",
                   padding: "5px 10px",
@@ -105,11 +105,11 @@ export default function WorkspacePanel() {
             </div>
 
             {workspaces.length > 0 && (
-              <div style={{ height: "1px", background: "#1a1a1a" }} />
+              <div style={{ height: "1px", background: "var(--divider)" }} />
             )}
 
             {workspaces.length === 0 && (
-              <div style={{ fontSize: "11px", color: "#444", textAlign: "center", padding: "8px 0" }}>
+              <div style={{ fontSize: "11px", color: "var(--text-muted)", textAlign: "center", padding: "8px 0" }}>
                 No saved workspaces
               </div>
             )}
@@ -130,10 +130,10 @@ export default function WorkspacePanel() {
                     flex: 1,
                     textAlign: "left",
                     background: "transparent",
-                    border: "1px solid #1a1a1a",
+                    border: "1px solid var(--border)",
                     borderRadius: "5px",
                     padding: "5px 8px",
-                    color: "#ffffff",
+                    color: "var(--text-primary)",
                     fontSize: "11px",
                     cursor: "pointer",
                     fontFamily: "'Geist Mono', monospace"
@@ -145,10 +145,10 @@ export default function WorkspacePanel() {
                   onClick={() => handleDelete(ws.id)}
                   style={{
                     background: "transparent",
-                    border: "1px solid #1a1a1a",
+                    border: "1px solid var(--border)",
                     borderRadius: "5px",
                     padding: "5px 7px",
-                    color: "#444",
+                    color: "var(--text-muted)",
                     fontSize: "11px",
                     cursor: "pointer"
                   }}

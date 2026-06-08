@@ -78,7 +78,6 @@ export default function TaskCard({
   const liveDotRef = useRef<HTMLSpanElement>(null);
   const expandedRef = useRef(expanded);
   expandedRef.current = expanded;
-  const interacting = useRef(false);
 
   // ─── Shake interval — loaded from DB, updated live via event ────────────
   const [intervalSeconds, setIntervalSeconds] = useState(30);
@@ -223,19 +222,11 @@ export default function TaskCard({
 
   const handleMouseDown = useCallback(async (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
-    interacting.current = true;
     await getCurrentWindow().startDragging();
-
-    const onUp = () => {
-      interacting.current = false;
-      window.removeEventListener("mouseup", onUp);
-    };
-    window.addEventListener("mouseup", onUp);
-  }, [taskId]);
+  }, []);
 
   const handleClick = useCallback(async (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
-    if (interacting.current) return;
     const next = !expanded;
     setExpanded(next);
     setShowRemindPicker(false);

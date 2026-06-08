@@ -87,11 +87,11 @@ export default function TaskList({ searchQuery }: TaskListProps) {
           style={{
             padding: "8px 12px",
             marginBottom: "8px",
-            background: "#1a1a1a",
-            border: "1px solid #2a2a2a",
+            background: "var(--bg-card)",
+            border: "1px solid var(--border-hover)",
             borderRadius: "6px",
             fontSize: "13px",
-            color: "#ccc",
+            color: "var(--text-secondary)",
           }}
         >
           {error}
@@ -163,11 +163,11 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                     margin: "16px 0 8px",
                   }}
                 >
-                  <div style={{ flex: 1, height: "1px", background: "#1a1a1a" }} />
-                  <span style={{ fontSize: "12px", color: "#333", flexShrink: 0 }}>
+                  <div style={{ flex: 1, height: "1px", background: "var(--divider)" }} />
+                  <span style={{ fontSize: "12px", color: "var(--text-muted)", flexShrink: 0 }}>
                     Completed ({completedTasks.length})
                   </span>
-                  <div style={{ flex: 1, height: "1px", background: "#1a1a1a" }} />
+                  <div style={{ flex: 1, height: "1px", background: "var(--divider)" }} />
                 </div>
                 {completedTasks.map((task) => (
                   <TaskCardItem
@@ -213,11 +213,11 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                     margin: "16px 0 8px",
                   }}
                 >
-                  <div style={{ flex: 1, height: "1px", background: "#1a1a1a" }} />
-                  <span style={{ fontSize: "12px", color: "#333", flexShrink: 0 }}>
+                  <div style={{ flex: 1, height: "1px", background: "var(--divider)" }} />
+                  <span style={{ fontSize: "12px", color: "var(--text-muted)", flexShrink: 0 }}>
                     Scheduled ({filteredScheduledTasks.length})
                   </span>
-                  <div style={{ flex: 1, height: "1px", background: "#1a1a1a" }} />
+                  <div style={{ flex: 1, height: "1px", background: "var(--divider)" }} />
                 </div>
                 {filteredScheduledTasks.map((task) => (
                   <ScheduledRow
@@ -310,7 +310,7 @@ function TaskCardItem({
           style={{ marginTop: "2px" }}
         >
           {completed && (
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-inverse)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
           )}
@@ -324,7 +324,7 @@ function TaskCardItem({
                 style={{
                   fontSize: "14px",
                   fontWeight: 500,
-                  color: completed ? "#444" : "#ededed",
+                  color: completed ? "var(--text-muted)" : "var(--text-primary)",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -333,7 +333,7 @@ function TaskCardItem({
                 {task.title}
               </span>
               {hasRecurrence && (
-                <span style={{ fontSize: "12px", color: "#444", flexShrink: 0 }} title={`Repeats ${task.recurrence}`}>
+                <span style={{ fontSize: "12px", color: "var(--text-muted)", flexShrink: 0 }} title={`Repeats ${task.recurrence}`}>
                   ↻
                 </span>
               )}
@@ -351,9 +351,9 @@ function TaskCardItem({
                   width: "22px",
                   height: "22px",
                   borderRadius: "6px",
-                  border: "1px solid #222",
+                  border: "1px solid var(--border-light)",
                   background: "transparent",
-                  color: "#666",
+                  color: "var(--text-secondary)",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
@@ -365,14 +365,14 @@ function TaskCardItem({
                   transition: "all 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#111";
-                  e.currentTarget.style.color = "#fff";
-                  e.currentTarget.style.borderColor = "#444";
+                  e.currentTarget.style.background = "var(--bg-badge)";
+                  e.currentTarget.style.color = "var(--text-primary)";
+                  e.currentTarget.style.borderColor = "var(--text-muted)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "#666";
-                  e.currentTarget.style.borderColor = "#222";
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                  e.currentTarget.style.borderColor = "var(--border-light)";
                 }}
               >
                 ⋯
@@ -392,14 +392,14 @@ function TaskCardItem({
                       right: 0,
                       zIndex: 50,
                       minWidth: "120px",
-                      background: "#0a0a0a",
-                      border: "1px solid #1a1a1a",
+                      background: "var(--bg-menu)",
+                      border: "1px solid var(--border)",
                       borderRadius: "8px",
                       padding: "4px",
                       display: "flex",
                       flexDirection: "column",
                       gap: "2px",
-                      boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+                      boxShadow: "var(--shadow-menu)",
                     }}
                   >
                     <button
@@ -412,17 +412,17 @@ function TaskCardItem({
                         background: "transparent",
                         border: "none",
                         borderRadius: "6px",
-                        color: "#ededed",
+                        color: "var(--text-primary)",
                         fontSize: "13px",
                         fontFamily: "'Geist Mono', monospace",
                         cursor: "pointer",
                         textAlign: "left",
                         width: "100%",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "#161616")}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-menu-hover)")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     >
-                      <span style={{ color: "#888", fontSize: "12px", width: "12px" }}>✎</span>
+                      <span style={{ color: "var(--text-secondary)", fontSize: "12px", width: "12px" }}>✎</span>
                       Edit
                     </button>
                     <button
@@ -435,17 +435,17 @@ function TaskCardItem({
                         background: "transparent",
                         border: "none",
                         borderRadius: "6px",
-                        color: "#ff5555",
+                        color: "var(--text-danger)",
                         fontSize: "13px",
                         fontFamily: "'Geist Mono', monospace",
                         cursor: "pointer",
                         textAlign: "left",
                         width: "100%",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "#1a0a0a")}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-delete-hover)")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     >
-                      <span style={{ color: "#ff5555", fontSize: "12px", width: "12px" }}>🗑</span>
+                      <span style={{ color: "var(--text-danger)", fontSize: "12px", width: "12px" }}>🗑</span>
                       Delete
                     </button>
                   </motion.div>
@@ -458,7 +458,7 @@ function TaskCardItem({
             <p
               style={{
                 fontSize: "13px",
-                color: "#444",
+                color: "var(--text-muted)",
                 marginTop: "4px",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -476,9 +476,9 @@ function TaskCardItem({
                   key={tag}
                   style={{
                     fontSize: "12px",
-                    color: "#666",
-                    background: "#0d0d0d",
-                    border: "1px solid #1e1e1e",
+                    color: "var(--text-secondary)",
+                    background: "var(--bg-tag)",
+                    border: "1px solid var(--border)",
                     borderRadius: "999px",
                     padding: "2px 8px",
                   }}
@@ -497,10 +497,10 @@ function TaskCardItem({
                 gap: "4px",
                 marginTop: "6px",
                 fontSize: "12px",
-                color: "#333",
+                color: "var(--text-muted)",
               }}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                 <line x1="16" y1="2" x2="16" y2="6" />
                 <line x1="8" y1="2" x2="8" y2="6" />
@@ -536,7 +536,7 @@ function TaskCardItem({
                 gap: "6px",
                 marginTop: "10px",
                 paddingTop: "10px",
-                borderTop: "1px solid #1a1a1a",
+                borderTop: "1px solid var(--divider)",
               }}
             >
               <button
@@ -584,17 +584,17 @@ function ScheduledRow({ task, onCancel }: { task: Task; onCancel: () => void }) 
         alignItems: "center",
         gap: "8px",
         padding: "10px 12px",
-        background: "#0a0a0a",
-        border: "1px solid #1a1a1a",
+        background: "var(--bg-scheduled)",
+        border: "1px solid var(--border)",
         borderRadius: "8px",
         marginBottom: "6px",
       }}
     >
-      <span style={{ fontSize: "12px", color: "#555", flexShrink: 0 }}>⏰</span>
+      <span style={{ fontSize: "12px", color: "var(--text-muted)", flexShrink: 0 }}>⏰</span>
       <span
         style={{
           fontSize: "13px",
-          color: "#888",
+          color: "var(--text-secondary)",
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",
@@ -608,7 +608,7 @@ function ScheduledRow({ task, onCancel }: { task: Task; onCancel: () => void }) 
       <span
         style={{
           fontSize: "12px",
-          color: "#444",
+          color: "var(--text-muted)",
           flexShrink: 0,
         }}
       >
@@ -621,9 +621,9 @@ function ScheduledRow({ task, onCancel }: { task: Task; onCancel: () => void }) 
           width: "22px",
           height: "22px",
           borderRadius: "6px",
-          border: "1px solid #222",
+          border: "1px solid var(--border-light)",
           background: "transparent",
-          color: "#666",
+          color: "var(--text-secondary)",
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
@@ -633,14 +633,14 @@ function ScheduledRow({ task, onCancel }: { task: Task; onCancel: () => void }) 
           transition: "all 0.15s ease",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = "#111";
-          e.currentTarget.style.color = "#fff";
-          e.currentTarget.style.borderColor = "#444";
+          e.currentTarget.style.background = "var(--bg-badge)";
+          e.currentTarget.style.color = "var(--text-primary)";
+          e.currentTarget.style.borderColor = "var(--text-muted)";
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.background = "transparent";
-          e.currentTarget.style.color = "#666";
-          e.currentTarget.style.borderColor = "#222";
+          e.currentTarget.style.color = "var(--text-secondary)";
+          e.currentTarget.style.borderColor = "var(--border-light)";
         }}
       >
         ✕
@@ -670,19 +670,19 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
         height="36"
         viewBox="0 0 24 24"
         fill="none"
-        stroke="#333"
+        stroke="var(--text-muted)"
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
         style={{ marginBottom: "12px" }}
       >
         <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-14 0Z" />
-        <circle cx="12" cy="9" r="2.5" fill="#333" stroke="none" />
+        <circle cx="12" cy="9" r="2.5" fill="var(--text-muted)" stroke="none" />
       </svg>
-      <span style={{ fontSize: "15px", fontWeight: 600, color: "#555", marginBottom: "4px" }}>
+      <span style={{ fontSize: "15px", fontWeight: 600, color: "var(--text-muted)", marginBottom: "4px" }}>
         No tasks yet
       </span>
-      <span style={{ fontSize: "13px", color: "#444", textAlign: "center", marginBottom: "16px" }}>
+      <span style={{ fontSize: "13px", color: "var(--text-muted)", textAlign: "center", marginBottom: "16px" }}>
         Create your first task to get started
       </span>
       <button
@@ -692,8 +692,8 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
           fontWeight: 600,
           padding: "9px 20px",
           borderRadius: "8px",
-          background: "#fff",
-          color: "#000",
+          background: "var(--text-primary)",
+          color: "var(--text-inverse)",
           border: "none",
           cursor: "pointer",
           transition: "opacity 0.15s ease",

@@ -11,6 +11,7 @@ import { useReminders } from "@/hooks/useReminders";
 import { useReminderStore } from "@/store/reminderStore";
 import { getShakeInterval, setShakeInterval, setZenMode, snapAllCardsToGrid } from "@/lib/tauriCommands";
 import WorkspacePanel from "@/components/WorkspacePanel";
+import type { Task } from "@/lib/tauriCommands";
 
 const SHAKE_OPTIONS = [10, 15, 30, 60, 120, 300];
 
@@ -22,6 +23,7 @@ export default function App() {
   useReminders();
 
   const tasks = useReminderStore((s) => s.tasks);
+  const fetchTasks = useReminderStore((s) => s.fetchTasks);
   const isAddTaskOpen = useReminderStore((s) => s.isAddTaskOpen);
   const setAddTaskOpen = useReminderStore((s) => s.setAddTaskOpen);
   const isSettingsOpen = useReminderStore((s) => s.isSettingsOpen);
@@ -46,6 +48,17 @@ export default function App() {
       unlisten.then((f) => f());
     };
   }, [tasks, setEditingTask]);
+
+  // Refresh task list when backend emits tasks-updated
+  // (e.g. after floating card completes a task)
+  useEffect(() => {
+    const unlisten = listen("tasks-updated", () => {
+      fetchTasks();
+    });
+    return () => {
+      unlisten.then((f) => f());
+    };
+  }, [fetchTasks]);
 
   // Close any open modal on Escape key
   useEffect(() => {
@@ -265,16 +278,6 @@ export default function App() {
           alignItems: "center",
         }}
       >
-        <button
-          className="v-btn"
-          onClick={() => setAddTaskOpen(true)}
-          style={{
-            padding: "7px 14px",
-            borderRadius: "8px",
-          }}
-        >
-          + Quick Add
-        </button>
         <button
           className="v-btn"
           onClick={togglePaused}

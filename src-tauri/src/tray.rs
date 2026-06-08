@@ -35,11 +35,18 @@ pub fn setup_tray(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Erro
         .cloned()
         .ok_or("missing default window icon for tray")?;
 
+    // macOS convention: menu bar icons show menu on left-click.
+    // Windows/Linux: left-click toggles the app window instead.
+    #[cfg(target_os = "macos")]
+    let show_menu = true;
+    #[cfg(not(target_os = "macos"))]
+    let show_menu = false;
+
     let tray = TrayIconBuilder::new()
         .icon(icon)
         .tooltip("PinedIn")
         .menu(&menu)
-        .show_menu_on_left_click(false)
+        .show_menu_on_left_click(show_menu)
         .on_menu_event(move |app_handle, event| match event.id().as_ref() {
             "show_app" => {
                 if let Some(window) = app_handle.get_webview_window("main") {
@@ -70,16 +77,18 @@ pub fn setup_tray(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Erro
         })
         .on_tray_icon_event(|tray, event| {
             // Left click and double click both toggle the main window:
-            // show+focus if hidden, hide if visible. Matches the
-            // Discord / Spotify minimize-to-tray convention.
+            // show+focus if hidden, hide if visible.
+            // Note: TrayIconEvent::DoubleClick does not fire reliably
+            // on macOS menu bar icons, so it's excluded on that platform.
             let should_toggle = matches!(
                 event,
                 TrayIconEvent::Click {
                     button: MouseButton::Left,
                     button_state: MouseButtonState::Up,
                     ..
-                } | TrayIconEvent::DoubleClick { .. }
-            );
+                }
+            ) || (cfg!(not(target_os = "macos"))
+                && matches!(event, TrayIconEvent::DoubleClick { .. }));
             if should_toggle {
                 let app = tray.app_handle();
                 if let Some(window) = app.get_webview_window("main") {

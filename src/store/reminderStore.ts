@@ -291,6 +291,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
     try {
       const settings = await getSettings();
       set({ settings });
+      stopSystemTheme();
       applyTheme(settings.theme);
       if (settings.theme === "system") listenSystemTheme();
     } catch (error) {
@@ -302,15 +303,13 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
     try {
       await updateSetting(key, value);
       const { settings } = get();
-      // Build the typed object explicitly so we don't widen AppSettings
-      // with arbitrary keys via a cast. Only "theme" is part of the
-      // type today; if more get added, update this switch.
       const updated: AppSettings =
         key === "theme"
           ? { ...settings, theme: value as AppSettings["theme"] }
           : settings;
       set({ settings: updated });
       if (key === "theme") {
+        stopSystemTheme();
         applyTheme(value);
         if (value === "system") listenSystemTheme();
       }
@@ -378,4 +377,11 @@ function listenSystemTheme(): void {
   };
   mq.addEventListener("change", handler);
   mediaListener = () => mq.removeEventListener("change", handler);
+}
+
+function stopSystemTheme(): void {
+  if (mediaListener) {
+    mediaListener();
+    mediaListener = null;
+  }
 }

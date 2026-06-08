@@ -338,7 +338,40 @@ function TaskCardItem({
                 </span>
               )}
             </div>
-            <UrgencyBadge urgency={urgency} />
+              <UrgencyBadge urgency={urgency} />
+            {completed && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onComplete();
+                }}
+                title="Restore task"
+                style={{
+                  fontSize: "11px",
+                  color: "var(--text-secondary)",
+                  background: "transparent",
+                  border: "1px solid var(--border-light)",
+                  borderRadius: "5px",
+                  padding: "3px 8px",
+                  cursor: "pointer",
+                  fontFamily: "'Geist Mono', monospace",
+                  transition: "all 0.15s ease",
+                  flexShrink: 0,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "var(--text-primary)";
+                  e.currentTarget.style.borderColor = "var(--border-strong)";
+                  e.currentTarget.style.background = "var(--bg-hover)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                  e.currentTarget.style.borderColor = "var(--border-light)";
+                  e.currentTarget.style.background = "transparent";
+                }}
+              >
+                ↩ Undo
+              </button>
+            )}
             {/* Three-dot context menu trigger */}
             <div ref={menuRef} style={{ position: "relative", flexShrink: 0 }}>
               <button

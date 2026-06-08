@@ -199,7 +199,7 @@ export default function AddTaskModal({
             style={{
               position: "absolute",
               inset: 0,
-              background: "rgba(0,0,0,0.6)",
+              background: "var(--bg-overlay)",
             }}
             onClick={handleClose}
           />
@@ -214,8 +214,8 @@ export default function AddTaskModal({
               zIndex: 10,
               width: "100%",
               maxWidth: "420px",
-              background: "#0a0a0a",
-              border: "1px solid #1a1a1a",
+              background: "var(--bg-modal)",
+              border: "1px solid var(--border)",
               borderRadius: "10px",
               padding: "24px",
             }}
@@ -228,7 +228,7 @@ export default function AddTaskModal({
                 marginBottom: "16px",
               }}
             >
-              <span style={{ fontSize: "17px", fontWeight: 600, color: "#ededed" }}>
+              <span style={{ fontSize: "17px", fontWeight: 600, color: "var(--text-primary)" }}>
                 {editTask ? "Edit Task" : "New Task"}
               </span>
               <button
@@ -237,9 +237,9 @@ export default function AddTaskModal({
                   width: "24px",
                   height: "24px",
                   borderRadius: "6px",
-                  border: "1px solid #222",
+                  border: "1px solid var(--border-light)",
                   background: "transparent",
-                  color: "#666",
+                  color: "var(--text-secondary)",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
@@ -248,14 +248,14 @@ export default function AddTaskModal({
                   transition: "all 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#111";
-                  e.currentTarget.style.color = "#fff";
-                  e.currentTarget.style.borderColor = "#444";
+                  e.currentTarget.style.background = "var(--bg-badge)";
+                  e.currentTarget.style.color = "var(--text-primary)";
+                  e.currentTarget.style.borderColor = "var(--text-muted)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "#666";
-                  e.currentTarget.style.borderColor = "#222";
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                  e.currentTarget.style.borderColor = "var(--border-light)";
                 }}
               >
                 ✕
@@ -269,11 +269,11 @@ export default function AddTaskModal({
                     display: "block",
                     fontSize: "13px",
                     fontWeight: 500,
-                    color: "#888",
+                    color: "var(--text-secondary)",
                     marginBottom: "6px",
                   }}
                 >
-                  Title <span style={{ color: "#555" }}>*</span>
+                  Title <span style={{ color: "var(--text-muted)" }}>*</span>
                 </label>
                 <input
                   type="text"
@@ -291,7 +291,7 @@ export default function AddTaskModal({
                     display: "block",
                     fontSize: "13px",
                     fontWeight: 500,
-                    color: "#888",
+                    color: "var(--text-secondary)",
                     marginBottom: "6px",
                   }}
                 >
@@ -313,7 +313,7 @@ export default function AddTaskModal({
                     display: "block",
                     fontSize: "13px",
                     fontWeight: 500,
-                    color: "#888",
+                    color: "var(--text-secondary)",
                     marginBottom: "6px",
                   }}
                 >
@@ -339,12 +339,12 @@ export default function AddTaskModal({
                     display: "block",
                     fontSize: "13px",
                     fontWeight: 500,
-                    color: "#888",
+                    color: "var(--text-secondary)",
                     marginBottom: "6px",
                   }}
                 >
                   Due Date{" "}
-                  <span style={{ color: "#555" }}>(optional)</span>
+                  <span style={{ color: "var(--text-muted)" }}>(optional)</span>
                 </label>
                 <div style={{ position: "relative" }}>
                   <svg
@@ -352,7 +352,7 @@ export default function AddTaskModal({
                     height="13"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="#444"
+                    stroke="var(--text-muted)"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -385,12 +385,12 @@ export default function AddTaskModal({
                     display: "block",
                     fontSize: "13px",
                     fontWeight: 500,
-                    color: "#888",
+                    color: "var(--text-secondary)",
                     marginBottom: "6px",
                   }}
                 >
                   Time Limit{" "}
-                  <span style={{ color: "#555" }}>(optional)</span>
+                  <span style={{ color: "var(--text-muted)" }}>(optional)</span>
                 </label>
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                   <input
@@ -401,11 +401,11 @@ export default function AddTaskModal({
                     onChange={(e) => setTimeLimitValue(e.target.value)}
                     style={{
                       width: "100px",
-                      background: "#0a0a0a",
-                      border: "1px solid #1a1a1a",
+                      background: "var(--bg-input)",
+                      border: "1px solid var(--border)",
                       borderRadius: "6px",
                       padding: "8px 10px",
-                      color: "#ffffff",
+                      color: "var(--text-primary)",
                       fontSize: "12px",
                       fontFamily: "'Geist Mono', monospace",
                     }}
@@ -414,11 +414,11 @@ export default function AddTaskModal({
                     value={timeLimitUnit}
                     onChange={(e) => setTimeLimitUnit(e.target.value as TimeLimitUnit)}
                     style={{
-                      background: "#0a0a0a",
-                      border: "1px solid #1a1a1a",
+                      background: "var(--bg-input)",
+                      border: "1px solid var(--border)",
                       borderRadius: "6px",
                       padding: "8px 10px",
-                      color: "#ffffff",
+                      color: "var(--text-primary)",
                       fontSize: "12px",
                       fontFamily: "'Geist Mono', monospace",
                       cursor: "pointer",
@@ -439,7 +439,7 @@ export default function AddTaskModal({
                     display: "block",
                     fontSize: "13px",
                     fontWeight: 500,
-                    color: "#888",
+                    color: "var(--text-secondary)",
                     marginBottom: "6px",
                   }}
                 >
@@ -465,12 +465,12 @@ export default function AddTaskModal({
                     display: "block",
                     fontSize: "13px",
                     fontWeight: 500,
-                    color: "#888",
+                    color: "var(--text-secondary)",
                     marginBottom: "6px",
                   }}
                 >
                   Tags{" "}
-                  <span style={{ color: "#444" }}>(max 5)</span>
+                  <span style={{ color: "var(--text-muted)" }}>(max 5)</span>
                 </label>
                 <div
                   style={{
@@ -478,8 +478,8 @@ export default function AddTaskModal({
                     flexWrap: "wrap",
                     alignItems: "center",
                     gap: "4px",
-                    background: "#0a0a0a",
-                    border: "1px solid #1a1a1a",
+                    background: "var(--bg-input)",
+                    border: "1px solid var(--border)",
                     borderRadius: "8px",
                     padding: "10px 12px",
                     minHeight: "42px",
@@ -493,9 +493,9 @@ export default function AddTaskModal({
                         alignItems: "center",
                         gap: "3px",
                         fontSize: "12px",
-                        color: "#666",
-                        background: "#111",
-                        border: "1px solid #222",
+                        color: "var(--text-secondary)",
+                        background: "var(--bg-tag)",
+                        border: "1px solid var(--border-light)",
                         borderRadius: "999px",
                         padding: "3px 10px",
                       }}
@@ -503,20 +503,20 @@ export default function AddTaskModal({
                       {tag}
                       <button
                         onClick={() => removeTag(tag)}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          width: "12px",
-                          height: "12px",
-                          borderRadius: "999px",
-                          border: "none",
-                          background: "transparent",
-                          color: "#444",
-                          cursor: "pointer",
-                          fontSize: "11px",
-                          padding: 0,
-                        }}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: "12px",
+                            height: "12px",
+                            borderRadius: "999px",
+                            border: "none",
+                            background: "transparent",
+                            color: "var(--text-muted)",
+                            cursor: "pointer",
+                            fontSize: "11px",
+                            padding: 0,
+                          }}
                       >
                         ✕
                       </button>
@@ -535,7 +535,7 @@ export default function AddTaskModal({
                       flex: 1,
                       border: "none",
                       background: "transparent",
-                      color: "#ededed",
+                      color: "var(--text-primary)",
                       fontSize: "14px",
                       fontFamily: "'Geist Mono', monospace",
                       outline: "none",
@@ -545,7 +545,7 @@ export default function AddTaskModal({
               </div>
 
               {error && (
-                <p style={{ fontSize: "13px", color: "#888" }}>{error}</p>
+                <p style={{ fontSize: "13px", color: "var(--text-secondary)" }}>{error}</p>
               )}
 
               <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
@@ -570,8 +570,8 @@ export default function AddTaskModal({
                     padding: "8px 0",
                     borderRadius: "8px",
                     border: "none",
-                    background: "#fff",
-                    color: "#000",
+                    background: "var(--text-primary)",
+                    color: "var(--text-inverse)",
                     fontSize: "14px",
                     fontWeight: 600,
                     cursor: "pointer",

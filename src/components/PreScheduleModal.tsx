@@ -123,7 +123,7 @@ export default function PreScheduleModal({ open, onClose }: PreScheduleModalProp
             style={{
               position: "absolute",
               inset: 0,
-              background: "rgba(0,0,0,0.6)",
+              background: "var(--bg-overlay)",
             }}
             onClick={handleClose}
           />
@@ -138,8 +138,8 @@ export default function PreScheduleModal({ open, onClose }: PreScheduleModalProp
               zIndex: 10,
               width: "100%",
               maxWidth: "420px",
-              background: "#0a0a0a",
-              border: "1px solid #1a1a1a",
+              background: "var(--bg-modal)",
+              border: "1px solid var(--border)",
               borderRadius: "10px",
               padding: "24px",
             }}
@@ -152,7 +152,7 @@ export default function PreScheduleModal({ open, onClose }: PreScheduleModalProp
                 marginBottom: "16px",
               }}
             >
-              <span style={{ fontSize: "17px", fontWeight: 600, color: "#ededed" }}>
+              <span style={{ fontSize: "17px", fontWeight: 600, color: "var(--text-primary)" }}>
                 Pre-Schedule Task
               </span>
               <button
@@ -161,9 +161,9 @@ export default function PreScheduleModal({ open, onClose }: PreScheduleModalProp
                   width: "24px",
                   height: "24px",
                   borderRadius: "6px",
-                  border: "1px solid #222",
+                  border: "1px solid var(--border-light)",
                   background: "transparent",
-                  color: "#666",
+                  color: "var(--text-secondary)",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
@@ -172,14 +172,14 @@ export default function PreScheduleModal({ open, onClose }: PreScheduleModalProp
                   transition: "all 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#111";
-                  e.currentTarget.style.color = "#fff";
-                  e.currentTarget.style.borderColor = "#444";
+                  e.currentTarget.style.background = "var(--bg-badge)";
+                  e.currentTarget.style.color = "var(--text-primary)";
+                  e.currentTarget.style.borderColor = "var(--text-muted)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "#666";
-                  e.currentTarget.style.borderColor = "#222";
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                  e.currentTarget.style.borderColor = "var(--border-light)";
                 }}
               >
                 ✕
@@ -193,11 +193,11 @@ export default function PreScheduleModal({ open, onClose }: PreScheduleModalProp
                     display: "block",
                     fontSize: "13px",
                     fontWeight: 500,
-                    color: "#888",
+                    color: "var(--text-secondary)",
                     marginBottom: "6px",
                   }}
                 >
-                  Title <span style={{ color: "#555" }}>*</span>
+                  Title <span style={{ color: "var(--text-muted)" }}>*</span>
                 </label>
                 <input
                   type="text"
@@ -215,7 +215,7 @@ export default function PreScheduleModal({ open, onClose }: PreScheduleModalProp
                     display: "block",
                     fontSize: "13px",
                     fontWeight: 500,
-                    color: "#888",
+                    color: "var(--text-secondary)",
                     marginBottom: "6px",
                   }}
                 >
@@ -237,7 +237,7 @@ export default function PreScheduleModal({ open, onClose }: PreScheduleModalProp
                     display: "block",
                     fontSize: "13px",
                     fontWeight: 500,
-                    color: "#888",
+                    color: "var(--text-secondary)",
                     marginBottom: "6px",
                   }}
                 >
@@ -263,11 +263,11 @@ export default function PreScheduleModal({ open, onClose }: PreScheduleModalProp
                     display: "block",
                     fontSize: "13px",
                     fontWeight: 500,
-                    color: "#888",
+                    color: "var(--text-secondary)",
                     marginBottom: "6px",
                   }}
                 >
-                  Schedule For <span style={{ color: "#555" }}>*</span>
+                  Schedule For <span style={{ color: "var(--text-muted)" }}>*</span>
                 </label>
                 <div style={{ display: "flex", gap: "8px" }}>
                   <input
@@ -289,7 +289,7 @@ export default function PreScheduleModal({ open, onClose }: PreScheduleModalProp
                 <p
                   style={{
                     fontSize: "12px",
-                    color: "#444",
+                    color: "var(--text-muted)",
                     marginTop: "6px",
                   }}
                 >
@@ -298,7 +298,7 @@ export default function PreScheduleModal({ open, onClose }: PreScheduleModalProp
               </div>
 
               {error && (
-                <p style={{ fontSize: "13px", color: "#888" }}>{error}</p>
+                <p style={{ fontSize: "13px", color: "var(--text-secondary)" }}>{error}</p>
               )}
 
               <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
@@ -323,8 +323,8 @@ export default function PreScheduleModal({ open, onClose }: PreScheduleModalProp
                     padding: "8px 0",
                     borderRadius: "8px",
                     border: "none",
-                    background: "#fff",
-                    color: "#000",
+                    background: "var(--text-primary)",
+                    color: "var(--text-inverse)",
                     fontSize: "14px",
                     fontWeight: 600,
                     cursor: "pointer",

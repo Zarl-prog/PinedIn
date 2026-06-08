@@ -29,8 +29,8 @@ export default function UpdateBanner() {
           transition={{ type: "spring", stiffness: 300, damping: 28 }}
           style={{
             width: "100%",
-            background: "#0a0a0a",
-            border: "1px solid #222",
+            background: "var(--bg-update)",
+            border: "1px solid var(--border-light)",
             borderRadius: "8px",
             padding: "10px 16px",
             display: "flex",
@@ -40,10 +40,10 @@ export default function UpdateBanner() {
           }}
         >
           <div>
-            <span style={{ fontSize: "12px", color: "#ffffff", fontWeight: 600 }}>
+            <span style={{ fontSize: "12px", color: "var(--text-primary)", fontWeight: 600 }}>
               Update available — v{version}
             </span>
-            <span style={{ fontSize: "11px", color: "#888", marginLeft: "10px" }}>
+            <span style={{ fontSize: "11px", color: "var(--text-secondary)", marginLeft: "10px" }}>
               A new version of PinedIn is ready
             </span>
           </div>
@@ -51,8 +51,8 @@ export default function UpdateBanner() {
             onClick={handleUpdate}
             disabled={updating}
             style={{
-              background: "#ffffff",
-              color: "#000000",
+              background: "var(--text-primary)",
+              color: "var(--text-inverse)",
               border: "none",
               borderRadius: "6px",
               padding: "6px 14px",

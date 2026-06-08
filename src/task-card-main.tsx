@@ -43,6 +43,11 @@ async function main() {
   try {
     const settings = await invoke<{ theme: string }>("get_settings");
     applyTheme(settings.theme);
+    if (settings.theme === "system") {
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+        document.documentElement.classList.toggle("dark", e.matches);
+      });
+    }
   } catch (_) {}
   listen<string>("theme_changed", (e) => applyTheme(e.payload));
 

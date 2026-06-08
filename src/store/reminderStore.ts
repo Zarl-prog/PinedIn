@@ -292,6 +292,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
       const settings = await getSettings();
       set({ settings });
       applyTheme(settings.theme);
+      if (settings.theme === "system") listenSystemTheme();
     } catch (error) {
       console.error("Failed to fetch settings:", error);
     }
@@ -311,6 +312,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
       set({ settings: updated });
       if (key === "theme") {
         applyTheme(value);
+        if (value === "system") listenSystemTheme();
       }
     } catch (error) {
       console.error("Failed to save setting:", error);
@@ -359,4 +361,21 @@ function applyTheme(theme: string): void {
       root.classList.remove("dark");
     }
   }
+}
+
+let mediaListener: (() => void) | null = null;
+
+function listenSystemTheme(): void {
+  if (mediaListener) mediaListener();
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  const handler = (e: MediaQueryListEvent) => {
+    const root = document.documentElement;
+    if (e.matches) {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+  };
+  mq.addEventListener("change", handler);
+  mediaListener = () => mq.removeEventListener("change", handler);
 }

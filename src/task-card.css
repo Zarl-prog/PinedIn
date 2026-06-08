@@ -4,14 +4,19 @@
   --bg-float-card: #ffffff;
   --bg-float-card-hover: #fafafa;
   --bg-badge-card: #e8e8e8;
+  --bg-tag-card: #f0f0f0;
   --border-card: #e0e0e0;
   --border-card-hover: #aaaaaa;
   --border-card-light: #d0d0d0;
   --border-card-strong: #aaaaaa;
+  --border-card-tag: #d0d0d0;
   --text-primary-card: #1a1a1a;
   --text-secondary-card: #666666;
   --text-muted-card: #999999;
-  --text-dim-card: #cccccc;
+  --text-dim-card: #888888;
+  --text-faint-card: rgba(0,0,0,0.25);
+  --progress-track-card: #e0e0e0;
+  --progress-fill-card: #1a1a1a;
   --shadow-hover-card: 0 0 16px rgba(0,0,0,0.06);
 }
 
@@ -19,14 +24,19 @@
   --bg-float-card: #080808;
   --bg-float-card-hover: #0a0a0a;
   --bg-badge-card: #111111;
+  --bg-tag-card: #0d0d0d;
   --border-card: #1a1a1a;
   --border-card-hover: #2e2e2e;
   --border-card-light: #222222;
   --border-card-strong: #333333;
+  --border-card-tag: #1e1e1e;
   --text-primary-card: #ffffff;
   --text-secondary-card: #aaaaaa;
   --text-muted-card: #777777;
   --text-dim-card: #888888;
+  --text-faint-card: rgba(255,255,255,0.2);
+  --progress-track-card: #111111;
+  --progress-fill-card: #ffffff;
   --shadow-hover-card: 0 0 20px rgba(255,255,255,0.04);
 }
 

@@ -276,7 +276,7 @@ export default function TaskCard({
             style={{
               fontSize: "13px",
               fontWeight: 500,
-              color: "#ffffff",
+              color: "var(--text-primary-card)",
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
@@ -291,7 +291,7 @@ export default function TaskCard({
             {hasRecurrence && (
               <span
                 title={`Repeats ${recurrence}`}
-                style={{ fontSize: "11px", color: "#888888", flexShrink: 0 }}
+                style={{ fontSize: "11px", color: "var(--text-dim-card)", flexShrink: 0 }}
               >
                 ↻
               </span>
@@ -312,7 +312,7 @@ export default function TaskCard({
           <p
             style={{
               fontSize: "11px",
-              color: "#888888",
+              color: "var(--text-dim-card)",
               marginTop: "4px",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -331,9 +331,9 @@ export default function TaskCard({
                 key={tag}
                 style={{
                   fontSize: "10px",
-                  color: "#888888",
-                  background: "#0d0d0d",
-                  border: "1px solid #1e1e1e",
+                  color: "var(--text-dim-card)",
+                  background: "var(--bg-tag-card)",
+                  border: "1px solid var(--border-card-tag)",
                   borderRadius: "999px",
                   padding: "2px 7px",
                 }}
@@ -352,10 +352,10 @@ export default function TaskCard({
               gap: "4px",
               marginTop: "6px",
               fontSize: "11px",
-              color: "#888888",
+              color: "var(--text-dim-card)",
             }}
           >
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#888888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim-card)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
               <line x1="16" y1="2" x2="16" y2="6" />
               <line x1="8" y1="2" x2="8" y2="6" />
@@ -368,7 +368,7 @@ export default function TaskCard({
         {createdAt && (
           <div style={{
             fontSize: "10px",
-            color: "rgba(255,255,255,0.2)",
+            color: "var(--text-faint-card)",
             marginTop: "2px",
             fontFamily: "'Geist Mono', monospace"
           }}>
@@ -380,7 +380,7 @@ export default function TaskCard({
           style={{
             width: "100%",
             height: "1px",
-            background: "#111",
+            background: "var(--progress-track-card)",
             marginTop: "8px",
             borderRadius: "2px",
             overflow: "hidden",
@@ -390,7 +390,7 @@ export default function TaskCard({
             style={{
               width: `${progressPercent}%`,
               height: "100%",
-              background: "#fff",
+              background: "var(--progress-fill-card)",
               transition: "width 0.4s ease",
               borderRadius: "2px",
             }}
@@ -450,7 +450,7 @@ export default function TaskCard({
             transition={{ duration: 0.1 }}
             style={{ marginTop: "4px", padding: "0 14px 14px" }}
           >
-            <div style={{ fontSize: "11px", color: "#888888", marginBottom: "6px" }}>
+            <div style={{ fontSize: "11px", color: "var(--text-dim-card)", marginBottom: "6px" }}>
               Remind me in…
             </div>
             <div style={{ display: "flex", gap: "6px" }}>
@@ -482,7 +482,7 @@ export default function TaskCard({
           style={{
             width: "100%",
             height: "4px",
-            background: "#1a1a1a",
+            background: "var(--border-card)",
           }}
         >
           <motion.div

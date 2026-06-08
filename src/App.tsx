@@ -274,19 +274,19 @@ export default function App() {
         <button
           className="v-btn"
           onClick={toggleZenMode}
+          aria-pressed={zenMode}
           style={{
             fontFamily: "'Geist Mono', monospace",
             fontSize: "11px",
-            color: zenMode ? "var(--text-primary)" : "var(--text-secondary)",
-            background: zenMode ? "var(--border)" : "transparent",
-            border: zenMode ? "1px solid var(--text-muted)" : "1px solid var(--border-light)",
             borderRadius: "5px",
             padding: "5px 10px",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             gap: "4px",
-            transition: "all 0.12s"
+            color: zenMode ? "var(--text-primary)" : undefined,
+            background: zenMode ? "var(--border)" : undefined,
+            borderColor: zenMode ? "var(--text-muted)" : undefined,
           }}
         >
           {zenMode ? "◎ Zen On" : "◎ Zen"}
@@ -297,9 +297,6 @@ export default function App() {
           style={{
             fontFamily: "'Geist Mono', monospace",
             fontSize: "11px",
-            color: "var(--text-secondary)",
-            background: "transparent",
-            border: "1px solid var(--border-light)",
             borderRadius: "5px",
             padding: "5px 10px",
             cursor: "pointer"
@@ -371,27 +368,14 @@ export default function App() {
           </div>
           <div style={{ display: "flex", gap: "6px" }}>
             <button
+              className="v-btn"
               onClick={() => setPreScheduleOpen(true)}
               style={{
-                background: "transparent",
-                border: "1px solid var(--border-light)",
                 borderRadius: "5px",
                 padding: "6px 12px",
-                color: "var(--text-secondary)",
                 fontSize: "11px",
                 fontFamily: "'Geist Mono', monospace",
                 cursor: "pointer",
-                transition: "all 0.15s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--bg-input)";
-                e.currentTarget.style.borderColor = "var(--border-strong)";
-                e.currentTarget.style.color = "var(--text-primary)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.borderColor = "var(--border-light)";
-                e.currentTarget.style.color = "var(--text-secondary)";
               }}
             >
               + Pre-Schedule

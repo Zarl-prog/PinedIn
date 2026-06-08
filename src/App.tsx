@@ -494,6 +494,8 @@ export default function App() {
             workspaceId={view.workspaceId}
             workspaceName={view.workspaceName}
             onBack={() => setView({ type: "workspaces" })}
+            onAddTask={() => setAddTaskOpen(true)}
+            onPreSchedule={() => setPreScheduleOpen(true)}
           />
         )}
       </div>

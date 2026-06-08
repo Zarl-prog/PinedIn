@@ -68,7 +68,31 @@ export default function WorkspacesView({ onOpen, onBack }: WorkspacesViewProps) 
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <button
+            onClick={onBack}
+            style={{
+              background: "transparent",
+              border: "1px solid var(--border)",
+              borderRadius: "6px",
+              padding: "6px 12px",
+              color: "var(--text-muted)",
+              fontSize: "12px",
+              fontFamily: "'Geist Mono', monospace",
+              cursor: "pointer",
+              transition: "color 0.15s, border-color 0.15s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "var(--text-primary)";
+              e.currentTarget.style.borderColor = "var(--border-hover)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "var(--text-muted)";
+              e.currentTarget.style.borderColor = "var(--border)";
+            }}
+          >
+            ← Tasks
+          </button>
           <h2
             style={{
               fontSize: "18px",

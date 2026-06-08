@@ -4,12 +4,16 @@ interface WorkspaceDetailViewProps {
   workspaceId: number;
   workspaceName: string;
   onBack: () => void;
+  onAddTask: () => void;
+  onPreSchedule: () => void;
 }
 
 export default function WorkspaceDetailView({
   workspaceId,
   workspaceName,
   onBack,
+  onAddTask,
+  onPreSchedule,
 }: WorkspaceDetailViewProps) {
   return (
     <motion.div
@@ -48,7 +52,7 @@ export default function WorkspaceDetailView({
             e.currentTarget.style.borderColor = "var(--border)";
           }}
         >
-          ← Back
+          ← Workspaces
         </button>
         <h2
           style={{
@@ -61,6 +65,39 @@ export default function WorkspaceDetailView({
         >
           {workspaceName}
         </h2>
+        <div style={{ marginLeft: "auto", display: "flex", gap: "6px", alignItems: "center" }}>
+          <button
+            onClick={onPreSchedule}
+            style={{
+              fontFamily: "'Geist Mono', monospace",
+              fontSize: "11px",
+              background: "transparent",
+              border: "1px solid var(--border)",
+              borderRadius: "5px",
+              padding: "6px 12px",
+              color: "var(--text-secondary)",
+              cursor: "pointer",
+            }}
+          >
+            + Pre-Schedule
+          </button>
+          <button
+            onClick={onAddTask}
+            style={{
+              background: "var(--text-primary)",
+              border: "none",
+              borderRadius: "5px",
+              padding: "6px 12px",
+              color: "var(--text-inverse)",
+              fontSize: "11px",
+              fontWeight: 600,
+              fontFamily: "'Geist Mono', monospace",
+              cursor: "pointer",
+            }}
+          >
+            + Add Task
+          </button>
+        </div>
       </div>
 
       <div

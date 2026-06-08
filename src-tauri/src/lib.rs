@@ -162,6 +162,15 @@ pub fn run() {
             commands::add_presceduled_task,
             commands::get_presceduled_tasks,
             commands::close_task_card,
+            commands::set_zen_mode,
+            commands::show_archive_zone,
+            commands::hide_archive_zone,
+            commands::check_drop_on_archive,
+            commands::snap_all_cards_to_grid,
+            commands::save_workspace,
+            commands::get_workspaces,
+            commands::load_workspace,
+            commands::delete_workspace,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

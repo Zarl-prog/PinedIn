@@ -49,6 +49,15 @@ pub struct AppSettings {
     pub theme: String,
 }
 
+/// Represents a saved workspace (card positions snapshot)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Workspace {
+    pub id: i64,
+    pub name: String,
+    pub state_json: String,
+    pub created_at: String,
+}
+
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
@@ -106,7 +115,13 @@ impl DbHandle {
             );
             INSERT OR IGNORE INTO settings (key, value) VALUES
                 ('theme', 'dark'),
-                ('shake_interval', '30');"
+                ('shake_interval', '30');
+            CREATE TABLE IF NOT EXISTS workspaces (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                state_json TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );"
         ).map_err(|e| format!("Failed to initialize database: {e}"))?;
 
         // Idempotent migrations for pre-v0.3.0 databases that lack
@@ -487,11 +502,13 @@ impl DbHandle {
         due_time: &str,
         recurrence: Option<&str>,
         tags: Option<&str>,
+        time_limit_minutes: Option<i64>,
+        started_at: Option<&str>,
     ) -> Result<(), String> {
         let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
         conn.execute(
-            "UPDATE tasks SET title=?1, description=?2, urgency=?3, due_time=?4, recurrence=?5, tags=?6 WHERE id=?7",
-            rusqlite::params![title, description, urgency, due_time, recurrence, tags, id],
+            "UPDATE tasks SET title=?1, description=?2, urgency=?3, due_time=?4, recurrence=?5, tags=?6, time_limit_minutes=?7, started_at=?8 WHERE id=?9",
+            rusqlite::params![title, description, urgency, due_time, recurrence, tags, time_limit_minutes, started_at, id],
         ).map_err(|e| format!("Failed to update task: {e}"))?;
         Ok(())
     }
@@ -630,6 +647,70 @@ impl DbHandle {
                 .cloned()
                 .unwrap_or_else(|| "dark".to_string()),
         })
+    }
+
+    // ─── Workspaces ───────────────────────────────────────────────────────
+
+    pub fn save_workspace(&self, name: &str, state_json: &str) -> Result<i64, String> {
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "INSERT INTO workspaces (name, state_json, created_at) VALUES (?1, ?2, ?3)",
+            rusqlite::params![name, state_json, now],
+        )
+        .map_err(|e| format!("Failed to save workspace: {e}"))?;
+        Ok(conn.last_insert_rowid())
+    }
+
+    pub fn get_all_workspaces(&self) -> Result<Vec<Workspace>, String> {
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let mut stmt = conn
+            .prepare("SELECT id, name, state_json, created_at FROM workspaces ORDER BY id ASC")
+            .map_err(|e| format!("Failed to prepare: {e}"))?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok(Workspace {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    state_json: row.get(2)?,
+                    created_at: row.get(3)?,
+                })
+            })
+            .map_err(|e| format!("Query error: {e}"))?;
+        let mut workspaces = vec![];
+        for row in rows {
+            if let Ok(w) = row {
+                workspaces.push(w);
+            }
+        }
+        Ok(workspaces)
+    }
+
+    pub fn get_workspace_by_id(&self, id: i64) -> Result<Workspace, String> {
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        conn.query_row(
+            "SELECT id, name, state_json, created_at FROM workspaces WHERE id = ?1",
+            rusqlite::params![id],
+            |row| {
+                Ok(Workspace {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    state_json: row.get(2)?,
+                    created_at: row.get(3)?,
+                })
+            },
+        )
+        .map_err(|e| format!("Failed to get workspace by id: {e}"))
+    }
+
+    pub fn delete_workspace(&self, id: i64) -> Result<(), String> {
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        conn.execute(
+            "DELETE FROM workspaces WHERE id = ?1",
+            rusqlite::params![id],
+        )
+        .map_err(|e| format!("Failed to delete workspace: {e}"))?;
+        Ok(())
     }
 
     pub fn update_setting(&self, key: &str, value: &str) -> Result<(), String> {

@@ -4,6 +4,25 @@ import QuickAdd from "./components/QuickAdd";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
+let systemMediaListener: (() => void) | null = null;
+
+function stopSystemTheme() {
+  if (systemMediaListener) {
+    systemMediaListener();
+    systemMediaListener = null;
+  }
+}
+
+function listenSystemTheme() {
+  stopSystemTheme();
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  const handler = (e: MediaQueryListEvent) => {
+    document.documentElement.classList.toggle("dark", e.matches);
+  };
+  mq.addEventListener("change", handler);
+  systemMediaListener = () => mq.removeEventListener("change", handler);
+}
+
 function applyTheme(theme: string) {
   const root = document.documentElement;
   if (theme === "dark") {
@@ -25,14 +44,15 @@ function applyTheme(theme: string) {
 (async () => {
   try {
     const settings = await invoke<{ theme: string }>("get_settings");
+    stopSystemTheme();
     applyTheme(settings.theme);
-    if (settings.theme === "system") {
-      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
-        document.documentElement.classList.toggle("dark", e.matches);
-      });
-    }
+    if (settings.theme === "system") listenSystemTheme();
   } catch (_) {}
-  listen<string>("theme_changed", (e) => applyTheme(e.payload));
+  listen<string>("theme_changed", (e) => {
+    stopSystemTheme();
+    applyTheme(e.payload);
+    if (e.payload === "system") listenSystemTheme();
+  });
 
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>

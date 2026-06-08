@@ -10,7 +10,6 @@ import {
   showArchiveZone,
   hideArchiveZone,
   checkDropOnArchive,
-  snapAllCardsToGrid,
 } from "@/lib/tauriCommands";
 import { useReminderStore } from "@/store/reminderStore";
 import UrgencyBadge from "./UrgencyBadge";
@@ -39,37 +38,14 @@ const URGENCY_LABEL: Record<string, string> = {
   low: "Low",
 };
 
-function detectShake(
-  currentX: number,
-  detector: { lastX: number; lastDirection: number; reversals: number; lastTime: number },
-): boolean {
+function getHoursAgo(createdAt: string): string {
+  const created = new Date(createdAt).getTime();
   const now = Date.now();
-  const delta = currentX - detector.lastX;
-  const direction = delta > 0 ? 1 : -1;
-  const timeDiff = now - detector.lastTime;
+  const diffMs = now - created;
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
 
-  if (timeDiff > 400) {
-    detector.reversals = 0;
-  }
-
-  if (Math.abs(delta) > 8 && direction !== detector.lastDirection) {
-    detector.reversals++;
-    detector.lastDirection = direction;
-    detector.lastTime = now;
-  }
-
-  detector.lastX = currentX;
-  return detector.reversals >= 4;
-}
-
-function formatCreatedAt(createdAt: string): string {
-  const date = new Date(createdAt);
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
+  if (diffHours < 1) return "< 1h";
+  return `${diffHours}h`;
 }
 
 function formatCardDate(dateStr: string): string {
@@ -101,15 +77,12 @@ export default function TaskCard({
 }: TaskCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showRemindPicker, setShowRemindPicker] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const liveDotRef = useRef<HTMLSpanElement>(null);
-  const mouseDownPos = useRef({ x: 0, y: 0 });
-  const dragging = useRef(false);
-  const interacting = useRef(false);
   const expandedRef = useRef(expanded);
   expandedRef.current = expanded;
-  const shakeDetector = useRef({ lastX: 0, lastDirection: 0, reversals: 0, lastTime: 0 });
+  const interacting = useRef(false);
+  expandedRef.current = expanded;
 
   // ─── Shake interval — loaded from DB, updated live via event ────────────
   const [intervalSeconds, setIntervalSeconds] = useState(30);
@@ -129,7 +102,6 @@ export default function TaskCard({
   const controls = useAnimation();
 
   const playAttention = useCallback(async () => {
-    if (interacting.current) return;
     const amplitude = urgency === "critical" ? [-12, 12, -10, 10, -6, 6] : [-8, 8, -6, 6, -4, 4];
     await controls.start({
       x: [0, ...amplitude, 0],
@@ -253,76 +225,32 @@ export default function TaskCard({
     };
   }, []);
 
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if ((e.target as HTMLElement).closest("button")) return;
-      interacting.current = true;
-      mouseDownPos.current = { x: e.clientX, y: e.clientY };
-      dragging.current = false;
-      shakeDetector.current = { lastX: e.clientX, lastDirection: 0, reversals: 0, lastTime: Date.now() };
+  const handleMouseDown = useCallback(async (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+    interacting.current = true;
+    await showArchiveZone();
+    await getCurrentWindow().startDragging();
 
-      const onMove = async (me: MouseEvent) => {
-        if (dragging.current) return;
-        if (detectShake(me.clientX, shakeDetector.current)) {
-          window.removeEventListener("mousemove", onMove);
-          window.removeEventListener("mouseup", onUp);
-          interacting.current = false;
-          await snapAllCardsToGrid();
-          return;
-        }
-        const dx = Math.abs(me.clientX - mouseDownPos.current.x);
-        const dy = Math.abs(me.clientY - mouseDownPos.current.y);
-        if (dx > 4 || dy > 4) {
-          dragging.current = true;
-          setIsDragging(true);
-          window.removeEventListener("mousemove", onMove);
-          await showArchiveZone();
-          await getCurrentWindow().startDragging();
-        }
-      };
-      const onUp = async () => {
-        if (dragging.current) {
-          setIsDragging(false);
-          const isOnZone = await checkDropOnArchive(taskId);
-          if (isOnZone) {
-            await invoke("complete_task", { id: taskId });
-            await getCurrentWindow().close();
-          }
-          await hideArchiveZone();
-        }
-        interacting.current = false;
-        dragging.current = false;
-        window.removeEventListener("mousemove", onMove);
-        window.removeEventListener("mouseup", onUp);
-      };
-      window.addEventListener("mousemove", onMove);
-      window.addEventListener("mouseup", onUp);
-    },
-    [taskId],
-  );
+    const onUp = async () => {
+      const isOnZone = await checkDropOnArchive(taskId);
+      if (isOnZone) {
+        await invoke("complete_task", { id: taskId });
+        await getCurrentWindow().close();
+      }
+      await hideArchiveZone();
+      interacting.current = false;
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mouseup", onUp);
+  }, [taskId]);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging) return;
-    if (detectShake(e.clientX, shakeDetector.current)) {
-      setIsDragging(false);
-      snapAllCardsToGrid();
-    }
-  }, [isDragging]);
-
-  const handleClick = useCallback(
-    async (e: React.MouseEvent) => {
-      if ((e.target as HTMLElement).closest("button")) return;
-      if (dragging.current) return;
-
-      const next = !expanded;
-      setExpanded(next);
-      setShowRemindPicker(false);
-      await getCurrentWindow().setSize(
-        new LogicalSize(280, next ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT)
-      );
-    },
-    [expanded],
-  );
+  const handleClick = useCallback(async (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+    if (interacting.current) return;
+    const next = !expanded;
+    setExpanded(next);
+    setShowRemindPicker(false);
+  }, [expanded]);
 
   const handleDone = useCallback(async () => {
     await invoke("complete_task", { id: taskId });
@@ -353,8 +281,6 @@ export default function TaskCard({
       ref={containerRef}
       data-tauri-drag-region
       onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={() => setIsDragging(false)}
       onClick={handleClick}
       className="v-float"
       animate={controls}
@@ -464,10 +390,10 @@ export default function TaskCard({
           <div style={{
             fontSize: "10px",
             color: "rgba(255,255,255,0.2)",
-            marginTop: "3px",
+            marginTop: "2px",
             fontFamily: "'Geist Mono', monospace"
           }}>
-            ⊕ {formatCreatedAt(createdAt)}
+            {getHoursAgo(createdAt)}
           </div>
         )}
 

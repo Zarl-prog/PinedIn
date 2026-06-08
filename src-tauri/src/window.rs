@@ -3,6 +3,35 @@ use crate::db::Task;
 use std::sync::atomic::Ordering;
 use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, WebviewUrl, WebviewWindowBuilder};
 
+/// Returns `true` if the platform supports transparent windows.
+/// On Linux, transparency requires a compositing window manager;
+/// Wayland and non-compositing X11 sessions fall back to opaque.
+fn supports_transparency() -> bool {
+    #[cfg(target_os = "linux")]
+    {
+        // Check for Wayland — transparency is unreliable there
+        if std::env::var("WAYLAND_DISPLAY").is_ok()
+            || std::env::var("XDG_SESSION_TYPE")
+                .map(|v| v == "wayland")
+                .unwrap_or(false)
+        {
+            return false;
+        }
+        // X11 without compositor: check for common compositor env vars
+        if std::env::var("XDG_SESSION_TYPE")
+            .map(|v| v == "x11")
+            .unwrap_or(false)
+        {
+            // Assume compositor is present (most modern desktops).
+            // Users on bare X11 without a compositor get opaque windows,
+            // which is still functional.
+            return true;
+        }
+    }
+    // macOS and Windows support transparency natively
+    true
+}
+
 const CARD_WIDTH: f64 = 280.0;
 const CARD_HEIGHT: f64 = 120.0;
 const TOP_MARGIN: f64 = 80.0;
@@ -84,7 +113,7 @@ pub fn open_task_card(app: &AppHandle, task: &Task, _index: usize) -> Result<(),
         .inner_size(CARD_WIDTH, CARD_HEIGHT)
         .resizable(false)
         .decorations(false)
-        .transparent(true)
+        .transparent(supports_transparency())
         .shadow(false)
         .always_on_top(true)
         .skip_taskbar(true)
@@ -158,7 +187,7 @@ pub fn open_task_card_window_at(app: &AppHandle, task: &Task, x: f64, y: f64) {
         .inner_size(CARD_WIDTH, CARD_HEIGHT)
         .resizable(false)
         .decorations(false)
-        .transparent(true)
+        .transparent(supports_transparency())
         .shadow(false)
         .always_on_top(true)
         .skip_taskbar(true)
@@ -231,6 +260,7 @@ pub fn open_daily_digest_window(app: &AppHandle) {
         .inner_size(420.0, 220.0)
         .resizable(false)
         .decorations(false)
+        .transparent(supports_transparency())
         .always_on_top(true)
         .skip_taskbar(true)
         .focused(false)

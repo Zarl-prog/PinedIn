@@ -83,11 +83,15 @@ pub fn run() {
             // Force remove native decorations — must run after the
             // window-state plugin restores its state, so we post it to
             // the event loop. Hide + show forces Windows to redraw
-            // without the native frame.
+            // without the native frame. On macOS/Linux just set the
+            // decoration flag without re-showing (avoids startup flicker).
             if let Some(win) = app.get_webview_window("main") {
                 let _ = win.set_decorations(false);
-                let _ = win.hide();
-                let _ = win.show();
+                #[cfg(target_os = "windows")]
+                {
+                    let _ = win.hide();
+                    let _ = win.show();
+                }
             }
 
             // Setup system tray
@@ -110,10 +114,14 @@ pub fn run() {
             // closed get caught up.
             scheduler::start_scheduler(app.handle().clone());
 
-            // Register global hotkey: Ctrl+Shift+Space opens quick-add popup from anywhere,
-            // even when the main window is minimized or not focused.
+            // Register global hotkey: Ctrl+Shift+Space on Windows/Linux,
+            // Cmd+Shift+Space on macOS — opens quick-add popup from anywhere.
+            #[cfg(target_os = "macos")]
+            let modifiers = Modifiers::SUPER | Modifiers::SHIFT;
+            #[cfg(not(target_os = "macos"))]
+            let modifiers = Modifiers::CONTROL | Modifiers::SHIFT;
             app.global_shortcut().on_shortcut(
-                Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::Space),
+                Shortcut::new(Some(modifiers), Code::Space),
                 |app, _shortcut, _event| {
                     window::open_quick_add_window(app);
                 },

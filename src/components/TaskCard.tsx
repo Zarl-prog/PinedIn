@@ -218,17 +218,29 @@ export default function TaskCard({
     };
   }, []);
 
+  const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
+
   const handleMouseDown = useCallback(async (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
+    pointerDownRef.current = { x: e.clientX, y: e.clientY };
     await getCurrentWindow().startDragging();
   }, []);
 
-  const handleClick = useCallback(async (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest("button")) return;
-    const next = !expanded;
-    setExpanded(next);
-    setShowRemindPicker(false);
-  }, [expanded]);
+  useEffect(() => {
+    const handleMouseUp = (e: MouseEvent) => {
+      const pt = pointerDownRef.current;
+      if (!pt) return;
+      pointerDownRef.current = null;
+      const dx = Math.abs(e.clientX - pt.x);
+      const dy = Math.abs(e.clientY - pt.y);
+      if (dx < 5 && dy < 5 && !(e.target as HTMLElement).closest("button")) {
+        setExpanded((prev) => !prev);
+        setShowRemindPicker(false);
+      }
+    };
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => window.removeEventListener("mouseup", handleMouseUp);
+  }, []);
 
   const handleDone = useCallback(async () => {
     await invoke("complete_task", { id: taskId });
@@ -258,7 +270,6 @@ export default function TaskCard({
     <motion.div
       ref={containerRef}
       onMouseDown={handleMouseDown}
-      onClick={handleClick}
       className="v-float"
       animate={controls}
       style={{

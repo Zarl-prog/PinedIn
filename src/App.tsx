@@ -9,7 +9,8 @@ import ShinyText from "@/components/ui/ShinyText";
 import UpdateBanner from "@/components/UpdateBanner";
 import { useReminders } from "@/hooks/useReminders";
 import { useReminderStore } from "@/store/reminderStore";
-import { getShakeInterval, setShakeInterval } from "@/lib/tauriCommands";
+import { getShakeInterval, setShakeInterval, setZenMode, snapAllCardsToGrid } from "@/lib/tauriCommands";
+import WorkspacePanel from "@/components/WorkspacePanel";
 
 const SHAKE_OPTIONS = [10, 15, 30, 60, 120, 300];
 
@@ -72,6 +73,14 @@ export default function App() {
     setPreScheduleOpen,
     setEditingTask,
   ]);
+
+  const [zenMode, setZenModeState] = useState(false);
+
+  async function toggleZenMode() {
+    const next = !zenMode;
+    setZenModeState(next);
+    await setZenMode(next).catch(() => {});
+  }
 
   const [searchQuery, setSearchQuery] = useState("");
   const incompleteCount = tasks.filter((t) => !t.completed).length;
@@ -262,6 +271,41 @@ export default function App() {
         >
           /\ Settings
         </button>
+        <button
+          onClick={toggleZenMode}
+          style={{
+            fontFamily: "'Geist Mono', monospace",
+            fontSize: "11px",
+            color: zenMode ? "#ffffff" : "#888888",
+            background: zenMode ? "#1a1a1a" : "transparent",
+            border: zenMode ? "1px solid #444" : "1px solid #222",
+            borderRadius: "5px",
+            padding: "5px 10px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "4px",
+            transition: "all 0.12s"
+          }}
+        >
+          {zenMode ? "◎ Zen On" : "◎ Zen"}
+        </button>
+        <button
+          onClick={() => snapAllCardsToGrid()}
+          style={{
+            fontFamily: "'Geist Mono', monospace",
+            fontSize: "11px",
+            color: "#888888",
+            background: "transparent",
+            border: "1px solid #222",
+            borderRadius: "5px",
+            padding: "5px 10px",
+            cursor: "pointer"
+          }}
+        >
+          ⊞ Align
+        </button>
+        <WorkspacePanel />
 
         {/* Shake interval — compact inline control, always visible */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "auto" }}>

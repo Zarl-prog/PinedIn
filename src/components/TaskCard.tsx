@@ -29,12 +29,6 @@ const REMIND_OPTIONS = [5, 15, 30, 60] as const;
 const COLLAPSED_HEIGHT = 120;
 const EXPANDED_HEIGHT = 180;
 
-const URGENCY_LABEL: Record<string, string> = {
-  critical: "Critical",
-  medium: "Medium",
-  low: "Low",
-};
-
 function getHoursAgo(createdAt: string): string {
   const created = new Date(createdAt).getTime();
   const now = Date.now();

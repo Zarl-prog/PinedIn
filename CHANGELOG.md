@@ -16,6 +16,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Daily-digest popup and floating-card stack now exclude pre-scheduled tasks (they are surfaced separately in the Scheduled section).
 - Tray icon click now toggles the main window instead of always showing it.
 
+## [0.3.0] - 2026-06-09
+
+### Added
+- **Workspaces redesign**: Full page view with card grid layout for better organization
+- **Cross-platform builds**: macOS/Linux matrix build support with dmg/AppImage/deb installers
+- **Auto-update infrastructure**: Public releases repo with signed update archives and latest.json manifest
+
+### Fixed
+- **Drag freeze**: Prevent permanent drag freeze on task cards — close handler survives hide() failure
+- **macOS tray**: Left-click shows menu, double-click handler excluded
+- **Linux window**: Compositor detection for transparency fallback
+- **Platform-aware shortcuts**: Wrap hide/show in cfg(windows), add platform-aware shortcut
+
+### Changed
+- **CI/CD**: Builds now upload to Zarl-prog/PinedIn-Releases public repo
+- **Updater**: Points to public releases repo with proper signing key
+
 ## [0.2.1] - 2026-06-07
 
 ### Fixed
@@ -30,8 +47,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Added window dragging permission (`core:window:allow-start-dragging`) for improved UX
-
-## [Unreleased]
 
 ## [0.1.0] - Initial Release
 

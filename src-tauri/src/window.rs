@@ -109,11 +109,15 @@ pub fn open_task_card(app: &AppHandle, task: &Task, _index: usize) -> Result<(),
     let x = (screen_w - CARD_WIDTH - RIGHT_MARGIN).max(0.0);
     let y = stack_offset_y(app) + CARD_GAP;
 
-    let window = WebviewWindowBuilder::new(app, &label, WebviewUrl::App("task-card.html".into()))
+    let builder = WebviewWindowBuilder::new(app, &label, WebviewUrl::App("task-card.html".into()))
         .inner_size(CARD_WIDTH, CARD_HEIGHT)
         .resizable(false)
-        .decorations(false)
-        .transparent(supports_transparency())
+        .decorations(false);
+
+    #[cfg(not(target_os = "macos"))]
+    let builder = builder.transparent(supports_transparency());
+
+    let window = builder
         .shadow(false)
         .always_on_top(true)
         .skip_taskbar(true)
@@ -183,11 +187,15 @@ pub fn open_task_card_window_at(app: &AppHandle, task: &Task, x: f64, y: f64) {
         return;
     }
 
-    let _ = WebviewWindowBuilder::new(app, &label, WebviewUrl::App("task-card.html".into()))
+    let builder = WebviewWindowBuilder::new(app, &label, WebviewUrl::App("task-card.html".into()))
         .inner_size(CARD_WIDTH, CARD_HEIGHT)
         .resizable(false)
-        .decorations(false)
-        .transparent(supports_transparency())
+        .decorations(false);
+
+    #[cfg(not(target_os = "macos"))]
+    let builder = builder.transparent(supports_transparency());
+
+    let _ = builder
         .shadow(false)
         .always_on_top(true)
         .skip_taskbar(true)
@@ -239,7 +247,6 @@ pub fn open_quick_add_window(app: &AppHandle) {
         .skip_taskbar(true)
         .focused(true)
         .position(x, y)
-        .transparent(false)
         .build()
         .expect("Failed to open quick add window");
 }
@@ -256,11 +263,15 @@ pub fn open_daily_digest_window(app: &AppHandle) {
         return;
     }
 
-    WebviewWindowBuilder::new(app, label, WebviewUrl::App("daily-digest.html".into()))
+    let builder = WebviewWindowBuilder::new(app, label, WebviewUrl::App("daily-digest.html".into()))
         .inner_size(420.0, 220.0)
         .resizable(false)
-        .decorations(false)
-        .transparent(supports_transparency())
+        .decorations(false);
+
+    #[cfg(not(target_os = "macos"))]
+    let builder = builder.transparent(supports_transparency());
+
+    builder
         .always_on_top(true)
         .skip_taskbar(true)
         .focused(false)

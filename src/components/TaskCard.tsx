@@ -217,9 +217,8 @@ export default function TaskCard({
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
-    if (didDrag.current) return;
-    mouseDownPos.current = { x: e.clientX, y: e.clientY };
     didDrag.current = false;
+    mouseDownPos.current = { x: e.clientX, y: e.clientY };
 
     let dragInitiated = false;
 

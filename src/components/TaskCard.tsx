@@ -217,23 +217,35 @@ export default function TaskCard({
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
+    if (didDrag.current) return;
     mouseDownPos.current = { x: e.clientX, y: e.clientY };
     didDrag.current = false;
+
+    let dragInitiated = false;
+
+    const cleanup = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
 
     const onMove = async (me: MouseEvent) => {
       const dx = Math.abs(me.clientX - mouseDownPos.current.x);
       const dy = Math.abs(me.clientY - mouseDownPos.current.y);
-      if ((dx > 6 || dy > 6) && !didDrag.current) {
+      if ((dx > 6 || dy > 6) && !dragInitiated) {
+        dragInitiated = true;
         didDrag.current = true;
-        window.removeEventListener("mousemove", onMove);
-        window.removeEventListener("mouseup", onUp);
-        await getCurrentWindow().startDragging();
+        try {
+          await getCurrentWindow().startDragging();
+        } catch {
+          didDrag.current = false;
+        } finally {
+          cleanup();
+        }
       }
     };
 
     const onUp = () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
+      cleanup();
     };
 
     window.addEventListener("mousemove", onMove);

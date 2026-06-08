@@ -47,7 +47,7 @@ export default function QuickAdd() {
     }
   }
 
-  const accent = status === "error" ? "#ff5555" : "#333";
+  const accent = status === "error" ? "var(--text-danger)" : "var(--text-muted)";
 
   return (
     <div
@@ -55,7 +55,7 @@ export default function QuickAdd() {
         width: "480px",
         height: "64px",
         background: "var(--bg-app)",
-        border: `1px solid ${status === "error" ? "#ff5555" : "var(--border-light)"}`,
+        border: `1px solid ${status === "error" ? "var(--text-danger)" : "var(--border-light)"}`,
         borderRadius: "12px",
         display: "flex",
         alignItems: "center",
@@ -83,10 +83,10 @@ export default function QuickAdd() {
           background: "transparent",
           border: "none",
           outline: "none",
-          color: status === "error" ? "#ff5555" : "var(--text-primary)",
+          color: status === "error" ? "var(--text-danger)" : "var(--text-primary)",
           fontSize: "14px",
           fontFamily: "'Geist Mono', monospace",
-          caretColor: "#ffffff",
+          caretColor: "var(--text-primary)",
         }}
       />
       <span style={{ fontSize: "11px", color: accent }}>

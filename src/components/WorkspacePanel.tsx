@@ -31,6 +31,7 @@ export default function WorkspacePanel() {
   return (
     <div style={{ position: "relative" }}>
       <button
+        className="v-btn"
         onClick={() => setOpen(o => !o)}
         style={{
           fontFamily: "'Geist Mono', monospace",

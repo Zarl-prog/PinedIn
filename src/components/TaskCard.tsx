@@ -259,7 +259,6 @@ export default function TaskCard({
   return (
     <motion.div
       ref={containerRef}
-      data-tauri-drag-region
       onMouseDown={handleMouseDown}
       onClick={handleClick}
       className="v-float"
@@ -412,7 +411,7 @@ export default function TaskCard({
           opacity: { duration: 0.15 },
           scale: { duration: 0.15 }
         }}
-        style={{ overflow: "hidden", transformOrigin: "top" }}
+        style={{ overflow: "hidden", transformOrigin: "top", borderRadius: "0 0 14px 14px" }}
       >
         <div
           style={{

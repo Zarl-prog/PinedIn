@@ -97,8 +97,10 @@ body {
 
 .v-action:hover {
   color: #fff;
-  border-color: #444;
-  background: #111;
+  border-color: #555;
+  background: #141414;
+  box-shadow: 0 0 20px rgba(255,255,255,0.04);
+  transform: scale(1.02);
 }
 
 /* ─── Live Status Dot ──────────────────────────────────────────────────── */

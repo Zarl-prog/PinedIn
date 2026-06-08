@@ -76,7 +76,15 @@ pub fn run() {
                         return;
                     }
                     api.prevent_close();
-                    let _ = main_window_clone.hide();
+                    // Only hide if the window is currently visible.
+                    // If hide() fails (e.g. window is already destroyed),
+                    // we don't want the user stuck in a prevent-close loop.
+                    if main_window_clone.is_visible().unwrap_or(false) {
+                        if main_window_clone.hide().is_err() {
+                            // hide failed — window might be in a bad state.
+                            // Let the close go through as a last resort.
+                        }
+                    }
                 }
             });
 

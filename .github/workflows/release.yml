@@ -72,8 +72,8 @@ jobs:
               --title "PinedIn $RELEASE_TAG" \
               --notes "See the main repo for changelog."
 
-          # Upload installer files (.msi, .dmg, .AppImage, .deb, .rpm)
-          find "$BUNDLE_DIR" -type f \( -name "*.msi" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \) \
+          # Upload installer files (.exe, .dmg, .AppImage, .deb, .rpm)
+          find "$BUNDLE_DIR" -type f \( -name "*.exe" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \) \
             -exec gh release upload "$RELEASE_TAG" {} --repo "$PUBLIC_REPO" --clobber \;
 
           # Upload signed update archives (.tar.gz) — these are what the

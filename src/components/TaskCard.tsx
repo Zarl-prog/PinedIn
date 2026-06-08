@@ -7,9 +7,6 @@ import { listen } from "@tauri-apps/api/event";
 import {
   getShakeInterval,
   fireTimeLimitNotification,
-  showArchiveZone,
-  hideArchiveZone,
-  checkDropOnArchive,
 } from "@/lib/tauriCommands";
 import { useReminderStore } from "@/store/reminderStore";
 import UrgencyBadge from "./UrgencyBadge";
@@ -228,16 +225,9 @@ export default function TaskCard({
   const handleMouseDown = useCallback(async (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
     interacting.current = true;
-    await showArchiveZone();
     await getCurrentWindow().startDragging();
 
-    const onUp = async () => {
-      const isOnZone = await checkDropOnArchive(taskId);
-      if (isOnZone) {
-        await invoke("complete_task", { id: taskId });
-        await getCurrentWindow().close();
-      }
-      await hideArchiveZone();
+    const onUp = () => {
       interacting.current = false;
       window.removeEventListener("mouseup", onUp);
     };

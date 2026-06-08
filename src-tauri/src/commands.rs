@@ -502,37 +502,6 @@ pub fn delete_workspace(app: AppHandle, workspace_id: i64) -> Result<(), String>
     db.delete_workspace(workspace_id).map_err(|e| e.to_string())
 }
 
-// ─── Archive Zone ─────────────────────────────────────────────────────────────
-
-#[tauri::command]
-pub fn show_archive_zone(app: AppHandle) -> Result<(), String> {
-    crate::window::open_archive_zone_window(&app);
-    Ok(())
-}
-
-#[tauri::command]
-pub fn hide_archive_zone(app: AppHandle) -> Result<(), String> {
-    crate::window::close_archive_zone_window(&app);
-    Ok(())
-}
-
-#[tauri::command]
-pub fn check_drop_on_archive(app: AppHandle, task_id: i64) -> Result<bool, String> {
-    if let Some(zone) = app.get_webview_window("archive_zone") {
-        let zone_pos = zone.outer_position().map_err(|e| e.to_string())?;
-        let zone_size = zone.outer_size().map_err(|e| e.to_string())?;
-        let cursor = app.cursor_position().map_err(|e| e.to_string())?;
-
-        let in_zone = cursor.x >= zone_pos.x as f64
-            && cursor.x <= (zone_pos.x as f64 + zone_size.width as f64)
-            && cursor.y >= zone_pos.y as f64
-            && cursor.y <= (zone_pos.y as f64 + zone_size.height as f64);
-
-        return Ok(in_zone);
-    }
-    Ok(false)
-}
-
 // ─── Zen Mode ─────────────────────────────────────────────────────────────────
 
 #[tauri::command]

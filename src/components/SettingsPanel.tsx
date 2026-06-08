@@ -106,7 +106,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
             style={{
               position: "absolute",
               inset: 0,
-              background: "rgba(0,0,0,0.6)",
+              background: "var(--bg-overlay)",
             }}
             onClick={onClose}
           />
@@ -121,8 +121,8 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
               zIndex: 10,
               width: "100%",
               maxWidth: "420px",
-              background: "#0a0a0a",
-              border: "1px solid #1a1a1a",
+              background: "var(--bg-modal)",
+              border: "1px solid var(--border)",
               borderRadius: "10px",
               padding: "24px",
             }}
@@ -135,7 +135,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                 marginBottom: "20px",
               }}
             >
-              <span style={{ fontSize: "17px", fontWeight: 600, color: "#ededed" }}>
+              <span style={{ fontSize: "17px", fontWeight: 600, color: "var(--text-primary)" }}>
                 Settings
               </span>
               <button
@@ -144,9 +144,9 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                   width: "24px",
                   height: "24px",
                   borderRadius: "8px",
-                  border: "1px solid #222",
+                  border: "1px solid var(--border-light)",
                   background: "transparent",
-                  color: "#666",
+                  color: "var(--text-secondary)",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
@@ -155,14 +155,14 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                   transition: "all 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#111";
-                  e.currentTarget.style.color = "#fff";
-                  e.currentTarget.style.borderColor = "#444";
+                  e.currentTarget.style.background = "var(--bg-badge)";
+                  e.currentTarget.style.color = "var(--text-primary)";
+                  e.currentTarget.style.borderColor = "var(--text-muted)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "#666";
-                  e.currentTarget.style.borderColor = "#222";
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                  e.currentTarget.style.borderColor = "var(--border-light)";
                 }}
               >
                 ✕
@@ -177,7 +177,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                     display: "block",
                     fontSize: "13px",
                     fontWeight: 500,
-                    color: "#888",
+                    color: "var(--text-secondary)",
                     marginBottom: "8px",
                   }}
                 >
@@ -188,8 +188,8 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    background: "#0a0a0a",
-                    border: "1px solid #1a1a1a",
+                    background: "var(--bg-input)",
+                    border: "1px solid var(--border)",
                     borderRadius: "8px",
                     padding: "14px 16px",
                   }}
@@ -200,7 +200,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                         display: "block",
                         fontSize: "14px",
                         fontWeight: 500,
-                        color: "#ededed",
+                        color: "var(--text-primary)",
                       }}
                     >
                       {autostartOn ? "Enabled" : "Disabled"}
@@ -209,7 +209,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                       style={{
                         display: "block",
                       fontSize: "13px",
-                      color: "#444",
+                      color: "var(--text-muted)",
                       marginTop: "2px",
                       }}
                     >
@@ -236,7 +236,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                     display: "block",
                     fontSize: "13px",
                     fontWeight: 500,
-                    color: "#888",
+                    color: "var(--text-secondary)",
                     marginBottom: "8px",
                   }}
                 >
@@ -296,7 +296,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                     display: "block",
                     fontSize: "13px",
                     fontWeight: 500,
-                    color: "#888",
+                    color: "var(--text-secondary)",
                     marginBottom: "8px",
                   }}
                 >
@@ -307,8 +307,8 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    background: "#0a0a0a",
-                    border: "1px solid #1a1a1a",
+                    background: "var(--bg-input)",
+                    border: "1px solid var(--border)",
                     borderRadius: "8px",
                     padding: "14px 16px",
                   }}
@@ -319,7 +319,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                         display: "block",
                         fontSize: "14px",
                         fontWeight: 500,
-                        color: "#ededed",
+                        color: "var(--text-primary)",
                       }}
                     >
                       {updateStatus.state === "checking"
@@ -336,7 +336,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                       style={{
                         display: "block",
                         fontSize: "13px",
-                        color: "#444",
+                        color: "var(--text-muted)",
                         marginTop: "2px",
                       }}
                     >

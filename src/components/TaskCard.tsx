@@ -218,28 +218,45 @@ export default function TaskCard({
     };
   }, []);
 
-  const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
+  const mouseDownPos = useRef({ x: 0, y: 0 });
+  const didDrag = useRef(false);
 
-  const handleMouseDown = useCallback(async (e: React.MouseEvent) => {
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
-    pointerDownRef.current = { x: e.clientX, y: e.clientY };
-    await getCurrentWindow().startDragging();
-  }, []);
+    mouseDownPos.current = { x: e.clientX, y: e.clientY };
+    didDrag.current = false;
 
-  useEffect(() => {
-    const handleMouseUp = (e: MouseEvent) => {
-      const pt = pointerDownRef.current;
-      if (!pt) return;
-      pointerDownRef.current = null;
-      const dx = Math.abs(e.clientX - pt.x);
-      const dy = Math.abs(e.clientY - pt.y);
-      if (dx < 5 && dy < 5 && !(e.target as HTMLElement).closest("button")) {
-        setExpanded((prev) => !prev);
-        setShowRemindPicker(false);
+    const onMove = async (me: MouseEvent) => {
+      const dx = Math.abs(me.clientX - mouseDownPos.current.x);
+      const dy = Math.abs(me.clientY - mouseDownPos.current.y);
+      if ((dx > 6 || dy > 6) && !didDrag.current) {
+        didDrag.current = true;
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
+        await getCurrentWindow().startDragging();
       }
     };
-    window.addEventListener("mouseup", handleMouseUp);
-    return () => window.removeEventListener("mouseup", handleMouseUp);
+
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }, []);
+
+  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+    if (didDrag.current) return;
+    setExpanded((prev) => {
+      const next = !prev;
+      setShowRemindPicker(false);
+      getCurrentWindow().setSize(
+        new LogicalSize(280, next ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT)
+      );
+      return next;
+    });
   }, []);
 
   const handleDone = useCallback(async () => {
@@ -270,6 +287,7 @@ export default function TaskCard({
     <motion.div
       ref={containerRef}
       onMouseDown={handleMouseDown}
+      onDoubleClick={handleDoubleClick}
       className="v-float"
       animate={controls}
       style={{

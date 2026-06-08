@@ -61,6 +61,7 @@ export async function updateTask(
   recurrence?: string | null,
   tags?: string | null,
   timeLimitMinutes?: number | null,
+  startedAt?: string | null,
 ): Promise<void> {
   return invoke("update_task", {
     id,
@@ -71,6 +72,7 @@ export async function updateTask(
     recurrence: recurrence ?? null,
     tags: tags ?? null,
     timeLimitMinutes: timeLimitMinutes ?? null,
+    startedAt: startedAt ?? null,
   });
 }
 
@@ -134,6 +136,11 @@ export async function triggerTaskEdit(id: number): Promise<void> {
   return invoke("trigger_task_edit", { id });
 }
 
+// ─── Zen Mode ─────────────────────────────────────────────────────────────────
+export async function setZenMode(hidden: boolean): Promise<void> {
+  return invoke("set_zen_mode", { hidden });
+}
+
 // ─── Autostart Commands ──────────────────────────────────────────────────────
 export async function enableAutostart(): Promise<void> {
   return invoke("enable_autostart");
@@ -184,4 +191,46 @@ export async function addPrescheduledTask(
 
 export async function getPrescheduledTasks(): Promise<Task[]> {
   return invoke<Task[]>("get_presceduled_tasks");
+}
+
+// ─── Snap to Grid ─────────────────────────────────────────────────────────────
+export async function snapAllCardsToGrid(): Promise<void> {
+  return invoke("snap_all_cards_to_grid");
+}
+
+// ─── Workspace Profiles ───────────────────────────────────────────────────────
+export interface Workspace {
+  id: number;
+  name: string;
+  state_json: string;
+  created_at: string;
+}
+
+export async function saveWorkspace(name: string): Promise<number> {
+  return invoke("save_workspace", { name });
+}
+
+export async function getWorkspaces(): Promise<Workspace[]> {
+  return invoke("get_workspaces");
+}
+
+export async function loadWorkspace(workspaceId: number): Promise<void> {
+  return invoke("load_workspace", { workspaceId });
+}
+
+export async function deleteWorkspace(workspaceId: number): Promise<void> {
+  return invoke("delete_workspace", { workspaceId });
+}
+
+// ─── Archive Zone ─────────────────────────────────────────────────────────────
+export async function showArchiveZone(): Promise<void> {
+  return invoke("show_archive_zone");
+}
+
+export async function hideArchiveZone(): Promise<void> {
+  return invoke("hide_archive_zone");
+}
+
+export async function checkDropOnArchive(taskId: number): Promise<boolean> {
+  return invoke("check_drop_on_archive", { taskId });
 }

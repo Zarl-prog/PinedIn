@@ -1,4 +1,6 @@
+use crate::commands::ZEN_MODE;
 use crate::db::Task;
+use std::sync::atomic::Ordering;
 use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, WebviewUrl, WebviewWindowBuilder};
 
 const CARD_WIDTH: f64 = 280.0;
@@ -78,7 +80,7 @@ pub fn open_task_card(app: &AppHandle, task: &Task, _index: usize) -> Result<(),
     let x = (screen_w - CARD_WIDTH - RIGHT_MARGIN).max(0.0);
     let y = stack_offset_y(app) + CARD_GAP;
 
-    WebviewWindowBuilder::new(app, &label, WebviewUrl::App("task-card.html".into()))
+    let window = WebviewWindowBuilder::new(app, &label, WebviewUrl::App("task-card.html".into()))
         .inner_size(CARD_WIDTH, CARD_HEIGHT)
         .resizable(false)
         .decorations(false)
@@ -90,6 +92,10 @@ pub fn open_task_card(app: &AppHandle, task: &Task, _index: usize) -> Result<(),
         .position(x, y)
         .build()
         .map_err(|e| format!("Failed to create task card window: {e}"))?;
+
+    if ZEN_MODE.load(Ordering::SeqCst) {
+        let _ = window.hide();
+    }
 
     Ok(())
 }
@@ -135,6 +141,38 @@ pub fn restack_task_cards(app: &AppHandle) {
     }
 }
 
+/// Open a task card window at an explicit position (for workspace restore).
+pub fn open_task_card_window_at(app: &AppHandle, task: &Task, x: f64, y: f64) {
+    let id = match task.id {
+        Some(id) => id,
+        None => return,
+    };
+
+    let label = format!("task_{}", id);
+
+    if app.get_webview_window(&label).is_some() {
+        return;
+    }
+
+    let _ = WebviewWindowBuilder::new(app, &label, WebviewUrl::App("task-card.html".into()))
+        .inner_size(CARD_WIDTH, CARD_HEIGHT)
+        .resizable(false)
+        .decorations(false)
+        .transparent(true)
+        .shadow(false)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .focused(false)
+        .position(x, y)
+        .build();
+
+    if ZEN_MODE.load(Ordering::SeqCst) {
+        if let Some(window) = app.get_webview_window(&label) {
+            let _ = window.hide();
+        }
+    }
+}
+
 /// Open task card windows for all incomplete tasks, stacked vertically.
 pub fn open_all_task_cards(app: &AppHandle, tasks: &[Task]) {
     for task in tasks {
@@ -175,6 +213,46 @@ pub fn open_quick_add_window(app: &AppHandle) {
         .transparent(false)
         .build()
         .expect("Failed to open quick add window");
+}
+
+// ─── Archive Zone ────────────────────────────────────────────────────────────
+
+pub fn open_archive_zone_window(app: &AppHandle) {
+    let label = "archive_zone";
+    if app.get_webview_window(label).is_some() {
+        return;
+    }
+
+    let (x, y) = get_archive_zone_position(app);
+
+    WebviewWindowBuilder::new(app, label, WebviewUrl::App("archive-zone.html".into()))
+        .inner_size(200.0, 60.0)
+        .resizable(false)
+        .decorations(false)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .focused(false)
+        .position(x, y)
+        .transparent(true)
+        .build()
+        .expect("Failed to open archive zone");
+}
+
+pub fn close_archive_zone_window(app: &AppHandle) {
+    if let Some(w) = app.get_webview_window("archive_zone") {
+        let _ = w.close();
+    }
+}
+
+fn get_archive_zone_position(app: &AppHandle) -> (f64, f64) {
+    if let Some(monitor) = app.primary_monitor().ok().flatten() {
+        let size = monitor.size();
+        let scale = monitor.scale_factor();
+        let x = (size.width as f64 / scale / 2.0) - 100.0;
+        let y = (size.height as f64 / scale) - 120.0;
+        return (x, y);
+    }
+    (600.0, 900.0)
 }
 
 /// Open the small always-on-top Daily Digest popup (420x220) that

@@ -1,9 +1,12 @@
 use crate::db::{DbHandle, Task};
 use crate::notifications;
 use crate::window;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_autostart::ManagerExt;
+
+pub static ZEN_MODE: AtomicBool = AtomicBool::new(false);
 
 pub fn emit_tasks_updated(app: &tauri::AppHandle, db: &DbHandle) {
     if let Ok(tasks) = db.get_all_tasks() {
@@ -77,6 +80,8 @@ pub fn update_task(
     due_time: String,
     recurrence: Option<String>,
     tags: Option<String>,
+    time_limit_minutes: Option<i64>,
+    started_at: Option<String>,
 ) -> Result<(), String> {
     db.update_task(
         id,
@@ -86,6 +91,8 @@ pub fn update_task(
         &due_time,
         recurrence.as_deref(),
         tags.as_deref(),
+        time_limit_minutes,
+        started_at.as_deref(),
     )?;
     emit_tasks_updated(&app, &db);
     Ok(())
@@ -392,6 +399,156 @@ pub fn get_daily_digest(db: State<'_, Arc<DbHandle>>) -> Result<DigestData, Stri
         unfinished_yesterday,
         total_active,
     })
+}
+
+// ─── Snap to Grid ─────────────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn snap_all_cards_to_grid(app: AppHandle) -> Result<(), String> {
+    let windows = app.webview_windows();
+    let mut task_windows: Vec<_> = windows
+        .into_iter()
+        .filter(|(label, _)| label.starts_with("task_"))
+        .collect();
+
+    task_windows.sort_by(|a, b| a.0.cmp(&b.0));
+
+    let monitor = app
+        .primary_monitor()
+        .map_err(|e| e.to_string())?
+        .ok_or("No monitor found")?;
+    let screen_width = monitor.size().width as f64 / monitor.scale_factor();
+    let screen_height = monitor.size().height as f64 / monitor.scale_factor();
+
+    let card_width = 300.0;
+    let card_height = 120.0;
+    let padding = 10.0;
+    let x = screen_width - card_width - padding;
+    let start_y = 80.0;
+
+    for (i, (_, window)) in task_windows.iter().enumerate() {
+        let y = start_y + (i as f64 * (card_height + padding));
+        if y + card_height < screen_height {
+            let _ = window.set_position(tauri::PhysicalPosition::new(
+                (x * monitor.scale_factor()) as i32,
+                (y * monitor.scale_factor()) as i32,
+            ));
+        }
+    }
+    Ok(())
+}
+
+// ─── Workspace Profiles ───────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn save_workspace(app: AppHandle, name: String) -> Result<i64, String> {
+    let windows = app.webview_windows();
+    let mut cards = vec![];
+
+    for (label, window) in &windows {
+        if label.starts_with("task_") {
+            let task_id: i64 = label.replace("task_", "").parse().unwrap_or(0);
+            if let Ok(pos) = window.outer_position() {
+                cards.push(serde_json::json!({
+                    "task_id": task_id,
+                    "x": pos.x,
+                    "y": pos.y
+                }));
+            }
+        }
+    }
+
+    let state_json = serde_json::json!({ "cards": cards }).to_string();
+    let db = app.state::<Arc<DbHandle>>();
+    db.save_workspace(&name, &state_json).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_workspaces(app: AppHandle) -> Result<Vec<crate::db::Workspace>, String> {
+    let db = app.state::<Arc<DbHandle>>();
+    db.get_all_workspaces().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn load_workspace(app: AppHandle, workspace_id: i64) -> Result<(), String> {
+    let db = app.state::<Arc<DbHandle>>();
+    let workspace = db.get_workspace_by_id(workspace_id).map_err(|e| e.to_string())?;
+    let parsed: serde_json::Value =
+        serde_json::from_str(&workspace.state_json).map_err(|e| e.to_string())?;
+
+    let windows = app.webview_windows();
+    for (label, window) in &windows {
+        if label.starts_with("task_") {
+            let _ = window.close();
+        }
+    }
+
+    if let Some(cards) = parsed["cards"].as_array() {
+        for card in cards {
+            let task_id = card["task_id"].as_i64().unwrap_or(0);
+            let x = card["x"].as_f64().unwrap_or(100.0);
+            let y = card["y"].as_f64().unwrap_or(100.0);
+            if let Ok(task) = db.get_task_by_id(task_id) {
+                crate::window::open_task_card_window_at(&app, &task, x, y);
+            }
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn delete_workspace(app: AppHandle, workspace_id: i64) -> Result<(), String> {
+    let db = app.state::<Arc<DbHandle>>();
+    db.delete_workspace(workspace_id).map_err(|e| e.to_string())
+}
+
+// ─── Archive Zone ─────────────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn show_archive_zone(app: AppHandle) -> Result<(), String> {
+    crate::window::open_archive_zone_window(&app);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn hide_archive_zone(app: AppHandle) -> Result<(), String> {
+    crate::window::close_archive_zone_window(&app);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn check_drop_on_archive(app: AppHandle, task_id: i64) -> Result<bool, String> {
+    if let Some(zone) = app.get_webview_window("archive_zone") {
+        let zone_pos = zone.outer_position().map_err(|e| e.to_string())?;
+        let zone_size = zone.outer_size().map_err(|e| e.to_string())?;
+        let cursor = app.cursor_position().map_err(|e| e.to_string())?;
+
+        let in_zone = cursor.x >= zone_pos.x as f64
+            && cursor.x <= (zone_pos.x as f64 + zone_size.width as f64)
+            && cursor.y >= zone_pos.y as f64
+            && cursor.y <= (zone_pos.y as f64 + zone_size.height as f64);
+
+        return Ok(in_zone);
+    }
+    Ok(false)
+}
+
+// ─── Zen Mode ─────────────────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn set_zen_mode(app: AppHandle, hidden: bool) -> Result<(), String> {
+    ZEN_MODE.store(hidden, Ordering::SeqCst);
+    let windows = app.webview_windows();
+    for (label, window) in windows {
+        if label.starts_with("task_") {
+            if hidden {
+                window.hide().map_err(|e| e.to_string())?;
+            } else {
+                window.show().map_err(|e| e.to_string())?;
+            }
+        }
+    }
+    Ok(())
 }
 
 // ─── Time Limit Notifications ────────────────────────────────────────────────

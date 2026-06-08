@@ -3,7 +3,26 @@ import ReactDOM from "react-dom/client";
 import TaskCard from "./components/TaskCard";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import "./task-card.css";
+
+function applyTheme(theme: string) {
+  const root = document.documentElement;
+  if (theme === "dark") {
+    root.classList.add("dark");
+  } else if (theme === "light") {
+    root.classList.remove("dark");
+  } else {
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
+    if (prefersDark) {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+  }
+}
 
 interface TaskData {
   id?: number | null;
@@ -20,12 +39,19 @@ interface TaskData {
 }
 
 async function main() {
+  // Apply theme before rendering
+  try {
+    const settings = await invoke<{ theme: string }>("get_settings");
+    applyTheme(settings.theme);
+  } catch (_) {}
+  listen<string>("theme_changed", (e) => applyTheme(e.payload));
+
   // Parse task ID from window label (format: "task_{id}")
   const label = getCurrentWindow().label;
   const taskId = parseInt(label.replace("task_", ""), 10);
 
   if (isNaN(taskId)) {
-    document.getElementById("root")!.innerHTML = `<div style="color:#fff;padding:20px">Invalid task</div>`;
+    document.getElementById("root")!.innerHTML = `<div style="color:var(--text-primary-card);padding:20px">Invalid task</div>`;
     return;
   }
 
@@ -49,7 +75,7 @@ async function main() {
       </React.StrictMode>
     );
   } catch (err) {
-    document.getElementById("root")!.innerHTML = `<div style="color:#fff;padding:20px">Failed to load task</div>`;
+    document.getElementById("root")!.innerHTML = `<div style="color:var(--text-primary-card);padding:20px">Failed to load task</div>`;
   }
 }
 

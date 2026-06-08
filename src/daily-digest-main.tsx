@@ -1,9 +1,37 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import DailyDigest from "./components/DailyDigest";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <DailyDigest />
-  </React.StrictMode>
-);
+function applyTheme(theme: string) {
+  const root = document.documentElement;
+  if (theme === "dark") {
+    root.classList.add("dark");
+  } else if (theme === "light") {
+    root.classList.remove("dark");
+  } else {
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
+    if (prefersDark) {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+  }
+}
+
+(async () => {
+  try {
+    const settings = await invoke<{ theme: string }>("get_settings");
+    applyTheme(settings.theme);
+  } catch (_) {}
+  listen<string>("theme_changed", (e) => applyTheme(e.payload));
+
+  ReactDOM.createRoot(document.getElementById("root")!).render(
+    <React.StrictMode>
+      <DailyDigest />
+    </React.StrictMode>
+  );
+})();

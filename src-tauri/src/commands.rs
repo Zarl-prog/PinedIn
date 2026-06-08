@@ -324,11 +324,16 @@ use crate::db::AppSettings;
 
 #[tauri::command]
 pub fn update_setting(
+    app: AppHandle,
     db: State<'_, Arc<DbHandle>>,
     key: String,
     value: String,
 ) -> Result<(), String> {
-    db.update_setting(&key, &value)
+    db.update_setting(&key, &value)?;
+    if key == "theme" {
+        let _ = app.emit("theme_changed", &value);
+    }
+    Ok(())
 }
 
 #[tauri::command]

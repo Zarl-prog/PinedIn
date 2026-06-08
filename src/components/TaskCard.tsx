@@ -7,6 +7,10 @@ import { listen } from "@tauri-apps/api/event";
 import {
   getShakeInterval,
   fireTimeLimitNotification,
+  showArchiveZone,
+  hideArchiveZone,
+  checkDropOnArchive,
+  snapAllCardsToGrid,
 } from "@/lib/tauriCommands";
 import { useReminderStore } from "@/store/reminderStore";
 import UrgencyBadge from "./UrgencyBadge";
@@ -17,6 +21,7 @@ interface TaskCardProps {
   description: string;
   urgency: string;
   dueTime: string;
+  createdAt: string;
   recurrence?: string | null;
   tags?: string | null;
   timeLimitMinutes?: number | null;
@@ -33,6 +38,39 @@ const URGENCY_LABEL: Record<string, string> = {
   medium: "Medium",
   low: "Low",
 };
+
+function detectShake(
+  currentX: number,
+  detector: { lastX: number; lastDirection: number; reversals: number; lastTime: number },
+): boolean {
+  const now = Date.now();
+  const delta = currentX - detector.lastX;
+  const direction = delta > 0 ? 1 : -1;
+  const timeDiff = now - detector.lastTime;
+
+  if (timeDiff > 400) {
+    detector.reversals = 0;
+  }
+
+  if (Math.abs(delta) > 8 && direction !== detector.lastDirection) {
+    detector.reversals++;
+    detector.lastDirection = direction;
+    detector.lastTime = now;
+  }
+
+  detector.lastX = currentX;
+  return detector.reversals >= 4;
+}
+
+function formatCreatedAt(createdAt: string): string {
+  const date = new Date(createdAt);
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
 
 function formatCardDate(dateStr: string): string {
   if (!dateStr) return "";
@@ -55,6 +93,7 @@ export default function TaskCard({
   description,
   urgency,
   dueTime,
+  createdAt,
   recurrence,
   tags,
   timeLimitMinutes,
@@ -62,6 +101,7 @@ export default function TaskCard({
 }: TaskCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showRemindPicker, setShowRemindPicker] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const liveDotRef = useRef<HTMLSpanElement>(null);
   const mouseDownPos = useRef({ x: 0, y: 0 });
@@ -69,6 +109,7 @@ export default function TaskCard({
   const interacting = useRef(false);
   const expandedRef = useRef(expanded);
   expandedRef.current = expanded;
+  const shakeDetector = useRef({ lastX: 0, lastDirection: 0, reversals: 0, lastTime: 0 });
 
   // ─── Shake interval — loaded from DB, updated live via event ────────────
   const [intervalSeconds, setIntervalSeconds] = useState(30);
@@ -218,27 +259,55 @@ export default function TaskCard({
       interacting.current = true;
       mouseDownPos.current = { x: e.clientX, y: e.clientY };
       dragging.current = false;
+      shakeDetector.current = { lastX: e.clientX, lastDirection: 0, reversals: 0, lastTime: Date.now() };
 
       const onMove = async (me: MouseEvent) => {
         if (dragging.current) return;
+        if (detectShake(me.clientX, shakeDetector.current)) {
+          window.removeEventListener("mousemove", onMove);
+          window.removeEventListener("mouseup", onUp);
+          interacting.current = false;
+          await snapAllCardsToGrid();
+          return;
+        }
         const dx = Math.abs(me.clientX - mouseDownPos.current.x);
         const dy = Math.abs(me.clientY - mouseDownPos.current.y);
         if (dx > 4 || dy > 4) {
           dragging.current = true;
+          setIsDragging(true);
           window.removeEventListener("mousemove", onMove);
+          await showArchiveZone();
           await getCurrentWindow().startDragging();
         }
       };
-      const onUp = () => {
+      const onUp = async () => {
+        if (dragging.current) {
+          setIsDragging(false);
+          const isOnZone = await checkDropOnArchive(taskId);
+          if (isOnZone) {
+            await invoke("complete_task", { id: taskId });
+            await getCurrentWindow().close();
+          }
+          await hideArchiveZone();
+        }
         interacting.current = false;
+        dragging.current = false;
         window.removeEventListener("mousemove", onMove);
         window.removeEventListener("mouseup", onUp);
       };
       window.addEventListener("mousemove", onMove);
       window.addEventListener("mouseup", onUp);
     },
-    [],
+    [taskId],
   );
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging) return;
+    if (detectShake(e.clientX, shakeDetector.current)) {
+      setIsDragging(false);
+      snapAllCardsToGrid();
+    }
+  }, [isDragging]);
 
   const handleClick = useCallback(
     async (e: React.MouseEvent) => {
@@ -284,6 +353,8 @@ export default function TaskCard({
       ref={containerRef}
       data-tauri-drag-region
       onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={() => setIsDragging(false)}
       onClick={handleClick}
       className="v-float"
       animate={controls}
@@ -386,6 +457,17 @@ export default function TaskCard({
               <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
             <span>{formatCardDate(dueTime)}</span>
+          </div>
+        )}
+
+        {createdAt && (
+          <div style={{
+            fontSize: "10px",
+            color: "rgba(255,255,255,0.2)",
+            marginTop: "3px",
+            fontFamily: "'Geist Mono', monospace"
+          }}>
+            ⊕ {formatCreatedAt(createdAt)}
           </div>
         )}
 

@@ -142,7 +142,7 @@ export default function TaskCard({
   }, [dueTime]);
 
   const [progress, setProgress] = useState(100);
-  const [barColor, setBarColor] = useState("#ffffff");
+  const [barColor, setBarColor] = useState("var(--progress-fill-card)");
   const [flash, setFlash] = useState(false);
   const notifiedRef = useRef(false);
 
@@ -159,7 +159,7 @@ export default function TaskCard({
 
       setProgress(pct);
 
-      if (pct > 50) setBarColor("#ffffff");
+      if (pct > 50) setBarColor("var(--progress-fill-card)");
       else if (pct > 25) setBarColor("#f59e0b");
       else setBarColor("#ef4444");
 

@@ -33,6 +33,8 @@
   --text-inverse: #ffffff;
   --text-danger: #cc0000;
   --text-on-white: #000000;
+  --text-shiny-base: #000000;
+  --text-shiny-shine: #1a1a1a;
 
   --shadow-card: 0 2px 12px rgba(0,0,0,0.08);
   --shadow-hover: 0 0 16px rgba(0,0,0,0.06);
@@ -82,6 +84,8 @@
   --text-inverse: #000000;
   --text-danger: #ff5555;
   --text-on-white: #ffffff;
+  --text-shiny-base: #888888;
+  --text-shiny-shine: #ededed;
 
   --shadow-card: 0 4px 24px rgba(0,0,0,0.4);
   --shadow-hover: 0 0 20px rgba(255,255,255,0.04);

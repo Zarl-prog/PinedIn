@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import DailyDigest from "./components/DailyDigest";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import "./index.css";
 
 let systemMediaListener: (() => void) | null = null;
 

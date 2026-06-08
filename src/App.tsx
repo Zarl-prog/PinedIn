@@ -131,7 +131,7 @@ export default function App() {
         display: "flex",
         flexDirection: "column",
         height: "100vh",
-        background: "#000",
+        background: "var(--bg-app)",
         overflow: "hidden",
       }}
     >
@@ -143,7 +143,7 @@ export default function App() {
           alignItems: "center",
           justifyContent: "space-between",
           padding: "10px 16px 8px",
-          borderBottom: "1px solid #1a1a1a",
+          borderBottom: "1px solid var(--divider)",
           flexShrink: 0,
         }}
       >
@@ -167,7 +167,7 @@ export default function App() {
           </div>
           <div>
             <ShinyText text="PinedIn" speed={4} className="text-white font-semibold text-sm" />
-            <div style={{ fontSize: "13px", color: "#444", lineHeight: 1.2, marginTop: "2px" }}>
+            <div style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.2, marginTop: "2px" }}>
               Persistent task overlay
             </div>
           </div>
@@ -180,15 +180,15 @@ export default function App() {
               width: "11px",
               height: "11px",
               borderRadius: "999px",
-              border: "1px solid #2e2e2e",
-              background: "#222",
+              border: "1px solid var(--border-hover)",
+              background: "var(--bg-hover)",
               cursor: "pointer",
               padding: 0,
               transition: "background 0.15s ease",
             }}
             title="Minimize"
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#333")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "#222")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--text-muted)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
           />
           <button
             onClick={() => getCurrentWindow().toggleMaximize()}
@@ -196,15 +196,15 @@ export default function App() {
               width: "11px",
               height: "11px",
               borderRadius: "999px",
-              border: "1px solid #2e2e2e",
-              background: "#222",
+              border: "1px solid var(--border-hover)",
+              background: "var(--bg-hover)",
               cursor: "pointer",
               padding: 0,
               transition: "background 0.15s ease",
             }}
             title="Maximize"
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#333")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "#222")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--text-muted)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
           />
           <button
             onClick={() => getCurrentWindow().close()}
@@ -212,15 +212,15 @@ export default function App() {
               width: "11px",
               height: "11px",
               borderRadius: "999px",
-              border: "1px solid #2e2e2e",
-              background: "#222",
+              border: "1px solid var(--border-hover)",
+              background: "var(--bg-hover)",
               cursor: "pointer",
               padding: 0,
               transition: "background 0.15s ease",
             }}
             title="Close"
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#444")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "#222")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--text-muted)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
           />
         </div>
       </div>
@@ -231,7 +231,7 @@ export default function App() {
           display: "flex",
           gap: "6px",
           padding: "8px 16px",
-          borderBottom: "1px solid #1a1a1a",
+          borderBottom: "1px solid var(--divider)",
           flexShrink: 0,
           alignItems: "center",
         }}
@@ -255,8 +255,8 @@ export default function App() {
           style={{
             padding: "7px 14px",
             borderRadius: "8px",
-            color: isPaused ? "#fff" : undefined,
-            borderColor: isPaused ? "#444" : undefined,
+            color: isPaused ? "var(--text-primary)" : undefined,
+            borderColor: isPaused ? "var(--text-muted)" : undefined,
           }}
         >
           {isPaused ? "▶ Resume" : "|| Pause"}
@@ -277,9 +277,9 @@ export default function App() {
           style={{
             fontFamily: "'Geist Mono', monospace",
             fontSize: "11px",
-            color: zenMode ? "#ffffff" : "#888888",
-            background: zenMode ? "#1a1a1a" : "transparent",
-            border: zenMode ? "1px solid #444" : "1px solid #222",
+            color: zenMode ? "var(--text-primary)" : "var(--text-secondary)",
+            background: zenMode ? "var(--border)" : "transparent",
+            border: zenMode ? "1px solid var(--text-muted)" : "1px solid var(--border-light)",
             borderRadius: "5px",
             padding: "5px 10px",
             cursor: "pointer",
@@ -297,9 +297,9 @@ export default function App() {
           style={{
             fontFamily: "'Geist Mono', monospace",
             fontSize: "11px",
-            color: "#888888",
+            color: "var(--text-secondary)",
             background: "transparent",
-            border: "1px solid #222",
+            border: "1px solid var(--border-light)",
             borderRadius: "5px",
             padding: "5px 10px",
             cursor: "pointer"
@@ -311,16 +311,16 @@ export default function App() {
 
         {/* Shake interval — compact inline control, always visible */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "auto" }}>
-          <span style={{ fontSize: "11px", color: "#444" }}>Shake every</span>
+          <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Shake every</span>
           <select
             value={shakeInterval}
             onChange={(e) => handleShakeChange(Number(e.target.value))}
             style={{
-              background: "#0a0a0a",
-              border: "1px solid #1a1a1a",
+              background: "var(--bg-input)",
+              border: "1px solid var(--border)",
               borderRadius: "5px",
               padding: "4px 8px",
-              color: "#888",
+              color: "var(--text-secondary)",
               fontSize: "11px",
               fontFamily: "'Geist Mono', monospace",
               cursor: "pointer",
@@ -366,7 +366,7 @@ export default function App() {
               aria-label="App heartbeat"
               title="App heartbeat — blinks red once an hour"
             />
-            <ShinyText text="Tasks" speed={3} className="text-white text-lg font-semibold" />
+            <ShinyText text="Tasks" speed={3} className="text-lg font-semibold" />
             <ShinyText text={`${incompleteCount} task${incompleteCount !== 1 ? "s" : ""} remaining`} speed={5} className="text-sm" />
           </div>
           <div style={{ display: "flex", gap: "6px" }}>
@@ -374,24 +374,24 @@ export default function App() {
               onClick={() => setPreScheduleOpen(true)}
               style={{
                 background: "transparent",
-                border: "1px solid #222",
+                border: "1px solid var(--border-light)",
                 borderRadius: "5px",
                 padding: "6px 12px",
-                color: "#888",
+                color: "var(--text-secondary)",
                 fontSize: "11px",
                 fontFamily: "'Geist Mono', monospace",
                 cursor: "pointer",
                 transition: "all 0.15s ease",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#0a0a0a";
-                e.currentTarget.style.borderColor = "#333";
-                e.currentTarget.style.color = "#ededed";
+                e.currentTarget.style.background = "var(--bg-input)";
+                e.currentTarget.style.borderColor = "var(--border-strong)";
+                e.currentTarget.style.color = "var(--text-primary)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.borderColor = "#222";
-                e.currentTarget.style.color = "#888";
+                e.currentTarget.style.borderColor = "var(--border-light)";
+                e.currentTarget.style.color = "var(--text-secondary)";
               }}
             >
               + Pre-Schedule
@@ -399,11 +399,11 @@ export default function App() {
             <button
               onClick={() => setAddTaskOpen(true)}
               style={{
-                background: "#ffffff",
+                background: "var(--text-primary)",
                 border: "none",
                 borderRadius: "5px",
                 padding: "6px 12px",
-                color: "#000000",
+                color: "var(--text-inverse)",
                 fontSize: "11px",
                 fontWeight: 600,
                 fontFamily: "'Geist Mono', monospace",
@@ -425,7 +425,7 @@ export default function App() {
             height="14"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#444"
+            stroke="var(--text-muted)"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -460,10 +460,10 @@ export default function App() {
       <div
         style={{
           padding: "10px 16px",
-          borderTop: "1px solid #1a1a1a",
+          borderTop: "1px solid var(--divider)",
           textAlign: "center",
           fontSize: "13px",
-          color: "#2a2a2a",
+          color: "var(--text-dim)",
           flexShrink: 0,
         }}
       >

@@ -11,7 +11,6 @@ import { useReminders } from "@/hooks/useReminders";
 import { useReminderStore } from "@/store/reminderStore";
 import { getShakeInterval, setShakeInterval, setZenMode, snapAllCardsToGrid } from "@/lib/tauriCommands";
 import WorkspacePanel from "@/components/WorkspacePanel";
-import type { Task } from "@/lib/tauriCommands";
 
 const SHAKE_OPTIONS = [10, 15, 30, 60, 120, 300];
 

@@ -106,11 +106,9 @@ export default function TaskCard({
         "0 0 10px rgba(255,255,255,0.2)",
         "0 0 0px rgba(255,255,255,0)",
       ],
-      backgroundColor: ["#080808", "#121212", "#0a0a0a", "#080808"],
       transition: {
         x: { duration: 0.4, ease: "easeInOut" },
         boxShadow: { duration: 0.6, ease: "easeInOut" },
-        backgroundColor: { duration: 0.6, ease: "easeInOut" },
       },
     });
   }, [urgency, controls]);
@@ -267,7 +265,7 @@ export default function TaskCard({
         position: "relative",
         overflow: "hidden",
         padding: 0,
-        willChange: "transform, background-color",
+        willChange: "transform",
       }}
     >
       <div style={{ padding: "12px 14px", pointerEvents: "none" }}>

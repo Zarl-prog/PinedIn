@@ -153,6 +153,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
     recurrence = null,
     tags = null,
     timeLimitMinutes = null,
+    startedAt = new Date().toISOString(),
   ) => {
     try {
       await updateTask(
@@ -164,6 +165,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
         recurrence,
         tags,
         timeLimitMinutes,
+        startedAt,
       );
       set((state) => ({
         tasks: state.tasks
@@ -178,6 +180,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
                   recurrence,
                   tags,
                   time_limit_minutes: timeLimitMinutes,
+                  started_at: startedAt,
                 }
               : t,
           )

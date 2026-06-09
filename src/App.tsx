@@ -616,7 +616,7 @@ export default function App() {
           flexShrink: 0,
         }}
       >
-        PinedIn v0.3.1 — Always-on-task overlay
+        PinedIn v0.3.2 — Always-on-task overlay
       </div>
 
       {/* Modals */}

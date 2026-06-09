@@ -25,6 +25,7 @@ pub fn create_task(
     recurrence: Option<String>,
     tags: Option<String>,
     time_limit_minutes: Option<i64>,
+    workspace_id: Option<i64>,
 ) -> Result<Task, String> {
     let task = db.create_task_with_tags(
         &title,
@@ -34,6 +35,7 @@ pub fn create_task(
         recurrence.as_deref(),
         tags.as_deref(),
         time_limit_minutes,
+        workspace_id,
     )?;
     emit_tasks_updated(&app, &db);
     notifications::check_due_notifications(&app);
@@ -43,11 +45,19 @@ pub fn create_task(
     let app_clone = app.clone();
     let db_clone = Arc::clone(&*db);
     std::thread::spawn(move || {
-        let index = db_clone
-            .get_incomplete_tasks()
-            .ok()
-            .and_then(|tasks| tasks.iter().position(|t| t.id == task_clone.id))
-            .unwrap_or(0);
+        let index = if task_clone.workspace_id.is_some() {
+            db_clone
+                .get_workspace_tasks(task_clone.workspace_id.unwrap())
+                .ok()
+                .and_then(|tasks| tasks.iter().position(|t| t.id == task_clone.id))
+                .unwrap_or(0)
+        } else {
+            db_clone
+                .get_incomplete_tasks()
+                .ok()
+                .and_then(|tasks| tasks.iter().position(|t| t.id == task_clone.id))
+                .unwrap_or(0)
+        };
         let _ = window::open_task_card(&app_clone, &task_clone, index);
     });
 
@@ -150,6 +160,7 @@ pub fn complete_task(
             Some(recurrence.as_str()),
             task.tags.as_deref(),
             task.time_limit_minutes,
+            task.workspace_id,
         )?;
 
         // Mark the original as completed
@@ -556,6 +567,7 @@ pub fn add_presceduled_task(
     due_date: Option<String>,
     time_limit_minutes: Option<i64>,
     tags: Option<String>,
+    workspace_id: Option<i64>,
 ) -> Result<i64, String> {
     let id = db.create_presceduled_task(
         &title,
@@ -565,6 +577,7 @@ pub fn add_presceduled_task(
         due_date.as_deref().unwrap_or(""),
         time_limit_minutes,
         tags.as_deref(),
+        workspace_id,
     )?;
     emit_tasks_updated(&app, &db);
     Ok(id)
@@ -573,4 +586,9 @@ pub fn add_presceduled_task(
 #[tauri::command]
 pub fn get_presceduled_tasks(db: State<'_, Arc<DbHandle>>) -> Result<Vec<Task>, String> {
     db.get_presceduled_tasks()
+}
+
+#[tauri::command]
+pub fn get_workspace_tasks(db: State<'_, Arc<DbHandle>>, workspace_id: i64) -> Result<Vec<Task>, String> {
+    db.get_workspace_tasks(workspace_id)
 }

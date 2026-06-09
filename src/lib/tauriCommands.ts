@@ -16,6 +16,7 @@ export interface Task {
   started_at: string | null;
   is_presceduled: number;
   scheduled_at: string | null;
+  workspace_id: number | null;
 }
 
 export interface AppSettings {
@@ -32,6 +33,7 @@ export async function createTask(
   recurrence?: string | null,
   tags?: string | null,
   timeLimitMinutes?: number | null,
+  workspaceId?: number | null,
 ): Promise<Task> {
   return invoke<Task>("create_task", {
     title,
@@ -41,6 +43,7 @@ export async function createTask(
     recurrence: recurrence ?? null,
     tags: tags ?? null,
     timeLimitMinutes: timeLimitMinutes ?? null,
+    workspaceId: workspaceId ?? null,
   });
 }
 
@@ -177,6 +180,7 @@ export async function addPrescheduledTask(
   dueDate: string | null,
   timeLimitMinutes: number | null,
   tags: string | null,
+  workspaceId?: number | null,
 ): Promise<number> {
   return invoke<number>("add_presceduled_task", {
     title,
@@ -186,11 +190,18 @@ export async function addPrescheduledTask(
     dueDate,
     timeLimitMinutes,
     tags,
+    workspaceId: workspaceId ?? null,
   });
 }
 
 export async function getPrescheduledTasks(): Promise<Task[]> {
   return invoke<Task[]>("get_presceduled_tasks");
+}
+
+// ─── Workspace Task Commands ──────────────────────────────────────────────────
+
+export async function getWorkspaceTasks(workspaceId: number): Promise<Task[]> {
+  return invoke<Task[]>("get_workspace_tasks", { workspaceId });
 }
 
 // ─── Snap to Grid ─────────────────────────────────────────────────────────────

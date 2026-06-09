@@ -105,8 +105,8 @@ pub fn run() {
             // Setup system tray
             tray::setup_tray(app.handle())?;
 
-            // Open floating task cards for all incomplete tasks
-            if let Ok(tasks) = db_handle.get_incomplete_tasks() {
+            // Open floating task cards for all incomplete tasks (global + workspace)
+            if let Ok(tasks) = db_handle.get_all_incomplete_tasks_global() {
                 window::open_all_task_cards(app.handle(), &tasks);
             }
 
@@ -177,6 +177,7 @@ pub fn run() {
             commands::fire_time_limit_notification,
             commands::add_presceduled_task,
             commands::get_presceduled_tasks,
+            commands::get_workspace_tasks,
             commands::close_task_card,
             commands::set_zen_mode,
             commands::snap_all_cards_to_grid,

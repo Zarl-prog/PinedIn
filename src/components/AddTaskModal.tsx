@@ -7,6 +7,7 @@ interface AddTaskModalProps {
   open: boolean;
   onClose: () => void;
   editTask?: Task | null;
+  workspaceId?: number | null;
 }
 
 const RECURRENCE_OPTIONS = [
@@ -32,6 +33,7 @@ export default function AddTaskModal({
   open,
   onClose,
   editTask,
+  workspaceId,
 }: AddTaskModalProps) {
   const addTask = useReminderStore((s) => s.addTask);
   const editTaskAction = useReminderStore((s) => s.editTask);
@@ -160,6 +162,7 @@ export default function AddTaskModal({
           recurrence,
           tagsString,
           safeTimeLimit,
+          workspaceId ?? null,
         );
       }
       onClose();

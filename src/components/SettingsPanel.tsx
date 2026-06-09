@@ -11,6 +11,7 @@ import { checkAndInstall } from "@/lib/updater";
 interface SettingsPanelProps {
   open: boolean;
   onClose: () => void;
+  updateAvailable?: string | null;
 }
 
 /**
@@ -18,7 +19,7 @@ interface SettingsPanelProps {
  * Shake interval is no longer here — it lives in the main toolbar.
  * All styling uses the exact palette: #0a0a0a, #1a1a1a, #ededed, #fff, etc.
  */
-export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
+export default function SettingsPanel({ open, onClose, updateAvailable }: SettingsPanelProps) {
   const { settings, updateSetting } = useSettings();
   const [autostartOn, setAutostartOn] = useState(false);
   const [autostartLoading, setAutostartLoading] = useState(false);
@@ -300,7 +301,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                     marginBottom: "8px",
                   }}
                 >
-                  Updates
+                  Updates {updateAvailable && <span style={{ color: "#ef4444", marginLeft: "6px", fontSize: "12px" }}>● Update v{updateAvailable} ready</span>}
                 </label>
                 <div
                   style={{

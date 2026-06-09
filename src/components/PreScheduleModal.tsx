@@ -6,6 +6,7 @@ import { localDateStr, localIsoString } from "@/lib/utils";
 interface PreScheduleModalProps {
   open: boolean;
   onClose: () => void;
+  workspaceId?: number | null;
 }
 
 /**
@@ -14,7 +15,7 @@ interface PreScheduleModalProps {
  * scheduling, with a clean set of fields: title, description, urgency,
  * scheduled date, scheduled time, and a Schedule button.
  */
-export default function PreScheduleModal({ open, onClose }: PreScheduleModalProps) {
+export default function PreScheduleModal({ open, onClose, workspaceId }: PreScheduleModalProps) {
   const addPrescheduledTask = useReminderStore((s) => s.addPrescheduledTask);
 
   const [title, setTitle] = useState("");
@@ -90,6 +91,7 @@ export default function PreScheduleModal({ open, onClose }: PreScheduleModalProp
         scheduledDate,
         null,
         null,
+        workspaceId ?? null,
       );
       onClose();
       resetForm();

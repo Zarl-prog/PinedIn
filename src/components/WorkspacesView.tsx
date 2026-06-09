@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getWorkspaces, saveWorkspace, loadWorkspace, deleteWorkspace, Workspace } from "../lib/tauriCommands";
+import { useReminderStore } from "@/store/reminderStore";
+import WorkspaceDetailView from "./WorkspaceDetailView";
 
 const WORKSPACE_ICONS = ["⬡", "◈", "⬟", "◉", "⬠", "◍", "⬢", "◎", "⬣", "◐"];
 
@@ -19,16 +21,35 @@ function formatDate(dateStr: string): string {
 interface WorkspacesViewProps {
   onOpen?: (id: number, name: string) => void;
   onBack: () => void;
+  workspaceContext: { workspaceId: number; workspaceName: string } | null;
+  onAddTask: () => void;
+  onPreSchedule: () => void;
 }
 
-export default function WorkspacesView({ onOpen, onBack }: WorkspacesViewProps) {
+export default function WorkspacesView({ onOpen, onBack, workspaceContext, onAddTask, onPreSchedule }: WorkspacesViewProps) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+  const deleteRef = useRef<HTMLDivElement>(null);
+
+  const fetchWorkspaceTasks = useReminderStore((s) => s.fetchWorkspaceTasks);
 
   useEffect(() => {
     getWorkspaces().then(setWorkspaces);
-  }, []);
+  }, [workspaceContext]); // re-fetch when returning from detail
+
+  // Close delete popover on outside click
+  useEffect(() => {
+    if (deleteTarget === null) return;
+    const handler = (e: MouseEvent) => {
+      if (deleteRef.current && !deleteRef.current.contains(e.target as Node)) {
+        setDeleteTarget(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [deleteTarget]);
 
   async function handleCreate() {
     if (!newName.trim()) return;
@@ -49,8 +70,26 @@ export default function WorkspacesView({ onOpen, onBack }: WorkspacesViewProps) 
 
   async function handleDelete(e: React.MouseEvent, id: number) {
     e.stopPropagation();
+    setDeleteTarget(id);
+  }
+
+  async function confirmDelete(id: number) {
+    setDeleteTarget(null);
     await deleteWorkspace(id);
     getWorkspaces().then(setWorkspaces);
+  }
+
+  // If in workspace detail context, show the detail view
+  if (workspaceContext) {
+    return (
+      <WorkspaceDetailView
+        workspaceId={workspaceContext.workspaceId}
+        workspaceName={workspaceContext.workspaceName}
+        onBack={() => onBack()}
+        onAddTask={onAddTask}
+        onPreSchedule={onPreSchedule}
+      />
+    );
   }
 
   return (
@@ -69,30 +108,6 @@ export default function WorkspacesView({ onOpen, onBack }: WorkspacesViewProps) 
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <button
-            onClick={onBack}
-            style={{
-              background: "transparent",
-              border: "1px solid var(--border)",
-              borderRadius: "6px",
-              padding: "6px 12px",
-              color: "var(--text-muted)",
-              fontSize: "12px",
-              fontFamily: "'Geist Mono', monospace",
-              cursor: "pointer",
-              transition: "color 0.15s, border-color 0.15s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "var(--text-primary)";
-              e.currentTarget.style.borderColor = "var(--border-hover)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "var(--text-muted)";
-              e.currentTarget.style.borderColor = "var(--border)";
-            }}
-          >
-            ← Tasks
-          </button>
           <h2
             style={{
               fontSize: "18px",
@@ -269,6 +284,7 @@ export default function WorkspacesView({ onOpen, onBack }: WorkspacesViewProps) 
                     e.currentTarget.style.background = "var(--bg-card)";
                   }}
                 >
+                  {/* Delete trigger */}
                   <div style={{ position: "absolute", top: "12px", right: "12px" }}>
                     <button
                       onClick={(e) => handleDelete(e, ws.id)}
@@ -287,6 +303,70 @@ export default function WorkspacesView({ onOpen, onBack }: WorkspacesViewProps) 
                     >
                       ···
                     </button>
+
+                    {/* Delete confirmation popover */}
+                    {deleteTarget === ws.id && (
+                      <div
+                        ref={deleteRef}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          position: "absolute",
+                          top: "32px",
+                          right: "0",
+                          zIndex: 20,
+                          background: "var(--bg-menu)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "8px",
+                          boxShadow: "var(--shadow-menu)",
+                          padding: "8px",
+                          minWidth: "140px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "4px",
+                        }}
+                      >
+                        <div style={{ fontSize: "11px", color: "var(--text-muted)", padding: "4px 8px", whiteSpace: "nowrap" }}>
+                          Delete this workspace?
+                        </div>
+                        <button
+                          onClick={() => confirmDelete(ws.id)}
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            borderRadius: "6px",
+                            padding: "6px 10px",
+                            fontSize: "12px",
+                            color: "var(--text-primary)",
+                            cursor: "pointer",
+                            textAlign: "left",
+                            fontFamily: "'Geist Mono', monospace",
+                            transition: "background 0.1s",
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-delete-hover)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                        >
+                          Delete
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(null)}
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            borderRadius: "6px",
+                            padding: "6px 10px",
+                            fontSize: "12px",
+                            color: "var(--text-secondary)",
+                            cursor: "pointer",
+                            textAlign: "left",
+                            fontFamily: "'Geist Mono', monospace",
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-menu-hover)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div

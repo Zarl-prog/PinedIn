@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { listen } from "@tauri-apps/api/event";
 import { useReminderStore } from "@/store/reminderStore";
@@ -17,6 +17,7 @@ interface WorkspaceDetailViewProps {
 function formatCardDate(dateStr: string): string {
   if (!dateStr) return "";
   const due = new Date(dateStr + "T00:00:00");
+  if (isNaN(due.getTime())) return "";
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const diffTime = due.getTime() - today.getTime();
@@ -48,9 +49,14 @@ export default function WorkspaceDetailView({
   const fetchWorkspaceTasks = useReminderStore((s) => s.fetchWorkspaceTasks);
   const [loading, setLoading] = useState(true);
 
+  const mountedRef = useRef(true);
+  const unlistenRef = useRef<(() => void) | null>(null);
+
   const refresh = useCallback(() => {
     setLoading(true);
-    fetchWorkspaceTasks(workspaceId).finally(() => setLoading(false));
+    fetchWorkspaceTasks(workspaceId).finally(() => {
+      if (mountedRef.current) setLoading(false);
+    });
   }, [workspaceId, fetchWorkspaceTasks]);
 
   useEffect(() => {
@@ -59,30 +65,52 @@ export default function WorkspaceDetailView({
 
   // Re-fetch when backend emits tasks-updated (e.g. floating card complete)
   useEffect(() => {
-    const unlisten = listen("tasks-updated", () => {
-      refresh();
+    let cancelled = false;
+    listen("tasks-updated", () => {
+      if (!cancelled) refresh();
+    }).then((unlisten) => {
+      unlistenRef.current = unlisten;
     });
-    return () => { unlisten.then((f) => f()); };
+    return () => {
+      cancelled = true;
+      if (unlistenRef.current) {
+        unlistenRef.current();
+        unlistenRef.current = null;
+      }
+    };
   }, [refresh]);
 
+  useEffect(() => {
+    return () => { mountedRef.current = false; };
+  }, []);
+
   async function handleComplete(task: Task) {
-    if (task.id) {
+    if (!task.id) return;
+    try {
       await completeTaskCmd(task.id);
       await fetchWorkspaceTasks(workspaceId);
+    } catch (e) {
+      console.error("Failed to complete task:", e);
     }
   }
 
   async function handleUncomplete(task: Task) {
-    if (task.id) {
+    if (!task.id) return;
+    try {
       await uncompleteTaskCmd(task.id);
       await fetchWorkspaceTasks(workspaceId);
+    } catch (e) {
+      console.error("Failed to uncomplete task:", e);
     }
   }
 
   async function handleDelete(task: Task) {
-    if (task.id) {
+    if (!task.id) return;
+    try {
       await deleteTask(task.id);
       await fetchWorkspaceTasks(workspaceId);
+    } catch (e) {
+      console.error("Failed to delete task:", e);
     }
   }
 

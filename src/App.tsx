@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Component, type ReactNode } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen } from "@tauri-apps/api/event";
 import TaskList from "@/components/TaskList";
@@ -16,6 +16,29 @@ import { checkForUpdates } from "@/lib/updater";
 const SHAKE_OPTIONS = [10, 15, 30, 60, 120, 300];
 
 type AppTab = "tasks" | "workspaces";
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: Error) {
+    console.error("ErrorBoundary caught:", error);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 24, color: "var(--text-secondary)", fontSize: 13, fontFamily: "'Geist Mono', monospace" }}>
+          Something went wrong. Please restart the app.
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function App() {
   useReminders();
@@ -185,7 +208,7 @@ export default function App() {
         overflow: "hidden",
       }}
     >
-      {/* ─── Custom Titlebar + Tab Bar ──────────────────────────────────── */}
+      {/* ─── Custom Titlebar ─────────────────────────────────────────── */}
       <div
         data-tauri-drag-region
         style={{
@@ -223,44 +246,6 @@ export default function App() {
               Persistent task overlay
             </div>
           </div>
-        </div>
-
-        {/* ─── Persistent Tab Navigation ──────────────────────────────── */}
-        <div style={{ display: "flex", gap: "4px" }}>
-          <button
-            onClick={() => handleTabChange("tasks")}
-            style={{
-              fontFamily: "'Geist Mono', monospace",
-              fontSize: "12px",
-              fontWeight: activeTab === "tasks" ? 600 : 400,
-              background: activeTab === "tasks" ? "var(--text-primary)" : "transparent",
-              color: activeTab === "tasks" ? "var(--text-inverse)" : "var(--text-secondary)",
-              border: `1px solid ${activeTab === "tasks" ? "var(--text-primary)" : "var(--border)"}`,
-              borderRadius: "6px",
-              padding: "6px 14px",
-              cursor: "pointer",
-              transition: "all 0.15s ease",
-            }}
-          >
-            Tasks
-          </button>
-          <button
-            onClick={() => handleTabChange("workspaces")}
-            style={{
-              fontFamily: "'Geist Mono', monospace",
-              fontSize: "12px",
-              fontWeight: activeTab === "workspaces" ? 600 : 400,
-              background: activeTab === "workspaces" ? "var(--text-primary)" : "transparent",
-              color: activeTab === "workspaces" ? "var(--text-inverse)" : "var(--text-secondary)",
-              border: `1px solid ${activeTab === "workspaces" ? "var(--text-primary)" : "var(--border)"}`,
-              borderRadius: "6px",
-              padding: "6px 14px",
-              cursor: "pointer",
-              transition: "all 0.15s ease",
-            }}
-          >
-            Workspace
-          </button>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -338,7 +323,7 @@ export default function App() {
             }}
             title="Maximize"
             onMouseEnter={(e) => (e.currentTarget.style.background = "var(--text-muted)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-hover")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
           />
           <button
             onClick={() => getCurrentWindow().close()}
@@ -357,6 +342,54 @@ export default function App() {
             onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
           />
         </div>
+      </div>
+
+      {/* ─── Persistent Tab Navigation (one line below titlebar) ──────── */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "4px",
+          padding: "6px 16px",
+          borderBottom: "1px solid var(--divider)",
+          flexShrink: 0,
+        }}
+      >
+        <button
+          onClick={() => handleTabChange("tasks")}
+          style={{
+            fontFamily: "'Geist Mono', monospace",
+            fontSize: "12px",
+            fontWeight: activeTab === "tasks" ? 600 : 400,
+            background: activeTab === "tasks" ? "var(--text-primary)" : "transparent",
+            color: activeTab === "tasks" ? "var(--text-inverse)" : "var(--text-secondary)",
+            border: `1px solid ${activeTab === "tasks" ? "var(--text-primary)" : "var(--border)"}`,
+            borderRadius: "6px",
+            padding: "6px 14px",
+            cursor: "pointer",
+            transition: "all 0.15s ease",
+          }}
+        >
+          Tasks
+        </button>
+        <button
+          onClick={() => handleTabChange("workspaces")}
+          style={{
+            fontFamily: "'Geist Mono', monospace",
+            fontSize: "12px",
+            fontWeight: activeTab === "workspaces" ? 600 : 400,
+            background: activeTab === "workspaces" ? "var(--text-primary)" : "transparent",
+            color: activeTab === "workspaces" ? "var(--text-inverse)" : "var(--text-secondary)",
+            border: `1px solid ${activeTab === "workspaces" ? "var(--text-primary)" : "var(--border)"}`,
+            borderRadius: "6px",
+            padding: "6px 14px",
+            cursor: "pointer",
+            transition: "all 0.15s ease",
+          }}
+        >
+          Workspace
+        </button>
       </div>
 
       {/* ─── Toolbar (only shown on Tasks tab) ─────────────────────────── */}
@@ -560,13 +593,15 @@ export default function App() {
         )}
 
         {activeTab === "workspaces" && (
-          <WorkspacesView
-            onOpen={handleWorkspaceOpen}
-            onBack={handleWorkspaceBack}
-            workspaceContext={workspaceContext}
-            onAddTask={() => setAddTaskOpen(true)}
-            onPreSchedule={() => setPreScheduleOpen(true)}
-          />
+          <ErrorBoundary key={workspaceContext ? "detail" : "list"}>
+            <WorkspacesView
+              onOpen={handleWorkspaceOpen}
+              onBack={handleWorkspaceBack}
+              workspaceContext={workspaceContext}
+              onAddTask={() => setAddTaskOpen(true)}
+              onPreSchedule={() => setPreScheduleOpen(true)}
+            />
+          </ErrorBoundary>
         )}
       </div>
 

@@ -8,12 +8,14 @@ import PreScheduleModal from "@/components/PreScheduleModal";
 import ShinyText from "@/components/ui/ShinyText";
 import UpdateBanner from "@/components/UpdateBanner";
 import WorkspacesView from "@/components/WorkspacesView";
-import WorkspaceDetailView from "@/components/WorkspaceDetailView";
 import { useReminders } from "@/hooks/useReminders";
 import { useReminderStore } from "@/store/reminderStore";
 import { getShakeInterval, setShakeInterval, setZenMode, snapAllCardsToGrid } from "@/lib/tauriCommands";
+import { checkForUpdates } from "@/lib/updater";
 
 const SHAKE_OPTIONS = [10, 15, 30, 60, 120, 300];
+
+type AppTab = "tasks" | "workspaces";
 
 export default function App() {
   useReminders();
@@ -31,20 +33,34 @@ export default function App() {
   const isPaused = useReminderStore((s) => s.isPaused);
   const togglePaused = useReminderStore((s) => s.togglePaused);
 
-  type AppView =
-    | { type: "tasks" }
-    | { type: "workspaces" }
-    | { type: "workspace-detail"; workspaceId: number; workspaceName: string };
+  const [activeTab, setActiveTab] = useState<AppTab>("tasks");
 
-  const [view, setView] = useState<AppView>({ type: "tasks" });
+  // Workspace detail sub-view state (managed by WorkspacesView internally)
+  const [workspaceContext, setWorkspaceContext] = useState<{ workspaceId: number; workspaceName: string } | null>(null);
+
+  // Update check state
+  const [updateAvailable, setUpdateAvailable] = useState<string | null>(null);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+
+  // Check for updates on mount
+  useEffect(() => {
+    checkForUpdates().then((result) => {
+      if (result.available && result.version) {
+        setUpdateAvailable(result.version);
+        setShowUpdateModal(true);
+      }
+    });
+  }, []);
 
   // Listen for task edit triggers from floating cards
   useEffect(() => {
     const unlisten = listen<number>("open_edit_task", (event) => {
       const taskId = event.payload;
       const task = tasks.find((t) => t.id === taskId);
-      if (task) {
-        setEditingTask(task);
+      const allTasks = Object.values(useReminderStore.getState().workspaceTasks).flat();
+      const found = task || allTasks.find((t) => t.id === taskId);
+      if (found) {
+        setEditingTask(found);
       }
     });
     return () => {
@@ -138,6 +154,27 @@ export default function App() {
     };
   }, []);
 
+  function handleTabChange(tab: AppTab) {
+    setActiveTab(tab);
+    if (tab === "tasks") {
+      setWorkspaceContext(null);
+    } else {
+      // coming from tasks to workspaces – show list
+      setWorkspaceContext(null);
+    }
+  }
+
+  function handleWorkspaceOpen(id: number, name: string) {
+    setActiveTab("workspaces");
+    setWorkspaceContext({ workspaceId: id, workspaceName: name });
+  }
+
+  function handleWorkspaceBack() {
+    setWorkspaceContext(null);
+  }
+
+  const effectiveWorkspaceId = workspaceContext?.workspaceId ?? null;
+
   return (
     <div
       style={{
@@ -148,7 +185,7 @@ export default function App() {
         overflow: "hidden",
       }}
     >
-      {/* ─── Custom Titlebar ──────────────────────────────────────────── */}
+      {/* ─── Custom Titlebar + Tab Bar ──────────────────────────────────── */}
       <div
         data-tauri-drag-region
         style={{
@@ -188,36 +225,89 @@ export default function App() {
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        {/* ─── Persistent Tab Navigation ──────────────────────────────── */}
+        <div style={{ display: "flex", gap: "4px" }}>
           <button
-            onClick={() => setSettingsOpen(true)}
-            title="Settings"
+            onClick={() => handleTabChange("tasks")}
             style={{
-              background: "none",
-              border: "none",
-              padding: "4px",
+              fontFamily: "'Geist Mono', monospace",
+              fontSize: "12px",
+              fontWeight: activeTab === "tasks" ? 600 : 400,
+              background: activeTab === "tasks" ? "var(--text-primary)" : "transparent",
+              color: activeTab === "tasks" ? "var(--text-inverse)" : "var(--text-secondary)",
+              border: `1px solid ${activeTab === "tasks" ? "var(--text-primary)" : "var(--border)"}`,
+              borderRadius: "6px",
+              padding: "6px 14px",
               cursor: "pointer",
-              borderRadius: "4px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "var(--text-secondary)",
-              transition: "color 0.15s ease, background 0.15s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "var(--text-primary)";
-              e.currentTarget.style.background = "var(--bg-hover)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "var(--text-secondary)";
-              e.currentTarget.style.background = "none";
+              transition: "all 0.15s ease",
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
+            Tasks
           </button>
+          <button
+            onClick={() => handleTabChange("workspaces")}
+            style={{
+              fontFamily: "'Geist Mono', monospace",
+              fontSize: "12px",
+              fontWeight: activeTab === "workspaces" ? 600 : 400,
+              background: activeTab === "workspaces" ? "var(--text-primary)" : "transparent",
+              color: activeTab === "workspaces" ? "var(--text-inverse)" : "var(--text-secondary)",
+              border: `1px solid ${activeTab === "workspaces" ? "var(--text-primary)" : "var(--border)"}`,
+              borderRadius: "6px",
+              padding: "6px 14px",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            Workspace
+          </button>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => setSettingsOpen(true)}
+              title="Settings"
+              style={{
+                background: "none",
+                border: "none",
+                padding: "4px",
+                cursor: "pointer",
+                borderRadius: "4px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--text-secondary)",
+                transition: "color 0.15s ease, background 0.15s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--text-primary)";
+                e.currentTarget.style.background = "var(--bg-hover)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--text-secondary)";
+                e.currentTarget.style.background = "none";
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+            </button>
+            {updateAvailable && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: "0px",
+                  right: "0px",
+                  width: "8px",
+                  height: "8px",
+                  background: "#ef4444",
+                  borderRadius: "50%",
+                }}
+              />
+            )}
+          </div>
           <button
             onClick={() => getCurrentWindow().minimize()}
             style={{
@@ -248,7 +338,7 @@ export default function App() {
             }}
             title="Maximize"
             onMouseEnter={(e) => (e.currentTarget.style.background = "var(--text-muted)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-hover")}
           />
           <button
             onClick={() => getCurrentWindow().close()}
@@ -269,94 +359,94 @@ export default function App() {
         </div>
       </div>
 
-      {/* ─── Toolbar ──────────────────────────────────────────────────── */}
-      <div
-        style={{
-          display: "flex",
-          gap: "6px",
-          padding: "8px 16px",
-          borderBottom: "1px solid var(--divider)",
-          flexShrink: 0,
-          alignItems: "center",
-        }}
-      >
-        <button
-          className="v-btn"
-          onClick={togglePaused}
-          aria-pressed={isPaused}
-          disabled={isAnyModalOpen}
-          title={isPaused ? "Resume card animations" : "Pause card animations"}
+      {/* ─── Toolbar (only shown on Tasks tab) ─────────────────────────── */}
+      {activeTab === "tasks" && (
+        <div
           style={{
-            padding: "7px 14px",
-            borderRadius: "8px",
-            color: isPaused ? "var(--text-primary)" : undefined,
-            borderColor: isPaused ? "var(--text-muted)" : undefined,
-          }}
-        >
-          {isPaused ? "▶ Resume" : "|| Pause"}
-        </button>
-
-        <button
-          className="v-btn"
-          onClick={toggleZenMode}
-          aria-pressed={zenMode}
-          style={{
-            fontFamily: "'Geist Mono', monospace",
-            fontSize: "11px",
-            borderRadius: "5px",
-            padding: "5px 10px",
-            cursor: "pointer",
             display: "flex",
+            gap: "6px",
+            padding: "8px 16px",
+            borderBottom: "1px solid var(--divider)",
+            flexShrink: 0,
             alignItems: "center",
-            gap: "4px",
-            color: zenMode ? "var(--text-primary)" : undefined,
-            background: zenMode ? "var(--border)" : undefined,
-            borderColor: zenMode ? "var(--text-muted)" : undefined,
           }}
         >
-          {zenMode ? "◎ Zen On" : "◎ Zen"}
-        </button>
-        <button
-          className="v-btn"
-          onClick={() => snapAllCardsToGrid()}
-          style={{
-            fontFamily: "'Geist Mono', monospace",
-            fontSize: "11px",
-            borderRadius: "5px",
-            padding: "5px 10px",
-            cursor: "pointer",
-          }}
-        >
-          ⊞ Align
-        </button>
-
-
-
-        {/* Shake interval — compact inline control, always visible */}
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "auto" }}>
-          <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Shake every</span>
-          <select
-            value={shakeInterval}
-            onChange={(e) => handleShakeChange(Number(e.target.value))}
+          <button
+            className="v-btn"
+            onClick={togglePaused}
+            aria-pressed={isPaused}
+            disabled={isAnyModalOpen}
+            title={isPaused ? "Resume card animations" : "Pause card animations"}
             style={{
-              background: "var(--bg-input)",
-              border: "1px solid var(--border)",
-              borderRadius: "5px",
-              padding: "4px 8px",
-              color: "var(--text-secondary)",
-              fontSize: "11px",
+              padding: "7px 14px",
+              borderRadius: "8px",
+              color: isPaused ? "var(--text-primary)" : undefined,
+              borderColor: isPaused ? "var(--text-muted)" : undefined,
+            }}
+          >
+            {isPaused ? "▶ Resume" : "|| Pause"}
+          </button>
+
+          <button
+            className="v-btn"
+            onClick={toggleZenMode}
+            aria-pressed={zenMode}
+            style={{
               fontFamily: "'Geist Mono', monospace",
+              fontSize: "11px",
+              borderRadius: "5px",
+              padding: "5px 10px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              color: zenMode ? "var(--text-primary)" : undefined,
+              background: zenMode ? "var(--border)" : undefined,
+              borderColor: zenMode ? "var(--text-muted)" : undefined,
+            }}
+          >
+            {zenMode ? "◎ Zen On" : "◎ Zen"}
+          </button>
+          <button
+            className="v-btn"
+            onClick={() => snapAllCardsToGrid()}
+            style={{
+              fontFamily: "'Geist Mono', monospace",
+              fontSize: "11px",
+              borderRadius: "5px",
+              padding: "5px 10px",
               cursor: "pointer",
             }}
           >
-            {SHAKE_OPTIONS.map((s) => (
-              <option key={s} value={s}>
-                {s < 60 ? `${s}s` : s === 60 ? "1m" : s === 120 ? "2m" : "5m"}
-              </option>
-            ))}
-          </select>
+            ⊞ Align
+          </button>
+
+          {/* Shake interval — compact inline control */}
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "auto" }}>
+            <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Shake every</span>
+            <select
+              value={shakeInterval}
+              onChange={(e) => handleShakeChange(Number(e.target.value))}
+              style={{
+                background: "var(--bg-input)",
+                border: "1px solid var(--border)",
+                borderRadius: "5px",
+                padding: "4px 8px",
+                color: "var(--text-secondary)",
+                fontSize: "11px",
+                fontFamily: "'Geist Mono', monospace",
+                cursor: "pointer",
+              }}
+            >
+              {SHAKE_OPTIONS.map((s) => (
+                <option key={s} value={s}>
+                  {s < 60 ? `${s}s` : s === 60 ? "1m" : s === 120 ? "2m" : "5m"}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ─── Body ─────────────────────────────────────────────────────── */}
       <div
@@ -364,12 +454,12 @@ export default function App() {
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          padding: view.type === "workspaces" || view.type === "workspace-detail" ? 0 : "16px",
+          padding: activeTab === "tasks" ? "16px" : 0,
           minHeight: 0,
           overflow: "hidden",
         }}
       >
-        {view.type === "tasks" && (
+        {activeTab === "tasks" && (
           <>
             <UpdateBanner />
 
@@ -395,21 +485,6 @@ export default function App() {
                 <ShinyText text={`${incompleteCount} task${incompleteCount !== 1 ? "s" : ""} remaining`} speed={5} className="text-sm" />
               </div>
               <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                <button
-                  onClick={() => setView({ type: "workspaces" })}
-                  style={{
-                    fontFamily: "'Geist Mono', monospace",
-                    fontSize: "11px",
-                    color: "#888888",
-                    background: "transparent",
-                    border: "1px solid #222",
-                    borderRadius: "5px",
-                    padding: "6px 12px",
-                    cursor: "pointer",
-                  }}
-                >
-                  ⊡ Workspaces
-                </button>
                 <button
                   className="v-btn"
                   onClick={() => setPreScheduleOpen(true)}
@@ -477,23 +552,18 @@ export default function App() {
               />
             </div>
 
-            {/* Task List */}
+            {/* Task List (global only) */}
             <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
               <TaskList searchQuery={searchQuery} />
             </div>
           </>
         )}
-        {view.type === "workspaces" && (
+
+        {activeTab === "workspaces" && (
           <WorkspacesView
-            onOpen={(id, name) => setView({ type: "workspace-detail", workspaceId: id, workspaceName: name })}
-            onBack={() => setView({ type: "tasks" })}
-          />
-        )}
-        {view.type === "workspace-detail" && (
-          <WorkspaceDetailView
-            workspaceId={view.workspaceId}
-            workspaceName={view.workspaceName}
-            onBack={() => setView({ type: "workspaces" })}
+            onOpen={handleWorkspaceOpen}
+            onBack={handleWorkspaceBack}
+            workspaceContext={workspaceContext}
             onAddTask={() => setAddTaskOpen(true)}
             onPreSchedule={() => setPreScheduleOpen(true)}
           />
@@ -511,7 +581,7 @@ export default function App() {
           flexShrink: 0,
         }}
       >
-        PinedIn v0.2.1 — Always-on-task overlay
+        PinedIn v0.3.1 — Always-on-task overlay
       </div>
 
       {/* Modals */}
@@ -522,17 +592,94 @@ export default function App() {
           setEditingTask(null);
         }}
         editTask={editingTask}
+        workspaceId={effectiveWorkspaceId}
       />
 
       <PreScheduleModal
         open={isPreScheduleOpen}
         onClose={() => setPreScheduleOpen(false)}
+        workspaceId={effectiveWorkspaceId}
       />
 
       <SettingsPanel
         open={isSettingsOpen}
         onClose={() => setSettingsOpen(false)}
+        updateAvailable={updateAvailable}
       />
+
+      {/* ─── Update Modal ──────────────────────────────────────────────── */}
+      {showUpdateModal && updateAvailable && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 200,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "var(--bg-overlay)",
+            }}
+            onClick={() => setShowUpdateModal(false)}
+          />
+          <div
+            style={{
+              position: "relative",
+              zIndex: 10,
+              width: "100%",
+              maxWidth: "400px",
+              background: "var(--bg-modal)",
+              border: "1px solid var(--border)",
+              borderRadius: "10px",
+              padding: "24px",
+            }}
+          >
+            <div style={{ fontSize: "17px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "12px" }}>
+              New Version Available
+            </div>
+            <p style={{ fontSize: "14px", color: "var(--text-secondary)", marginBottom: "8px" }}>
+              PinedIn v{updateAvailable} is ready to install.
+            </p>
+            <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "20px" }}>
+              Your current version: v0.3.1
+            </p>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                onClick={() => setShowUpdateModal(false)}
+                className="v-btn"
+                style={{ flex: 1, padding: "8px 0", borderRadius: "8px", fontSize: "14px" }}
+              >
+                Dismiss
+              </button>
+              <button
+                onClick={async () => {
+                  const { checkAndInstall } = await import("@/lib/updater");
+                  await checkAndInstall();
+                }}
+                style={{
+                  flex: 1,
+                  padding: "8px 0",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "var(--text-primary)",
+                  color: "var(--text-inverse)",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "opacity 0.15s ease",
+                }}
+              >
+                Update Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

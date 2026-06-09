@@ -11,6 +11,7 @@ import {
   updateSetting,
   addPrescheduledTask as addPrescheduledTaskCmd,
   getPrescheduledTasks as getPrescheduledTasksCmd,
+  getWorkspaceTasks,
 } from "@/lib/tauriCommands";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -18,6 +19,7 @@ import {
 export interface OverlayState {
   // Data
   tasks: Task[];
+  workspaceTasks: Record<number, Task[]>;
   scheduledTasks: Task[];
   settings: AppSettings;
   overlayVisible: boolean;
@@ -33,6 +35,7 @@ export interface OverlayState {
 
   // Actions - Task management
   fetchTasks: () => Promise<void>;
+  fetchWorkspaceTasks: (workspaceId: number) => Promise<void>;
   addTask: (
     title: string,
     description: string,
@@ -41,6 +44,7 @@ export interface OverlayState {
     recurrence?: string | null,
     tags?: string,
     timeLimitMinutes?: number | null,
+    workspaceId?: number | null,
   ) => Promise<void>;
   editTask: (
     id: number,
@@ -66,6 +70,7 @@ export interface OverlayState {
     dueDate: string | null,
     timeLimitMinutes: number | null,
     tags: string | null,
+    workspaceId?: number | null,
   ) => Promise<number>;
   removeScheduledTask: (id: number) => Promise<void>;
 
@@ -90,6 +95,7 @@ export interface OverlayState {
 export const useReminderStore = create<OverlayState>()((set, get) => ({
   // Initial state
   tasks: [],
+  workspaceTasks: {},
   scheduledTasks: [],
   settings: {
     theme: "dark",
@@ -116,6 +122,17 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
     }
   },
 
+  fetchWorkspaceTasks: async (workspaceId: number) => {
+    try {
+      const tasks = await getWorkspaceTasks(workspaceId);
+      set((state) => ({
+        workspaceTasks: { ...state.workspaceTasks, [workspaceId]: tasks },
+      }));
+    } catch (error) {
+      console.error("Failed to fetch workspace tasks:", error);
+    }
+  },
+
   addTask: async (
     title,
     description,
@@ -124,6 +141,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
     recurrence = null,
     tags = "",
     timeLimitMinutes = null,
+    workspaceId = null,
   ) => {
     try {
       const newTask = await createTask(
@@ -134,10 +152,20 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
         recurrence,
         tags || null,
         timeLimitMinutes,
+        workspaceId,
       );
-      set((state) => ({
-        tasks: [...state.tasks, newTask].sort(sortTasks),
-      }));
+      if (workspaceId) {
+        set((state) => ({
+          workspaceTasks: {
+            ...state.workspaceTasks,
+            [workspaceId]: [...(state.workspaceTasks[workspaceId] || []), newTask].sort(sortTasks),
+          },
+        }));
+      } else {
+        set((state) => ({
+          tasks: [...state.tasks, newTask].sort(sortTasks),
+        }));
+      }
     } catch (error) {
       console.error("Failed to create task:", error);
       throw error;
@@ -167,25 +195,37 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
         timeLimitMinutes,
         startedAt,
       );
-      set((state) => ({
-        tasks: state.tasks
-          .map((t) =>
-            t.id === id
-              ? {
-                  ...t,
-                  title,
-                  description,
-                  urgency: urgency as Task["urgency"],
-                  due_time: dueTime,
-                  recurrence,
-                  tags,
-                  time_limit_minutes: timeLimitMinutes,
-                  started_at: startedAt,
-                }
-              : t,
-          )
-          .sort(sortTasks),
-      }));
+      const updatedFields = {
+        title,
+        description,
+        urgency: urgency as Task["urgency"],
+        due_time: dueTime,
+        recurrence,
+        tags,
+        time_limit_minutes: timeLimitMinutes,
+        started_at: startedAt,
+      };
+      set((state) => {
+        // Try global tasks first
+        const globalUpdated = state.tasks.map((t) =>
+          t.id === id ? { ...t, ...updatedFields } : t,
+        );
+        // Check if task was workspace-scoped
+        const target = state.tasks.find((t) => t.id === id) ||
+          Object.values(state.workspaceTasks).flat().find((t) => t.id === id);
+        if (target?.workspace_id) {
+          const wid = target.workspace_id;
+          const wsTasks = state.workspaceTasks[wid] || [];
+          return {
+            tasks: globalUpdated,
+            workspaceTasks: {
+              ...state.workspaceTasks,
+              [wid]: wsTasks.map((t) => t.id === id ? { ...t, ...updatedFields } : t).sort(sortTasks),
+            },
+          };
+        }
+        return { tasks: globalUpdated.sort(sortTasks) };
+      });
     } catch (error) {
       console.error("Failed to update task:", error);
       throw error;
@@ -251,6 +291,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
     dueDate,
     timeLimitMinutes,
     tags,
+    workspaceId = null,
   ) => {
     try {
       const id = await addPrescheduledTaskCmd(
@@ -261,6 +302,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
         dueDate,
         timeLimitMinutes,
         tags,
+        workspaceId,
       );
       // Refresh the scheduled list so the new entry shows up in the
       // Scheduled section of the main task view immediately.

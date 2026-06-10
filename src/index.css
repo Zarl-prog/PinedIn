@@ -453,6 +453,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0.85 !important;
 }
 
+.shiny-text {
+  background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.6) 50%, transparent 70%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shine 5s linear infinite;
+  width: fit-content;
+}
+
 /* ─── Feature Button Styles (.feature-btn) ──────────────────────────── */
 
 .feature-btn {

@@ -12,6 +12,7 @@ import { useReminders } from "@/hooks/useReminders";
 import { useReminderStore } from "@/store/reminderStore";
 import { setZenMode, snapAllCardsToGrid } from "@/lib/tauriCommands";
 import { checkForUpdates } from "@/lib/updater";
+import { ShinyText } from "@/components/ShinyText";
 import type { Workspace } from "@/lib/tauriCommands";
 
 type AppTab = "tasks" | "workspaces";
@@ -213,9 +214,12 @@ export default function App() {
               <circle cx="12" cy="9" r="2.5" fill="var(--text-inverse)" stroke="none" />
             </svg>
           </div>
-          <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)", fontFamily: "'Geist Mono', monospace", letterSpacing: "-0.3px" }}>
+          <ShinyText style={{ fontSize: "14px", fontWeight: 600, fontFamily: "'Geist Mono', monospace", letterSpacing: "-0.3px" }}>
             PinedIn
-          </span>
+          </ShinyText>
+          <ShinyText style={{ fontSize: "9px", fontWeight: 500, fontFamily: "'Geist Mono', monospace", letterSpacing: "-0.1px", opacity: 0.6 }} speed={8}>
+            Persistent Task Overlay
+          </ShinyText>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -401,12 +405,12 @@ export default function App() {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "15px", fontWeight: 600, color: "var(--text-primary)", fontFamily: "'Geist Mono', monospace", letterSpacing: "-0.3px" }}>
+                <ShinyText style={{ fontSize: "15px", fontWeight: 600, fontFamily: "'Geist Mono', monospace", letterSpacing: "-0.3px" }}>
                   Tasks
-                </span>
-                <span style={{ fontSize: "12px", color: "var(--text-muted)", fontFamily: "'Geist Mono', monospace" }}>
+                </ShinyText>
+                <ShinyText style={{ fontSize: "12px", fontFamily: "'Geist Mono', monospace" }} speed={8}>
                   · {incompleteCount} remaining
-                </span>
+                </ShinyText>
               </div>
               <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                 <button

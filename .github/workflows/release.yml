@@ -1,4 +1,4 @@
-﻿name: Release
+name: Release
 on:
   push:
     tags:
@@ -59,6 +59,8 @@ jobs:
           GH_TOKEN: ${{ secrets.PINEDIN_RELEASES_TOKEN }}
         shell: bash
         run: |
+          echo "$GH_TOKEN" | gh auth login --with-token 2>/dev/null || true
+
           BUNDLE_DIR="src-tauri/target/release/bundle"
           [ ! -d "$BUNDLE_DIR" ] && echo "No bundle dir" && exit 0
 
@@ -76,41 +78,40 @@ jobs:
           find "$BUNDLE_DIR" -type f \( -name "*.exe" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \) \
             -exec gh release upload "$RELEASE_TAG" {} --repo "$PUBLIC_REPO" --clobber \;
 
-          # Upload updater archives â€” v1Compatible generates .tar.gz (macOS/Linux)
-          # and .zip (Windows) in bundle/updater/ or alongside bundles
-          UPDATER_DIR="$BUNDLE_DIR/updater"
-          if [ -d "$UPDATER_DIR" ]; then
-            find "$UPDATER_DIR" -type f \( -name "*.tar.gz" -o -name "*.zip" \) \
-              -exec gh release upload "$RELEASE_TAG" {} --repo "$PUBLIC_REPO" --clobber \;
-            # Upload .sig signature files alongside the archives
-            find "$UPDATER_DIR" -type f -name "*.sig" \
-              -exec gh release upload "$RELEASE_TAG" {} --repo "$PUBLIC_REPO" --clobber \;
-          fi
-
-          # Also look for .sig files alongside installers (for non-v1Compatible)
+          # Upload updater archives (.tar.gz for macOS/Linux, .zip for Windows)
+          # and their .sig signature files — generated alongside installers by Tauri v2
+          find "$BUNDLE_DIR" -type f \( -name "*.tar.gz" -o -name "*.zip" \) \
+            -exec gh release upload "$RELEASE_TAG" {} --repo "$PUBLIC_REPO" --clobber \;
           find "$BUNDLE_DIR" -type f -name "*.sig" \
             -exec gh release upload "$RELEASE_TAG" {} --repo "$PUBLIC_REPO" --clobber \;
 
-          # Generate latest.json from the updater archives that were uploaded
-          echo "Generating latest.json from updater artifacts..."
+          # Generate latest.json from updater archives in bundle directory
+          echo "Generating latest.json..."
           PLATFORMS=""
-          for f in $(find "$UPDATER_DIR" -type f \( -name "*.tar.gz" -o -name "*.zip" \) 2>/dev/null); do
+          VERSION="${RELEASE_TAG#v}"
+          NOTES="See the main repo for changelog."
+          PUB_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          for f in $(find "$BUNDLE_DIR" -type f \( -name "*.tar.gz" -o -name "*.zip" \) 2>/dev/null); do
             BASENAME=$(basename "$f")
+            # Skip deb package metadata — not updater archives
+            case "$BASENAME" in
+              control.tar.gz|data.tar.gz) continue ;;
+            esac
             # Extract platform from updater archive filename (Tauri v2 v1Compatible naming)
             case "$BASENAME" in
-              *x64-setup.nsis.zip*)  PLAT="windows-x86_64" ;;
-              *x64-setup.mui.zip*)   PLAT="windows-x86_64" ;;
-              *x86_64-setup.nsis.zip*) PLAT="windows-x86_64" ;;
-              *x86_64-setup.mui.zip*) PLAT="windows-x86_64" ;;
+              *x64-setup.nsis.zip*)     PLAT="windows-x86_64" ;;
+              *x64-setup.mui.zip*)      PLAT="windows-x86_64" ;;
+              *x86_64-setup.nsis.zip*)  PLAT="windows-x86_64" ;;
+              *x86_64-setup.mui.zip*)   PLAT="windows-x86_64" ;;
               *x86_64.AppImage.tar.gz*) PLAT="linux-x86_64" ;;
               *amd64.AppImage.tar.gz*)  PLAT="linux-x86_64" ;;
-              *x86_64.dmg.tar.gz*)    PLAT="darwin-x86_64" ;;
-              *aarch64.dmg.tar.gz*)   PLAT="darwin-aarch64" ;;
-              *x86_64.app.tar.gz*)    PLAT="darwin-x86_64" ;;
-              *aarch64.app.tar.gz*)   PLAT="darwin-aarch64" ;;
-              *)                      continue ;;
+              *x86_64.dmg.tar.gz*)      PLAT="darwin-x86_64" ;;
+              *aarch64.dmg.tar.gz*)     PLAT="darwin-aarch64" ;;
+              *x86_64.app.tar.gz*)      PLAT="darwin-x86_64" ;;
+              *aarch64.app.tar.gz*)     PLAT="darwin-aarch64" ;;
+              *)                        continue ;;
             esac
-            # Read the .sig file that sits right next to the archive
             SIG_FILE="${f}.sig"
             SIGNATURE=""
             [ -f "$SIG_FILE" ] && SIGNATURE=$(cat "$SIG_FILE")
@@ -120,11 +121,13 @@ jobs:
 
           if [ -n "$PLATFORMS" ]; then
             PLATFORMS="{${PLATFORMS:1}}"
-            printf '{\n  "version": "%s",\n  "notes": "See the main repo for changelog.",\n  "pub_date": "%s",\n  "platforms": %s\n}\n' \
-              "$RELEASE_TAG" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$PLATFORMS" > /tmp/latest.json
-            echo "Uploading latest.json..."
-            gh release upload "$RELEASE_TAG" /tmp/latest.json \
-              --repo "$PUBLIC_REPO" --clobber
           else
-            echo "WARNING: No updater archives found â€” latest.json not generated!"
+            PLATFORMS="{}"
           fi
+
+          printf '{\n  "version": "%s",\n  "notes": "%s",\n  "pub_date": "%s",\n  "platforms": %s\n}\n' \
+            "$VERSION" "$NOTES" "$PUB_DATE" "$PLATFORMS" > /tmp/latest.json
+
+          echo "Uploading latest.json..."
+          gh release upload "$RELEASE_TAG" /tmp/latest.json \
+            --repo "$PUBLIC_REPO" --clobber

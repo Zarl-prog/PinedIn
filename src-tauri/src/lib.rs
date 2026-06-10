@@ -178,6 +178,7 @@ pub fn run() {
             commands::add_presceduled_task,
             commands::get_presceduled_tasks,
             commands::get_workspace_tasks,
+            commands::get_all_workspace_tasks,
             commands::close_task_card,
             commands::set_zen_mode,
             commands::snap_all_cards_to_grid,

@@ -48,11 +48,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: PinedIn ${{ github.ref_name }}
-          releaseBody: "See changelog for details."
-          releaseDraft: false
-          prerelease: false
+          includeRelease: false
+          includeUpdaterJson: false
 
       - name: Upload to public release repo
         env:

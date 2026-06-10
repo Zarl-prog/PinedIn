@@ -167,5 +167,5 @@ jobs:
             echo "Release already exists in main repo" || \
             gh release create "$RELEASE_TAG" \
               --repo "Zarl-prog/PinedIn" \
-              --title "PinedIn $RELEASE_TAG" \
+              --title "Release: $RELEASE_TAG" \
               --notes "Download installers from the [public releases repo](https://github.com/Zarl-prog/PinedIn-Releases/releases/tag/$RELEASE_TAG)."

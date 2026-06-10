@@ -120,14 +120,8 @@ jobs:
 
           if [ -n "$PLATFORMS" ]; then
             PLATFORMS="{${PLATFORMS:1}}"
-            cat > /tmp/latest.json <<EOF
-           {
-             "version": "$RELEASE_TAG",
-             "notes": "See the main repo for changelog.",
-             "pub_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-             "platforms": $PLATFORMS
-           }
-           EOF
+            printf '{\n  "version": "%s",\n  "notes": "See the main repo for changelog.",\n  "pub_date": "%s",\n  "platforms": %s\n}\n' \
+              "$RELEASE_TAG" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$PLATFORMS" > /tmp/latest.json
             echo "Uploading latest.json..."
             gh release upload "$RELEASE_TAG" /tmp/latest.json \
               --repo "$PUBLIC_REPO" --clobber

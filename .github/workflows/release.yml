@@ -39,18 +39,14 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build and publish
-        uses: tauri-apps/tauri-action@v0
+      - name: Build the app
+        shell: bash
+        run: npm run tauri build
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
-        with:
-          tagName: ${{ github.ref_name }}
-          includeRelease: false
-          includeUpdaterJson: false
 
       - name: Upload to public release repo
         env:

@@ -592,3 +592,8 @@ pub fn get_presceduled_tasks(db: State<'_, Arc<DbHandle>>) -> Result<Vec<Task>, 
 pub fn get_workspace_tasks(db: State<'_, Arc<DbHandle>>, workspace_id: i64) -> Result<Vec<Task>, String> {
     db.get_workspace_tasks(workspace_id)
 }
+
+#[tauri::command]
+pub fn get_all_workspace_tasks(db: State<'_, Arc<DbHandle>>, workspace_id: i64) -> Result<Vec<Task>, String> {
+    db.get_all_workspace_tasks(workspace_id)
+}

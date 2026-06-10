@@ -204,6 +204,10 @@ export async function getWorkspaceTasks(workspaceId: number): Promise<Task[]> {
   return invoke<Task[]>("get_workspace_tasks", { workspaceId });
 }
 
+export async function getAllWorkspaceTasks(workspaceId: number): Promise<Task[]> {
+  return invoke<Task[]>("get_all_workspace_tasks", { workspaceId });
+}
+
 // ─── Snap to Grid ─────────────────────────────────────────────────────────────
 export async function snapAllCardsToGrid(): Promise<void> {
   return invoke("snap_all_cards_to_grid");

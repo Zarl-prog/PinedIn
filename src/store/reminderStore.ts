@@ -12,6 +12,7 @@ import {
   addPrescheduledTask as addPrescheduledTaskCmd,
   getPrescheduledTasks as getPrescheduledTasksCmd,
   getWorkspaceTasks,
+  getAllWorkspaceTasks,
 } from "@/lib/tauriCommands";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -124,7 +125,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
 
   fetchWorkspaceTasks: async (workspaceId: number) => {
     try {
-      const tasks = await getWorkspaceTasks(workspaceId);
+      const tasks = await getAllWorkspaceTasks(workspaceId);
       set((state) => ({
         workspaceTasks: { ...state.workspaceTasks, [workspaceId]: tasks },
       }));
@@ -235,9 +236,22 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
   removeTask: async (id) => {
     try {
       await deleteTask(id);
-      set((state) => ({
-        tasks: state.tasks.filter((t) => t.id !== id),
-      }));
+      set((state) => {
+        const target = state.tasks.find((t) => t.id === id) ||
+          Object.values(state.workspaceTasks).flat().find((t) => t.id === id);
+        if (target?.workspace_id) {
+          const wid = target.workspace_id;
+          const wsTasks = state.workspaceTasks[wid] || [];
+          return {
+            tasks: state.tasks.filter((t) => t.id !== id),
+            workspaceTasks: {
+              ...state.workspaceTasks,
+              [wid]: wsTasks.filter((t) => t.id !== id),
+            },
+          };
+        }
+        return { tasks: state.tasks.filter((t) => t.id !== id) };
+      });
     } catch (error) {
       console.error("Failed to delete task:", error);
       throw error;
@@ -247,11 +261,28 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
   completeTask: async (id) => {
     try {
       await completeTaskCmd(id);
-      set((state) => ({
-        tasks: state.tasks.map((t) =>
-          t.id === id ? { ...t, completed: true } : t,
-        ),
-      }));
+      set((state) => {
+        const target = state.tasks.find((t) => t.id === id) ||
+          Object.values(state.workspaceTasks).flat().find((t) => t.id === id);
+        if (target?.workspace_id) {
+          const wid = target.workspace_id;
+          const wsTasks = state.workspaceTasks[wid] || [];
+          return {
+            tasks: state.tasks.map((t) =>
+              t.id === id ? { ...t, completed: true } : t,
+            ),
+            workspaceTasks: {
+              ...state.workspaceTasks,
+              [wid]: wsTasks.map((t) => t.id === id ? { ...t, completed: true } : t),
+            },
+          };
+        }
+        return {
+          tasks: state.tasks.map((t) =>
+            t.id === id ? { ...t, completed: true } : t,
+          ),
+        };
+      });
     } catch (error) {
       console.error("Failed to complete task:", error);
       throw error;
@@ -261,11 +292,28 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
   uncompleteTask: async (id) => {
     try {
       await uncompleteTaskCmd(id);
-      set((state) => ({
-        tasks: state.tasks.map((t) =>
-          t.id === id ? { ...t, completed: false } : t,
-        ),
-      }));
+      set((state) => {
+        const target = state.tasks.find((t) => t.id === id) ||
+          Object.values(state.workspaceTasks).flat().find((t) => t.id === id);
+        if (target?.workspace_id) {
+          const wid = target.workspace_id;
+          const wsTasks = state.workspaceTasks[wid] || [];
+          return {
+            tasks: state.tasks.map((t) =>
+              t.id === id ? { ...t, completed: false } : t,
+            ),
+            workspaceTasks: {
+              ...state.workspaceTasks,
+              [wid]: wsTasks.map((t) => t.id === id ? { ...t, completed: false } : t),
+            },
+          };
+        }
+        return {
+          tasks: state.tasks.map((t) =>
+            t.id === id ? { ...t, completed: false } : t,
+          ),
+        };
+      });
     } catch (error) {
       console.error("Failed to uncomplete task:", error);
       throw error;

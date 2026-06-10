@@ -1,6 +1,6 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { listen } from "@tauri-apps/api/event";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useReminderStore } from "@/store/reminderStore";
 import { completeTask as completeTaskCmd, uncompleteTask as uncompleteTaskCmd, deleteTask } from "@/lib/tauriCommands";
 import type { Task } from "@/lib/tauriCommands";
@@ -49,40 +49,34 @@ export default function WorkspaceDetailView({
   const fetchWorkspaceTasks = useReminderStore((s) => s.fetchWorkspaceTasks);
   const [loading, setLoading] = useState(true);
 
-  const mountedRef = useRef(true);
-  const unlistenRef = useRef<(() => void) | null>(null);
-
-  const refresh = useCallback(() => {
+  const refresh = useCallback(async () => {
     setLoading(true);
-    fetchWorkspaceTasks(workspaceId).finally(() => {
-      if (mountedRef.current) setLoading(false);
-    });
+    try {
+      await fetchWorkspaceTasks(workspaceId);
+    } catch (e) {
+      console.error("WorkspaceDetailView refresh failed:", e);
+    } finally {
+      setLoading(false);
+    }
   }, [workspaceId, fetchWorkspaceTasks]);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
 
-  // Re-fetch when backend emits tasks-updated (e.g. floating card complete)
   useEffect(() => {
     let cancelled = false;
-    listen("tasks-updated", () => {
+    const unlistenPromise = listen("tasks-updated", () => {
       if (!cancelled) refresh();
-    }).then((unlisten) => {
-      unlistenRef.current = unlisten;
+    }).catch((err) => {
+      console.error("WorkspaceDetailView listen error:", err);
+      return (() => {}) as UnlistenFn;
     });
     return () => {
       cancelled = true;
-      if (unlistenRef.current) {
-        unlistenRef.current();
-        unlistenRef.current = null;
-      }
+      unlistenPromise.then((fn) => fn());
     };
   }, [refresh]);
-
-  useEffect(() => {
-    return () => { mountedRef.current = false; };
-  }, []);
 
   async function handleComplete(task: Task) {
     if (!task.id) return;

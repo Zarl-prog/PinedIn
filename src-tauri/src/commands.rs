@@ -216,7 +216,7 @@ pub fn uncomplete_task(
 /// Advance the due date by the given recurrence interval.
 fn advance_due_date(current_date: &str, recurrence: &str) -> String {
     let base_date = chrono::NaiveDate::parse_from_str(current_date, "%Y-%m-%d")
-        .unwrap_or_else(|_| chrono::Local::now().date_naive());
+        .unwrap_or_else(|_| chrono::Utc::now().date_naive());
 
     let new_date = match recurrence {
         "daily" => base_date + chrono::Duration::days(1),
@@ -399,8 +399,8 @@ pub struct DigestData {
 
 #[tauri::command]
 pub fn get_daily_digest(db: State<'_, Arc<DbHandle>>) -> Result<DigestData, String> {
-    let today = chrono::Local::now().date_naive().to_string();
-    let yesterday = (chrono::Local::now() - chrono::Duration::days(1))
+    let today = chrono::Utc::now().date_naive().to_string();
+    let yesterday = (chrono::Utc::now() - chrono::Duration::days(1))
         .date_naive()
         .to_string();
 
@@ -569,6 +569,10 @@ pub fn add_presceduled_task(
     tags: Option<String>,
     workspace_id: Option<i64>,
 ) -> Result<i64, String> {
+    // Validate scheduled_at is not in the past
+    if &scheduled_at < &chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string() {
+        return Err("scheduled_at must be in the future".to_string());
+    }
     let id = db.create_presceduled_task(
         &title,
         &body,

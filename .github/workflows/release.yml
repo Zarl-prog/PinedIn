@@ -79,38 +79,68 @@ jobs:
           find "$BUNDLE_DIR" -type f -name "*.sig" \
             -exec gh release upload "$RELEASE_TAG" {} --repo "$PUBLIC_REPO" --clobber \;
 
-          # Generate latest.json from updater archives in bundle directory
-          echo "Generating latest.json..."
-          PLATFORMS=""
+          # Generate per-platform updater metadata file
+          echo "Generating platform metadata..."
           VERSION="${RELEASE_TAG#v}"
-          NOTES="See the main repo for changelog."
-          PUB_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
           for f in $(find "$BUNDLE_DIR" -type f \( -name "*.tar.gz" -o -name "*.zip" \) 2>/dev/null); do
             BASENAME=$(basename "$f")
-            # Skip deb package metadata — not updater archives
             case "$BASENAME" in
               control.tar.gz|data.tar.gz) continue ;;
             esac
-            # Extract platform from updater archive filename (Tauri v2 v1Compatible naming)
             case "$BASENAME" in
-              *x64-setup.nsis.zip*)     PLAT="windows-x86_64" ;;
-              *x64-setup.mui.zip*)      PLAT="windows-x86_64" ;;
-              *x86_64-setup.nsis.zip*)  PLAT="windows-x86_64" ;;
-              *x86_64-setup.mui.zip*)   PLAT="windows-x86_64" ;;
-              *x86_64.AppImage.tar.gz*) PLAT="linux-x86_64" ;;
-              *amd64.AppImage.tar.gz*)  PLAT="linux-x86_64" ;;
-              *x86_64.dmg.tar.gz*)      PLAT="darwin-x86_64" ;;
-              *aarch64.dmg.tar.gz*)     PLAT="darwin-aarch64" ;;
-              *x86_64.app.tar.gz*)      PLAT="darwin-x86_64" ;;
-              *aarch64.app.tar.gz*)     PLAT="darwin-aarch64" ;;
-              *)                        continue ;;
+              *x64-setup.nsis.zip*)      PLAT="windows-x86_64" ;;
+              *x64-setup.mui.zip*)       PLAT="windows-x86_64" ;;
+              *x86_64-setup.nsis.zip*)   PLAT="windows-x86_64" ;;
+              *x86_64-setup.mui.zip*)    PLAT="windows-x86_64" ;;
+              *x86_64.AppImage.tar.gz*)  PLAT="linux-x86_64" ;;
+              *amd64.AppImage.tar.gz*)   PLAT="linux-x86_64" ;;
+              *x86_64.dmg.tar.gz*)       PLAT="darwin-x86_64" ;;
+              *aarch64.dmg.tar.gz*)      PLAT="darwin-aarch64" ;;
+              *x86_64.app.tar.gz*)       PLAT="darwin-x86_64" ;;
+              *aarch64.app.tar.gz*)      PLAT="darwin-aarch64" ;;
+              *)                         continue ;;
             esac
             SIG_FILE="${f}.sig"
             SIGNATURE=""
             [ -f "$SIG_FILE" ] && SIGNATURE=$(cat "$SIG_FILE")
             URL="https://github.com/$PUBLIC_REPO/releases/download/$RELEASE_TAG/$BASENAME"
-            PLATFORMS="$PLATFORMS,\"$PLAT\":{\"signature\":\"$SIGNATURE\",\"url\":\"$URL\"}"
+            printf '{"signature":"%s","url":"%s"}' "$SIGNATURE" "$URL" > /tmp/meta-$PLAT.json
+            echo "Uploading metadata for $PLAT..."
+            gh release upload "$RELEASE_TAG" /tmp/meta-$PLAT.json \
+              --repo "$PUBLIC_REPO" --clobber
+          done
+
+  merge-updater-metadata:
+    needs: [release]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Merge platform metadata into latest.json
+        env:
+          GH_TOKEN: ${{ secrets.PINEDIN_RELEASES_TOKEN }}
+        shell: bash
+        run: |
+          echo "$GH_TOKEN" | gh auth login --with-token 2>/dev/null || true
+
+          RELEASE_TAG="${{ github.ref_name }}"
+          PUBLIC_REPO="Zarl-prog/PinedIn-Releases"
+          VERSION="${RELEASE_TAG#v}"
+
+          cd /tmp
+
+          gh release download "$RELEASE_TAG" --repo "$PUBLIC_REPO" -p "meta-*.json" 2>/dev/null || true
+
+          PLATFORMS=""
+          for f in meta-*.json; do
+            [ ! -f "$f" ] && continue
+            PLAT="${f#meta-}"
+            PLAT="${PLAT%.json}"
+            CONTENT=$(cat "$f")
+            PLATFORMS="$PLATFORMS,\"$PLAT\":$CONTENT"
           done
 
           if [ -n "$PLATFORMS" ]; then
@@ -119,9 +149,10 @@ jobs:
             PLATFORMS="{}"
           fi
 
-          printf '{\n  "version": "%s",\n  "notes": "%s",\n  "pub_date": "%s",\n  "platforms": %s\n}\n' \
-            "$VERSION" "$NOTES" "$PUB_DATE" "$PLATFORMS" > /tmp/latest.json
+          printf '{\n  "version": "%s",\n  "notes": "See the main repo for changelog.",\n  "pub_date": "%s",\n  "platforms": %s\n}\n' \
+            "$VERSION" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$PLATFORMS" > latest.json
 
           echo "Uploading latest.json..."
-          gh release upload "$RELEASE_TAG" /tmp/latest.json \
+          cat latest.json
+          gh release upload "$RELEASE_TAG" latest.json \
             --repo "$PUBLIC_REPO" --clobber

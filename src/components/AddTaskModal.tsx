@@ -548,7 +548,7 @@ export default function AddTaskModal({
               </div>
 
               {error && (
-                <p style={{ fontSize: "13px", color: "var(--text-secondary)" }}>{error}</p>
+                <p style={{ fontSize: "13px", color: "var(--text-danger)", fontWeight: 500, marginTop: "8px" }}>{error}</p>
               )}
 
               <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>

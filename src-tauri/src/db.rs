@@ -106,7 +106,10 @@ impl DbHandle {
 
         conn.execute_batch("PRAGMA journal_mode=WAL;")
             .map_err(|e| format!("Failed to set journal mode: {e}"))?;
-
+        // Verify database integrity on startup
+        let integrity: String = conn.query_row("PRAGMA quick_check", [], |row| row.get(0))
+            .map_err(|e| format!("Database integrity check failed: {e}"))?;
+        if integrity != "ok" {            return Err(format!("Database corruption detected: {integrity}"));        }
         let handle = Self {
             conn: Mutex::new(conn),
         };
@@ -410,7 +413,8 @@ impl DbHandle {
                     WHEN 'medium' THEN 1
                     WHEN 'low' THEN 2
                 END,
-                created_at ASC"
+                created_at ASC
+                LIMIT 500"
         ).map_err(|e| format!("Failed to prepare query: {e}"))?;
 
         let tasks = stmt
@@ -436,7 +440,8 @@ impl DbHandle {
                     WHEN 'medium' THEN 1
                     WHEN 'low' THEN 2
                 END,
-                created_at ASC"
+                created_at ASC
+                LIMIT 500"
         ).map_err(|e| format!("Failed to prepare query: {e}"))?;
 
         let tasks = stmt
@@ -461,7 +466,8 @@ impl DbHandle {
                     WHEN 'medium' THEN 1
                     WHEN 'low' THEN 2
                 END,
-                created_at ASC"
+                created_at ASC
+                LIMIT 500"
         ).map_err(|e| format!("Failed to prepare workspace tasks query: {e}"))?;
 
         let tasks = stmt
@@ -486,7 +492,8 @@ impl DbHandle {
                     WHEN 'medium' THEN 1
                     WHEN 'low' THEN 2
                 END,
-                created_at ASC"
+                created_at ASC
+                LIMIT 500"
         ).map_err(|e| format!("Failed to prepare all workspace tasks query: {e}"))?;
 
         let tasks = stmt
@@ -511,7 +518,8 @@ impl DbHandle {
                     WHEN 'medium' THEN 1
                     WHEN 'low' THEN 2
                 END,
-                created_at ASC"
+                created_at ASC
+                LIMIT 500"
         ).map_err(|e| format!("Failed to prepare all incomplete tasks query: {e}"))?;
 
         let tasks = stmt

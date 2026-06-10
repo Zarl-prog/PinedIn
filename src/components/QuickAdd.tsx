@@ -9,6 +9,7 @@ export default function QuickAdd() {
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const isSubmitting = useRef(false);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -22,7 +23,8 @@ export default function QuickAdd() {
 
   async function handleSubmit() {
     const title = value.trim();
-    if (!title || status === "loading") return;
+    if (!title || isSubmitting.current) return;
+    isSubmitting.current = true;
 
     setStatus("loading");
     setErrorMsg("");

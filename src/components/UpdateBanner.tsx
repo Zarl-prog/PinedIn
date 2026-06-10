@@ -50,17 +50,11 @@ export default function UpdateBanner() {
           <button
             onClick={handleUpdate}
             disabled={updating}
+            className="feature-btn primary"
             style={{
-              background: "var(--text-primary)",
-              color: "var(--text-inverse)",
-              border: "none",
-              borderRadius: "6px",
               padding: "6px 14px",
-              fontSize: "11px",
-              fontWeight: 600,
-              cursor: updating ? "not-allowed" : "pointer",
-              fontFamily: "'Geist Mono', monospace",
-              opacity: updating ? 0.6 : 1
+              opacity: updating ? 0.6 : 1,
+              cursor: updating ? "not-allowed" : "",
             }}
           >
             {updating ? "Updating..." : "Update Now"}

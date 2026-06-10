@@ -157,17 +157,6 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const incompleteCount = tasks.filter((t) => !t.completed).length;
 
-  const ghostBtnStyle: React.CSSProperties = {
-    fontFamily: "'Geist Mono', monospace",
-    fontSize: "11px",
-    color: "#888888",
-    background: "transparent",
-    border: "1px solid #222",
-    borderRadius: "5px",
-    padding: "6px 12px",
-    cursor: "pointer",
-  };
-
   function handleTabChange(tab: AppTab) {
     setActiveTab(tab);
     setWorkspaceContext(null);
@@ -234,25 +223,13 @@ export default function App() {
             <button
               onClick={() => setSettingsOpen(true)}
               title="Settings"
+              className="feature-btn ghost"
               style={{
-                background: "none",
-                border: "none",
                 padding: "4px",
-                cursor: "pointer",
                 borderRadius: "4px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "var(--text-secondary)",
-                transition: "color 0.15s ease, background 0.15s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "var(--text-primary)";
-                e.currentTarget.style.background = "var(--bg-hover)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "var(--text-secondary)";
-                e.currentTarget.style.background = "none";
               }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -339,34 +316,30 @@ export default function App() {
       >
         <button
           onClick={() => handleTabChange("tasks")}
+          className="feature-btn"
           style={{
-            fontFamily: "'Geist Mono', monospace",
             fontSize: "12px",
             fontWeight: activeTab === "tasks" ? 600 : 400,
-            background: activeTab === "tasks" ? "var(--text-primary)" : "transparent",
-            color: activeTab === "tasks" ? "var(--text-inverse)" : "var(--text-secondary)",
-            border: `1px solid ${activeTab === "tasks" ? "var(--text-primary)" : "var(--border)"}`,
+            background: activeTab === "tasks" ? "var(--text-primary)" : "",
+            color: activeTab === "tasks" ? "var(--text-inverse)" : "",
+            borderColor: activeTab === "tasks" ? "var(--text-primary)" : "",
             borderRadius: "6px",
             padding: "6px 14px",
-            cursor: "pointer",
-            transition: "all 0.15s ease",
           }}
         >
           Tasks
         </button>
         <button
           onClick={() => handleTabChange("workspaces")}
+          className="feature-btn"
           style={{
-            fontFamily: "'Geist Mono', monospace",
             fontSize: "12px",
             fontWeight: activeTab === "workspaces" ? 600 : 400,
-            background: activeTab === "workspaces" ? "var(--text-primary)" : "transparent",
-            color: activeTab === "workspaces" ? "var(--text-inverse)" : "var(--text-secondary)",
-            border: `1px solid ${activeTab === "workspaces" ? "var(--text-primary)" : "var(--border)"}`,
+            background: activeTab === "workspaces" ? "var(--text-primary)" : "",
+            color: activeTab === "workspaces" ? "var(--text-inverse)" : "",
+            borderColor: activeTab === "workspaces" ? "var(--text-primary)" : "",
             borderRadius: "6px",
             padding: "6px 14px",
-            cursor: "pointer",
-            transition: "all 0.15s ease",
           }}
         >
           Workspace
@@ -393,16 +366,8 @@ export default function App() {
           </span>
           <button
             onClick={() => invoke("deactivate_workspace")}
-            style={{
-              background: "transparent",
-              border: "1px solid #333",
-              color: "#888",
-              borderRadius: "4px",
-              padding: "3px 8px",
-              fontSize: "10px",
-              cursor: "pointer",
-              fontFamily: "'Geist Mono', monospace",
-            }}
+            className="feature-btn"
+            style={{ fontSize: "10px", padding: "3px 8px" }}
           >
             Deactivate
           </button>
@@ -446,32 +411,14 @@ export default function App() {
               <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                 <button
                   onClick={() => setPreScheduleOpen(true)}
-                  style={{
-                    fontFamily: "'Geist Mono', monospace",
-                    fontSize: "11px",
-                    color: "#888888",
-                    background: "transparent",
-                    border: "1px solid #222",
-                    borderRadius: "5px",
-                    padding: "6px 12px",
-                    cursor: "pointer",
-                  }}
+                  className="feature-btn"
                 >
                   + Pre-Schedule
                 </button>
                 <button
                   onClick={() => setAddTaskOpen(true)}
-                  style={{
-                    fontFamily: "'Geist Mono', monospace",
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    color: "#000000",
-                    background: "#ffffff",
-                    border: "none",
-                    borderRadius: "5px",
-                    padding: "6px 12px",
-                    cursor: "pointer",
-                  }}
+                  className="feature-btn primary"
+                  style={{ fontSize: "11px", padding: "6px 12px" }}
                 >
                   + Add Task
                 </button>
@@ -550,27 +497,27 @@ export default function App() {
         >
           <button
             onClick={togglePaused}
+            className="feature-btn"
             style={{
-              ...ghostBtnStyle,
-              color: isPaused ? "#ffffff" : "#888888",
-              borderColor: isPaused ? "#555" : "#222",
+              color: isPaused ? "#ffffff" : "",
+              borderColor: isPaused ? "#555" : "",
             }}
           >
             {isPaused ? "▶ Resume" : "|| Pause"}
           </button>
           <button
             onClick={toggleZenMode}
+            className="feature-btn"
             style={{
-              ...ghostBtnStyle,
-              color: zenMode ? "#ffffff" : "#888888",
-              borderColor: zenMode ? "#555" : "#222",
+              color: zenMode ? "#ffffff" : "",
+              borderColor: zenMode ? "#555" : "",
             }}
           >
             {zenMode ? "◎ Zen On" : "◎ Zen"}
           </button>
           <button
             onClick={() => snapAllCardsToGrid()}
-            style={ghostBtnStyle}
+            className="feature-btn"
           >
             ⊞ Align
           </button>

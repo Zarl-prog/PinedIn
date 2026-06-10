@@ -132,16 +132,8 @@ export default function DailyDigest() {
             </div>
             <button
               onClick={handleDismiss}
-              style={{
-                background: "transparent",
-                border: "1px solid var(--border-light)",
-                borderRadius: "6px",
-                padding: "5px 12px",
-                color: "var(--text-secondary)",
-                fontSize: "11px",
-                cursor: "pointer",
-                fontFamily: "'Geist Mono', monospace"
-              }}
+              className="feature-btn"
+              style={{ padding: "5px 12px" }}
             >
               Dismiss {countdown}s
             </button>

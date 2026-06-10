@@ -47,63 +47,55 @@ pub fn run() {
             let quit_flag = QuitFlag::default();
             app.manage(quit_flag);
 
-            let app_data_dir = app
-                .path()
-                .app_data_dir()
-                .expect("Failed to get app data directory");
+            let app_data_dir = match app.path().app_data_dir() {
+                Ok(dir) => dir,
+                Err(e) => {
+                    eprintln!("[startup] Failed to get app data directory: {e}");
+                    return Err(Box::from(e));
+                }
+            };
 
-            let db_handle =
-                Arc::new(DbHandle::new(app_data_dir).expect("Failed to initialize database"));
+            let db_handle = match DbHandle::new(app_data_dir) {
+                Ok(handle) => Arc::new(handle),
+                Err(e) => {
+                    eprintln!("[startup] Failed to initialize database: {e}");
+                    return Err(Box::from(e));
+                }
+            };
 
             app.manage(db_handle.clone());
 
-            let main_window = app.get_webview_window("main").unwrap();
-            let main_window_clone = main_window.clone();
-
-            // Register the close-to-tray handler FIRST, before any
-            // hide()/show() dance. Tauri delivers WindowEvent to handlers
-            // attached to the window; re-creating the window visually
-            // (hide+show) is safe but doing it before the handler is
-            // bound opens a brief window where a real close could slip
-            // through. Bind first, decorate second.
-            let quit_flag_handle = app.state::<QuitFlag>().0.clone();
-            main_window.on_window_event(move |event| {
-                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                    // If the user picked "Quit PinedIn" from the tray,
-                    // the flag is set — let the close go through so the
-                    // process actually exits.
-                    if quit_flag_handle.load(Ordering::SeqCst) {
-                        return;
-                    }
-                    api.prevent_close();
-                    // Only hide if the window is currently visible.
-                    // If hide() fails (e.g. window is already destroyed),
-                    // we don't want the user stuck in a prevent-close loop.
-                    if main_window_clone.is_visible().unwrap_or(false) {
-                        if main_window_clone.hide().is_err() {
-                            // hide failed — window might be in a bad state.
-                            // Let the close go through as a last resort.
+            // Bind close-to-tray handler if main window exists
+            if let Some(main_window) = app.get_webview_window("main") {
+                let main_window_clone = main_window.clone();
+                let quit_flag_handle = app.state::<QuitFlag>().0.clone();
+                main_window.on_window_event(move |event| {
+                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                        if quit_flag_handle.load(Ordering::SeqCst) {
+                            return;
+                        }
+                        api.prevent_close();
+                        if main_window_clone.is_visible().unwrap_or(false) {
+                            let _ = main_window_clone.hide();
                         }
                     }
-                }
-            });
+                });
 
-            // Force remove native decorations — must run after the
-            // window-state plugin restores its state, so we post it to
-            // the event loop. Hide + show forces Windows to redraw
-            // without the native frame. On macOS/Linux just set the
-            // decoration flag without re-showing (avoids startup flicker).
-            if let Some(win) = app.get_webview_window("main") {
-                let _ = win.set_decorations(false);
+                // Force remove native decorations
+                let _ = main_window.set_decorations(false);
                 #[cfg(target_os = "windows")]
                 {
-                    let _ = win.hide();
-                    let _ = win.show();
+                    let _ = main_window.hide();
+                    let _ = main_window.show();
                 }
+            } else {
+                eprintln!("[startup] Main window not found — continuing without window operations");
             }
 
-            // Setup system tray
-            tray::setup_tray(app.handle())?;
+            // Setup system tray — log error but don't crash
+            if let Err(e) = tray::setup_tray(app.handle()) {
+                eprintln!("[startup] Failed to setup system tray: {e}");
+            }
 
             // Open floating task cards for all incomplete tasks (global + workspace)
             if let Ok(tasks) = db_handle.get_all_incomplete_tasks_global() {
@@ -124,16 +116,21 @@ pub fn run() {
 
             // Register global hotkey: Ctrl+Shift+Space on Windows/Linux,
             // Cmd+Shift+Space on macOS — opens quick-add popup from anywhere.
+            // Unregister any stale shortcut from a previously crashed
+            // instance first to avoid "already registered" panic.
+            let _ = app.global_shortcut().unregister_all();
             #[cfg(target_os = "macos")]
             let modifiers = Modifiers::SUPER | Modifiers::SHIFT;
             #[cfg(not(target_os = "macos"))]
             let modifiers = Modifiers::CONTROL | Modifiers::SHIFT;
-            app.global_shortcut().on_shortcut(
+            if let Err(e) = app.global_shortcut().on_shortcut(
                 Shortcut::new(Some(modifiers), Code::Space),
                 |app, _shortcut, _event| {
                     window::open_quick_add_window(app);
                 },
-            )?;
+            ) {
+                eprintln!("[startup] Failed to register global shortcut: {e}");
+            }
 
             // Spawn a background update check on startup - silent unless one is found
             let handle = app.handle().clone();

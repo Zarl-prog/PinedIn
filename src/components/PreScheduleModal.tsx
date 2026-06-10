@@ -307,7 +307,7 @@ export default function PreScheduleModal({ open, onClose, workspaceId }: PreSche
                 <button
                   onClick={handleClose}
                   disabled={isSubmitting}
-                  className="v-btn"
+                  className="feature-btn"
                   style={{
                     flex: 1,
                     padding: "8px 0",
@@ -320,24 +320,13 @@ export default function PreScheduleModal({ open, onClose, workspaceId }: PreSche
                 <button
                   onClick={handleSubmit}
                   disabled={isSubmitting}
+                  className="feature-btn primary"
                   style={{
                     flex: 1,
                     padding: "8px 0",
                     borderRadius: "8px",
-                    border: "none",
-                    background: "var(--text-primary)",
-                    color: "var(--text-inverse)",
                     fontSize: "14px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    transition: "opacity 0.15s ease",
                     opacity: isSubmitting ? 0.6 : 1,
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isSubmitting) e.currentTarget.style.opacity = "0.85";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isSubmitting) e.currentTarget.style.opacity = "1";
                   }}
                 >
                   {isSubmitting ? "Scheduling..." : "Schedule"}

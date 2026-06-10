@@ -632,6 +632,8 @@ export default function TaskCard({
               width: "100%",
               height: "4px",
               background: "var(--border-card)",
+              borderRadius: "0 0 14px 14px",
+              overflow: "hidden",
             }}
           >
             <motion.div

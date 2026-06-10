@@ -156,3 +156,16 @@ jobs:
           cat latest.json
           gh release upload "$RELEASE_TAG" latest.json \
             --repo "$PUBLIC_REPO" --clobber
+
+      - name: Create GitHub Release in main repo
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          RELEASE_TAG="${{ github.ref_name }}"
+          gh release view "$RELEASE_TAG" --repo "Zarl-prog/PinedIn" &>/dev/null && \
+            echo "Release already exists in main repo" || \
+            gh release create "$RELEASE_TAG" \
+              --repo "Zarl-prog/PinedIn" \
+              --title "PinedIn $RELEASE_TAG" \
+              --notes "Download installers from the [public releases repo](https://github.com/Zarl-prog/PinedIn-Releases/releases/tag/$RELEASE_TAG)."

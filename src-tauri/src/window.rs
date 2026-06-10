@@ -174,6 +174,19 @@ pub fn restack_task_cards(app: &AppHandle) {
     }
 }
 
+/// Open task card windows for all incomplete tasks, stacked vertically.
+pub fn open_all_task_cards(app: &AppHandle, tasks: &[Task]) {
+    for task in tasks {
+        if let Err(e) = open_task_card(app, task, 0) {
+            eprintln!(
+                "Failed to open task card for task {}: {e}",
+                task.id.unwrap_or(0)
+            );
+        }
+    }
+    restack_task_cards(app);
+}
+
 /// Open a task card window at an explicit position (for workspace restore).
 pub fn open_task_card_window_at(app: &AppHandle, task: &Task, x: f64, y: f64) {
     let id = match task.id {
@@ -201,26 +214,14 @@ pub fn open_task_card_window_at(app: &AppHandle, task: &Task, x: f64, y: f64) {
         .skip_taskbar(true)
         .focused(false)
         .position(x, y)
-        .build();
+        .build()
+        .map_err(|e| eprintln!("Failed to open task card window: {e}"));
 
     if ZEN_MODE.load(Ordering::SeqCst) {
         if let Some(window) = app.get_webview_window(&label) {
             let _ = window.hide();
         }
     }
-}
-
-/// Open task card windows for all incomplete tasks, stacked vertically.
-pub fn open_all_task_cards(app: &AppHandle, tasks: &[Task]) {
-    for task in tasks {
-        if let Err(e) = open_task_card(app, task, 0) {
-            eprintln!(
-                "Failed to open task card for task {}: {e}",
-                task.id.unwrap_or(0)
-            );
-        }
-    }
-    restack_task_cards(app);
 }
 
 /// Open a minimal 480x64 quick-add popup, centered horizontally near
@@ -239,7 +240,7 @@ pub fn open_quick_add_window(app: &AppHandle) {
     let x = get_center_x(app);
     let y = get_top_y(app);
 
-    WebviewWindowBuilder::new(app, label, WebviewUrl::App("quick-add.html".into()))
+    let _ = WebviewWindowBuilder::new(app, label, WebviewUrl::App("quick-add.html".into()))
         .inner_size(QUICK_ADD_WIDTH, QUICK_ADD_HEIGHT)
         .resizable(false)
         .decorations(false)
@@ -248,7 +249,7 @@ pub fn open_quick_add_window(app: &AppHandle) {
         .focused(true)
         .position(x, y)
         .build()
-        .expect("Failed to open quick add window");
+        .map_err(|e| eprintln!("Failed to open quick add window: {e}"));
 }
 
 /// Open the small always-on-top Daily Digest popup (420x220) that
@@ -272,11 +273,11 @@ pub fn open_daily_digest_window(app: &AppHandle) {
     #[cfg(not(target_os = "macos"))]
     let builder = builder.transparent(supports_transparency());
 
-    builder
+    let _ = builder
         .always_on_top(true)
         .skip_taskbar(true)
         .focused(false)
         .center()
         .build()
-        .expect("Failed to open daily digest window");
+        .map_err(|e| eprintln!("Failed to open daily digest window: {e}"));
 }

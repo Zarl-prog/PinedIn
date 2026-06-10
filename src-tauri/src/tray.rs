@@ -33,7 +33,7 @@ pub fn setup_tray(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Erro
     let icon: Image<'_> = app
         .default_window_icon()
         .cloned()
-        .ok_or("missing default window icon for tray")?;
+        .unwrap_or_else(|| Image::new(&[0; 4], 1, 1));
 
     // macOS convention: menu bar icons show menu on left-click.
     // Windows/Linux: left-click toggles the app window instead.

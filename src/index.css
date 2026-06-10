@@ -448,3 +448,69 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background-clip: unset;
   color: var(--text-inverse) !important;
 }
+
+.shiny-btn:hover {
+  opacity: 0.85 !important;
+}
+
+/* ─── Feature Button Styles (.feature-btn) ──────────────────────────── */
+
+.feature-btn {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.feature-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+  background: var(--bg-hover);
+  box-shadow: var(--shadow-hover);
+  transform: scale(1.02);
+}
+
+.feature-btn.primary {
+  background: var(--text-primary);
+  color: var(--text-inverse);
+  border: none;
+  font-weight: 600;
+}
+
+.feature-btn.primary:hover {
+  opacity: 0.85;
+  transform: scale(1.02);
+  box-shadow: var(--shadow-hover);
+}
+
+.feature-btn.active {
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+.feature-btn.danger {
+  color: var(--text-danger);
+}
+
+.feature-btn.danger:hover {
+  color: #ff5555;
+  border-color: var(--text-danger);
+  background: var(--bg-delete-hover);
+}
+
+.feature-btn.ghost {
+  color: var(--text-muted);
+  border-color: transparent;
+}
+
+.feature-btn.ghost:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--border);
+}

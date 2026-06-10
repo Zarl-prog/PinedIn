@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
@@ -48,6 +48,9 @@ export default function WorkspaceDetailView({
 }: WorkspaceDetailViewProps) {
   const workspaceTasks = useReminderStore((s) => s.workspaceTasks[workspaceId] || []);
   const fetchWorkspaceTasks = useReminderStore((s) => s.fetchWorkspaceTasks);
+  const scheduledTasks = useReminderStore((s) => s.scheduledTasks);
+  const fetchScheduledTasks = useReminderStore((s) => s.fetchScheduledTasks);
+  const removeScheduledTask = useReminderStore((s) => s.removeScheduledTask);
   const [loading, setLoading] = useState(true);
   const [isActive, setIsActive] = useState(false);
 
@@ -70,7 +73,8 @@ export default function WorkspaceDetailView({
 
   useEffect(() => {
     refresh();
-  }, [refresh]);
+    fetchScheduledTasks();
+  }, [refresh, fetchScheduledTasks]);
 
   useEffect(() => {
     let cancelled = false;
@@ -134,6 +138,18 @@ export default function WorkspaceDetailView({
     }
   }
 
+  async function handleCancelScheduled(taskId: number) {
+    try {
+      await removeScheduledTask(taskId);
+    } catch (e) {
+      console.error("Failed to cancel scheduled task:", e);
+    }
+  }
+
+  const workspaceScheduledTasks = useMemo(
+    () => scheduledTasks.filter((t) => t.workspace_id === workspaceId),
+    [scheduledTasks, workspaceId]
+  );
   const incompleteTasks = workspaceTasks.filter((t) => !t.completed).sort(sortTasks);
   const completedTasks = workspaceTasks.filter((t) => t.completed).sort(sortTasks);
 
@@ -156,25 +172,8 @@ export default function WorkspaceDetailView({
       <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
         <button
           onClick={onBack}
-          style={{
-            background: "transparent",
-            border: "1px solid var(--border)",
-            borderRadius: "6px",
-            padding: "6px 12px",
-            color: "var(--text-muted)",
-            fontSize: "12px",
-            fontFamily: "'Geist Mono', monospace",
-            cursor: "pointer",
-            transition: "color 0.15s, border-color 0.15s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = "var(--text-primary)";
-            e.currentTarget.style.borderColor = "var(--border-hover)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = "var(--text-muted)";
-            e.currentTarget.style.borderColor = "var(--border)";
-          }}
+          className="feature-btn"
+          style={{ fontSize: "12px", padding: "6px 12px" }}
         >
           ← Workspaces
         </button>
@@ -198,19 +197,12 @@ export default function WorkspaceDetailView({
           {isActive ? (
             <button
               onClick={handleDeactivate}
+              className="feature-btn active"
               style={{
-                background: "transparent",
-                border: "1px solid #444",
-                color: "#ffffff",
-                borderRadius: "6px",
-                padding: "7px 14px",
-                fontSize: "11px",
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "'Geist Mono', monospace",
                 display: "flex",
                 alignItems: "center",
                 gap: "6px",
+                padding: "7px 14px",
               }}
             >
               ● Active — Deactivate
@@ -218,49 +210,23 @@ export default function WorkspaceDetailView({
           ) : (
             <button
               onClick={handleActivate}
-              style={{
-                background: "#ffffff",
-                color: "#000000",
-                border: "none",
-                borderRadius: "6px",
-                padding: "7px 14px",
-                fontSize: "11px",
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "'Geist Mono', monospace",
-              }}
+              className="feature-btn primary"
+              style={{ padding: "7px 14px" }}
             >
               ▶ Activate Workspace
             </button>
           )}
           <button
             onClick={onPreSchedule}
-            style={{
-              fontFamily: "'Geist Mono', monospace",
-              fontSize: "11px",
-              background: "transparent",
-              border: "1px solid var(--border)",
-              borderRadius: "5px",
-              padding: "6px 12px",
-              color: "var(--text-secondary)",
-              cursor: "pointer",
-            }}
+            className="feature-btn"
+            style={{ padding: "6px 12px" }}
           >
             + Pre-Schedule
           </button>
           <button
             onClick={onAddTask}
-            style={{
-              background: "var(--text-primary)",
-              border: "none",
-              borderRadius: "5px",
-              padding: "6px 12px",
-              color: "var(--text-inverse)",
-              fontSize: "11px",
-              fontWeight: 600,
-              fontFamily: "'Geist Mono', monospace",
-              cursor: "pointer",
-            }}
+            className="feature-btn primary"
+            style={{ padding: "6px 12px", fontSize: "11px" }}
           >
             + Add Task
           </button>
@@ -273,7 +239,7 @@ export default function WorkspaceDetailView({
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
             <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>Loading tasks...</p>
           </div>
-        ) : incompleteTasks.length === 0 && completedTasks.length === 0 ? (
+        ) : workspaceScheduledTasks.length === 0 && incompleteTasks.length === 0 && completedTasks.length === 0 ? (
           <div
             style={{
               display: "flex",
@@ -294,6 +260,23 @@ export default function WorkspaceDetailView({
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {workspaceScheduledTasks.length > 0 && (
+              <>
+                <p style={{ fontSize: "11px", color: "var(--text-muted)", fontFamily: "'Geist Mono', monospace", marginBottom: "4px", marginTop: "8px" }}>
+                  Scheduled — {workspaceScheduledTasks.length}
+                </p>
+                {workspaceScheduledTasks.map((task) => (
+                  <ScheduledRow
+                    key={task.id}
+                    task={task}
+                    onCancel={() => {
+                      if (task.id) handleCancelScheduled(task.id);
+                    }}
+                  />
+                ))}
+              </>
+            )}
+
             {incompleteTasks.length > 0 && (
               <>
                 <p style={{ fontSize: "11px", color: "var(--text-muted)", fontFamily: "'Geist Mono', monospace", marginBottom: "4px" }}>
@@ -329,6 +312,99 @@ export default function WorkspaceDetailView({
         )}
       </div>
     </motion.div>
+  );
+}
+
+function formatScheduledTime(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const dateStr = d.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+  const timeStr = d.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return `${dateStr} at ${timeStr}`;
+}
+
+interface ScheduledRowProps {
+  task: Task;
+  onCancel: () => void;
+}
+
+function ScheduledRow({ task, onCancel }: ScheduledRowProps) {
+  const urgency = task.urgency as "low" | "medium" | "critical";
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        padding: "10px 12px",
+        background: "var(--bg-scheduled, var(--bg-card))",
+        border: "1px solid var(--border)",
+        borderRadius: "8px",
+      }}
+    >
+      <span style={{ fontSize: "12px", color: "var(--text-muted)", flexShrink: 0 }}>⏰</span>
+      <span
+        style={{
+          fontSize: "13px",
+          color: "var(--text-secondary)",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          flex: 1,
+          minWidth: 0,
+        }}
+      >
+        {task.title}
+      </span>
+      <UrgencyBadge urgency={urgency} />
+      <span
+        style={{
+          fontSize: "12px",
+          color: "var(--text-muted)",
+          flexShrink: 0,
+        }}
+      >
+        {formatScheduledTime(task.scheduled_at)}
+      </span>
+      <button
+        onClick={onCancel}
+        title="Cancel scheduled task"
+        style={{
+          width: "22px",
+          height: "22px",
+          borderRadius: "6px",
+          border: "1px solid var(--border-light)",
+          background: "transparent",
+          color: "var(--text-secondary)",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "12px",
+          flexShrink: 0,
+          transition: "all 0.15s ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "var(--bg-badge, var(--bg-card))";
+          e.currentTarget.style.color = "var(--text-primary)";
+          e.currentTarget.style.borderColor = "var(--text-muted)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "transparent";
+          e.currentTarget.style.color = "var(--text-secondary)";
+          e.currentTarget.style.borderColor = "var(--border-light)";
+        }}
+      >
+        ✕
+      </button>
+    </div>
   );
 }
 

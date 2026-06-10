@@ -1,4 +1,4 @@
-name: Release
+﻿name: Release
 on:
   push:
     tags:
@@ -76,7 +76,7 @@ jobs:
           find "$BUNDLE_DIR" -type f \( -name "*.exe" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \) \
             -exec gh release upload "$RELEASE_TAG" {} --repo "$PUBLIC_REPO" --clobber \;
 
-          # Upload updater archives — v1Compatible generates .tar.gz (macOS/Linux)
+          # Upload updater archives â€” v1Compatible generates .tar.gz (macOS/Linux)
           # and .zip (Windows) in bundle/updater/ or alongside bundles
           UPDATER_DIR="$BUNDLE_DIR/updater"
           if [ -d "$UPDATER_DIR" ]; then
@@ -121,16 +121,16 @@ jobs:
           if [ -n "$PLATFORMS" ]; then
             PLATFORMS="{${PLATFORMS:1}}"
             cat > /tmp/latest.json <<EOF
-        {
-          "version": "$RELEASE_TAG",
-          "notes": "See the main repo for changelog.",
-          "pub_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-          "platforms": $PLATFORMS
-        }
-        EOF
+           {
+             "version": "$RELEASE_TAG",
+             "notes": "See the main repo for changelog.",
+             "pub_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+             "platforms": $PLATFORMS
+           }
+           EOF
             echo "Uploading latest.json..."
             gh release upload "$RELEASE_TAG" /tmp/latest.json \
               --repo "$PUBLIC_REPO" --clobber
           else
-            echo "WARNING: No updater archives found — latest.json not generated!"
+            echo "WARNING: No updater archives found â€” latest.json not generated!"
           fi

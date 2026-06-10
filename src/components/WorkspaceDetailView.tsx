@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
+import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useReminderStore } from "@/store/reminderStore";
 import { completeTask as completeTaskCmd, uncompleteTask as uncompleteTaskCmd, deleteTask } from "@/lib/tauriCommands";
@@ -48,6 +49,13 @@ export default function WorkspaceDetailView({
   const workspaceTasks = useReminderStore((s) => s.workspaceTasks[workspaceId] || []);
   const fetchWorkspaceTasks = useReminderStore((s) => s.fetchWorkspaceTasks);
   const [loading, setLoading] = useState(true);
+  const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    invoke<number | null>("get_active_workspace_id").then((id) => {
+      setIsActive(id === workspaceId);
+    });
+  }, [workspaceId]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -77,6 +85,24 @@ export default function WorkspaceDetailView({
       unlistenPromise.then((fn) => fn());
     };
   }, [refresh]);
+
+  async function handleActivate() {
+    try {
+      await invoke("activate_workspace", { workspaceId });
+      setIsActive(true);
+    } catch (e) {
+      console.error("Failed to activate workspace:", e);
+    }
+  }
+
+  async function handleDeactivate() {
+    try {
+      await invoke("deactivate_workspace");
+      setIsActive(false);
+    } catch (e) {
+      console.error("Failed to deactivate workspace:", e);
+    }
+  }
 
   async function handleComplete(task: Task) {
     if (!task.id) return;
@@ -169,6 +195,44 @@ export default function WorkspaceDetailView({
           </p>
         </div>
         <div style={{ marginLeft: "auto", display: "flex", gap: "6px", alignItems: "center" }}>
+          {isActive ? (
+            <button
+              onClick={handleDeactivate}
+              style={{
+                background: "transparent",
+                border: "1px solid #444",
+                color: "#ffffff",
+                borderRadius: "6px",
+                padding: "7px 14px",
+                fontSize: "11px",
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: "'Geist Mono', monospace",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              ● Active — Deactivate
+            </button>
+          ) : (
+            <button
+              onClick={handleActivate}
+              style={{
+                background: "#ffffff",
+                color: "#000000",
+                border: "none",
+                borderRadius: "6px",
+                padding: "7px 14px",
+                fontSize: "11px",
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: "'Geist Mono', monospace",
+              }}
+            >
+              ▶ Activate Workspace
+            </button>
+          )}
           <button
             onClick={onPreSchedule}
             style={{
@@ -230,7 +294,6 @@ export default function WorkspaceDetailView({
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {/* Incomplete tasks */}
             {incompleteTasks.length > 0 && (
               <>
                 <p style={{ fontSize: "11px", color: "var(--text-muted)", fontFamily: "'Geist Mono', monospace", marginBottom: "4px" }}>
@@ -247,7 +310,6 @@ export default function WorkspaceDetailView({
               </>
             )}
 
-            {/* Completed tasks */}
             {completedTasks.length > 0 && (
               <>
                 <p style={{ fontSize: "11px", color: "var(--text-muted)", fontFamily: "'Geist Mono', monospace", marginTop: "16px", marginBottom: "4px" }}>
@@ -287,7 +349,6 @@ function TaskRow({ task, onComplete, onUncomplete, onDelete }: TaskRowProps) {
       className={`v-card${task.completed ? " completed" : ""}`}
       style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}
     >
-      {/* Checkbox */}
       <button
         onClick={() => {
           if (task.completed && onUncomplete) onUncomplete(task);
@@ -344,7 +405,6 @@ function TaskRow({ task, onComplete, onUncomplete, onDelete }: TaskRowProps) {
         </div>
       </div>
 
-      {/* Delete button */}
       {task.completed && (
         <button
           onClick={() => onDelete(task)}

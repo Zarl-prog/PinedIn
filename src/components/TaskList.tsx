@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { useReminderStore } from "@/store/reminderStore";
 import {
   type Task,
@@ -18,6 +19,8 @@ interface TaskListProps {
  */
 export default function TaskList({ searchQuery }: TaskListProps) {
   const tasks = useReminderStore((s) => s.tasks);
+  const workspaceTasks = useReminderStore((s) => s.workspaceTasks);
+  const fetchWorkspaceTasks = useReminderStore((s) => s.fetchWorkspaceTasks);
   const scheduledTasks = useReminderStore((s) => s.scheduledTasks);
   const completeTask = useReminderStore((s) => s.completeTask);
   const uncompleteFromStore = useReminderStore((s) => s.uncompleteTask);
@@ -43,17 +46,49 @@ export default function TaskList({ searchQuery }: TaskListProps) {
     return () => document.removeEventListener("click", handleClick);
   }, [menuOpenId]);
 
+  // Active workspace filtering
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<number | null>(null);
+
+  useEffect(() => {
+    invoke<number | null>("get_active_workspace_id").then(setActiveWorkspaceId);
+
+    const unlisten1 = listen("workspace_activated", () => {
+      invoke<number | null>("get_active_workspace_id").then(setActiveWorkspaceId);
+    });
+    const unlisten2 = listen("workspace_deactivated", () => {
+      setActiveWorkspaceId(null);
+    });
+    return () => {
+      unlisten1.then((f) => f());
+      unlisten2.then((f) => f());
+    };
+  }, []);
+
+  useEffect(() => {
+    if (activeWorkspaceId !== null) {
+      fetchWorkspaceTasks(activeWorkspaceId);
+    }
+  }, [activeWorkspaceId, fetchWorkspaceTasks]);
+
+  const displayTasks = useMemo(() => {
+    if (activeWorkspaceId !== null) {
+      return workspaceTasks[activeWorkspaceId] || [];
+    }
+    return tasks;
+  }, [tasks, workspaceTasks, activeWorkspaceId]);
+
   const filteredTasks = useMemo(() => {
-    if (!searchQuery.trim()) return tasks;
+    if (!searchQuery.trim()) return displayTasks;
     const q = searchQuery.toLowerCase();
-    return tasks.filter(
+    return displayTasks.filter(
       (t) =>
         t.title.toLowerCase().includes(q) ||
         t.description.toLowerCase().includes(q),
     );
-  }, [tasks, searchQuery]);
+  }, [displayTasks, searchQuery]);
 
   const filteredScheduledTasks = useMemo(() => {
+    if (activeWorkspaceId !== null) return [];
     if (!searchQuery.trim()) return scheduledTasks;
     const q = searchQuery.toLowerCase();
     return scheduledTasks.filter(
@@ -61,7 +96,7 @@ export default function TaskList({ searchQuery }: TaskListProps) {
         t.title.toLowerCase().includes(q) ||
         t.description.toLowerCase().includes(q),
     );
-  }, [scheduledTasks, searchQuery]);
+  }, [scheduledTasks, searchQuery, activeWorkspaceId]);
 
   const incompleteTasks = filteredTasks.filter((t) => !t.completed);
   const completedTasks = filteredTasks.filter((t) => t.completed);

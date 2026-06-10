@@ -47,9 +47,9 @@
 }
 
 html, body, #root {
-  width: 280px;
+  width: 308px;
   height: auto;
-  overflow: hidden;
+  overflow: visible;
   background: transparent;
 }
 

@@ -597,3 +597,149 @@ pub fn get_workspace_tasks(db: State<'_, Arc<DbHandle>>, workspace_id: i64) -> R
 pub fn get_all_workspace_tasks(db: State<'_, Arc<DbHandle>>, workspace_id: i64) -> Result<Vec<Task>, String> {
     db.get_all_workspace_tasks(workspace_id)
 }
+
+#[tauri::command]
+pub fn activate_workspace(app: AppHandle, db: State<'_, Arc<DbHandle>>, workspace_id: i64) -> Result<(), String> {
+    let workspace = db.get_workspace_by_id(workspace_id)?;
+    let workspace_name = workspace.name.clone();
+    db.update_setting("active_workspace_id", &workspace_id.to_string())?;
+
+    let windows = app.webview_windows();
+    for (label, window) in &windows {
+        if label.starts_with("task_") {
+            let _ = window.close();
+        }
+    }
+
+    let tasks = db.get_workspace_tasks(workspace_id)?;
+    for (i, task) in tasks.iter().enumerate() {
+        let _ = window::open_task_card(&app, task, i);
+    }
+    window::restack_task_cards(&app);
+
+    let _ = app.emit("workspace_activated", serde_json::json!({ "name": workspace_name }));
+    emit_tasks_updated(&app, &db);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn deactivate_workspace(app: AppHandle, db: State<'_, Arc<DbHandle>>) -> Result<(), String> {
+    db.update_setting("active_workspace_id", "")?;
+
+    let windows = app.webview_windows();
+    for (label, window) in &windows {
+        if label.starts_with("task_") {
+            let _ = window.close();
+        }
+    }
+
+    if let Ok(tasks) = db.get_incomplete_tasks() {
+        for (i, task) in tasks.iter().enumerate() {
+            let _ = window::open_task_card(&app, task, i);
+        }
+        window::restack_task_cards(&app);
+    }
+
+    let _ = app.emit("workspace_deactivated", ());
+    emit_tasks_updated(&app, &db);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn get_active_workspace_id(db: State<'_, Arc<DbHandle>>) -> Result<Option<i64>, String> {
+    let map = db.get_settings_map()?;
+    match map.get("active_workspace_id") {
+        Some(val) if !val.is_empty() => {
+            val.parse::<i64>().map(Some).map_err(|e| format!("Invalid active_workspace_id: {e}"))
+        }
+        _ => Ok(None),
+    }
+}
+
+#[tauri::command]
+pub fn add_task_to_workspace(app: AppHandle, db: State<'_, Arc<DbHandle>>, task_id: i64, workspace_id: i64) -> Result<(), String> {
+    db.set_task_workspace(task_id, Some(workspace_id))?;
+    emit_tasks_updated(&app, &db);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn get_card_position(app: AppHandle, task_id: i64) -> Result<serde_json::Value, String> {
+    let mut windows: Vec<String> = app
+        .webview_windows()
+        .keys()
+        .filter(|k| k.starts_with("task_"))
+        .cloned()
+        .collect();
+    windows.sort_by(|a, b| {
+        let a_id = a.trim_start_matches("task_").parse::<i64>().unwrap_or(0);
+        let b_id = b.trim_start_matches("task_").parse::<i64>().unwrap_or(0);
+        a_id.cmp(&b_id)
+    });
+
+    let current_label = format!("task_{}", task_id);
+    let index = windows.iter().position(|l| l == &current_label).unwrap_or(0);
+    let total = windows.len();
+
+    Ok(serde_json::json!({ "index": index, "total": total }))
+}
+
+#[tauri::command]
+pub fn focus_next_card(app: AppHandle, task_id: i64) -> Result<(), String> {
+    let mut windows: Vec<String> = app
+        .webview_windows()
+        .keys()
+        .filter(|k| k.starts_with("task_"))
+        .cloned()
+        .collect();
+    windows.sort_by(|a, b| {
+        let a_id = a.trim_start_matches("task_").parse::<i64>().unwrap_or(0);
+        let b_id = b.trim_start_matches("task_").parse::<i64>().unwrap_or(0);
+        a_id.cmp(&b_id)
+    });
+
+    let current_label = format!("task_{}", task_id);
+    let current_index = windows.iter().position(|l| l == &current_label).unwrap_or(0);
+    if windows.is_empty() {
+        return Ok(());
+    }
+    let next_index = (current_index + 1) % windows.len();
+    let next_label = &windows[next_index];
+
+    if let Some(window) = app.get_webview_window(next_label) {
+        window.set_focus().map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn focus_prev_card(app: AppHandle, task_id: i64) -> Result<(), String> {
+    let mut windows: Vec<String> = app
+        .webview_windows()
+        .keys()
+        .filter(|k| k.starts_with("task_"))
+        .cloned()
+        .collect();
+    windows.sort_by(|a, b| {
+        let a_id = a.trim_start_matches("task_").parse::<i64>().unwrap_or(0);
+        let b_id = b.trim_start_matches("task_").parse::<i64>().unwrap_or(0);
+        a_id.cmp(&b_id)
+    });
+
+    let current_label = format!("task_{}", task_id);
+    let current_index = windows.iter().position(|l| l == &current_label).unwrap_or(0);
+    if windows.is_empty() {
+        return Ok(());
+    }
+    let prev_index = if current_index == 0 {
+        windows.len() - 1
+    } else {
+        current_index - 1
+    };
+    let prev_label = &windows[prev_index];
+
+    if let Some(window) = app.get_webview_window(prev_label) {
+        window.set_focus().map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}

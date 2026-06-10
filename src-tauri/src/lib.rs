@@ -186,6 +186,13 @@ pub fn run() {
             commands::get_workspaces,
             commands::load_workspace,
             commands::delete_workspace,
+            commands::activate_workspace,
+            commands::deactivate_workspace,
+            commands::get_active_workspace_id,
+            commands::add_task_to_workspace,
+            commands::get_card_position,
+            commands::focus_next_card,
+            commands::focus_prev_card,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -592,6 +592,20 @@ impl DbHandle {
         Ok(())
     }
 
+    pub fn set_task_workspace(
+        &self,
+        task_id: i64,
+        workspace_id: Option<i64>,
+    ) -> Result<(), String> {
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        conn.execute(
+            "UPDATE tasks SET workspace_id = ?1 WHERE id = ?2",
+            rusqlite::params![workspace_id, task_id],
+        )
+        .map_err(|e| format!("Failed to set task workspace: {e}"))?;
+        Ok(())
+    }
+
     // ─── Daily Digest Queries ──────────────────────────────────────────────
 
     /// Count tasks due strictly before `today` that are still incomplete.

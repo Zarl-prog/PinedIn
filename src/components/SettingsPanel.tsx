@@ -5,8 +5,19 @@ import {
   isAutostartEnabled,
   enableAutostart,
   disableAutostart,
+  getShakeInterval,
+  setShakeInterval,
 } from "@/lib/tauriCommands";
 import { checkAndInstall } from "@/lib/updater";
+
+const SHAKE_OPTIONS: { value: number; label: string }[] = [
+  { value: 10, label: "10s" },
+  { value: 15, label: "15s" },
+  { value: 30, label: "30s" },
+  { value: 60, label: "1m" },
+  { value: 120, label: "2m" },
+  { value: 300, label: "5m" },
+];
 
 interface SettingsPanelProps {
   open: boolean;
@@ -15,8 +26,8 @@ interface SettingsPanelProps {
 }
 
 /**
- * SettingsPanel - Monochrome settings panel with theme pills and autostart toggle.
- * Shake interval is no longer here — it lives in the main toolbar.
+ * SettingsPanel - Monochrome settings panel with theme pills, autostart toggle,
+ * shake interval selector, and update controls.
  * All styling uses the exact palette: #0a0a0a, #1a1a1a, #ededed, #fff, etc.
  */
 export default function SettingsPanel({ open, onClose, updateAvailable }: SettingsPanelProps) {
@@ -28,6 +39,22 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
     version?: string;
     error?: string;
   }>({ state: "idle" });
+  const [shakeInterval, setShakeIntervalState] = useState(30);
+
+  useEffect(() => {
+    if (open) {
+      getShakeInterval().then(setShakeIntervalState).catch(() => {});
+    }
+  }, [open]);
+
+  const handleShakeIntervalChange = async (value: number) => {
+    setShakeIntervalState(value);
+    try {
+      await setShakeInterval(value);
+    } catch (err) {
+      console.error("Failed to set shake interval:", err);
+    }
+  };
 
   useEffect(() => {
     if (open) {
@@ -285,6 +312,45 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                         </svg>
                       )}
                       <span style={{ fontSize: "12px" }}>{option.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Card shake interval */}
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    color: "var(--text-secondary)",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Card shake interval
+                </label>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "6px",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  {SHAKE_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => handleShakeIntervalChange(option.value)}
+                      className={`pill-toggle${shakeInterval === option.value ? " selected" : ""}`}
+                      style={{
+                        flex: 1,
+                        minWidth: "56px",
+                        textAlign: "center",
+                        padding: "10px 12px",
+                        fontSize: "12px",
+                      }}
+                    >
+                      {option.label}
                     </button>
                   ))}
                 </div>

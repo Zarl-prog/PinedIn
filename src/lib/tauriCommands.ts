@@ -208,6 +208,19 @@ export async function getAllWorkspaceTasks(workspaceId: number): Promise<Task[]>
   return invoke<Task[]>("get_all_workspace_tasks", { workspaceId });
 }
 
+// ─── Card Navigation ───────────────────────────────────────────────────────────
+export async function getCardPosition(taskId: number): Promise<{ index: number; total: number }> {
+  return invoke("get_card_position", { taskId });
+}
+
+export async function focusNextCard(taskId: number): Promise<void> {
+  return invoke("focus_next_card", { taskId });
+}
+
+export async function focusPrevCard(taskId: number): Promise<void> {
+  return invoke("focus_prev_card", { taskId });
+}
+
 // ─── Snap to Grid ─────────────────────────────────────────────────────────────
 export async function snapAllCardsToGrid(): Promise<void> {
   return invoke("snap_all_cards_to_grid");

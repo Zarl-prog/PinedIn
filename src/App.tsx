@@ -1,19 +1,18 @@
-import { useState, useEffect, useRef, Component, type ReactNode } from "react";
+import { useState, useEffect, Component, type ReactNode } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import TaskList from "@/components/TaskList";
 import AddTaskModal from "@/components/AddTaskModal";
 import SettingsPanel from "@/components/SettingsPanel";
 import PreScheduleModal from "@/components/PreScheduleModal";
-import ShinyText from "@/components/ui/ShinyText";
 import UpdateBanner from "@/components/UpdateBanner";
 import WorkspacesView from "@/components/WorkspacesView";
 import { useReminders } from "@/hooks/useReminders";
 import { useReminderStore } from "@/store/reminderStore";
-import { getShakeInterval, setShakeInterval, setZenMode, snapAllCardsToGrid } from "@/lib/tauriCommands";
+import { setZenMode, snapAllCardsToGrid } from "@/lib/tauriCommands";
 import { checkForUpdates } from "@/lib/updater";
-
-const SHAKE_OPTIONS = [10, 15, 30, 60, 120, 300];
+import type { Workspace } from "@/lib/tauriCommands";
 
 type AppTab = "tasks" | "workspaces";
 
@@ -58,14 +57,36 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState<AppTab>("tasks");
 
-  // Workspace detail sub-view state (managed by WorkspacesView internally)
   const [workspaceContext, setWorkspaceContext] = useState<{ workspaceId: number; workspaceName: string } | null>(null);
 
-  // Update check state
+  const [activeWorkspaceName, setActiveWorkspaceName] = useState<string | null>(null);
+
+  useEffect(() => {
+    invoke<number | null>("get_active_workspace_id").then(async (id) => {
+      if (id !== null) {
+        const workspaces = await invoke<Workspace[]>("get_workspaces");
+        const ws = workspaces.find((w) => w.id === id);
+        if (ws) setActiveWorkspaceName(ws.name);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    const unlistenActivated = listen<{ name: string }>("workspace_activated", (e) => {
+      setActiveWorkspaceName(e.payload.name);
+    });
+    const unlistenDeactivated = listen("workspace_deactivated", () => {
+      setActiveWorkspaceName(null);
+    });
+    return () => {
+      unlistenActivated.then((f) => f());
+      unlistenDeactivated.then((f) => f());
+    };
+  }, []);
+
   const [updateAvailable, setUpdateAvailable] = useState<string | null>(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
 
-  // Check for updates on mount
   useEffect(() => {
     checkForUpdates().then((result) => {
       if (result.available && result.version) {
@@ -75,7 +96,6 @@ export default function App() {
     });
   }, []);
 
-  // Listen for task edit triggers from floating cards
   useEffect(() => {
     const unlisten = listen<number>("open_edit_task", (event) => {
       const taskId = event.payload;
@@ -91,7 +111,6 @@ export default function App() {
     };
   }, [tasks, setEditingTask]);
 
-  // Refresh task list when backend emits tasks-updated
   useEffect(() => {
     const unlisten = listen("tasks-updated", () => {
       fetchTasks();
@@ -101,7 +120,6 @@ export default function App() {
     };
   }, [fetchTasks]);
 
-  // Close any open modal on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
@@ -138,53 +156,21 @@ export default function App() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const incompleteCount = tasks.filter((t) => !t.completed).length;
-  const isAnyModalOpen = isAddTaskOpen || isSettingsOpen || isPreScheduleOpen;
 
-  const [shakeInterval, setShakeIntervalLocal] = useState<number>(30);
-  useEffect(() => {
-    getShakeInterval()
-      .then((s) => setShakeIntervalLocal(s))
-      .catch(() => {});
-  }, []);
-
-  const handleShakeChange = (value: number) => {
-    setShakeIntervalLocal(value);
-    setShakeInterval(value).catch(() => {});
+  const ghostBtnStyle: React.CSSProperties = {
+    fontFamily: "'Geist Mono', monospace",
+    fontSize: "11px",
+    color: "#888888",
+    background: "transparent",
+    border: "1px solid #222",
+    borderRadius: "5px",
+    padding: "6px 12px",
+    cursor: "pointer",
   };
-
-  const liveDotRef = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    const dot = liveDotRef.current;
-    if (!dot) return;
-
-    let alertTimeout: ReturnType<typeof setTimeout> | null = null;
-
-    const startAlert = () => {
-      dot.classList.remove("live");
-      dot.classList.add("alert");
-      alertTimeout = setTimeout(() => {
-        dot.classList.remove("alert");
-        dot.classList.add("live");
-        alertTimeout = null;
-      }, 60_000);
-    };
-
-    const interval = setInterval(startAlert, 60 * 60 * 1000);
-    return () => {
-      clearInterval(interval);
-      if (alertTimeout) clearTimeout(alertTimeout);
-    };
-  }, []);
 
   function handleTabChange(tab: AppTab) {
     setActiveTab(tab);
-    if (tab === "tasks") {
-      setWorkspaceContext(null);
-    } else {
-      // coming from tasks to workspaces – show list
-      setWorkspaceContext(null);
-    }
+    setWorkspaceContext(null);
   }
 
   function handleWorkspaceOpen(id: number, name: string) {
@@ -208,7 +194,7 @@ export default function App() {
         overflow: "hidden",
       }}
     >
-      {/* ─── Custom Titlebar ─────────────────────────────────────────── */}
+      {/* ─── Titlebar ─────────────────────────────────────────── */}
       <div
         data-tauri-drag-region
         style={{
@@ -238,14 +224,9 @@ export default function App() {
               <circle cx="12" cy="9" r="2.5" fill="var(--text-inverse)" stroke="none" />
             </svg>
           </div>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <ShinyText text="PinedIn" speed={4} className="text-white font-semibold text-sm" />
-            </div>
-            <div style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.2, marginTop: "2px" }}>
-              Persistent task overlay
-            </div>
-          </div>
+          <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)", fontFamily: "'Geist Mono', monospace", letterSpacing: "-0.3px" }}>
+            PinedIn
+          </span>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -344,7 +325,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* ─── Persistent Tab Navigation (one line below titlebar) ──────── */}
+      {/* ─── Tab Bar ─────────────────────────────────────────── */}
       <div
         style={{
           display: "flex",
@@ -392,102 +373,50 @@ export default function App() {
         </button>
       </div>
 
-      {/* ─── Toolbar (only shown on Tasks tab) ─────────────────────────── */}
-      {activeTab === "tasks" && (
+      {/* ─── Active Workspace Banner ──────────────────────────── */}
+      {activeWorkspaceName && (
         <div
           style={{
+            background: "#0a0a0a",
+            borderBottom: "1px solid #1a1a1a",
+            padding: "6px 16px",
             display: "flex",
-            gap: "6px",
-            padding: "8px 16px",
-            borderBottom: "1px solid var(--divider)",
-            flexShrink: 0,
             alignItems: "center",
+            justifyContent: "space-between",
+            fontSize: "11px",
+            fontFamily: "'Geist Mono', monospace",
+            flexShrink: 0,
           }}
         >
+          <span style={{ color: "#ffffff" }}>
+            ● Workspace active: <strong>{activeWorkspaceName}</strong>
+          </span>
           <button
-            className="v-btn"
-            onClick={togglePaused}
-            aria-pressed={isPaused}
-            disabled={isAnyModalOpen}
-            title={isPaused ? "Resume card animations" : "Pause card animations"}
+            onClick={() => invoke("deactivate_workspace")}
             style={{
-              padding: "7px 14px",
-              borderRadius: "8px",
-              color: isPaused ? "var(--text-primary)" : undefined,
-              borderColor: isPaused ? "var(--text-muted)" : undefined,
-            }}
-          >
-            {isPaused ? "▶ Resume" : "|| Pause"}
-          </button>
-
-          <button
-            className="v-btn"
-            onClick={toggleZenMode}
-            aria-pressed={zenMode}
-            style={{
-              fontFamily: "'Geist Mono', monospace",
-              fontSize: "11px",
-              borderRadius: "5px",
-              padding: "5px 10px",
+              background: "transparent",
+              border: "1px solid #333",
+              color: "#888",
+              borderRadius: "4px",
+              padding: "3px 8px",
+              fontSize: "10px",
               cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-              color: zenMode ? "var(--text-primary)" : undefined,
-              background: zenMode ? "var(--border)" : undefined,
-              borderColor: zenMode ? "var(--text-muted)" : undefined,
-            }}
-          >
-            {zenMode ? "◎ Zen On" : "◎ Zen"}
-          </button>
-          <button
-            className="v-btn"
-            onClick={() => snapAllCardsToGrid()}
-            style={{
               fontFamily: "'Geist Mono', monospace",
-              fontSize: "11px",
-              borderRadius: "5px",
-              padding: "5px 10px",
-              cursor: "pointer",
             }}
           >
-            ⊞ Align
+            Deactivate
           </button>
-
-          {/* Shake interval — compact inline control */}
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "auto" }}>
-            <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Shake every</span>
-            <select
-              value={shakeInterval}
-              onChange={(e) => handleShakeChange(Number(e.target.value))}
-              style={{
-                background: "var(--bg-input)",
-                border: "1px solid var(--border)",
-                borderRadius: "5px",
-                padding: "4px 8px",
-                color: "var(--text-secondary)",
-                fontSize: "11px",
-                fontFamily: "'Geist Mono', monospace",
-                cursor: "pointer",
-              }}
-            >
-              {SHAKE_OPTIONS.map((s) => (
-                <option key={s} value={s}>
-                  {s < 60 ? `${s}s` : s === 60 ? "1m" : s === 120 ? "2m" : "5m"}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
       )}
 
-      {/* ─── Body ─────────────────────────────────────────────────────── */}
+      {/* ─── Body ─────────────────────────────────────────────── */}
       <div
         style={{
           flex: 1,
           display: "flex",
           flexDirection: "column",
           padding: activeTab === "tasks" ? "16px" : 0,
+          paddingBottom: activeTab === "tasks" ? "52px" : 0,
           minHeight: 0,
           overflow: "hidden",
         }}
@@ -507,25 +436,24 @@ export default function App() {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span
-                  ref={liveDotRef}
-                  id="live-dot"
-                  className="dot live"
-                  aria-label="App heartbeat"
-                  title="App heartbeat — blinks red once an hour"
-                />
-                <ShinyText text="Tasks" speed={3} className="text-lg font-semibold" />
-                <ShinyText text={`${incompleteCount} task${incompleteCount !== 1 ? "s" : ""} remaining`} speed={5} className="text-sm" />
+                <span style={{ fontSize: "15px", fontWeight: 600, color: "var(--text-primary)", fontFamily: "'Geist Mono', monospace", letterSpacing: "-0.3px" }}>
+                  Tasks
+                </span>
+                <span style={{ fontSize: "12px", color: "var(--text-muted)", fontFamily: "'Geist Mono', monospace" }}>
+                  · {incompleteCount} remaining
+                </span>
               </div>
               <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                 <button
-                  className="v-btn"
                   onClick={() => setPreScheduleOpen(true)}
                   style={{
+                    fontFamily: "'Geist Mono', monospace",
+                    fontSize: "11px",
+                    color: "#888888",
+                    background: "transparent",
+                    border: "1px solid #222",
                     borderRadius: "5px",
                     padding: "6px 12px",
-                    fontSize: "11px",
-                    fontFamily: "'Geist Mono', monospace",
                     cursor: "pointer",
                   }}
                 >
@@ -534,19 +462,16 @@ export default function App() {
                 <button
                   onClick={() => setAddTaskOpen(true)}
                   style={{
-                    background: "var(--text-primary)",
+                    fontFamily: "'Geist Mono', monospace",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    color: "#000000",
+                    background: "#ffffff",
                     border: "none",
                     borderRadius: "5px",
                     padding: "6px 12px",
-                    color: "var(--text-inverse)",
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    fontFamily: "'Geist Mono', monospace",
                     cursor: "pointer",
-                    transition: "opacity 0.15s ease",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
-                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
                 >
                   + Add Task
                 </button>
@@ -585,7 +510,7 @@ export default function App() {
               />
             </div>
 
-            {/* Task List (global only) */}
+            {/* Task List */}
             <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
               <TaskList searchQuery={searchQuery} />
             </div>
@@ -605,19 +530,52 @@ export default function App() {
         )}
       </div>
 
-      {/* ─── Footer ───────────────────────────────────────────────────── */}
-      <div
-        style={{
-          padding: "10px 16px",
-          borderTop: "1px solid var(--divider)",
-          textAlign: "center",
-          fontSize: "13px",
-          color: "var(--text-dim)",
-          flexShrink: 0,
-        }}
-      >
-        PinedIn v0.3.2 — Always-on-task overlay
-      </div>
+      {/* ─── Bottom Bar ──────────────────────────────────────── */}
+      {activeTab === "tasks" && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: "44px",
+            background: "#000",
+            borderTop: "1px solid #111",
+            display: "flex",
+            alignItems: "center",
+            gap: "4px",
+            padding: "0 16px",
+            zIndex: 50,
+          }}
+        >
+          <button
+            onClick={togglePaused}
+            style={{
+              ...ghostBtnStyle,
+              color: isPaused ? "#ffffff" : "#888888",
+              borderColor: isPaused ? "#555" : "#222",
+            }}
+          >
+            {isPaused ? "▶ Resume" : "|| Pause"}
+          </button>
+          <button
+            onClick={toggleZenMode}
+            style={{
+              ...ghostBtnStyle,
+              color: zenMode ? "#ffffff" : "#888888",
+              borderColor: zenMode ? "#555" : "#222",
+            }}
+          >
+            {zenMode ? "◎ Zen On" : "◎ Zen"}
+          </button>
+          <button
+            onClick={() => snapAllCardsToGrid()}
+            style={ghostBtnStyle}
+          >
+            ⊞ Align
+          </button>
+        </div>
+      )}
 
       {/* Modals */}
       <AddTaskModal
@@ -642,7 +600,7 @@ export default function App() {
         updateAvailable={updateAvailable}
       />
 
-      {/* ─── Update Modal ──────────────────────────────────────────────── */}
+      {/* Update Modal */}
       {showUpdateModal && updateAvailable && (
         <div
           style={{

@@ -32,7 +32,7 @@ fn supports_transparency() -> bool {
     true
 }
 
-const CARD_WIDTH: f64 = 280.0;
+const CARD_WIDTH: f64 = 308.0;
 const CARD_HEIGHT: f64 = 120.0;
 const TOP_MARGIN: f64 = 80.0;
 const RIGHT_MARGIN: f64 = 24.0;
@@ -263,10 +263,11 @@ pub fn open_daily_digest_window(app: &AppHandle) {
         return;
     }
 
-    let builder = WebviewWindowBuilder::new(app, label, WebviewUrl::App("daily-digest.html".into()))
-        .inner_size(420.0, 220.0)
-        .resizable(false)
-        .decorations(false);
+    let builder =
+        WebviewWindowBuilder::new(app, label, WebviewUrl::App("daily-digest.html".into()))
+            .inner_size(420.0, 220.0)
+            .resizable(false)
+            .decorations(false);
 
     #[cfg(not(target_os = "macos"))]
     let builder = builder.transparent(supports_transparency());

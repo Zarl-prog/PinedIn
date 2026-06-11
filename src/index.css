@@ -35,6 +35,8 @@
   --text-on-white: #000000;
   --text-shiny-base: #000000;
   --text-shiny-shine: #1a1a1a;
+  --shiny-color-primary: #000000;
+  --shiny-color-secondary: #555555;
 
   --shadow-card: 0 2px 12px rgba(0,0,0,0.08);
   --shadow-hover: 0 0 16px rgba(0,0,0,0.06);
@@ -86,6 +88,8 @@
   --text-on-white: #ffffff;
   --text-shiny-base: #888888;
   --text-shiny-shine: #ededed;
+  --shiny-color-primary: #ffffff;
+  --shiny-color-secondary: #888888;
 
   --shadow-card: 0 4px 24px rgba(0,0,0,0.4);
   --shadow-hover: 0 0 20px rgba(255,255,255,0.04);
@@ -453,15 +457,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0.85 !important;
 }
 
-.shiny-text {
-  background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.6) 50%, transparent 70%);
-  background-size: 200% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: shine 5s linear infinite;
-  width: fit-content;
-}
+
 
 /* ─── Feature Button Styles (.feature-btn) ──────────────────────────── */
 

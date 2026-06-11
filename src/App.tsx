@@ -12,7 +12,7 @@ import { useReminders } from "@/hooks/useReminders";
 import { useReminderStore } from "@/store/reminderStore";
 import { setZenMode, snapAllCardsToGrid } from "@/lib/tauriCommands";
 import { checkForUpdates } from "@/lib/updater";
-import { ShinyText } from "@/components/ShinyText";
+import ShinyText from "@/components/ui/ShinyText";
 import type { Workspace } from "@/lib/tauriCommands";
 
 type AppTab = "tasks" | "workspaces";
@@ -214,12 +214,10 @@ export default function App() {
               <circle cx="12" cy="9" r="2.5" fill="var(--text-inverse)" stroke="none" />
             </svg>
           </div>
-          <ShinyText style={{ fontSize: "14px", fontWeight: 600, fontFamily: "'Geist Mono', monospace", letterSpacing: "-0.3px" }}>
-            PinedIn
-          </ShinyText>
-          <ShinyText style={{ fontSize: "9px", fontWeight: 500, fontFamily: "'Geist Mono', monospace", letterSpacing: "-0.1px", opacity: 0.6 }} speed={8}>
+          <ShinyText text="PinedIn" speed={4} className="font-semibold" style={{ fontSize: "14px" }} />
+          <span style={{ fontSize: "9px", fontWeight: 500, fontFamily: "'Geist Mono', monospace", letterSpacing: "-0.1px", opacity: 0.6, color: "var(--text-muted)" }}>
             Persistent Task Overlay
-          </ShinyText>
+          </span>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -405,12 +403,10 @@ export default function App() {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <ShinyText style={{ fontSize: "15px", fontWeight: 600, fontFamily: "'Geist Mono', monospace", letterSpacing: "-0.3px" }}>
+                <span style={{ fontSize: "15px", fontWeight: 600, fontFamily: "'Geist Mono', monospace", letterSpacing: "-0.3px", color: "var(--text-primary)" }}>
                   Tasks
-                </ShinyText>
-                <ShinyText style={{ fontSize: "12px", fontFamily: "'Geist Mono', monospace" }} speed={8}>
-                  · {incompleteCount} remaining
-                </ShinyText>
+                </span>
+                <ShinyText text={`${incompleteCount} tasks remaining`} speed={6} className="" style={{ fontSize: "11px" }} />
               </div>
               <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                 <button

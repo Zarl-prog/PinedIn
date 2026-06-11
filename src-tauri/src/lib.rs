@@ -97,9 +97,22 @@ pub fn run() {
                 eprintln!("[startup] Failed to setup system tray: {e}");
             }
 
-            // Open floating task cards for all incomplete tasks (global + workspace)
-            if let Ok(tasks) = db_handle.get_all_incomplete_tasks_global() {
-                window::open_all_task_cards(app.handle(), &tasks);
+            // Check if compact mode was enabled before restart
+            let compact_enabled = db_handle
+                .get_settings_map()
+                .ok()
+                .and_then(|map| map.get("compact_mode").cloned())
+                .map(|v| v == "true")
+                .unwrap_or(false);
+
+            if compact_enabled {
+                // Open the compact pill instead of individual task cards
+                window::open_compact_pill_window(app.handle());
+            } else {
+                // Open floating task cards for all incomplete tasks (global + workspace)
+                if let Ok(tasks) = db_handle.get_all_incomplete_tasks_global() {
+                    window::open_all_task_cards(app.handle(), &tasks);
+                }
             }
 
             // Request notification permission, then fire notifications for tasks due today
@@ -178,6 +191,8 @@ pub fn run() {
             commands::get_all_workspace_tasks,
             commands::close_task_card,
             commands::set_zen_mode,
+            commands::get_compact_mode,
+            commands::set_compact_mode,
             commands::snap_all_cards_to_grid,
             commands::save_workspace,
             commands::get_workspaces,

@@ -518,6 +518,46 @@ pub fn delete_workspace(app: AppHandle, workspace_id: i64) -> Result<(), String>
     db.delete_workspace(workspace_id).map_err(|e| e.to_string())
 }
 
+// ─── Compact Mode ──────────────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn get_compact_mode(db: State<'_, Arc<DbHandle>>) -> Result<bool, String> {
+    let map = db.get_settings_map()?;
+    let value = map.get("compact_mode").cloned().unwrap_or_else(|| "false".to_string());
+    Ok(value == "true")
+}
+
+#[tauri::command]
+pub fn set_compact_mode(app: AppHandle, db: State<'_, Arc<DbHandle>>, enabled: bool) -> Result<(), String> {
+    db.update_setting("compact_mode", if enabled { "true" } else { "false" })?;
+
+    if enabled {
+        // Close all task card windows
+        let windows = app.webview_windows();
+        for (label, window) in &windows {
+            if label.starts_with("task_") {
+                let _ = window.close();
+            }
+        }
+        // Open the compact pill
+        crate::window::open_compact_pill_window(&app);
+        let _ = app.emit("compact_mode_enabled", ());
+    } else {
+        // Close the compact pill
+        crate::window::close_compact_pill_window(&app);
+        // Reopen all active task card windows
+        let db = db.inner();
+        if let Ok(tasks) = db.get_incomplete_tasks() {
+            for (i, task) in tasks.iter().enumerate() {
+                let _ = crate::window::open_task_card(&app, task, i);
+            }
+            crate::window::restack_task_cards(&app);
+        }
+        let _ = app.emit("compact_mode_disabled", ());
+    }
+    Ok(())
+}
+
 // ─── Zen Mode ─────────────────────────────────────────────────────────────────
 
 #[tauri::command]

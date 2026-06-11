@@ -107,9 +107,12 @@ impl DbHandle {
         conn.execute_batch("PRAGMA journal_mode=WAL;")
             .map_err(|e| format!("Failed to set journal mode: {e}"))?;
         // Verify database integrity on startup
-        let integrity: String = conn.query_row("PRAGMA quick_check", [], |row| row.get(0))
+        let integrity: String = conn
+            .query_row("PRAGMA quick_check", [], |row| row.get(0))
             .map_err(|e| format!("Database integrity check failed: {e}"))?;
-        if integrity != "ok" {            return Err(format!("Database corruption detected: {integrity}"));        }
+        if integrity != "ok" {
+            return Err(format!("Database corruption detected: {integrity}"));
+        }
         let handle = Self {
             conn: Mutex::new(conn),
         };
@@ -142,7 +145,8 @@ impl DbHandle {
             );
             INSERT OR IGNORE INTO settings (key, value) VALUES
                 ('theme', 'dark'),
-                ('shake_interval', '30');
+                ('shake_interval', '30'),
+                ('compact_mode', 'false');
             CREATE TABLE IF NOT EXISTS workspaces (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,

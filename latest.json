@@ -1,0 +1,15 @@
+{
+  "version": "0.3.4",
+  "notes": "See the main repo for changelog.",
+  "pub_date": "2026-06-10T16:58:43Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUMExyQ3dxMFhnLzBabVFNOU5OWGFkTnhtZU9PS2RuSHBLRUNIWndLaW1GbktVK3B1UnV4OFNodkU4cnNCUUphUWFrWkQveHJjTGxkSDdIcEVQNXAzc2t4WHNQVHdMRHdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgxMTEwNzA1CWZpbGU6UGluZWRJbl8wLjMuNF94NjQtc2V0dXAubnNpcy56aXAKWDJmcjZwMzZOMmlCOGJKallMUlRrNFprR1lycVY5bTBVWTFQZmFla0ZSYXBUaFhtZ0c5OEx3Uy8vOUFOMHFtcmdEenJ0bUhNaFBIcnJhbWFKeVdoQ0E9PQo=",
+      "url": "https://github.com/Zarl-prog/PinedIn-Releases/releases/download/v0.3.4/PinedIn_0.3.4_x64-setup.nsis.zip"
+    },
+    "linux-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUMExyQ3dxMFhnLzMrTVJzWmgyUEZLSVQ2UnFUUzM4OXVMZDNDc2s1akd3T3FJR3ZVVFlYekswcUpIeHhIRjdISm41T0c2bzhHcFlLaHVYWnJyVmhJWXZnWnB1TmdJNEFNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgxMTEwNTE5CWZpbGU6UGluZWRJbl8wLjMuNF9hbWQ2NC5BcHBJbWFnZS50YXIuZ3oKOHk0TW0zMmp2ZkRjRXdDNm1UkNPNWExaW95QVJWbE82d3BDZXloNTV5TGhDL3FqZWlOdHVxYUx6WGRQZzJGYys4S1BWd3F6cGZSNkJ4NlFWQi82Q2c9PQo=",
+      "url": "https://github.com/Zarl-prog/PinedIn-Releases/releases/download/v0.3.4/PinedIn_0.3.4_amd64.AppImage.tar.gz"
+    }
+  }
+}

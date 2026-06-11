@@ -139,6 +139,15 @@ export async function triggerTaskEdit(id: number): Promise<void> {
   return invoke("trigger_task_edit", { id });
 }
 
+// ─── Compact Mode ──────────────────────────────────────────────────────────────
+export async function getCompactMode(): Promise<boolean> {
+  return invoke("get_compact_mode");
+}
+
+export async function setCompactMode(enabled: boolean): Promise<void> {
+  return invoke("set_compact_mode", { enabled });
+}
+
 // ─── Zen Mode ─────────────────────────────────────────────────────────────────
 export async function setZenMode(hidden: boolean): Promise<void> {
   return invoke("set_zen_mode", { hidden });

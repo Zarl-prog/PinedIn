@@ -149,6 +149,20 @@ export default function App() {
 
   const [zenMode, setZenModeState] = useState(false);
 
+  // Zen mode hotkey: Ctrl+Shift+Z / Cmd+Shift+Z
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        const next = !zenMode;
+        setZenModeState(next);
+        setZenMode(next).catch(() => {});
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [zenMode, setZenModeState, setZenMode]);
+
   async function toggleZenMode() {
     const next = !zenMode;
     setZenModeState(next);

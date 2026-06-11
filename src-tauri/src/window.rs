@@ -252,6 +252,43 @@ pub fn open_quick_add_window(app: &AppHandle) {
         .map_err(|e| eprintln!("Failed to open quick add window: {e}"));
 }
 
+// ─── Compact Pill Window ───────────────────────────────────────────────────────
+
+fn get_pill_position(app: &AppHandle) -> (f64, f64) {
+    if let Some(monitor) = app.primary_monitor().ok().flatten() {
+        let w = monitor.size().width as f64 / monitor.scale_factor();
+        let h = monitor.size().height as f64 / monitor.scale_factor();
+        return (w - 140.0, h - 80.0);
+    }
+    (1200.0, 900.0)
+}
+
+pub fn open_compact_pill_window(app: &AppHandle) {
+    let label = "compact_pill";
+    if app.get_webview_window(label).is_some() {
+        return;
+    }
+
+    let (x, y) = get_pill_position(app);
+
+    let _ = WebviewWindowBuilder::new(app, label, WebviewUrl::App("compact-pill.html".into()))
+        .inner_size(120.0, 36.0)
+        .resizable(false)
+        .decorations(false)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .focused(false)
+        .position(x, y)
+        .build()
+        .map_err(|e| eprintln!("Failed to open compact pill window: {e}"));
+}
+
+pub fn close_compact_pill_window(app: &AppHandle) {
+    if let Some(w) = app.get_webview_window("compact_pill") {
+        let _ = w.close();
+    }
+}
+
 /// Open the small always-on-top Daily Digest popup (420x220) that
 /// summarizes the user's day. The window is centered, non-focusable
 /// (so it doesn't steal focus from the main app), and skipped from the

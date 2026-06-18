@@ -7,8 +7,6 @@ import {
   disableAutostart,
   getShakeInterval,
   setShakeInterval,
-  getCompactMode,
-  setCompactMode,
 } from "@/lib/tauriCommands";
 import { checkAndInstall } from "@/lib/updater";
 
@@ -42,28 +40,12 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
     error?: string;
   }>({ state: "idle" });
   const [shakeInterval, setShakeIntervalState] = useState(30);
-  const [compactMode, setCompactModeState] = useState(false);
 
   useEffect(() => {
     if (open) {
       getShakeInterval().then(setShakeIntervalState).catch(() => {});
     }
   }, [open]);
-
-  useEffect(() => {
-    if (open) {
-      getCompactMode().then(setCompactModeState).catch(() => {});
-    }
-  }, [open]);
-
-  const handleCompactToggle = async (enabled: boolean) => {
-    setCompactModeState(enabled);
-    try {
-      await setCompactMode(enabled);
-    } catch (err) {
-      console.error("Failed to toggle compact mode:", err);
-    }
-  };
 
   const handleShakeIntervalChange = async (value: number) => {
     setShakeIntervalState(value);
@@ -332,64 +314,6 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                       <span style={{ fontSize: "12px" }}>{option.label}</span>
                     </button>
                   ))}
-                </div>
-              </div>
-
-              {/* Compact Mode */}
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    color: "var(--text-secondary)",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Compact Mode
-                </label>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    background: "var(--bg-input)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "8px",
-                    padding: "14px 16px",
-                  }}
-                >
-                  <div>
-                    <span
-                      style={{
-                        display: "block",
-                        fontSize: "14px",
-                        fontWeight: 500,
-                        color: "var(--text-primary)",
-                      }}
-                    >
-                      {compactMode ? "On" : "Off"}
-                    </span>
-                    <span
-                      style={{
-                        display: "block",
-                        fontSize: "13px",
-                        color: "var(--text-muted)",
-                        marginTop: "2px",
-                      }}
-                    >
-                      Replace floating cards with a tiny corner pill
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleCompactToggle(!compactMode)}
-                    className={`toggle-track${compactMode ? " active" : ""}`}
-                    style={{ flexShrink: 0 }}
-                  >
-                    <span
-                      className={`toggle-thumb${compactMode ? " active" : ""}`}
-                    />
-                  </button>
                 </div>
               </div>
 

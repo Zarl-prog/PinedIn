@@ -10,7 +10,7 @@ import UpdateBanner from "@/components/UpdateBanner";
 import WorkspacesView from "@/components/WorkspacesView";
 import { useReminders } from "@/hooks/useReminders";
 import { useReminderStore } from "@/store/reminderStore";
-import { setZenMode, snapAllCardsToGrid } from "@/lib/tauriCommands";
+import { setZenMode, snapAllCardsToGrid, getCompactMode, setCompactMode } from "@/lib/tauriCommands";
 import { checkForUpdates } from "@/lib/updater";
 import ShinyText from "@/components/ui/ShinyText";
 import type { Workspace } from "@/lib/tauriCommands";
@@ -168,6 +168,27 @@ export default function App() {
     setZenModeState(next);
     await setZenMode(next).catch(() => {});
   }
+
+  const [compactMode, setCompactModeLocal] = useState(false);
+
+  useEffect(() => {
+    getCompactMode().then(setCompactModeLocal).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const u1 = listen("compact_mode_enabled", () => setCompactModeLocal(true));
+    const u2 = listen("compact_mode_disabled", () => setCompactModeLocal(false));
+    return () => {
+      u1.then((f) => f());
+      u2.then((f) => f());
+    };
+  }, []);
+
+  const toggleCompactMode = async () => {
+    const next = !compactMode;
+    setCompactModeLocal(next);
+    await setCompactMode(next).catch(() => {});
+  };
 
   const [searchQuery, setSearchQuery] = useState("");
   const incompleteCount = tasks.filter((t) => !t.completed).length;
@@ -518,6 +539,16 @@ export default function App() {
             }}
           >
             {isPaused ? "▶ Resume" : "|| Pause"}
+          </button>
+          <button
+            onClick={toggleCompactMode}
+            className="feature-btn"
+            style={{
+              color: compactMode ? "#ffffff" : "",
+              borderColor: compactMode ? "#555" : "",
+            }}
+          >
+            ◉ Compact
           </button>
           <button
             onClick={toggleZenMode}

@@ -40,11 +40,21 @@ pub fn create_task(
     emit_tasks_updated(&app, &db);
     notifications::check_due_notifications(&app);
 
+    // Check compact mode before spawning — prevents white flash from
+    // briefly opening then immediately closing a task card window.
+    if get_compact_mode_state(&app) {
+        return Ok(task);
+    }
+
     // Spawn window creation so we don't block the invoke response
     let task_clone = task.clone();
     let app_clone = app.clone();
     let db_clone = Arc::clone(&*db);
     std::thread::spawn(move || {
+        // Re-check compact mode in case it changed during the thread spawn
+        if get_compact_mode_state(&app_clone) {
+            return;
+        }
         let index = if task_clone.workspace_id.is_some() {
             db_clone
                 .get_workspace_tasks(task_clone.workspace_id.unwrap())
@@ -172,12 +182,14 @@ pub fn complete_task(
         let db_clone = Arc::clone(&*db);
         let new_task_clone = new_task.clone();
         std::thread::spawn(move || {
-            if let Ok(tasks) = db_clone.get_incomplete_tasks() {
-                let index = tasks
-                    .iter()
-                    .position(|t| t.id == new_task_clone.id)
-                    .unwrap_or(0);
-                let _ = window::open_task_card(&app_clone, &new_task_clone, index);
+            if !crate::commands::get_compact_mode_state(&app_clone) {
+                if let Ok(tasks) = db_clone.get_incomplete_tasks() {
+                    let index = tasks
+                        .iter()
+                        .position(|t| t.id == new_task_clone.id)
+                        .unwrap_or(0);
+                    let _ = window::open_task_card(&app_clone, &new_task_clone, index);
+                }
             }
         });
 
@@ -201,16 +213,30 @@ pub fn uncomplete_task(
     if task.completed {
         db.uncomplete_task(id)?;
 
-        // Find the task and its position among incomplete tasks, then open its card
-        if let Ok(tasks) = db.get_incomplete_tasks() {
-            let index = tasks.iter().position(|t| t.id == Some(id)).unwrap_or(0);
-            let _ = window::open_task_card(&app, &task, index);
+        // Don't open individual cards in compact mode
+        if !get_compact_mode_state(&app) {
+            // Find the task and its position among incomplete tasks, then open its card
+            if let Ok(tasks) = db.get_incomplete_tasks() {
+                let index = tasks.iter().position(|t| t.id == Some(id)).unwrap_or(0);
+                let _ = window::open_task_card(&app, &task, index);
+            }
         }
 
         emit_tasks_updated(&app, &db);
         notifications::check_due_notifications(&app);
     }
     Ok(())
+}
+
+/// Returns `true` if compact mode is currently enabled.
+/// Safe to call from any thread — it acquires the app state lock briefly.
+pub fn get_compact_mode_state(app: &AppHandle) -> bool {
+    app.state::<Arc<DbHandle>>()
+        .get_settings_map()
+        .ok()
+        .and_then(|map| map.get("compact_mode").cloned())
+        .map(|v| v == "true")
+        .unwrap_or(false)
 }
 
 /// Advance the due date by the given recurrence interval.
@@ -257,6 +283,11 @@ pub fn snooze_task(
             return;
         }
 
+        // Don't reopen a card if compact mode is active
+        if crate::commands::get_compact_mode_state(&app_clone) {
+            return;
+        }
+
         // Find the task's position among incomplete tasks
         if let Ok(tasks) = db_clone.get_incomplete_tasks() {
             let index = tasks.iter().position(|t| t.id == Some(id)).unwrap_or(0);
@@ -288,6 +319,10 @@ pub fn remind_task(
             .map(|t| !t.completed)
             .unwrap_or(false);
         if !still_present {
+            return;
+        }
+        // Don't reopen a card if compact mode is active
+        if crate::commands::get_compact_mode_state(&app_clone) {
             return;
         }
         if let Ok(tasks) = db_clone.get_incomplete_tasks() {
@@ -499,13 +534,16 @@ pub fn load_workspace(app: AppHandle, workspace_id: i64) -> Result<(), String> {
         }
     }
 
-    if let Some(cards) = parsed["cards"].as_array() {
-        for card in cards {
-            let task_id = card["task_id"].as_i64().unwrap_or(0);
-            let x = card["x"].as_f64().unwrap_or(100.0);
-            let y = card["y"].as_f64().unwrap_or(100.0);
-            if let Ok(task) = db.get_task_by_id(task_id) {
-                crate::window::open_task_card_window_at(&app, &task, x, y);
+    // Don't open individual cards in compact mode
+    if !get_compact_mode_state(&app) {
+        if let Some(cards) = parsed["cards"].as_array() {
+            for card in cards {
+                let task_id = card["task_id"].as_i64().unwrap_or(0);
+                let x = card["x"].as_f64().unwrap_or(100.0);
+                let y = card["y"].as_f64().unwrap_or(100.0);
+                if let Ok(task) = db.get_task_by_id(task_id) {
+                    crate::window::open_task_card_window_at(&app, &task, x, y);
+                }
             }
         }
     }
@@ -545,9 +583,9 @@ pub fn set_compact_mode(app: AppHandle, db: State<'_, Arc<DbHandle>>, enabled: b
     } else {
         // Close the compact pill
         crate::window::close_compact_pill_window(&app);
-        // Reopen all active task card windows
+        // Reopen all active task card windows (including workspace tasks)
         let db = db.inner();
-        if let Ok(tasks) = db.get_incomplete_tasks() {
+        if let Ok(tasks) = db.get_all_active_tasks() {
             for (i, task) in tasks.iter().enumerate() {
                 let _ = crate::window::open_task_card(&app, task, i);
             }
@@ -655,11 +693,14 @@ pub fn activate_workspace(app: AppHandle, db: State<'_, Arc<DbHandle>>, workspac
         }
     }
 
-    let tasks = db.get_workspace_tasks(workspace_id)?;
-    for (i, task) in tasks.iter().enumerate() {
-        let _ = window::open_task_card(&app, task, i);
+    // Don't open individual cards in compact mode
+    if !get_compact_mode_state(&app) {
+        let tasks = db.get_workspace_tasks(workspace_id)?;
+        for (i, task) in tasks.iter().enumerate() {
+            let _ = window::open_task_card(&app, task, i);
+        }
+        window::restack_task_cards(&app);
     }
-    window::restack_task_cards(&app);
 
     let _ = app.emit("workspace_activated", serde_json::json!({ "name": workspace_name }));
     emit_tasks_updated(&app, &db);
@@ -677,11 +718,14 @@ pub fn deactivate_workspace(app: AppHandle, db: State<'_, Arc<DbHandle>>) -> Res
         }
     }
 
-    if let Ok(tasks) = db.get_incomplete_tasks() {
-        for (i, task) in tasks.iter().enumerate() {
-            let _ = window::open_task_card(&app, task, i);
+    // Don't open individual cards in compact mode
+    if !get_compact_mode_state(&app) {
+        if let Ok(tasks) = db.get_incomplete_tasks() {
+            for (i, task) in tasks.iter().enumerate() {
+                let _ = window::open_task_card(&app, task, i);
+            }
+            window::restack_task_cards(&app);
         }
-        window::restack_task_cards(&app);
     }
 
     let _ = app.emit("workspace_deactivated", ());

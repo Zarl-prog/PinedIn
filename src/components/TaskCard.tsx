@@ -7,9 +7,6 @@ import { listen } from "@tauri-apps/api/event";
 import {
   getShakeInterval,
   fireTimeLimitNotification,
-  getCardPosition,
-  focusNextCard,
-  focusPrevCard,
 } from "@/lib/tauriCommands";
 import { useReminderStore } from "@/store/reminderStore";
 import UrgencyBadge from "./UrgencyBadge";
@@ -72,36 +69,10 @@ export default function TaskCard({
   const [expanded, setExpanded] = useState(false);
   const [showRemindPicker, setShowRemindPicker] = useState(false);
   const [hovered, setHovered] = useState(false);
-  const [cardIndex, setCardIndex] = useState(0);
-  const [totalCards, setTotalCards] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const liveDotRef = useRef<HTMLSpanElement>(null);
   const expandedRef = useRef(expanded);
   expandedRef.current = expanded;
-
-  useEffect(() => {
-    getCardPosition(taskId).then((pos) => {
-      setCardIndex(pos.index);
-      setTotalCards(pos.total);
-    });
-
-    const unlisten = listen("tasks_updated", async () => {
-      const pos = await getCardPosition(taskId);
-      setCardIndex(pos.index);
-      setTotalCards(pos.total);
-    });
-    return () => {
-      unlisten.then((f) => f());
-    };
-  }, [taskId]);
-
-  async function handlePrev() {
-    await focusPrevCard(taskId);
-  }
-
-  async function handleNext() {
-    await focusNextCard(taskId);
-  }
 
   // ─── Shake interval — loaded from DB, updated live via event ────────────
   const [intervalSeconds, setIntervalSeconds] = useState(30);
@@ -324,88 +295,6 @@ export default function TaskCard({
       onMouseLeave={() => setHovered(false)}
       style={{ position: "relative", width: "100%", height: "100%" }}
     >
-      {hovered && totalCards > 1 && (
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={handlePrev}
-          style={{
-            position: "absolute",
-            left: "-14px",
-            top: "50%",
-            transform: "translateY(-50%)",
-            width: "28px",
-            height: "28px",
-            borderRadius: "50%",
-            background: "#1a1a1a",
-            border: "1px solid #333",
-            color: "#ffffff",
-            fontSize: "12px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 100,
-            fontFamily: "'Geist Mono', monospace",
-          }}
-        >
-          ‹
-        </motion.button>
-      )}
-
-      {hovered && totalCards > 1 && (
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={handleNext}
-          style={{
-            position: "absolute",
-            right: "-14px",
-            top: "50%",
-            transform: "translateY(-50%)",
-            width: "28px",
-            height: "28px",
-            borderRadius: "50%",
-            background: "#1a1a1a",
-            border: "1px solid #333",
-            color: "#ffffff",
-            fontSize: "12px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 100,
-            fontFamily: "'Geist Mono', monospace",
-          }}
-        >
-          ›
-        </motion.button>
-      )}
-
-      {hovered && totalCards > 1 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          style={{
-            position: "absolute",
-            bottom: "6px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            fontSize: "9px",
-            color: "rgba(255,255,255,0.35)",
-            fontFamily: "'Geist Mono', monospace",
-            letterSpacing: "0.1em",
-            pointerEvents: "none",
-            zIndex: 100,
-          }}
-        >
-          {cardIndex + 1} / {totalCards}
-        </motion.div>
-      )}
-
       <motion.div
         ref={containerRef}
         onMouseDown={handleMouseDown}
@@ -414,7 +303,7 @@ export default function TaskCard({
         animate={controls}
         style={{
           position: "relative",
-          overflow: "visible",
+          overflow: "hidden",
           padding: 0,
           willChange: "transform",
         }}

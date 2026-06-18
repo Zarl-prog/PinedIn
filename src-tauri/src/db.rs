@@ -508,6 +508,40 @@ impl DbHandle {
         Ok(tasks)
     }
 
+    /// ALL incomplete non-prescheduled tasks — no LIMIT, ordered by
+    /// created_at DESC. Used by compact mode to reopen all task windows.
+    pub fn get_all_active_tasks(&self) -> Result<Vec<Task>, String> {
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let mut stmt = conn.prepare(
+            "SELECT id, title, description, urgency, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at, workspace_id
+             FROM tasks
+             WHERE completed = 0 AND is_presceduled = 0
+             ORDER BY created_at DESC"
+        ).map_err(|e| format!("Failed to prepare query: {e}"))?;
+
+        let tasks = stmt
+            .query_map([], row_to_task)
+            .map_err(|e| format!("Query error: {e}"))?
+            .filter_map(|r| r.ok())
+            .collect();
+        Ok(tasks)
+    }
+
+    /// Read a single setting value by key. Returns Ok(None) if the key
+    /// does not exist.
+    pub fn get_setting(&self, key: &str) -> Result<Option<String>, String> {
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        match conn.query_row(
+            "SELECT value FROM settings WHERE key = ?1",
+            rusqlite::params![key],
+            |row| row.get::<_, String>(0),
+        ) {
+            Ok(val) => Ok(Some(val)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(format!("Failed to get setting: {e}")),
+        }
+    }
+
     /// ALL incomplete tasks across global and all workspaces — used for
     /// opening floating cards on startup (cards float regardless of workspace).
     pub fn get_all_incomplete_tasks_global(&self) -> Result<Vec<Task>, String> {

@@ -99,18 +99,19 @@ pub fn run() {
 
             // Check if compact mode was enabled before restart
             let compact_enabled = db_handle
-                .get_settings_map()
+                .get_setting("compact_mode")
                 .ok()
-                .and_then(|map| map.get("compact_mode").cloned())
+                .flatten()
                 .map(|v| v == "true")
                 .unwrap_or(false);
 
             if compact_enabled {
-                // Open the compact pill instead of individual task cards
+                // Open the compact pill instead of individual task cards.
+                // Do NOT open any task card windows — compact mode replaces them.
                 window::open_compact_pill_window(app.handle());
             } else {
-                // Open floating task cards for all incomplete tasks (global + workspace)
-                if let Ok(tasks) = db_handle.get_all_incomplete_tasks_global() {
+                // Open all active task cards (global + workspace tasks, no limit)
+                if let Ok(tasks) = db_handle.get_all_active_tasks() {
                     window::open_all_task_cards(app.handle(), &tasks);
                 }
             }

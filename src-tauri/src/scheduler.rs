@@ -40,6 +40,9 @@ fn check_and_spawn_due_tasks(app: &AppHandle) {
         return;
     }
 
+    // Don't open individual cards if compact mode is active
+    let compact = crate::commands::get_compact_mode_state(app);
+
     let mut activated_any = false;
     for task in &due {
         let id = match task.id {
@@ -51,8 +54,10 @@ fn check_and_spawn_due_tasks(app: &AppHandle) {
             continue;
         }
         activated_any = true;
-        if let Err(e) = window::open_task_card(app, task, 0) {
-            eprintln!("[scheduler] Failed to open card for task {id}: {e}");
+        if !compact {
+            if let Err(e) = window::open_task_card(app, task, 0) {
+                eprintln!("[scheduler] Failed to open card for task {id}: {e}");
+            }
         }
     }
 

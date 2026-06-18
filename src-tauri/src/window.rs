@@ -271,10 +271,15 @@ pub fn open_compact_pill_window(app: &AppHandle) {
 
     let (x, y) = get_pill_position(app);
 
-    let _ = WebviewWindowBuilder::new(app, label, WebviewUrl::App("compact-pill.html".into()))
-        .inner_size(120.0, 36.0)
+    let builder = WebviewWindowBuilder::new(app, label, WebviewUrl::App("compact-pill.html".into()))
+        .inner_size(140.0, 40.0)
         .resizable(false)
-        .decorations(false)
+        .decorations(false);
+
+    #[cfg(not(target_os = "macos"))]
+    let builder = builder.transparent(supports_transparency());
+
+    let _ = builder
         .always_on_top(true)
         .skip_taskbar(true)
         .focused(false)

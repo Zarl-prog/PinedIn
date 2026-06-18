@@ -306,20 +306,15 @@ pub fn open_daily_digest_window(app: &AppHandle) {
         return;
     }
 
-    let builder =
+    let _ =
         WebviewWindowBuilder::new(app, label, WebviewUrl::App("daily-digest.html".into()))
             .inner_size(420.0, 220.0)
             .resizable(false)
-            .decorations(false);
-
-    #[cfg(not(target_os = "macos"))]
-    let builder = builder.transparent(supports_transparency());
-
-    let _ = builder
-        .always_on_top(true)
-        .skip_taskbar(true)
-        .focused(false)
-        .center()
-        .build()
-        .map_err(|e| eprintln!("Failed to open daily digest window: {e}"));
+            .decorations(false)
+            .always_on_top(true)
+            .skip_taskbar(true)
+            .focused(false)
+            .center()
+            .build()
+            .map_err(|e| eprintln!("Failed to open daily digest window: {e}"));
 }

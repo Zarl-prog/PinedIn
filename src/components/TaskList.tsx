@@ -8,6 +8,7 @@ import {
   closeTaskCard,
 } from "@/lib/tauriCommands";
 import UrgencyBadge from "./UrgencyBadge";
+import Skeleton from "./ui/Skeleton";
 
 interface TaskListProps {
   searchQuery: string;
@@ -20,6 +21,7 @@ interface TaskListProps {
 export default function TaskList({ searchQuery }: TaskListProps) {
   const tasks = useReminderStore((s) => s.tasks);
   const workspaceTasks = useReminderStore((s) => s.workspaceTasks);
+  const fetchTasks = useReminderStore((s) => s.fetchTasks);
   const fetchWorkspaceTasks = useReminderStore((s) => s.fetchWorkspaceTasks);
   const scheduledTasks = useReminderStore((s) => s.scheduledTasks);
   const completeTask = useReminderStore((s) => s.completeTask);
@@ -28,6 +30,7 @@ export default function TaskList({ searchQuery }: TaskListProps) {
   const removeScheduledTask = useReminderStore((s) => s.removeScheduledTask);
   const setAddTaskOpen = useReminderStore((s) => s.setAddTaskOpen);
   const setEditingTask = useReminderStore((s) => s.setEditingTask);
+  const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
   const [completedExpanded, setCompletedExpanded] = useState(false);
@@ -69,6 +72,10 @@ export default function TaskList({ searchQuery }: TaskListProps) {
       fetchWorkspaceTasks(activeWorkspaceId);
     }
   }, [activeWorkspaceId, fetchWorkspaceTasks]);
+
+  useEffect(() => {
+    fetchTasks().finally(() => setLoading(false));
+  }, [fetchTasks]);
 
   const displayTasks = useMemo(() => {
     if (activeWorkspaceId !== null) {
@@ -134,7 +141,9 @@ export default function TaskList({ searchQuery }: TaskListProps) {
         </div>
       )}
       <AnimatePresence mode="popLayout">
-        {incompleteTasks.length === 0 &&
+        {loading ? (
+          <SkeletonRows />
+        ) : incompleteTasks.length === 0 &&
         completedTasks.length === 0 &&
         filteredScheduledTasks.length === 0 ? (
           <EmptyState onAdd={() => setAddTaskOpen(true)} />
@@ -796,6 +805,36 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
         + Create Task
       </button>
     </motion.div>
+  );
+}
+
+// ─── Skeleton Rows ─────────────────────────────────────────────────────────────
+
+function SkeletonRows() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      {[1, 2, 3].map((i) => (
+        <div
+          key={i}
+          style={{
+            padding: "14px 12px",
+            background: "var(--bg-card)",
+            border: "1px solid var(--border)",
+            borderRadius: "8px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <Skeleton width={16} height={16} borderRadius="50%" />
+            <Skeleton width={`${60 + i * 10}%`} height={14} />
+            <Skeleton width={44} height={18} borderRadius={999} style={{ marginLeft: "auto" }} />
+          </div>
+          <Skeleton width={`${40 + i * 8}%`} height={10} style={{ marginLeft: "26px" }} />
+        </div>
+      ))}
+    </div>
   );
 }
 

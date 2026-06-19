@@ -54,9 +54,15 @@ body::-webkit-scrollbar,
 
 html, body, #root {
   width: 308px;
-  height: 100vh;
+  height: auto;
   overflow: hidden;
-  background: var(--bg-float-card);
+  background: transparent !important;
+}
+
+#root {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
 }
 
 body {

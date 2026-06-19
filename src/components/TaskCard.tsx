@@ -293,19 +293,27 @@ export default function TaskCard({
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      style={{ position: "relative", width: "100%", height: "100%" }}
+      style={{
+        background: "transparent",
+        width: "280px",
+        padding: "6px",
+        boxSizing: "border-box",
+      }}
     >
       <motion.div
         ref={containerRef}
         onMouseDown={handleMouseDown}
         onDoubleClick={handleDoubleClick}
-        className="v-float"
         animate={controls}
         style={{
-          position: "relative",
+          background: "#0f0f11",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: "12px",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
           overflow: "hidden",
-          padding: 0,
-          willChange: "transform",
+          width: "100%",
+          cursor: "grab",
+          userSelect: "none",
         }}
       >
         <div style={{ padding: "12px 14px", pointerEvents: "none" }}>

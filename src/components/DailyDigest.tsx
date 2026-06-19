@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
+import Skeleton from "./ui/Skeleton";
 
 interface DigestData {
   overdue: number;
@@ -47,7 +48,7 @@ export default function DailyDigest() {
   }
 
   function getMessage() {
-    if (!data) return "Loading...";
+    if (!data) return "";
     const parts = [];
     if (data.unfinished_yesterday > 0)
       parts.push(`${data.unfinished_yesterday} unfinished from yesterday`);
@@ -93,11 +94,11 @@ export default function DailyDigest() {
 
             {/* Message */}
             <p style={{ fontSize: "15px", color: "var(--text-primary)", fontWeight: 600, lineHeight: 1.5 }}>
-              {getMessage()}
+              {data ? getMessage() : <Skeleton width="70%" height={16} />}
             </p>
 
             {/* Stats row */}
-            {data && (
+            {data ? (
               <div style={{ display: "flex", gap: "16px", marginTop: "16px" }}>
                 <div>
                   <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)" }}>{data.total_active}</div>
@@ -110,6 +111,21 @@ export default function DailyDigest() {
                 <div>
                   <div style={{ fontSize: "20px", fontWeight: 700, color: data.overdue > 0 ? "var(--text-primary)" : "var(--text-muted)" }}>{data.overdue}</div>
                   <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>Overdue</div>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", gap: "16px", marginTop: "16px" }}>
+                <div>
+                  <Skeleton width={28} height={28} borderRadius={4} />
+                  <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "4px" }}>Active</div>
+                </div>
+                <div>
+                  <Skeleton width={28} height={28} borderRadius={4} />
+                  <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "4px" }}>Due Today</div>
+                </div>
+                <div>
+                  <Skeleton width={28} height={28} borderRadius={4} />
+                  <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "4px" }}>Overdue</div>
                 </div>
               </div>
             )}

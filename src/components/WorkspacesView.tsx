@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { getWorkspaces, saveWorkspace, loadWorkspace, deleteWorkspace, Workspace } from "../lib/tauriCommands";
 import { useReminderStore } from "@/store/reminderStore";
 import WorkspaceDetailView from "./WorkspaceDetailView";
+import Skeleton from "./ui/Skeleton";
 
 const WORKSPACE_ICONS = ["⬡", "◈", "⬟", "◉", "⬠", "◍", "⬢", "◎", "⬣", "◐"];
 
@@ -29,6 +30,7 @@ interface WorkspacesViewProps {
 export default function WorkspacesView({ onOpen, onBack, workspaceContext, onAddTask, onPreSchedule }: WorkspacesViewProps) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [creating, setCreating] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const deleteRef = useRef<HTMLDivElement>(null);
@@ -36,7 +38,11 @@ export default function WorkspacesView({ onOpen, onBack, workspaceContext, onAdd
   const fetchWorkspaceTasks = useReminderStore((s) => s.fetchWorkspaceTasks);
 
   useEffect(() => {
-    getWorkspaces().then(setWorkspaces);
+    setLoading(true);
+    getWorkspaces().then((ws) => {
+      setWorkspaces(ws);
+      setLoading(false);
+    });
   }, [workspaceContext]); // re-fetch when returning from detail
 
   // Close delete popover on outside click
@@ -221,7 +227,36 @@ export default function WorkspacesView({ onOpen, onBack, workspaceContext, onAdd
         )}
       </AnimatePresence>
 
-      {workspaces.length === 0 && !creating ? (
+      {loading ? (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+            gap: "12px",
+          }}
+        >
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              style={{
+                background: "var(--bg-card)",
+                border: "1px solid var(--border)",
+                borderRadius: "12px",
+                padding: "16px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+              }}
+            >
+              <Skeleton width={44} height={44} borderRadius={10} />
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <Skeleton width={`${50 + i * 15}%`} height={14} />
+                <Skeleton width={`${30 + i * 10}%`} height={10} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : workspaces.length === 0 && !creating ? (
         <div
           style={{
             flex: 1,

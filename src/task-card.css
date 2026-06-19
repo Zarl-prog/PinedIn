@@ -44,18 +44,19 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  overflow: hidden !important;
 }
 
-::-webkit-scrollbar {
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#root::-webkit-scrollbar {
   display: none;
 }
 
 html, body, #root {
   width: 308px;
-  height: auto;
-  overflow: visible;
-  background: transparent;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-float-card);
 }
 
 body {

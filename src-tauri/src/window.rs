@@ -112,10 +112,8 @@ pub fn open_task_card(app: &AppHandle, task: &Task, _index: usize) -> Result<(),
     let builder = WebviewWindowBuilder::new(app, &label, WebviewUrl::App("task-card.html".into()))
         .inner_size(CARD_WIDTH, CARD_HEIGHT)
         .resizable(false)
-        .decorations(false);
-
-    #[cfg(not(target_os = "macos"))]
-    let builder = builder.transparent(supports_transparency());
+        .decorations(false)
+        .transparent(true);
 
     let window = builder
         .shadow(false)
@@ -203,10 +201,8 @@ pub fn open_task_card_window_at(app: &AppHandle, task: &Task, x: f64, y: f64) {
     let builder = WebviewWindowBuilder::new(app, &label, WebviewUrl::App("task-card.html".into()))
         .inner_size(CARD_WIDTH, CARD_HEIGHT)
         .resizable(false)
-        .decorations(false);
-
-    #[cfg(not(target_os = "macos"))]
-    let builder = builder.transparent(supports_transparency());
+        .decorations(false)
+        .transparent(true);
 
     let _ = builder
         .shadow(false)

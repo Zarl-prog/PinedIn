@@ -422,7 +422,27 @@ pub async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-// ─── Daily Digest ──────────────────────────────────────────────────────────
+// ─── Daily Digest Toggle ────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn get_daily_digest_enabled(db: State<'_, Arc<DbHandle>>) -> Result<bool, String> {
+    let map = db.get_settings_map()?;
+    Ok(map.get("daily_digest_enabled").map(|v| v == "true").unwrap_or(false))
+}
+
+#[tauri::command]
+pub fn set_daily_digest_enabled(
+    db: State<'_, Arc<DbHandle>>,
+    enabled: bool,
+) -> Result<(), String> {
+    db.update_setting("daily_digest_enabled", if enabled { "true" } else { "false" })
+}
+
+#[tauri::command]
+pub fn open_daily_digest_window(app: AppHandle) -> Result<(), String> {
+    crate::window::open_daily_digest_window(&app);
+    Ok(())
+}
 
 #[derive(serde::Serialize)]
 pub struct DigestData {

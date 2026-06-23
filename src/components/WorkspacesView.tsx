@@ -34,7 +34,9 @@ export default function WorkspacesView({ onOpen, onBack, workspaceContext, onAdd
   const [newName, setNewName] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
-  const fetchWorkspaceTasks = useReminderStore((s) => s.fetchWorkspaceTasks);
+  // fetchWorkspaceTasks is only used in handleOpen — get stable ref via getState()
+  // so it never causes WorkspacesView to re-render when the store updates.
+  const fetchWorkspaceTasks = useReminderStore.getState().fetchWorkspaceTasks;
 
   useEffect(() => {
     setLoading(true);
@@ -96,18 +98,23 @@ export default function WorkspacesView({ onOpen, onBack, workspaceContext, onAdd
   // If in workspace detail context, show the detail view
   if (workspaceContext) {
     return (
-      <WorkspaceDetailView
-        workspaceId={workspaceContext.workspaceId}
-        workspaceName={workspaceContext.workspaceName}
-        onBack={() => onBack()}
-        onAddTask={onAddTask}
-        onPreSchedule={onPreSchedule}
-      />
+      <AnimatePresence mode="wait">
+        <WorkspaceDetailView
+          key={workspaceContext.workspaceId}
+          workspaceId={workspaceContext.workspaceId}
+          workspaceName={workspaceContext.workspaceName}
+          onBack={() => onBack()}
+          onAddTask={onAddTask}
+          onPreSchedule={onPreSchedule}
+        />
+      </AnimatePresence>
     );
   }
 
   return (
+    <AnimatePresence mode="wait">
     <motion.div
+      key="workspace-list"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}
@@ -460,5 +467,6 @@ export default function WorkspacesView({ onOpen, onBack, workspaceContext, onAdd
         </div>
       )}
     </motion.div>
+    </AnimatePresence>
   );
 }

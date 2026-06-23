@@ -135,12 +135,13 @@ export default function TaskCard({
     if (!dueTime) return 0;
     const due = new Date(dueTime + "T23:59:59").getTime();
     const now = Date.now();
-    const created = now - 7 * 24 * 60 * 60 * 1000;
+    // Use the task's actual creation time so the bar shows true elapsed progress
+    const created = new Date(createdAt).getTime();
     const total = due - created;
     const elapsed = now - created;
     if (total <= 0) return 100;
     return Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
-  }, [dueTime]);
+  }, [dueTime, createdAt]);
 
   const [progress, setProgress] = useState(100);
   const [barColor, setBarColor] = useState("var(--progress-fill-card)");

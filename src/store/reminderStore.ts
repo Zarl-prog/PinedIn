@@ -56,6 +56,7 @@ export interface OverlayState {
     recurrence?: string | null,
     tags?: string | null,
     timeLimitMinutes?: number | null,
+    startedAt?: string | null,
   ) => Promise<void>;
   removeTask: (id: number) => Promise<void>;
   completeTask: (id: number) => Promise<void>;
@@ -182,9 +183,28 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
     recurrence = null,
     tags = null,
     timeLimitMinutes = null,
-    startedAt = new Date().toISOString(),
+    startedAt = null,
   ) => {
     try {
+      // Resolve startedAt: use explicit value if provided, otherwise
+      // keep the existing started_at from the store so editing title/
+      // description doesn't reset the task timer.
+      const existingTask =
+        useReminderStore.getState().tasks.find((t) => t.id === id) ||
+        Object.values(useReminderStore.getState().workspaceTasks)
+          .flat()
+          .find((t) => t.id === id);
+
+      let resolvedStartedAt: string | null = startedAt;
+      if (resolvedStartedAt === null) {
+        if (timeLimitMinutes && !existingTask?.started_at) {
+          // Timer newly enabled — start it now
+          resolvedStartedAt = new Date().toISOString();
+        } else {
+          // Preserve existing started_at (may be null if no timer)
+          resolvedStartedAt = existingTask?.started_at ?? null;
+        }
+      }
       await updateTask(
         id,
         title,
@@ -194,7 +214,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
         recurrence,
         tags,
         timeLimitMinutes,
-        startedAt,
+        resolvedStartedAt,
       );
       const updatedFields = {
         title,
@@ -204,7 +224,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
         recurrence,
         tags,
         time_limit_minutes: timeLimitMinutes,
-        started_at: startedAt,
+        started_at: resolvedStartedAt,
       };
       set((state) => {
         // Try global tasks first

@@ -39,6 +39,7 @@ export default function QuickAdd() {
         recurrence: null,
         tags: null,
         timeLimitMinutes: null,
+        workspaceId: null,
       });
       getCurrentWindow().close();
     } catch (e) {

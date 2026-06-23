@@ -647,8 +647,11 @@ pub fn add_presceduled_task(
     tags: Option<String>,
     workspace_id: Option<i64>,
 ) -> Result<i64, String> {
-    // Validate scheduled_at is not in the past
-    if &scheduled_at < &chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string() {
+    // Validate scheduled_at is not in the past — parse as RFC 3339/ISO
+    // datetime so the comparison is timezone-aware and correct.
+    let scheduled_dt = chrono::DateTime::parse_from_rfc3339(&scheduled_at)
+        .map_err(|e| format!("Invalid scheduled_at format: {e}"))?;
+    if scheduled_dt <= chrono::Utc::now() {
         return Err("scheduled_at must be in the future".to_string());
     }
     let id = db.create_presceduled_task(

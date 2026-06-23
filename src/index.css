@@ -54,6 +54,7 @@
 
   --calendar-picker-filter: none;
   --grid-line: rgba(0, 0, 0, 0.06);
+  --diag-line: rgba(0, 0, 0, 0.055);
 }
 
 .dark {
@@ -109,6 +110,7 @@
 
   --calendar-picker-filter: invert(0.7);
   --grid-line: rgba(255, 255, 255, 0.04);
+  --diag-line: rgba(255, 255, 255, 0.045);
 }
 
 * {
@@ -535,4 +537,24 @@ input[type="number"] {
   color: var(--text-primary);
   background: var(--bg-hover);
   border-color: var(--border);
+}
+
+/* ─── Tasks Body Grid Texture ───────────────────────────────────────────── */
+
+.tasks-body::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Ensure all direct children of tasks-body sit above the texture layer */
+.tasks-body > * {
+  position: relative;
+  z-index: 1;
 }

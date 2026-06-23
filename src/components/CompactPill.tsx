@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { LogicalSize } from "@tauri-apps/api/dpi";
@@ -11,7 +11,6 @@ export default function CompactPill() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const [timerBorderColor, setTimerBorderColor] = useState<string | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   function getTimerColor(task: Task): string | null {
     if (!task.time_limit_minutes || !task.started_at) return null;
@@ -25,18 +24,20 @@ export default function CompactPill() {
   }
 
   const recalcTimerBorder = useCallback(() => {
-    const color = tasks.reduce<string | null>((acc, t) => {
-      const c = getTimerColor(t);
-      if (!acc && c) return c;
-      return acc;
-    }, null);
-    setTimerBorderColor(color);
-  }, [tasks]);
+    setTasks(current => {
+      const color = current.reduce<string | null>((acc, t) => {
+        const c = getTimerColor(t);
+        if (!acc && c) return c;
+        return acc;
+      }, null);
+      setTimerBorderColor(color);
+      return current; // no actual state change, just side-effectful read
+    });
+  }, []); // no deps — reads tasks via setState callback to avoid stale closure
 
   async function refresh() {
     const all = await invoke<Task[]>("get_incomplete_tasks");
     setTasks(all);
-    setCurrentIndex(0);
   }
 
   useEffect(() => {
@@ -48,22 +49,13 @@ export default function CompactPill() {
   // 1-second interval only when timed tasks exist
   useEffect(() => {
     const hasTimed = tasks.some(t => t.time_limit_minutes && t.started_at);
-    if (hasTimed) {
-      recalcTimerBorder();
-      intervalRef.current = setInterval(recalcTimerBorder, 1000);
-    } else {
+    if (!hasTimed) {
       setTimerBorderColor(null);
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+      return;
     }
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
+    recalcTimerBorder();
+    const id = setInterval(recalcTimerBorder, 1000);
+    return () => clearInterval(id);
   }, [tasks, recalcTimerBorder]);
 
   useEffect(() => {
@@ -85,10 +77,8 @@ export default function CompactPill() {
     if (tasks.length === 0) return;
     const taskToComplete = tasks[currentIndex];
     if (!taskToComplete) return;
-    await invoke("complete_task", { id: taskToComplete.id });
-    // refresh() resets currentIndex to 0 — clamp here in case the
-    // completed task was not the last one so the pill doesn't jump unexpectedly
     const nextIndex = currentIndex >= tasks.length - 1 ? 0 : currentIndex;
+    await invoke("complete_task", { id: taskToComplete.id });
     await refresh();
     setCurrentIndex(nextIndex);
   }

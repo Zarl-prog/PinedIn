@@ -21,15 +21,17 @@ interface TaskListProps {
 export default function TaskList({ searchQuery }: TaskListProps) {
   const tasks = useReminderStore((s) => s.tasks);
   const workspaceTasks = useReminderStore((s) => s.workspaceTasks);
-  const fetchTasks = useReminderStore((s) => s.fetchTasks);
-  const fetchWorkspaceTasks = useReminderStore((s) => s.fetchWorkspaceTasks);
   const scheduledTasks = useReminderStore((s) => s.scheduledTasks);
-  const completeTask = useReminderStore((s) => s.completeTask);
-  const uncompleteFromStore = useReminderStore((s) => s.uncompleteTask);
-  const removeTask = useReminderStore((s) => s.removeTask);
-  const removeScheduledTask = useReminderStore((s) => s.removeScheduledTask);
-  const setAddTaskOpen = useReminderStore((s) => s.setAddTaskOpen);
-  const setEditingTask = useReminderStore((s) => s.setEditingTask);
+
+  // Stable action refs — never cause re-renders
+  const fetchTasks = useReminderStore.getState().fetchTasks;
+  const fetchWorkspaceTasks = useReminderStore.getState().fetchWorkspaceTasks;
+  const completeTask = useReminderStore.getState().completeTask;
+  const uncompleteFromStore = useReminderStore.getState().uncompleteTask;
+  const removeTask = useReminderStore.getState().removeTask;
+  const removeScheduledTask = useReminderStore.getState().removeScheduledTask;
+  const setAddTaskOpen = useReminderStore.getState().setAddTaskOpen;
+  const setEditingTask = useReminderStore.getState().setEditingTask;
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
@@ -53,10 +55,14 @@ export default function TaskList({ searchQuery }: TaskListProps) {
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<number | null>(null);
 
   useEffect(() => {
-    invoke<number | null>("get_active_workspace_id").then(setActiveWorkspaceId);
+    invoke<number | null>("get_active_workspace_id")
+      .then(setActiveWorkspaceId)
+      .catch(() => {});
 
     const unlisten1 = listen("workspace_activated", () => {
-      invoke<number | null>("get_active_workspace_id").then(setActiveWorkspaceId);
+      invoke<number | null>("get_active_workspace_id")
+        .then(setActiveWorkspaceId)
+        .catch(() => {});
     });
     const unlisten2 = listen("workspace_deactivated", () => {
       setActiveWorkspaceId(null);
@@ -71,11 +77,11 @@ export default function TaskList({ searchQuery }: TaskListProps) {
     if (activeWorkspaceId !== null) {
       fetchWorkspaceTasks(activeWorkspaceId);
     }
-  }, [activeWorkspaceId, fetchWorkspaceTasks]);
+  }, [activeWorkspaceId]); // fetchWorkspaceTasks is stable
 
   useEffect(() => {
     fetchTasks().finally(() => setLoading(false));
-  }, [fetchTasks]);
+  }, []); // fetchTasks is stable
 
   const displayTasks = useMemo(() => {
     if (activeWorkspaceId !== null) {

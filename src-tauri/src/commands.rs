@@ -7,6 +7,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_autostart::ManagerExt;
 
 pub static ZEN_MODE: AtomicBool = AtomicBool::new(false);
+pub static COMPACT_MODE: AtomicBool = AtomicBool::new(false);
 
 pub fn emit_tasks_updated(app: &tauri::AppHandle, db: &DbHandle) {
     if let Ok(tasks) = db.get_all_tasks() {
@@ -229,14 +230,10 @@ pub fn uncomplete_task(
 }
 
 /// Returns `true` if compact mode is currently enabled.
-/// Safe to call from any thread — it acquires the app state lock briefly.
-pub fn get_compact_mode_state(app: &AppHandle) -> bool {
-    app.state::<Arc<DbHandle>>()
-        .get_settings_map()
-        .ok()
-        .and_then(|map| map.get("compact_mode").cloned())
-        .map(|v| v == "true")
-        .unwrap_or(false)
+/// Reads from the in-memory AtomicBool — safe to call from any thread
+/// with no DB overhead and no TOCTOU race.
+pub fn get_compact_mode_state(_app: &AppHandle) -> bool {
+    COMPACT_MODE.load(Ordering::SeqCst)
 }
 
 /// Advance the due date by the given recurrence interval.
@@ -588,6 +585,9 @@ pub fn get_compact_mode(db: State<'_, Arc<DbHandle>>) -> Result<bool, String> {
 #[tauri::command]
 pub fn set_compact_mode(app: AppHandle, db: State<'_, Arc<DbHandle>>, enabled: bool) -> Result<(), String> {
     db.update_setting("compact_mode", if enabled { "true" } else { "false" })?;
+    // Set the AtomicBool first so all spawned threads see the new value
+    // immediately — eliminates the TOCTOU race in create_task and snooze.
+    COMPACT_MODE.store(enabled, Ordering::SeqCst);
 
     if enabled {
         // Close all task card windows
@@ -603,10 +603,10 @@ pub fn set_compact_mode(app: AppHandle, db: State<'_, Arc<DbHandle>>, enabled: b
     } else {
         // Close the compact pill
         crate::window::close_compact_pill_window(&app);
-        // Reopen all active task card windows (including workspace tasks)
+        // Reopen active task card windows — cap at 20 to avoid freezing
         let db = db.inner();
         if let Ok(tasks) = db.get_all_active_tasks() {
-            for (i, task) in tasks.iter().enumerate() {
+            for (i, task) in tasks.iter().take(20).enumerate() {
                 let _ = crate::window::open_task_card(&app, task, i);
             }
             crate::window::restack_task_cards(&app);

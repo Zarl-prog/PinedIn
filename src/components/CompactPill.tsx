@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { LogicalSize } from "@tauri-apps/api/dpi";
@@ -24,14 +24,14 @@ export default function CompactPill() {
     return "#ef4444";
   }
 
-  function recalcTimerBorder() {
+  const recalcTimerBorder = useCallback(() => {
     const color = tasks.reduce<string | null>((acc, t) => {
       const c = getTimerColor(t);
       if (!acc && c) return c;
       return acc;
     }, null);
     setTimerBorderColor(color);
-  }
+  }, [tasks]);
 
   async function refresh() {
     const all = await invoke<Task[]>("get_incomplete_tasks");
@@ -64,7 +64,7 @@ export default function CompactPill() {
         intervalRef.current = null;
       }
     };
-  }, [tasks]);
+  }, [tasks, recalcTimerBorder]);
 
   useEffect(() => {
     const win = getCurrentWindow();
@@ -83,9 +83,14 @@ export default function CompactPill() {
 
   async function handleDone() {
     if (tasks.length === 0) return;
-    await invoke("complete_task", { id: tasks[currentIndex].id });
+    const taskToComplete = tasks[currentIndex];
+    if (!taskToComplete) return;
+    await invoke("complete_task", { id: taskToComplete.id });
+    // refresh() resets currentIndex to 0 — clamp here in case the
+    // completed task was not the last one so the pill doesn't jump unexpectedly
+    const nextIndex = currentIndex >= tasks.length - 1 ? 0 : currentIndex;
     await refresh();
-    if (currentIndex >= tasks.length - 1) setCurrentIndex(0);
+    setCurrentIndex(nextIndex);
   }
 
   function handleNext() {

@@ -381,12 +381,13 @@ function TaskCardItem({
     if (!task.due_time) return 0;
     const due = new Date(task.due_time + "T23:59:59").getTime();
     const now = Date.now();
-    const created = now - 7 * 24 * 60 * 60 * 1000;
+    // Use the task's actual creation time so the bar shows true elapsed progress
+    const created = new Date(task.created_at).getTime();
     const total = due - created;
     const elapsed = now - created;
     if (total <= 0) return 100;
     return Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
-  }, [task.due_time]);
+  }, [task.due_time, task.created_at]);
 
   return (
     <motion.div
@@ -771,14 +772,14 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
         height="36"
         viewBox="0 0 24 24"
         fill="none"
-        stroke="var(--text-muted)"
-        strokeWidth="1.5"
+        stroke="currentColor"
+        strokeWidth="2.2"
         strokeLinecap="round"
         strokeLinejoin="round"
         style={{ marginBottom: "12px" }}
       >
-        <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-14 0Z" />
-        <circle cx="12" cy="9" r="2.5" fill="var(--text-muted)" stroke="none" />
+        <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-14 0Z"/>
+        <circle cx="12" cy="9" r="2.5" fill="currentColor" stroke="none"/>
       </svg>
       <span style={{ fontSize: "15px", fontWeight: 600, color: "var(--text-muted)", marginBottom: "4px" }}>
         No tasks yet

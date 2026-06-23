@@ -55,9 +55,13 @@ export default function WorkspaceDetailView({
   const [isActive, setIsActive] = useState(false);
 
   useEffect(() => {
-    invoke<number | null>("get_active_workspace_id").then((id) => {
-      setIsActive(id === workspaceId);
-    });
+    invoke<number | null>("get_active_workspace_id")
+      .then((id) => {
+        setIsActive(id === workspaceId);
+      })
+      .catch((e) => {
+        console.error("Failed to get active workspace id:", e);
+      });
   }, [workspaceId]);
 
   const refresh = useCallback(async () => {

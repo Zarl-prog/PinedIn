@@ -2,6 +2,7 @@
 
 :root {
   --bg-app: #ffffff;
+  --bg-dot: rgba(0, 0, 0, 0.05);
   --bg-card: #f5f5f5;
   --bg-card-hover: #f0f0f0;
   --bg-float: #ffffff;
@@ -56,6 +57,7 @@
 
 .dark {
   --bg-app: #000000;
+  --bg-dot: rgba(255, 255, 255, 0.05);
   --bg-card: #0a0a0a;
   --bg-card-hover: #0d0d0d;
   --bg-float: #080808;
@@ -114,7 +116,9 @@
 }
 
 html, body, #root {
-  background: var(--bg-app);
+  background-color: var(--bg-app);
+  background-image: radial-gradient(circle, var(--bg-dot) 1px, transparent 1px);
+  background-size: 24px 24px;
   color: var(--text-primary);
   font-family: 'Geist Mono', monospace;
   width: 100%;
@@ -379,6 +383,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .input-field::placeholder {
   color: var(--text-muted);
+}
+
+/* Hide native number input spinners globally */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
 }
 
 /* ─── Pill Toggle ───────────────────────────────────────────────────────── */

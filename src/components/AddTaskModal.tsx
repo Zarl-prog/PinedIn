@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useReminderStore } from "@/store/reminderStore";
 import type { Task } from "@/lib/tauriCommands";
@@ -23,6 +23,116 @@ const TIME_LIMIT_UNITS = [
 ] as const;
 
 type TimeLimitUnit = (typeof TIME_LIMIT_UNITS)[number]["value"];
+
+/** Minimal themed dropdown — avoids native <select> which ignores CSS vars */
+function UnitDropdown({
+  value,
+  onChange,
+}: {
+  value: TimeLimitUnit;
+  onChange: (v: TimeLimitUnit) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const id = useId();
+
+  useEffect(() => {
+    const handleOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, []);
+
+  const selected = TIME_LIMIT_UNITS.find((u) => u.value === value)!;
+
+  return (
+    <div ref={ref} style={{ position: "relative" }} id={id}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+          background: "var(--bg-input)",
+          border: "1px solid var(--border)",
+          borderRadius: "6px",
+          padding: "8px 10px",
+          color: "var(--text-primary)",
+          fontSize: "12px",
+          fontFamily: "'Geist Mono', monospace",
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+          transition: "border-color 0.15s ease",
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--border-hover)")}
+        onMouseLeave={(e) => (e.currentTarget.style.borderColor = open ? "var(--text-muted)" : "var(--border)")}
+      >
+        {selected.label}
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 10 10"
+          fill="none"
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.15s ease" }}
+        >
+          <path d="M2 3.5L5 6.5L8 3.5" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            minWidth: "100%",
+            background: "var(--bg-dropdown)",
+            border: "1px solid var(--border)",
+            borderRadius: "6px",
+            boxShadow: "var(--shadow-menu)",
+            zIndex: 200,
+            overflow: "hidden",
+          }}
+        >
+          {TIME_LIMIT_UNITS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => { onChange(opt.value); setOpen(false); }}
+              style={{
+                display: "block",
+                width: "100%",
+                textAlign: "left",
+                padding: "8px 12px",
+                background: opt.value === value ? "var(--bg-hover)" : "transparent",
+                border: "none",
+                color: opt.value === value ? "var(--text-primary)" : "var(--text-secondary)",
+                fontSize: "12px",
+                fontFamily: "'Geist Mono', monospace",
+                cursor: "pointer",
+                transition: "background 0.1s ease, color 0.1s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--bg-menu-hover)";
+                e.currentTarget.style.color = "var(--text-primary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = opt.value === value ? "var(--bg-hover)" : "transparent";
+                e.currentTarget.style.color = opt.value === value ? "var(--text-primary)" : "var(--text-secondary)";
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /**
  * AddTaskModal - Monochrome modal for creating or editing an *immediate* task.
@@ -396,43 +506,99 @@ export default function AddTaskModal({
                   <span style={{ color: "var(--text-muted)" }}>(optional)</span>
                 </label>
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="No limit"
-                    value={timeLimitValue}
-                    onChange={(e) => setTimeLimitValue(e.target.value)}
+                  <div
                     style={{
-                      width: "100px",
+                      display: "flex",
+                      alignItems: "center",
                       background: "var(--bg-input)",
                       border: "1px solid var(--border)",
                       borderRadius: "6px",
-                      padding: "8px 10px",
-                      color: "var(--text-primary)",
-                      fontSize: "12px",
-                      fontFamily: "'Geist Mono', monospace",
-                    }}
-                  />
-                  <select
-                    value={timeLimitUnit}
-                    onChange={(e) => setTimeLimitUnit(e.target.value as TimeLimitUnit)}
-                    style={{
-                      background: "var(--bg-input)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "6px",
-                      padding: "8px 10px",
-                      color: "var(--text-primary)",
-                      fontSize: "12px",
-                      fontFamily: "'Geist Mono', monospace",
-                      cursor: "pointer",
+                      overflow: "hidden",
+                      width: "130px",
                     }}
                   >
-                    {TIME_LIMIT_UNITS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
+                    <button
+                      type="button"
+                      onClick={() => setTimeLimitValue((v) => String(Math.max(1, (parseInt(v, 10) || 0) - 1) || ""))}
+                      style={{
+                        width: "30px",
+                        height: "34px",
+                        background: "transparent",
+                        border: "none",
+                        borderRight: "1px solid var(--border)",
+                        color: "var(--text-muted)",
+                        cursor: "pointer",
+                        fontSize: "16px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        transition: "background 0.1s ease, color 0.1s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "var(--bg-hover)";
+                        e.currentTarget.style.color = "var(--text-primary)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "transparent";
+                        e.currentTarget.style.color = "var(--text-muted)";
+                      }}
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="No limit"
+                      value={timeLimitValue}
+                      onChange={(e) => setTimeLimitValue(e.target.value)}
+                      style={{
+                        flex: 1,
+                        width: 0,
+                        background: "transparent",
+                        border: "none",
+                        color: "var(--text-primary)",
+                        fontSize: "12px",
+                        fontFamily: "'Geist Mono', monospace",
+                        textAlign: "center",
+                        outline: "none",
+                        padding: "8px 4px",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setTimeLimitValue((v) => String((parseInt(v, 10) || 0) + 1))}
+                      style={{
+                        width: "30px",
+                        height: "34px",
+                        background: "transparent",
+                        border: "none",
+                        borderLeft: "1px solid var(--border)",
+                        color: "var(--text-muted)",
+                        cursor: "pointer",
+                        fontSize: "16px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        transition: "background 0.1s ease, color 0.1s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "var(--bg-hover)";
+                        e.currentTarget.style.color = "var(--text-primary)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "transparent";
+                        e.currentTarget.style.color = "var(--text-muted)";
+                      }}
+                    >
+                      +
+                    </button>
+                  </div>
+                  <UnitDropdown
+                    value={timeLimitUnit}
+                    onChange={setTimeLimitUnit}
+                  />
                 </div>
               </div>
 

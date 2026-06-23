@@ -418,7 +418,7 @@ impl DbHandle {
                     WHEN 'low' THEN 2
                 END,
                 created_at ASC
-                LIMIT 500"
+             LIMIT 500"
         ).map_err(|e| format!("Failed to prepare query: {e}"))?;
 
         let tasks = stmt
@@ -445,7 +445,7 @@ impl DbHandle {
                     WHEN 'low' THEN 2
                 END,
                 created_at ASC
-                LIMIT 500"
+             LIMIT 500"
         ).map_err(|e| format!("Failed to prepare query: {e}"))?;
 
         let tasks = stmt
@@ -471,7 +471,7 @@ impl DbHandle {
                     WHEN 'low' THEN 2
                 END,
                 created_at ASC
-                LIMIT 500"
+             LIMIT 500"
         ).map_err(|e| format!("Failed to prepare workspace tasks query: {e}"))?;
 
         let tasks = stmt
@@ -497,7 +497,7 @@ impl DbHandle {
                     WHEN 'low' THEN 2
                 END,
                 created_at ASC
-                LIMIT 500"
+             LIMIT 500"
         ).map_err(|e| format!("Failed to prepare all workspace tasks query: {e}"))?;
 
         let tasks = stmt
@@ -557,7 +557,7 @@ impl DbHandle {
                     WHEN 'low' THEN 2
                 END,
                 created_at ASC
-                LIMIT 500"
+             LIMIT 500"
         ).map_err(|e| format!("Failed to prepare all incomplete tasks query: {e}"))?;
 
         let tasks = stmt

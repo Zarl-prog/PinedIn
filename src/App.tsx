@@ -192,7 +192,12 @@ export default function App() {
   const toggleCompactMode = async () => {
     const next = !compactMode;
     setCompactModeLocal(next);
-    await setCompactMode(next).catch(() => {});
+    try {
+      await setCompactMode(next);
+    } catch {
+      // Roll back optimistic update if backend call failed
+      setCompactModeLocal(!next);
+    }
   };
 
   const [digestEnabled, setDigestEnabledLocal] = useState(false);
@@ -431,6 +436,7 @@ export default function App() {
 
       {/* ─── Body ─────────────────────────────────────────────── */}
       <div
+        className={activeTab === "tasks" ? "tasks-body" : undefined}
         style={{
           flex: 1,
           display: "flex",
@@ -439,6 +445,7 @@ export default function App() {
           paddingBottom: activeTab === "tasks" ? "52px" : 0,
           minHeight: 0,
           overflow: "hidden",
+          position: "relative",
         }}
       >
         {activeTab === "tasks" && (

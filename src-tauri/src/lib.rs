@@ -105,6 +105,9 @@ pub fn run() {
                 .map(|v| v == "true")
                 .unwrap_or(false);
 
+            // Sync the AtomicBool so spawned threads have the correct value immediately
+            commands::COMPACT_MODE.store(compact_enabled, std::sync::atomic::Ordering::SeqCst);
+
             if compact_enabled {
                 // Open the compact pill instead of individual task cards.
                 // Do NOT open any task card windows — compact mode replaces them.

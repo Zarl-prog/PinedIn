@@ -244,9 +244,9 @@ export default function App() {
               flexShrink: 0,
             }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-inverse)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-14 0Z" />
-              <circle cx="12" cy="9" r="2.5" fill="var(--text-inverse)" stroke="none" />
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-inverse)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-14 0Z"/>
+              <circle cx="12" cy="9" r="2.5" fill="var(--text-inverse)" stroke="none"/>
             </svg>
           </div>
           <ShinyText text="PinedIn" speed={4} className="font-semibold" style={{ fontSize: "14px" }} />
@@ -500,7 +500,7 @@ export default function App() {
         )}
 
         {activeTab === "workspaces" && (
-          <ErrorBoundary key={workspaceContext ? "detail" : "list"}>
+          <ErrorBoundary>
             <WorkspacesView
               onOpen={handleWorkspaceOpen}
               onBack={handleWorkspaceBack}
@@ -521,8 +521,8 @@ export default function App() {
             left: 0,
             right: 0,
             height: "44px",
-            background: "#000",
-            borderTop: "1px solid #111",
+            background: "var(--bg-app)",
+            borderTop: "1px solid var(--divider)",
             display: "flex",
             alignItems: "center",
             gap: "4px",
@@ -534,8 +534,9 @@ export default function App() {
             onClick={togglePaused}
             className="feature-btn"
             style={{
-              color: isPaused ? "#ffffff" : "",
-              borderColor: isPaused ? "#555" : "",
+              color: isPaused ? "var(--text-primary)" : "",
+              borderColor: isPaused ? "var(--border-hover)" : "",
+              background: isPaused ? "var(--bg-hover)" : "",
             }}
           >
             {isPaused ? "▶ Resume" : "|| Pause"}
@@ -544,8 +545,9 @@ export default function App() {
             onClick={toggleCompactMode}
             className="feature-btn"
             style={{
-              color: compactMode ? "#ffffff" : "",
-              borderColor: compactMode ? "#555" : "",
+              color: compactMode ? "var(--text-primary)" : "",
+              borderColor: compactMode ? "var(--border-hover)" : "",
+              background: compactMode ? "var(--bg-hover)" : "",
             }}
           >
             ◉ Compact
@@ -554,8 +556,9 @@ export default function App() {
             onClick={toggleZenMode}
             className="feature-btn"
             style={{
-              color: zenMode ? "#ffffff" : "",
-              borderColor: zenMode ? "#555" : "",
+              color: zenMode ? "var(--text-primary)" : "",
+              borderColor: zenMode ? "var(--border-hover)" : "",
+              background: zenMode ? "var(--bg-hover)" : "",
             }}
           >
             {zenMode ? "◎ Zen On" : "◎ Zen"}
@@ -631,7 +634,7 @@ export default function App() {
               PinedIn v{updateAvailable} is ready to install.
             </p>
             <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "20px" }}>
-              Your current version: v0.3.1
+              Your current version: v0.3.8
             </p>
             <div style={{ display: "flex", gap: "8px" }}>
               <button

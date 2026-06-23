@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getWorkspaces, saveWorkspace, loadWorkspace, deleteWorkspace, Workspace } from "../lib/tauriCommands";
 import { useReminderStore } from "@/store/reminderStore";
@@ -33,25 +33,33 @@ export default function WorkspacesView({ onOpen, onBack, workspaceContext, onAdd
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
-  const deleteRef = useRef<HTMLDivElement>(null);
 
   const fetchWorkspaceTasks = useReminderStore((s) => s.fetchWorkspaceTasks);
 
   useEffect(() => {
     setLoading(true);
-    getWorkspaces().then((ws) => {
-      setWorkspaces(ws);
-      setLoading(false);
-    });
+    getWorkspaces()
+      .then((ws) => {
+        setWorkspaces(ws);
+      })
+      .catch((e) => {
+        console.error("Failed to load workspaces:", e);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [workspaceContext]); // re-fetch when returning from detail
 
-  // Close delete popover on outside click
+  // Close delete popover on any outside click — we don't use a ref
+  // because the popover is rendered inside a mapped list and a single
+  // ref can only point at one element at a time.
   useEffect(() => {
     if (deleteTarget === null) return;
     const handler = (e: MouseEvent) => {
-      if (deleteRef.current && !deleteRef.current.contains(e.target as Node)) {
-        setDeleteTarget(null);
-      }
+      const target = e.target as HTMLElement;
+      // If the click is inside any element with data-delete-popover, keep open
+      if (target.closest("[data-delete-popover]")) return;
+      setDeleteTarget(null);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -62,7 +70,7 @@ export default function WorkspacesView({ onOpen, onBack, workspaceContext, onAdd
     await saveWorkspace(newName.trim());
     setNewName("");
     setCreating(false);
-    getWorkspaces().then(setWorkspaces);
+    getWorkspaces().then(setWorkspaces).catch((e) => console.error("Failed to refresh workspaces:", e));
   }
 
   async function handleOpen(id: number, name: string) {
@@ -82,7 +90,7 @@ export default function WorkspacesView({ onOpen, onBack, workspaceContext, onAdd
   async function confirmDelete(id: number) {
     setDeleteTarget(null);
     await deleteWorkspace(id);
-    getWorkspaces().then(setWorkspaces);
+    getWorkspaces().then(setWorkspaces).catch((e) => console.error("Failed to refresh workspaces:", e));
   }
 
   // If in workspace detail context, show the detail view
@@ -322,6 +330,7 @@ export default function WorkspacesView({ onOpen, onBack, workspaceContext, onAdd
                   {/* Delete trigger */}
                   <div style={{ position: "absolute", top: "12px", right: "12px" }}>
                     <button
+                      data-delete-popover
                       onClick={(e) => handleDelete(e, ws.id)}
                       style={{
                         background: "transparent",
@@ -342,7 +351,7 @@ export default function WorkspacesView({ onOpen, onBack, workspaceContext, onAdd
                     {/* Delete confirmation popover */}
                     {deleteTarget === ws.id && (
                       <div
-                        ref={deleteRef}
+                        data-delete-popover
                         onClick={(e) => e.stopPropagation()}
                         style={{
                           position: "absolute",

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
@@ -47,12 +47,17 @@ export default function WorkspaceDetailView({
   onPreSchedule,
 }: WorkspaceDetailViewProps) {
   const workspaceTasks = useReminderStore((s) => s.workspaceTasks[workspaceId] || []);
-  const fetchWorkspaceTasks = useReminderStore((s) => s.fetchWorkspaceTasks);
   const scheduledTasks = useReminderStore((s) => s.scheduledTasks);
-  const fetchScheduledTasks = useReminderStore((s) => s.fetchScheduledTasks);
-  const removeScheduledTask = useReminderStore((s) => s.removeScheduledTask);
+
+  // Pull actions via getState() so they are always stable references
+  // and never trigger useEffect/useCallback dependency re-runs.
+  const fetchWorkspaceTasks = useReminderStore.getState().fetchWorkspaceTasks;
+  const fetchScheduledTasks = useReminderStore.getState().fetchScheduledTasks;
+  const removeScheduledTask = useReminderStore.getState().removeScheduledTask;
+
   const [loading, setLoading] = useState(true);
   const [isActive, setIsActive] = useState(false);
+  const isFetchingRef = useRef(false);
 
   useEffect(() => {
     invoke<number | null>("get_active_workspace_id")
@@ -65,6 +70,8 @@ export default function WorkspaceDetailView({
   }, [workspaceId]);
 
   const refresh = useCallback(async () => {
+    if (isFetchingRef.current) return; // prevent re-entrant calls
+    isFetchingRef.current = true;
     setLoading(true);
     try {
       await fetchWorkspaceTasks(workspaceId);
@@ -72,24 +79,33 @@ export default function WorkspaceDetailView({
       console.error("WorkspaceDetailView refresh failed:", e);
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
-  }, [workspaceId, fetchWorkspaceTasks]);
+  }, [workspaceId]); // fetchWorkspaceTasks is stable via getState()
 
   useEffect(() => {
     refresh();
     fetchScheduledTasks();
-  }, [refresh, fetchScheduledTasks]);
+  }, [refresh]); // fetchScheduledTasks is stable via getState()
 
   useEffect(() => {
     let cancelled = false;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
     const unlistenPromise = listen("tasks-updated", () => {
-      if (!cancelled) refresh();
+      if (cancelled) return;
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        if (!cancelled) refresh();
+      }, 100);
     }).catch((err) => {
       console.error("WorkspaceDetailView listen error:", err);
       return (() => {}) as UnlistenFn;
     });
+
     return () => {
       cancelled = true;
+      if (debounceTimer) clearTimeout(debounceTimer);
       unlistenPromise.then((fn) => fn());
     };
   }, [refresh]);

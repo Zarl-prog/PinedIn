@@ -53,6 +53,7 @@
   --progress-fill: #1a1a1a;
 
   --calendar-picker-filter: none;
+  --grid-line: rgba(0, 0, 0, 0.06);
 }
 
 .dark {
@@ -107,6 +108,7 @@
   --progress-fill: #ffffff;
 
   --calendar-picker-filter: invert(0.7);
+  --grid-line: rgba(255, 255, 255, 0.04);
 }
 
 * {

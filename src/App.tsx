@@ -17,7 +17,10 @@ import type { Workspace } from "@/lib/tauriCommands";
 
 type AppTab = "tasks" | "workspaces";
 
-class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+class ErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean }
+> {
   constructor(props: { children: ReactNode }) {
     super(props);
     this.state = { hasError: false };
@@ -25,17 +28,13 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   static getDerivedStateFromError() {
     return { hasError: true };
   }
-  componentDidCatch(error: Error) {
-    console.error("ErrorBoundary caught:", error);
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error("ErrorBoundary caught:", error, info.componentStack);
+    // Auto-recover after a short delay so the user never sees a broken state
+    setTimeout(() => this.setState({ hasError: false }), 50);
   }
   render() {
-    if (this.state.hasError) {
-      return (
-        <div style={{ padding: 24, color: "var(--text-secondary)", fontSize: 13, fontFamily: "'Geist Mono', monospace" }}>
-          Something went wrong. Please restart the app.
-        </div>
-      );
-    }
+    if (this.state.hasError) return null;
     return this.props.children;
   }
 }
@@ -44,17 +43,19 @@ export default function App() {
   useReminders();
 
   const tasks = useReminderStore((s) => s.tasks);
-  const fetchTasks = useReminderStore((s) => s.fetchTasks);
   const isAddTaskOpen = useReminderStore((s) => s.isAddTaskOpen);
-  const setAddTaskOpen = useReminderStore((s) => s.setAddTaskOpen);
   const isSettingsOpen = useReminderStore((s) => s.isSettingsOpen);
-  const setSettingsOpen = useReminderStore((s) => s.setSettingsOpen);
   const isPreScheduleOpen = useReminderStore((s) => s.isPreScheduleOpen);
-  const setPreScheduleOpen = useReminderStore((s) => s.setPreScheduleOpen);
   const editingTask = useReminderStore((s) => s.editingTask);
-  const setEditingTask = useReminderStore((s) => s.setEditingTask);
   const isPaused = useReminderStore((s) => s.isPaused);
-  const togglePaused = useReminderStore((s) => s.togglePaused);
+
+  // Actions — always stable, never cause re-renders
+  const fetchTasks = useReminderStore.getState().fetchTasks;
+  const setAddTaskOpen = useReminderStore.getState().setAddTaskOpen;
+  const setSettingsOpen = useReminderStore.getState().setSettingsOpen;
+  const setPreScheduleOpen = useReminderStore.getState().setPreScheduleOpen;
+  const setEditingTask = useReminderStore.getState().setEditingTask;
+  const togglePaused = useReminderStore.getState().togglePaused;
 
   const [activeTab, setActiveTab] = useState<AppTab>("tasks");
 
@@ -63,13 +64,17 @@ export default function App() {
   const [activeWorkspaceName, setActiveWorkspaceName] = useState<string | null>(null);
 
   useEffect(() => {
-    invoke<number | null>("get_active_workspace_id").then(async (id) => {
-      if (id !== null) {
-        const workspaces = await invoke<Workspace[]>("get_workspaces");
-        const ws = workspaces.find((w) => w.id === id);
-        if (ws) setActiveWorkspaceName(ws.name);
-      }
-    });
+    invoke<number | null>("get_active_workspace_id")
+      .then(async (id) => {
+        if (id !== null) {
+          const workspaces = await invoke<Workspace[]>("get_workspaces");
+          const ws = workspaces.find((w) => w.id === id);
+          if (ws) setActiveWorkspaceName(ws.name);
+        }
+      })
+      .catch((e) => {
+        console.error("Failed to get active workspace:", e);
+      });
   }, []);
 
   useEffect(() => {
@@ -100,7 +105,7 @@ export default function App() {
   useEffect(() => {
     const unlisten = listen<number>("open_edit_task", (event) => {
       const taskId = event.payload;
-      const task = tasks.find((t) => t.id === taskId);
+      const task = useReminderStore.getState().tasks.find((t) => t.id === taskId);
       const allTasks = Object.values(useReminderStore.getState().workspaceTasks).flat();
       const found = task || allTasks.find((t) => t.id === taskId);
       if (found) {
@@ -110,7 +115,7 @@ export default function App() {
     return () => {
       unlisten.then((f) => f());
     };
-  }, [tasks, setEditingTask]);
+  }, []); // all refs are stable
 
   useEffect(() => {
     const unlisten = listen("tasks-updated", () => {
@@ -119,7 +124,7 @@ export default function App() {
     return () => {
       unlisten.then((f) => f());
     };
-  }, [fetchTasks]);
+  }, []); // fetchTasks is stable via getState()
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -190,6 +195,22 @@ export default function App() {
     await setCompactMode(next).catch(() => {});
   };
 
+  const [digestEnabled, setDigestEnabledLocal] = useState(false);
+
+  useEffect(() => {
+    invoke<boolean>("get_daily_digest_enabled").then(setDigestEnabledLocal).catch(() => {});
+  }, []);
+
+  const toggleDigest = async () => {
+    const next = !digestEnabled;
+    setDigestEnabledLocal(next);
+    await invoke("set_daily_digest_enabled", { enabled: next }).catch(() => {});
+    if (next) {
+      // Open the digest popup immediately when toggled on
+      await invoke("open_daily_digest_window").catch(() => {});
+    }
+  };
+
   const [searchQuery, setSearchQuery] = useState("");
   const incompleteCount = tasks.filter((t) => !t.completed).length;
 
@@ -250,9 +271,6 @@ export default function App() {
             </svg>
           </div>
           <ShinyText text="PinedIn" speed={4} className="font-semibold" style={{ fontSize: "14px" }} />
-          <span style={{ fontSize: "9px", fontWeight: 500, fontFamily: "'Geist Mono', monospace", letterSpacing: "-0.1px", opacity: 0.6, color: "var(--text-muted)" }}>
-            Persistent Task Overlay
-          </span>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -500,15 +518,27 @@ export default function App() {
         )}
 
         {activeTab === "workspaces" && (
-          <ErrorBoundary>
-            <WorkspacesView
-              onOpen={handleWorkspaceOpen}
-              onBack={handleWorkspaceBack}
-              workspaceContext={workspaceContext}
-              onAddTask={() => setAddTaskOpen(true)}
-              onPreSchedule={() => setPreScheduleOpen(true)}
-            />
-          </ErrorBoundary>
+          <div
+            style={{
+              flex: 1,
+              minHeight: 0,
+              overflow: "hidden",
+              position: "relative",
+              backgroundImage:
+                "linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px)",
+              backgroundSize: "28px 28px",
+            }}
+          >
+            <ErrorBoundary>
+              <WorkspacesView
+                onOpen={handleWorkspaceOpen}
+                onBack={handleWorkspaceBack}
+                workspaceContext={workspaceContext}
+                onAddTask={() => setAddTaskOpen(true)}
+                onPreSchedule={() => setPreScheduleOpen(true)}
+              />
+            </ErrorBoundary>
+          </div>
         )}
       </div>
 
@@ -568,6 +598,17 @@ export default function App() {
             className="feature-btn"
           >
             ⊞ Align
+          </button>
+          <button
+            onClick={toggleDigest}
+            className="feature-btn"
+            style={{
+              color: digestEnabled ? "var(--text-primary)" : "",
+              borderColor: digestEnabled ? "var(--border-hover)" : "",
+              background: digestEnabled ? "var(--bg-hover)" : "",
+            }}
+          >
+            ◈ Digest
           </button>
         </div>
       )}

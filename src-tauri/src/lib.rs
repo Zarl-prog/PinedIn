@@ -152,15 +152,22 @@ pub fn run() {
                 check_for_updates(handle).await;
             });
 
-            // Open the daily digest popup 2s after launch so the main
-            // window has time to render first. Using spawn_blocking with
-            // std::thread::sleep avoids pulling in a tokio dep just for
-            // a one-shot timer.
-            let handle = app.handle().clone();
-            tauri::async_runtime::spawn_blocking(move || {
-                std::thread::sleep(std::time::Duration::from_secs(2));
-                window::open_daily_digest_window(&handle);
-            });
+            // Open the daily digest popup 2s after launch, but only if
+            // the user has enabled it via the footer toggle.
+            let digest_enabled = db_handle
+                .get_setting("daily_digest_enabled")
+                .ok()
+                .flatten()
+                .map(|v| v == "true")
+                .unwrap_or(false);
+
+            if digest_enabled {
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn_blocking(move || {
+                    std::thread::sleep(std::time::Duration::from_secs(2));
+                    window::open_daily_digest_window(&handle);
+                });
+            }
 
             Ok(())
         })
@@ -185,6 +192,9 @@ pub fn run() {
             commands::trigger_task_edit,
             commands::install_update,
             commands::get_daily_digest,
+            commands::get_daily_digest_enabled,
+            commands::set_daily_digest_enabled,
+            commands::open_daily_digest_window,
             commands::fire_time_limit_notification,
             commands::add_presceduled_task,
             commands::get_presceduled_tasks,

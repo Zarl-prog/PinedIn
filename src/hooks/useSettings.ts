@@ -6,17 +6,15 @@ import { useReminderStore } from "@/store/reminderStore";
  * Settings are persisted to SQLite via Tauri commands.
  */
 export function useSettings() {
-  const fetchSettings = useReminderStore((s) => s.fetchSettings);
-  const saveSetting = useReminderStore((s) => s.saveSetting);
   const settings = useReminderStore((s) => s.settings);
+  // Stable action refs
+  const fetchSettings = useReminderStore.getState().fetchSettings;
+  const saveSetting = useReminderStore.getState().saveSetting;
 
   useEffect(() => {
     fetchSettings();
-  }, [fetchSettings]);
+  }, []); // fetchSettings is stable
 
-  /**
-   * Update a single setting in both local state and SQLite.
-   */
   const updateSetting = async (
     key: string,
     value: string | boolean | number,

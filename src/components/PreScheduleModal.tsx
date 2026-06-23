@@ -16,7 +16,7 @@ interface PreScheduleModalProps {
  * scheduled date, scheduled time, and a Schedule button.
  */
 export default function PreScheduleModal({ open, onClose, workspaceId }: PreScheduleModalProps) {
-  const addPrescheduledTask = useReminderStore((s) => s.addPrescheduledTask);
+  const addPrescheduledTask = useReminderStore.getState().addPrescheduledTask;
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");

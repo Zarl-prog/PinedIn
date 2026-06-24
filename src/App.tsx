@@ -682,7 +682,7 @@ export default function App() {
               PinedIn v{updateAvailable} is ready to install.
             </p>
             <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "20px" }}>
-              Your current version: v0.3.8
+              Your current version: v0.3.9
             </p>
             <div style={{ display: "flex", gap: "8px" }}>
               <button

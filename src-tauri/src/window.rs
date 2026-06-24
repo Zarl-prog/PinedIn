@@ -97,6 +97,12 @@ pub fn open_task_card(app: &AppHandle, task: &Task, _index: usize) -> Result<(),
         .build()
         .map_err(|e| format!("Failed to create task card window: {e}"))?;
 
+    // Re-assert always-on-top after creation — some window managers
+    // (notably GNOME/Mutter on Wayland) ignore the builder hint during
+    // Alt+Tab and may lower the window. This double-assertion helps.
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
+    let _ = window.set_always_on_top(true);
+
     if ZEN_MODE.load(Ordering::SeqCst) {
         let _ = window.hide();
     }
@@ -140,6 +146,8 @@ pub fn restack_task_cards(app: &AppHandle) {
                 .map(|s| LogicalSize::new(s.width as f64 / scale, s.height as f64 / scale))
                 .unwrap_or(LogicalSize::new(CARD_WIDTH, CARD_HEIGHT));
             let _ = window.set_position(LogicalPosition::new(x, y));
+            #[cfg(any(target_os = "linux", target_os = "windows"))]
+            let _ = window.set_always_on_top(true);
             y += size.height + CARD_GAP;
         }
     }
@@ -179,19 +187,22 @@ pub fn open_task_card_window_at(app: &AppHandle, task: &Task, x: f64, y: f64) {
     #[cfg(not(target_os = "macos"))]
     let builder = builder.transparent(true);
 
-    let _ = builder
+    if let Ok(window) = builder
         .shadow(false)
         .always_on_top(true)
         .skip_taskbar(true)
         .focused(false)
         .position(x, y)
         .build()
-        .map_err(|e| eprintln!("Failed to open task card window: {e}"));
+    {
+        #[cfg(any(target_os = "linux", target_os = "windows"))]
+        let _ = window.set_always_on_top(true);
 
-    if ZEN_MODE.load(Ordering::SeqCst) {
-        if let Some(window) = app.get_webview_window(&label) {
+        if ZEN_MODE.load(Ordering::SeqCst) {
             let _ = window.hide();
         }
+    } else {
+        eprintln!("Failed to open task card window");
     }
 }
 
@@ -250,13 +261,18 @@ pub fn open_compact_pill_window(app: &AppHandle) {
     #[cfg(not(target_os = "macos"))]
     let builder = builder.transparent(true);
 
-    let _ = builder
+    if let Ok(window) = builder
         .always_on_top(true)
         .skip_taskbar(true)
         .focused(false)
         .position(x, y)
         .build()
-        .map_err(|e| eprintln!("Failed to open compact pill window: {e}"));
+    {
+        #[cfg(any(target_os = "linux", target_os = "windows"))]
+        let _ = window.set_always_on_top(true);
+    } else {
+        eprintln!("Failed to open compact pill window");
+    }
 }
 
 pub fn close_compact_pill_window(app: &AppHandle) {

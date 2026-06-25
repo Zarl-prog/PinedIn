@@ -23,6 +23,11 @@ use tauri_plugin_window_state::StateFlags;
 pub struct QuitFlag(pub Arc<AtomicBool>);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+fn is_wayland() -> bool {
+    std::env::var("WAYLAND_DISPLAY").is_ok()
+        && std::env::var("GDK_BACKEND").unwrap_or_default() != "x11"
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(
@@ -95,6 +100,20 @@ pub fn run() {
             // Setup system tray — log error but don't crash
             if let Err(e) = tray::setup_tray(app.handle()) {
                 eprintln!("[startup] Failed to setup system tray: {e}");
+            }
+
+            // ── Wayland detection ────────────────────────────────────
+            #[cfg(target_os = "linux")]
+            if is_wayland() {
+                let shown = db_handle
+                    .get_setting("wayland_warning_shown")
+                    .unwrap_or_default()
+                    .map(|v| v == "true")
+                    .unwrap_or(false);
+                if !shown {
+                    let _ = app.emit("show_wayland_warning", ());
+                    let _ = db_handle.update_setting("wayland_warning_shown", "true");
+                }
             }
 
             // Check if compact mode was enabled before restart

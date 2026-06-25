@@ -7,6 +7,13 @@ use tauri::{
     Emitter, Manager,
 };
 
+pub fn is_gnome() -> bool {
+    std::env::var("XDG_CURRENT_DESKTOP")
+        .unwrap_or_default()
+        .to_lowercase()
+        .contains("gnome")
+}
+
 /// Setup the system tray with menu items and event handlers.
 /// Clicking the tray icon toggles the main window's visibility so the
 /// app stays running in the background between sessions, exactly like

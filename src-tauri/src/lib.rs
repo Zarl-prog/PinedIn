@@ -116,6 +116,20 @@ pub fn run() {
                 }
             }
 
+            // ── GNOME tray warning ──────────────────────────────────
+            #[cfg(target_os = "linux")]
+            if tray::is_gnome() {
+                let shown = db_handle
+                    .get_setting("gnome_tray_warning_shown")
+                    .unwrap_or_default()
+                    .map(|v| v == "true")
+                    .unwrap_or(false);
+                if !shown {
+                    let _ = app.emit("show_gnome_tray_warning", ());
+                    let _ = db_handle.update_setting("gnome_tray_warning_shown", "true");
+                }
+            }
+
             // Check if compact mode was enabled before restart
             let compact_enabled = db_handle
                 .get_setting("compact_mode")

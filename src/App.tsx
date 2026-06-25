@@ -268,13 +268,24 @@ export default function App() {
   return (
     <div
       style={{
+        width: "100%",
+        height: "100vh",
+        background: "#000000",
+        border: "1px solid rgba(255, 255, 255, 0.18)",
+        borderRadius: "12px",
+        overflow: "hidden",
         display: "flex",
         flexDirection: "column",
-        height: "100vh",
-        background: "var(--bg-app)",
-        overflow: "hidden",
+        boxSizing: "border-box"
       }}
     >
+      {/* Top accent border — makes window edge very visible */}
+      <div style={{
+        height: "1px",
+        width: "100%",
+        background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)",
+        flexShrink: 0
+      }} />
       {/* ─── Titlebar ─────────────────────────────────────────── */}
       <div
         data-tauri-drag-region

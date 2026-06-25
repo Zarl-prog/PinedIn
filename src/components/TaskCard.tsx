@@ -103,6 +103,14 @@ export default function TaskCard({
     };
   }, []);
 
+  // Re-assert always-on-top + skip-taskbar after mount (GNOME/Wayland needs
+  // the window to be fully realized before it accepts these hints)
+  useEffect(() => {
+    invoke("reassert_window_properties");
+    const timer = setTimeout(() => invoke("reassert_window_properties"), 500);
+    return () => clearTimeout(timer);
+  }, []);
+
   const controls = useAnimation();
 
   const playAttention = useCallback(async () => {

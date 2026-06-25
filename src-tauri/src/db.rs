@@ -146,6 +146,7 @@ impl DbHandle {
             INSERT OR IGNORE INTO settings (key, value) VALUES
                 ('theme', 'dark'),
                 ('shake_interval', '30'),
+                ('shake_enabled', 'true'),
                 ('compact_mode', 'false');
             CREATE TABLE IF NOT EXISTS workspaces (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -17,6 +17,11 @@ import {
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
+export interface UndoEntry {
+  action: "delete" | "complete";
+  task: Task;
+}
+
 export interface OverlayState {
   // Data
   tasks: Task[];
@@ -33,6 +38,7 @@ export interface OverlayState {
   editingTask: Task | null;
   activeTags: string[];
   isPaused: boolean;
+  undoEntry: UndoEntry | null;
 
   // Actions - Task management
   fetchTasks: () => Promise<void>;
@@ -90,6 +96,8 @@ export interface OverlayState {
   setEditingTask: (task: Task | null) => void;
   setOverlayVisible: (visible: boolean) => void;
   togglePaused: () => void;
+  pushUndo: (entry: UndoEntry) => void;
+  clearUndo: () => void;
 }
 
 // ─── Store ──────────────────────────────────────────────────────────────────
@@ -110,6 +118,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
   editingTask: null,
   activeTags: [],
   isPaused: false,
+  undoEntry: null,
 
   // ─── Task Management ──────────────────────────────────────────────────
 
@@ -255,6 +264,11 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
 
   removeTask: async (id) => {
     try {
+      const target = get().tasks.find((t) => t.id === id) ||
+        Object.values(get().workspaceTasks).flat().find((t) => t.id === id);
+      if (target) {
+        get().pushUndo({ action: "delete", task: target });
+      }
       await deleteTask(id);
       set((state) => {
         const target = state.tasks.find((t) => t.id === id) ||
@@ -280,6 +294,11 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
 
   completeTask: async (id) => {
     try {
+      const target = get().tasks.find((t) => t.id === id) ||
+        Object.values(get().workspaceTasks).flat().find((t) => t.id === id);
+      if (target) {
+        get().pushUndo({ action: "complete", task: target });
+      }
       await completeTaskCmd(id);
       set((state) => {
         const target = state.tasks.find((t) => t.id === id) ||
@@ -441,6 +460,8 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
   setEditingTask: (task: Task | null) => set({ editingTask: task, isAddTaskOpen: !!task }),
   setOverlayVisible: (visible) => set({ overlayVisible: visible }),
   togglePaused: () => set((state) => ({ isPaused: !state.isPaused })),
+  pushUndo: (entry) => set({ undoEntry: entry }),
+  clearUndo: () => set({ undoEntry: null }),
 }));
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

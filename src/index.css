@@ -109,7 +109,7 @@
   --progress-fill: #ffffff;
 
   --calendar-picker-filter: invert(0.7);
-  --grid-line: rgba(255, 255, 255, 0.04);
+  --grid-line: rgba(255, 255, 255, 0.12);
   --diag-line: rgba(255, 255, 255, 0.045);
 }
 
@@ -539,7 +539,7 @@ input[type="number"] {
   border-color: var(--border);
 }
 
-/* ─── Tasks Body Grid Texture ───────────────────────────────────────────── */
+/* ─── Tasks Body Dot Texture ────────────────────────────────────────────── */
 
 .tasks-body::after {
   content: "";
@@ -548,9 +548,8 @@ input[type="number"] {
   pointer-events: none;
   z-index: 0;
   background-image:
-    linear-gradient(var(--grid-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-  background-size: 28px 28px;
+    radial-gradient(circle, var(--grid-line) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 /* Ensure all direct children of tasks-body sit above the texture layer */

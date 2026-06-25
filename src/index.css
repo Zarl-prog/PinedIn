@@ -125,8 +125,9 @@ html, body {
 }
 
 html {
-  border-radius: 12px;
-  overflow: hidden;
+  background-color: var(--bg-app);
+  background-image: radial-gradient(circle, var(--bg-dot) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 #root {
@@ -140,7 +141,6 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.08),
     0 20px 60px rgba(0, 0, 0, 0.8),

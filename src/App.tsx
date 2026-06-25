@@ -272,7 +272,6 @@ export default function App() {
         height: "100vh",
         background: "#000000",
         border: "1px solid rgba(255, 255, 255, 0.18)",
-        borderRadius: "12px",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",

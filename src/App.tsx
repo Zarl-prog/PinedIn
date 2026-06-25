@@ -229,6 +229,23 @@ export default function App() {
     await setShakeEnabled(next).catch(() => {});
   };
 
+  const [showWaylandWarning, setShowWaylandWarning] = useState(false);
+  const [showGnomeTrayWarning, setShowGnomeTrayWarning] = useState(false);
+
+  useEffect(() => {
+    const unlisten = listen("show_wayland_warning", () => {
+      setShowWaylandWarning(true);
+    });
+    return () => { unlisten.then(f => f()); };
+  }, []);
+
+  useEffect(() => {
+    const unlisten = listen("show_gnome_tray_warning", () => {
+      setShowGnomeTrayWarning(true);
+    });
+    return () => { unlisten.then(f => f()); };
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState("");
   const incompleteCount = tasks.filter((t) => !t.completed).length;
 
@@ -374,6 +391,73 @@ export default function App() {
           />
         </div>
       </div>
+
+      {/* ─── Wayland Warning ──────────────────────────────────── */}
+      {showWaylandWarning && (
+        <div style={{
+          background: "#0a0a0a",
+          border: "1px solid #333",
+          borderRadius: "8px",
+          padding: "12px 16px",
+          margin: "8px 14px",
+          fontSize: "11px",
+          fontFamily: "'Geist Mono', monospace",
+          color: "#ffffff",
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px"
+        }}>
+          <span style={{ fontWeight: 600 }}>⚠ Wayland detected</span>
+          <span style={{ color: "#888" }}>
+            Always-on-top floating cards may not work correctly on Wayland.
+            For the best experience run PinedIn with:
+          </span>
+          <code style={{ background: "#111", padding: "6px 10px", borderRadius: "4px", color: "#fff", fontSize: "10px" }}>
+            GDK_BACKEND=x11 pinedin
+          </code>
+          <button
+            onClick={() => setShowWaylandWarning(false)}
+            style={{ alignSelf: "flex-end", background: "transparent", border: "1px solid #333", color: "#666", borderRadius: "4px", padding: "4px 10px", fontSize: "10px", cursor: "pointer", fontFamily: "'Geist Mono', monospace" }}
+          >
+            Got it
+          </button>
+        </div>
+      )}
+
+      {/* ─── GNOME Tray Warning ────────────────────────────────── */}
+      {showGnomeTrayWarning && (
+        <div style={{
+          background: "#0a0a0a",
+          border: "1px solid #333",
+          borderRadius: "8px",
+          padding: "12px 16px",
+          margin: "8px 14px",
+          fontSize: "11px",
+          fontFamily: "'Geist Mono', monospace",
+          color: "#ffffff",
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px"
+        }}>
+          <span style={{ fontWeight: 600 }}>ℹ GNOME detected</span>
+          <span style={{ color: "#888" }}>
+            The system tray icon requires the AppIndicator extension on GNOME.
+          </span>
+          <a
+            href="https://extensions.gnome.org/extension/615/appindicator-support"
+            target="_blank"
+            style={{ color: "#ffffff", fontSize: "10px" }}
+          >
+            Install AppIndicator Extension →
+          </a>
+          <button
+            onClick={() => setShowGnomeTrayWarning(false)}
+            style={{ alignSelf: "flex-end", background: "transparent", border: "1px solid #333", color: "#666", borderRadius: "4px", padding: "4px 10px", fontSize: "10px", cursor: "pointer", fontFamily: "'Geist Mono', monospace" }}
+          >
+            Got it
+          </button>
+        </div>
+      )}
 
       {/* ─── Tab Bar ─────────────────────────────────────────── */}
       <div

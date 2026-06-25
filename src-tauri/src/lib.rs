@@ -192,6 +192,8 @@ pub fn run() {
             commands::update_setting,
             commands::get_shake_interval,
             commands::set_shake_interval,
+            commands::get_shake_enabled,
+            commands::set_shake_enabled,
             commands::trigger_task_edit,
             commands::install_update,
             commands::get_daily_digest,

@@ -402,6 +402,27 @@ pub fn set_shake_interval(
     Ok(())
 }
 
+#[tauri::command]
+pub fn get_shake_enabled(db: State<'_, Arc<DbHandle>>) -> Result<bool, String> {
+    let map = db.get_settings_map()?;
+    let value = map
+        .get("shake_enabled")
+        .cloned()
+        .unwrap_or_else(|| "true".to_string());
+    Ok(value == "true")
+}
+
+#[tauri::command]
+pub fn set_shake_enabled(
+    app: AppHandle,
+    db: State<'_, Arc<DbHandle>>,
+    enabled: bool,
+) -> Result<(), String> {
+    db.update_setting("shake_enabled", if enabled { "true" } else { "false" })?;
+    let _ = app.emit("shake_enabled_updated", enabled);
+    Ok(())
+}
+
 // ─── Update Commands ───────────────────────────────────────────────────────
 
 #[tauri::command]

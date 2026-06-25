@@ -8,9 +8,10 @@ import SettingsPanel from "@/components/SettingsPanel";
 import PreScheduleModal from "@/components/PreScheduleModal";
 import UpdateBanner from "@/components/UpdateBanner";
 import WorkspacesView from "@/components/WorkspacesView";
+import UndoToast from "@/components/UndoToast";
 import { useReminders } from "@/hooks/useReminders";
 import { useReminderStore } from "@/store/reminderStore";
-import { setZenMode, snapAllCardsToGrid, getCompactMode, setCompactMode } from "@/lib/tauriCommands";
+import { setZenMode, snapAllCardsToGrid, getCompactMode, setCompactMode, getShakeEnabled, setShakeEnabled } from "@/lib/tauriCommands";
 import { checkForUpdates } from "@/lib/updater";
 import ShinyText from "@/components/ui/ShinyText";
 import type { Workspace } from "@/lib/tauriCommands";
@@ -214,6 +215,18 @@ export default function App() {
       // Open the digest popup immediately when toggled on
       await invoke("open_daily_digest_window").catch(() => {});
     }
+  };
+
+  const [shakeEnabled, setShakeEnabledLocal] = useState(false);
+
+  useEffect(() => {
+    getShakeEnabled().then(setShakeEnabledLocal).catch(() => {});
+  }, []);
+
+  const toggleShake = async () => {
+    const next = !shakeEnabled;
+    setShakeEnabledLocal(next);
+    await setShakeEnabled(next).catch(() => {});
   };
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -607,6 +620,17 @@ export default function App() {
             ⊞ Align
           </button>
           <button
+            onClick={toggleShake}
+            className="feature-btn"
+            style={{
+              color: shakeEnabled ? "var(--text-primary)" : "",
+              borderColor: shakeEnabled ? "var(--border-hover)" : "",
+              background: shakeEnabled ? "var(--bg-hover)" : "",
+            }}
+          >
+            {shakeEnabled ? "⚡ Shake On" : "⚡ Shake"}
+          </button>
+          <button
             onClick={toggleDigest}
             className="feature-btn"
             style={{
@@ -716,6 +740,8 @@ export default function App() {
           </div>
         </div>
       )}
+
+      <UndoToast />
     </div>
   );
 }

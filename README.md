@@ -271,6 +271,31 @@ CREATE TABLE workspaces (
 | **macOS** | ✅ Supported | DMG, requires macOS 12+ |
 | **Linux** | ✅ Supported | AppImage + Deb, tested on Ubuntu 22.04+ |
 
+## Linux
+
+### Requirements
+- WebKitGTK 2.44 or higher
+- libappindicator3 (for system tray)
+
+### Known Issues
+
+**Wayland:** Always-on-top floating cards may not work correctly on Wayland compositors. Run with `GDK_BACKEND=x11` for full functionality.
+
+**GNOME:** System tray requires the [AppIndicator extension](https://extensions.gnome.org/extension/615/appindicator-support).
+
+**KDE:** Fully supported on both X11 and Wayland.
+
+### Running on Wayland
+```bash
+GDK_BACKEND=x11 ./PinedIn.AppImage
+```
+
+### Crash on launch
+If the app crashes immediately try:
+```bash
+WEBKIT_DISABLE_COMPOSITING_MODE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 ./PinedIn.AppImage
+```
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please see our [Contributing Guidelines](CONTRIBUTING.md).

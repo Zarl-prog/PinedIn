@@ -55,6 +55,13 @@ export default function CompactPill() {
     };
   }, []);
 
+  // Re-assert always-on-top + skip-taskbar (GNOME/Wayland workaround)
+  useEffect(() => {
+    invoke("reassert_window_properties");
+    const timer = setTimeout(() => invoke("reassert_window_properties"), 500);
+    return () => clearTimeout(timer);
+  }, []);
+
   // 1-second interval only when timed tasks exist
   useEffect(() => {
     const hasTimed = tasks.some(t => t.time_limit_minutes && t.started_at);

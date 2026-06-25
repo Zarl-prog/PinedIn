@@ -254,6 +254,7 @@ pub fn run() {
             commands::get_card_position,
             commands::focus_next_card,
             commands::focus_prev_card,
+            commands::reassert_window_properties,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

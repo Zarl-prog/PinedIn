@@ -3,7 +3,7 @@ use crate::notifications;
 use crate::window;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::{AppHandle, Emitter, Manager, State, Window};
 use tauri_plugin_autostart::ManagerExt;
 
 pub static ZEN_MODE: AtomicBool = AtomicBool::new(false);
@@ -873,5 +873,13 @@ pub fn focus_prev_card(app: AppHandle, task_id: i64) -> Result<(), String> {
     if let Some(window) = app.get_webview_window(prev_label) {
         window.set_focus().map_err(|e| e.to_string())?;
     }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn reassert_window_properties(window: Window) -> Result<(), String> {
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
+    let _ = window.set_always_on_top(true);
+    let _ = window.set_skip_taskbar(true);
     Ok(())
 }

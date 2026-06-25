@@ -135,6 +135,14 @@ export async function setShakeInterval(seconds: number): Promise<void> {
   return invoke("set_shake_interval", { seconds });
 }
 
+export async function getShakeEnabled(): Promise<boolean> {
+  return invoke<boolean>("get_shake_enabled");
+}
+
+export async function setShakeEnabled(enabled: boolean): Promise<void> {
+  return invoke("set_shake_enabled", { enabled });
+}
+
 export async function triggerTaskEdit(id: number): Promise<void> {
   return invoke("trigger_task_edit", { id });
 }

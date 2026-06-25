@@ -6,6 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import {
   getShakeInterval,
+  getShakeEnabled,
   fireTimeLimitNotification,
 } from "@/lib/tauriCommands";
 import { useReminderStore } from "@/store/reminderStore";
@@ -76,6 +77,7 @@ export default function TaskCard({
 
   // ─── Shake interval — loaded from DB, updated live via event ────────────
   const [intervalSeconds, setIntervalSeconds] = useState(30);
+  const [shakeEnabled, setShakeEnabled] = useState(true);
 
   useEffect(() => {
     getShakeInterval()
@@ -83,6 +85,18 @@ export default function TaskCard({
       .catch(() => {});
     const unlisten = listen<number>("shake_interval_updated", (e) => {
       setIntervalSeconds(e.payload);
+    });
+    return () => {
+      unlisten.then((f) => f());
+    };
+  }, []);
+
+  useEffect(() => {
+    getShakeEnabled()
+      .then(setShakeEnabled)
+      .catch(() => {});
+    const unlisten = listen<boolean>("shake_enabled_updated", (e) => {
+      setShakeEnabled(e.payload);
     });
     return () => {
       unlisten.then((f) => f());
@@ -113,18 +127,20 @@ export default function TaskCard({
     const interval = setInterval(() => {
       if (expandedRef.current) return;
       if (useReminderStore.getState().isPaused) return;
+      if (!shakeEnabled) return;
       playAttention();
     }, intervalMs);
     return () => clearInterval(interval);
-  }, [intervalSeconds, playAttention]);
+  }, [intervalSeconds, playAttention, shakeEnabled]);
 
   useEffect(() => {
     const t = setTimeout(() => {
       if (useReminderStore.getState().isPaused) return;
+      if (!shakeEnabled) return;
       playAttention();
     }, 3000);
     return () => clearTimeout(t);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [shakeEnabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const hasRecurrence = !!recurrence;
   const tagList = tags

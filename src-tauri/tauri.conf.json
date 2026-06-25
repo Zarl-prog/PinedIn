@@ -71,7 +71,10 @@
         ]
       },
       "appimage": {
-        "bundleMediaFramework": true
+        "bundleMediaFramework": true,
+        "files": {
+          "AppRun": "bin/AppRun"
+        }
       }
     }
   },

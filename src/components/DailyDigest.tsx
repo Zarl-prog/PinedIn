@@ -72,8 +72,8 @@ export default function DailyDigest() {
           style={{
             width: "420px",
             height: "220px",
-            background: "#0a0a0a",
-            border: "1px solid #1a1a1a",
+            background: "var(--bg-card)",
+            border: "1px solid var(--border)",
             borderRadius: "12px",
             padding: "24px",
             display: "flex",

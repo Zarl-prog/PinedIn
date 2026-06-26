@@ -270,8 +270,8 @@ export default function App() {
       style={{
         width: "100%",
         height: "100vh",
-        background: "#000000",
-        border: "1px solid rgba(255, 255, 255, 0.18)",
+        background: "var(--bg-app)",
+        border: "1px solid var(--app-border, rgba(255, 255, 255, 0.18))",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
@@ -282,7 +282,7 @@ export default function App() {
       <div style={{
         height: "1px",
         width: "100%",
-        background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)",
+        background: "var(--accent-line)",
         flexShrink: 0
       }} />
       {/* ─── Titlebar ─────────────────────────────────────────── */}
@@ -345,7 +345,7 @@ export default function App() {
                   right: "0px",
                   width: "8px",
                   height: "8px",
-                  background: "#ef4444",
+                  background: "var(--text-danger)",
                   borderRadius: "50%",
                 }}
               />
@@ -405,29 +405,32 @@ export default function App() {
       {/* ─── Wayland Warning ──────────────────────────────────── */}
       {showWaylandWarning && (
         <div style={{
-          background: "#0a0a0a",
-          border: "1px solid #333",
+          background: "var(--bg-card)",
+          border: "1px solid var(--border)",
           borderRadius: "8px",
           padding: "12px 16px",
           margin: "8px 14px",
           fontSize: "11px",
           fontFamily: "'Geist Mono', monospace",
-          color: "#ffffff",
+          color: "var(--text-primary)",
           display: "flex",
           flexDirection: "column",
           gap: "8px"
         }}>
           <span style={{ fontWeight: 600 }}>⚠ Wayland detected</span>
-          <span style={{ color: "#888" }}>
-            Always-on-top floating cards may not work correctly on Wayland.
-            For the best experience run PinedIn with:
+          <span style={{ color: "var(--text-secondary)" }}>
+            Always-on-top floating cards require the X11 backend on GNOME.
+            Run PinedIn with:
           </span>
-          <code style={{ background: "#111", padding: "6px 10px", borderRadius: "4px", color: "#fff", fontSize: "10px" }}>
+          <code style={{ background: "var(--bg-hover)", padding: "6px 10px", borderRadius: "4px", color: "var(--text-primary)", fontSize: "10px" }}>
             GDK_BACKEND=x11 pinedin
           </code>
+          <span style={{ color: "var(--text-muted)", fontSize: "10px" }}>
+            Or install the <a href="https://extensions.gnome.org/extension/8324/always-on-top" target="_blank" style={{ color: "var(--text-primary)" }}>Always on Top</a> GNOME extension and pin PinedIn windows manually.
+          </span>
           <button
             onClick={() => setShowWaylandWarning(false)}
-            style={{ alignSelf: "flex-end", background: "transparent", border: "1px solid #333", color: "#666", borderRadius: "4px", padding: "4px 10px", fontSize: "10px", cursor: "pointer", fontFamily: "'Geist Mono', monospace" }}
+            style={{ alignSelf: "flex-end", background: "transparent", border: "1px solid var(--border)", color: "var(--text-muted)", borderRadius: "4px", padding: "4px 10px", fontSize: "10px", cursor: "pointer", fontFamily: "'Geist Mono', monospace" }}
           >
             Got it
           </button>
@@ -437,32 +440,32 @@ export default function App() {
       {/* ─── GNOME Tray Warning ────────────────────────────────── */}
       {showGnomeTrayWarning && (
         <div style={{
-          background: "#0a0a0a",
-          border: "1px solid #333",
+          background: "var(--bg-card)",
+          border: "1px solid var(--border)",
           borderRadius: "8px",
           padding: "12px 16px",
           margin: "8px 14px",
           fontSize: "11px",
           fontFamily: "'Geist Mono', monospace",
-          color: "#ffffff",
+          color: "var(--text-primary)",
           display: "flex",
           flexDirection: "column",
           gap: "8px"
         }}>
           <span style={{ fontWeight: 600 }}>ℹ GNOME detected</span>
-          <span style={{ color: "#888" }}>
+          <span style={{ color: "var(--text-secondary)" }}>
             The system tray icon requires the AppIndicator extension on GNOME.
           </span>
           <a
             href="https://extensions.gnome.org/extension/615/appindicator-support"
             target="_blank"
-            style={{ color: "#ffffff", fontSize: "10px" }}
+            style={{ color: "var(--text-primary)", fontSize: "10px" }}
           >
             Install AppIndicator Extension →
           </a>
           <button
             onClick={() => setShowGnomeTrayWarning(false)}
-            style={{ alignSelf: "flex-end", background: "transparent", border: "1px solid #333", color: "#666", borderRadius: "4px", padding: "4px 10px", fontSize: "10px", cursor: "pointer", fontFamily: "'Geist Mono', monospace" }}
+            style={{ alignSelf: "flex-end", background: "transparent", border: "1px solid var(--border)", color: "var(--text-muted)", borderRadius: "4px", padding: "4px 10px", fontSize: "10px", cursor: "pointer", fontFamily: "'Geist Mono', monospace" }}
           >
             Got it
           </button>
@@ -517,8 +520,8 @@ export default function App() {
       {activeWorkspaceName && (
         <div
           style={{
-            background: "#0a0a0a",
-            borderBottom: "1px solid #1a1a1a",
+            background: "var(--bg-card)",
+            borderBottom: "1px solid var(--border)",
             padding: "6px 16px",
             display: "flex",
             alignItems: "center",
@@ -528,7 +531,7 @@ export default function App() {
             flexShrink: 0,
           }}
         >
-          <span style={{ color: "#ffffff" }}>
+          <span style={{ color: "var(--text-primary)" }}>
             ● Workspace active: <strong>{activeWorkspaceName}</strong>
           </span>
           <button

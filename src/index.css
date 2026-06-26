@@ -55,6 +55,60 @@
   --calendar-picker-filter: none;
   --grid-line: rgba(0, 0, 0, 0.06);
   --diag-line: rgba(0, 0, 0, 0.055);
+
+  --card-bg: #ffffff;
+  --card-border: #e0e0e0;
+  --card-text-primary: #1a1a1a;
+  --card-text-secondary: #666666;
+  --card-text-muted: #999999;
+  --card-surface: #f5f5f5;
+  --card-progress-track: #e0e0e0;
+  --card-progress-fill: #1a1a1a;
+
+  --skeleton-from: #e0e0e0;
+  --skeleton-to: #d0d0d0;
+
+  --app-border: rgba(0, 0, 0, 0.18);
+  --accent-line: linear-gradient(90deg, transparent, rgba(0,0,0,0.3), transparent);
+
+  --btn-primary-bg: #1a1a1a;
+  --btn-primary-text: #ffffff;
+
+  --badge-critical-bg: #1a1a1a;
+  --badge-critical-text: #ffffff;
+  --badge-medium-bg: #e8e8e8;
+  --badge-medium-border: #d0d0d0;
+  --badge-medium-text: #666666;
+  --badge-low-bg: #f0f0f0;
+  --badge-low-border: #e0e0e0;
+  --badge-low-text: #999999;
+
+  --toolbar-bg: #ffffff;
+  --titlebar-bg: transparent;
+  --tab-active-bg: #1a1a1a;
+  --tab-active-text: #ffffff;
+  --tab-inactive-text: #666666;
+  --input-bg: #ffffff;
+  --shiny-primary: #000000;
+  --shiny-secondary: #555555;
+
+  --btn-done-bg: transparent;
+  --btn-done-text: var(--text-secondary);
+  --btn-done-border: var(--border-light);
+  --btn-snooze-bg: transparent;
+  --btn-snooze-text: var(--text-secondary);
+  --btn-remind-bg: transparent;
+  --btn-remind-text: var(--text-secondary);
+
+  --left-accent: var(--text-primary);
+  --card-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  --shake-glow: rgba(255,255,255,0.4);
+
+  --pill-bg: #060608;
+  --pill-border: #2e2e2e;
+  --pill-text: #ffffff;
+  --pill-text-muted: #888888;
+  --pill-shadow: 0 4px 16px rgba(0,0,0,0.5);
 }
 
 .dark {
@@ -111,6 +165,173 @@
   --calendar-picker-filter: invert(0.7);
   --grid-line: rgba(255, 255, 255, 0.12);
   --diag-line: rgba(255, 255, 255, 0.045);
+
+  --card-bg: #080808;
+  --card-border: #1a1a1a;
+  --card-text-primary: #ffffff;
+  --card-text-secondary: #aaaaaa;
+  --card-text-muted: #777777;
+  --card-surface: #0a0a0a;
+  --card-progress-track: #111111;
+  --card-progress-fill: #ffffff;
+
+  --skeleton-from: #1a1a1a;
+  --skeleton-to: #2a2a2a;
+
+  --app-border: rgba(255, 255, 255, 0.18);
+  --accent-line: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+
+  --btn-primary-bg: #ffffff;
+  --btn-primary-text: #000000;
+
+  --badge-critical-bg: #ffffff;
+  --badge-critical-text: #000000;
+  --badge-medium-bg: #111111;
+  --badge-medium-border: #222222;
+  --badge-medium-text: #888888;
+  --badge-low-bg: #0a0a0a;
+  --badge-low-border: #1a1a1a;
+  --badge-low-text: #444444;
+
+  --toolbar-bg: #000000;
+  --titlebar-bg: transparent;
+  --tab-active-bg: #ffffff;
+  --tab-active-text: #000000;
+  --tab-inactive-text: #888888;
+  --input-bg: #0a0a0a;
+  --shiny-primary: #ffffff;
+  --shiny-secondary: #888888;
+
+  --btn-done-bg: transparent;
+  --btn-done-text: var(--text-secondary);
+  --btn-done-border: var(--border-light);
+  --btn-snooze-bg: transparent;
+  --btn-snooze-text: var(--text-secondary);
+  --btn-remind-bg: transparent;
+  --btn-remind-text: var(--text-secondary);
+
+  --left-accent: var(--text-primary);
+  --card-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  --shake-glow: rgba(255,255,255,0.4);
+
+  --pill-bg: #060608;
+  --pill-border: #1a1a1a;
+  --pill-text: #ffffff;
+  --pill-text-muted: #777777;
+  --pill-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+
+/* ─── Parchment Theme ──────────────────────────────────────────────── */
+
+[data-theme="parchment"] {
+  --bg-app: #faf6f0;
+  --bg-dot: rgba(61, 43, 31, 0.08);
+  --bg-card: #f0e8da;
+  --bg-card-hover: #e8dece;
+  --bg-float: #faf6f0;
+  --bg-float-hover: #f0e8da;
+  --bg-input: #f0e8da;
+  --bg-hover: #e8dece;
+  --bg-badge: #e8c9a0;
+  --bg-overlay: rgba(61, 43, 31, 0.4);
+  --bg-toggle: #d4b896;
+  --bg-modal: #faf6f0;
+  --bg-update: #f0e8da;
+  --bg-menu: #faf6f0;
+  --bg-menu-hover: #f0e8da;
+  --bg-delete-hover: #f0e8da;
+  --bg-dropdown: #faf6f0;
+  --bg-scheduled: #f0e8da;
+  --bg-date-icon: #c4a882;
+  --bg-tag: #f0e8da;
+
+  --border: #d4b896;
+  --border-light: #d4b896;
+  --border-hover: #c4a882;
+  --border-strong: #c4a882;
+
+  --text-primary: #3d2b1f;
+  --text-secondary: #a07850;
+  --text-muted: #c4a882;
+  --text-dim: #d4b896;
+  --text-inverse: #faf6f0;
+  --text-danger: #8b5e3c;
+  --text-on-white: #3d2b1f;
+  --text-shiny-base: #c4a882;
+  --text-shiny-shine: #3d2b1f;
+  --shiny-color-primary: #3d2b1f;
+  --shiny-color-secondary: #8b5e3c;
+
+  --shadow-card: 0 2px 12px rgba(61, 43, 31, 0.12);
+  --shadow-hover: 0 0 16px rgba(61, 43, 31, 0.08);
+  --shadow-menu: 0 8px 24px rgba(61, 43, 31, 0.15);
+
+  --scrollbar-track: #f0e8da;
+  --scrollbar-thumb: #d4b896;
+  --scrollbar-thumb-hover: #c4a882;
+
+  --divider: #d4b896;
+
+  --progress-track: #d4b896;
+  --progress-fill: #8b5e3c;
+
+  --calendar-picker-filter: none;
+  --grid-line: rgba(61, 43, 31, 0.1);
+  --diag-line: rgba(61, 43, 31, 0.06);
+
+  --card-bg: #faf6f0;
+  --card-border: #d4b896;
+  --card-text-primary: #3d2b1f;
+  --card-text-secondary: #a07850;
+  --card-text-muted: #c4a882;
+  --card-surface: #f0e8da;
+  --card-progress-track: #d4b896;
+  --card-progress-fill: #8b5e3c;
+
+  --skeleton-from: #e8dece;
+  --skeleton-to: #d4b896;
+
+  --app-border: rgba(61, 43, 31, 0.25);
+  --accent-line: linear-gradient(90deg, transparent, rgba(139, 94, 60, 0.4), transparent);
+
+  --btn-primary-bg: #3d2b1f;
+  --btn-primary-text: #faf6f0;
+
+  --badge-critical-bg: #3d2b1f;
+  --badge-critical-text: #faf6f0;
+  --badge-medium-bg: #e8c9a0;
+  --badge-medium-border: #c9a87a;
+  --badge-medium-text: #8b5e3c;
+  --badge-low-bg: #f0e8da;
+  --badge-low-border: #d4b896;
+  --badge-low-text: #a07850;
+
+  --toolbar-bg: #f0e8da;
+  --titlebar-bg: #f0e8da;
+  --tab-active-bg: #3d2b1f;
+  --tab-active-text: #faf6f0;
+  --tab-inactive-text: #a07850;
+  --input-bg: #f0e8da;
+  --shiny-primary: #3d2b1f;
+  --shiny-secondary: #8b5e3c;
+
+  --btn-done-bg: rgba(46,125,50,0.12);
+  --btn-done-text: #2e7d32;
+  --btn-done-border: rgba(46,125,50,0.3);
+  --btn-snooze-bg: rgba(245,127,23,0.12);
+  --btn-snooze-text: #f57f17;
+  --btn-remind-bg: rgba(106,27,154,0.12);
+  --btn-remind-text: #6a1b9a;
+
+  --left-accent: #8b5e3c;
+  --card-shadow: 0 8px 32px rgba(61, 43, 31, 0.35);
+  --shake-glow: rgba(139, 94, 60, 0.45);
+
+  --pill-bg: #5c3d2e;
+  --pill-border: #8b6f50;
+  --pill-text: #faf6f0;
+  --pill-text-muted: #d4b896;
+  --pill-shadow: 0 4px 16px rgba(61, 43, 31, 0.4);
 }
 
 * {
@@ -140,9 +361,9 @@ html {
   font-family: 'Geist Mono', monospace;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid var(--app-border, rgba(255, 255, 255, 0.15));
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 0 0 1px var(--app-border, rgba(255, 255, 255, 0.08)),
     0 20px 60px rgba(0, 0, 0, 0.8),
     0 0 40px rgba(255, 255, 255, 0.03);
   overflow: hidden;

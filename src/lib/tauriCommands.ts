@@ -20,7 +20,7 @@ export interface Task {
 }
 
 export interface AppSettings {
-  theme: "light" | "dark" | "system";
+  theme: "light" | "dark" | "parchment" | "system";
 }
 
 // ─── Task Commands ──────────────────────────────────────────────────────────

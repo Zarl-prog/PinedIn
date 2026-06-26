@@ -18,6 +18,13 @@
   --progress-track-card: #e0e0e0;
   --progress-fill-card: #1a1a1a;
   --shadow-hover-card: 0 0 16px rgba(0,0,0,0.06);
+  --card-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  --shake-glow: rgba(255,255,255,0.4);
+  --pill-bg: #1a1a1a;
+  --pill-border: #2e2e2e;
+  --pill-text: #ffffff;
+  --pill-text-muted: #888888;
+  --pill-shadow: 0 4px 16px rgba(0,0,0,0.5);
 }
 
 .dark {
@@ -38,6 +45,40 @@
   --progress-track-card: #111111;
   --progress-fill-card: #ffffff;
   --shadow-hover-card: 0 0 20px rgba(255,255,255,0.04);
+  --card-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  --shake-glow: rgba(255,255,255,0.4);
+  --pill-bg: #060608;
+  --pill-border: #1a1a1a;
+  --pill-text: #ffffff;
+  --pill-text-muted: #777777;
+  --pill-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+
+[data-theme="parchment"] {
+  --bg-float-card: #faf6f0;
+  --bg-float-card-hover: #f0e8da;
+  --bg-badge-card: #e8c9a0;
+  --bg-tag-card: #f0e8da;
+  --border-card: #d4b896;
+  --border-card-hover: #c4a882;
+  --border-card-light: #d4b896;
+  --border-card-strong: #c4a882;
+  --border-card-tag: #d4b896;
+  --text-primary-card: #3d2b1f;
+  --text-secondary-card: #a07850;
+  --text-muted-card: #c4a882;
+  --text-dim-card: #a07850;
+  --text-faint-card: rgba(61, 43, 31, 0.25);
+  --progress-track-card: #d4b896;
+  --progress-fill-card: #8b5e3c;
+  --shadow-hover-card: 0 0 16px rgba(61, 43, 31, 0.08);
+  --card-shadow: 0 8px 32px rgba(61, 43, 31, 0.35);
+  --shake-glow: rgba(139, 94, 60, 0.45);
+  --pill-bg: #5c3d2e;
+  --pill-border: #8b6f50;
+  --pill-text: #faf6f0;
+  --pill-text-muted: #d4b896;
+  --pill-shadow: 0 4px 16px rgba(61, 43, 31, 0.4);
 }
 
 * {

@@ -118,10 +118,10 @@ export default function TaskCard({
     await controls.start({
       x: [0, ...amplitude, 0],
       boxShadow: [
-        "0 0 0px rgba(255,255,255,0)",
-        "0 0 20px rgba(255,255,255,0.4)",
-        "0 0 10px rgba(255,255,255,0.2)",
-        "0 0 0px rgba(255,255,255,0)",
+        "0 0 0px var(--shake-glow, rgba(255,255,255,0))",
+        "0 0 20px var(--shake-glow, rgba(255,255,255,0.4))",
+        "0 0 10px var(--shake-glow, rgba(255,255,255,0.2))",
+        "0 0 0px var(--shake-glow, rgba(255,255,255,0))",
       ],
       transition: {
         x: { duration: 0.4, ease: "easeInOut" },
@@ -168,7 +168,7 @@ export default function TaskCard({
   }, [dueTime, createdAt]);
 
   const [progress, setProgress] = useState(100);
-  const [barColor, setBarColor] = useState("var(--progress-fill-card)");
+  const [barColor, setBarColor] = useState("var(--card-progress-fill, var(--progress-fill-card))");
   const [flash, setFlash] = useState(false);
   const notifiedRef = useRef(false);
 
@@ -185,7 +185,7 @@ export default function TaskCard({
 
       setProgress(pct);
 
-      if (pct > 50) setBarColor("var(--progress-fill-card)");
+      if (pct > 50) setBarColor("var(--card-progress-fill, var(--progress-fill-card))");
       else if (pct > 25) setBarColor("#f59e0b");
       else setBarColor("#ef4444");
 
@@ -331,16 +331,26 @@ export default function TaskCard({
         onDoubleClick={handleDoubleClick}
         animate={controls}
         style={{
-          background: "#0f0f11",
-          border: "1px solid rgba(255,255,255,0.08)",
+          background: "var(--card-bg, #0f0f11)",
+          border: "1px solid var(--card-border, rgba(255,255,255,0.08))",
           borderRadius: "12px",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+          boxShadow: "var(--card-shadow, 0 8px 32px rgba(0,0,0,0.6))",
           overflow: "hidden",
           width: "100%",
           cursor: "grab",
           userSelect: "none",
+          position: "relative",
         }}
       >
+        <div style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: "3px",
+          background: "var(--left-accent, transparent)",
+          borderRadius: "3px 0 0 3px",
+        }} />
         <div style={{ padding: "12px 14px", pointerEvents: "none" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <span
@@ -451,7 +461,7 @@ export default function TaskCard({
             style={{
               width: "100%",
               height: "1px",
-              background: "var(--progress-track-card)",
+              background: "var(--card-progress-track, var(--progress-track-card))",
               marginTop: "8px",
               borderRadius: "2px",
               overflow: "hidden",
@@ -461,7 +471,7 @@ export default function TaskCard({
               style={{
                 width: `${progressPercent}%`,
                 height: "100%",
-                background: "var(--progress-fill-card)",
+                background: "var(--card-progress-fill, var(--progress-fill-card))",
                 transition: "width 0.4s ease",
                 borderRadius: "2px",
               }}
@@ -494,21 +504,21 @@ export default function TaskCard({
             <button
               className="v-action"
               onClick={(e) => { e.stopPropagation(); handleDone(); }}
-              style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0" }}
+              style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0", background: "var(--btn-done-bg)", color: "var(--btn-done-text)", borderColor: "var(--btn-done-border)" }}
             >
               ✓ Done
             </button>
             <button
               className="v-action"
               onClick={(e) => { e.stopPropagation(); handleSnooze(); }}
-              style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0" }}
+              style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0", background: "var(--btn-snooze-bg)", color: "var(--btn-snooze-text)", borderColor: "var(--btn-snooze-border, var(--border-light))" }}
             >
               💤 Snooze
             </button>
             <button
               className="v-action"
               onClick={(e) => { e.stopPropagation(); handleRemindClick(e); }}
-              style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0" }}
+              style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0", background: "var(--btn-remind-bg)", color: "var(--btn-remind-text)", borderColor: "var(--btn-remind-border, var(--border-light))" }}
             >
               🔔 Remind
             </button>
@@ -553,7 +563,7 @@ export default function TaskCard({
             style={{
               width: "100%",
               height: "4px",
-              background: "var(--border-card)",
+              background: "var(--card-border, var(--border-card))",
               borderRadius: "0 0 14px 14px",
               overflow: "hidden",
             }}

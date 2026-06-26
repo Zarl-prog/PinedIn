@@ -144,10 +144,10 @@ export default function CompactPill() {
   };
 
   const pillStyle: React.CSSProperties = {
-    background: "#060608",
-    border: `1.5px solid ${timerBorderColor || "#1a1a1a"}`,
+    background: "var(--pill-bg, var(--card-bg, #060608))",
+    border: `1.5px solid ${timerBorderColor || "var(--pill-border, var(--card-border, #1a1a1a))"}`,
     borderRadius: "999px",
-    boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
+    boxShadow: "var(--pill-shadow, 0 4px 16px rgba(0,0,0,0.5))",
     overflow: "hidden",
     cursor: "pointer",
     userSelect: "none",
@@ -178,11 +178,11 @@ export default function CompactPill() {
           flexShrink: 0,
         }}>
           {tasks.length === 0 ? (
-            <span style={{ fontSize: "11px", color: "#444", fontFamily: "'Geist Mono', monospace" }}>✓ All clear</span>
+            <span style={{ fontSize: "11px", color: "var(--pill-text-muted, var(--card-text-muted, #444))", fontFamily: "'Geist Mono', monospace" }}>✓ All clear</span>
           ) : (
             <>
               <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: dotColor, flexShrink: 0 }} />
-              <span style={{ fontSize: "11px", color: "#ffffff", fontFamily: "'Geist Mono', monospace", fontWeight: 600 }}>
+              <span style={{ fontSize: "11px", color: "var(--pill-text, var(--card-text-primary, #ffffff))", fontFamily: "'Geist Mono', monospace", fontWeight: 600 }}>
                 {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
               </span>
             </>
@@ -201,27 +201,27 @@ export default function CompactPill() {
                 display: "flex",
                 flexDirection: "column",
                 gap: "8px",
-                borderTop: "1px solid #151515",
+                borderTop: "1px solid var(--divider, #151515)",
                 overflow: "hidden",
               }}
             >
               <div style={{ paddingTop: "8px" }}>
-                <div style={{ fontSize: "12px", fontWeight: 600, color: "#ffffff", fontFamily: "'Geist Mono', monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--pill-text, var(--card-text-primary, #ffffff))", fontFamily: "'Geist Mono', monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {currentTask.title}
                 </div>
-                <div style={{ fontSize: "10px", color: "#555", marginTop: "2px", fontFamily: "'Geist Mono', monospace" }}>
+                <div style={{ fontSize: "10px", color: "var(--pill-text-muted, var(--card-text-secondary, #555))", marginTop: "2px", fontFamily: "'Geist Mono', monospace" }}>
                   {currentIndex + 1} / {tasks.length}
                 </div>
               </div>
 
               <div style={{ display: "flex", gap: "5px" }}>
-                <button onClick={(e) => { e.stopPropagation(); handlePrev(); }} style={{ width: "24px", height: "24px", borderRadius: "5px", border: "1px solid #1a1a1a", background: "transparent", color: "#777", fontSize: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <button onClick={(e) => { e.stopPropagation(); handlePrev(); }} style={{ width: "24px", height: "24px", borderRadius: "5px", border: "1px solid var(--pill-border, var(--card-border, #1a1a1a))", background: "transparent", color: "var(--pill-text-muted, var(--card-text-muted, #777))", fontSize: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   ‹
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); handleDone(); }} style={{ flex: 1, height: "24px", borderRadius: "5px", border: "1px solid rgba(34,197,94,0.3)", background: "rgba(34,197,94,0.1)", color: "#22c55e", fontSize: "10px", fontWeight: 600, cursor: "pointer", fontFamily: "'Geist Mono', monospace" }}>
+                <button onClick={(e) => { e.stopPropagation(); handleDone(); }} style={{ flex: 1, height: "24px", borderRadius: "5px", border: "1px solid var(--btn-done-border, rgba(34,197,94,0.3))", background: "var(--btn-done-bg, rgba(34,197,94,0.1))", color: "var(--btn-done-text, #22c55e)", fontSize: "10px", fontWeight: 600, cursor: "pointer", fontFamily: "'Geist Mono', monospace" }}>
                   ✓ Done
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); handleNext(); }} style={{ width: "24px", height: "24px", borderRadius: "5px", border: "1px solid #1a1a1a", background: "transparent", color: "#777", fontSize: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <button onClick={(e) => { e.stopPropagation(); handleNext(); }} style={{ width: "24px", height: "24px", borderRadius: "5px", border: "1px solid var(--pill-border, var(--card-border, #1a1a1a))", background: "transparent", color: "var(--pill-text-muted, var(--card-text-muted, #777))", fontSize: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   ›
                 </button>
               </div>

@@ -18,6 +18,7 @@ export default function CompactPill() {
   const [expanded, setExpanded] = useState(false);
   const [timerBorderColor, setTimerBorderColor] = useState<string | null>(null);
   const peekTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function getTimerColor(task: Task): string | null {
     if (!task.time_limit_minutes || !task.started_at) return null;
@@ -53,6 +54,7 @@ export default function CompactPill() {
     return () => {
       unlisten.then(f => f());
       if (peekTimer.current) clearInterval(peekTimer.current);
+      if (clickTimer.current) clearTimeout(clickTimer.current);
     };
   }, []);
 
@@ -86,9 +88,13 @@ export default function CompactPill() {
 
   function handleClick() {
     if (peekTimer.current) {
-      clearInterval(peekTimer.current);
-      peekTimer.current = null;
-      setExpanded(false);
+      if (clickTimer.current) clearTimeout(clickTimer.current);
+      clickTimer.current = setTimeout(() => {
+        clearInterval(peekTimer.current!);
+        peekTimer.current = null;
+        setExpanded(false);
+        clickTimer.current = null;
+      }, 280);
       return;
     }
     if (tasks.length === 0) return;
@@ -106,6 +112,10 @@ export default function CompactPill() {
   }
 
   function handleDoubleClick() {
+    if (clickTimer.current) {
+      clearTimeout(clickTimer.current);
+      clickTimer.current = null;
+    }
     if (tasks.length === 0) return;
     if (peekTimer.current) {
       clearInterval(peekTimer.current);

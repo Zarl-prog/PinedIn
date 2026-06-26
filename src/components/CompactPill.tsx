@@ -90,9 +90,18 @@ export default function CompactPill() {
       setExpanded(false);
       return;
     }
-    if (tasks.length > 0) {
-      setExpanded(p => !p);
+    if (tasks.length === 0) return;
+    if (expanded) {
+      setExpanded(false);
+      return;
     }
+    setExpanded(true);
+    setCurrentIndex(0);
+    peekTimer.current = setInterval(() => {
+      if (peekTimer.current) clearInterval(peekTimer.current);
+      peekTimer.current = null;
+      setExpanded(false);
+    }, 10000);
   }
 
   function handleDoubleClick() {

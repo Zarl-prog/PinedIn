@@ -11,6 +11,7 @@ import {
 } from "@/lib/tauriCommands";
 import { useReminderStore } from "@/store/reminderStore";
 import UrgencyBadge from "./UrgencyBadge";
+import { Check, Bell, ClockCountdown, ArrowsClockwise } from "@phosphor-icons/react";
 
 interface TaskCardProps {
   taskId: number;
@@ -374,7 +375,7 @@ export default function TaskCard({
                   title={`Repeats ${recurrence}`}
                   style={{ fontSize: "11px", color: "var(--text-dim-card)", flexShrink: 0 }}
                 >
-                  ↻
+                  <ArrowsClockwise size={12} weight="light" />
                 </span>
               )}
             </span>
@@ -506,21 +507,21 @@ export default function TaskCard({
               onClick={(e) => { e.stopPropagation(); handleDone(); }}
               style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0", background: "var(--btn-done-bg)", color: "var(--btn-done-text)", borderColor: "var(--btn-done-border)" }}
             >
-              ✓ Done
+              <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Check size={14} weight="light" /> Done</span>
             </button>
             <button
               className="v-action"
               onClick={(e) => { e.stopPropagation(); handleSnooze(); }}
               style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0", background: "var(--btn-snooze-bg)", color: "var(--btn-snooze-text)", borderColor: "var(--btn-snooze-border, var(--border-light))" }}
             >
-              💤 Snooze
+              <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><ClockCountdown size={14} weight="light" /> Snooze</span>
             </button>
             <button
               className="v-action"
               onClick={(e) => { e.stopPropagation(); handleRemindClick(e); }}
               style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0", background: "var(--btn-remind-bg)", color: "var(--btn-remind-text)", borderColor: "var(--btn-remind-border, var(--border-light))" }}
             >
-              🔔 Remind
+              <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Bell size={14} weight="light" /> Remind</span>
             </button>
           </div>
 

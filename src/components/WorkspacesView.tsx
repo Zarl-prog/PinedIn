@@ -4,10 +4,13 @@ import { getWorkspaces, saveWorkspace, loadWorkspace, deleteWorkspace, Workspace
 import { useReminderStore } from "@/store/reminderStore";
 import WorkspaceDetailView from "./WorkspaceDetailView";
 import Skeleton from "./ui/Skeleton";
+import { Hexagon, Diamond, Square, DotOutline, Triangle, CircleHalf, Star, DotsThree } from "@phosphor-icons/react";
 
-const WORKSPACE_ICONS = ["⬡", "◈", "⬟", "◉", "⬠", "◍", "⬢", "◎", "⬣", "◐"];
+const WORKSPACE_ICONS = [
+  Hexagon, Diamond, Square, DotOutline, Triangle, CircleHalf, Star, Hexagon, Diamond, Square,
+] as const;
 
-function getWorkspaceIcon(id: number): string {
+function getWorkspaceIcon(id: number): React.ElementType {
   return WORKSPACE_ICONS[id % WORKSPACE_ICONS.length];
 }
 
@@ -282,7 +285,7 @@ export default function WorkspacesView({ onOpen, onBack, workspaceContext, onAdd
             gap: "12px",
           }}
         >
-          <div style={{ fontSize: "32px", opacity: 0.2, color: "var(--text-primary)" }}>⬡</div>
+          <Hexagon size={32} weight="light" style={{ opacity: 0.2, color: "var(--text-primary)" }} />
           <p style={{ fontSize: "12px", color: "var(--text-muted)", fontFamily: "'Geist Mono', monospace" }}>
             No workspaces yet
           </p>
@@ -352,7 +355,7 @@ export default function WorkspacesView({ onOpen, onBack, workspaceContext, onAdd
                       onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
                       onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-dim)")}
                     >
-                      ···
+                      <DotsThree size={16} weight="light" />
                     </button>
 
                     {/* Delete confirmation popover */}
@@ -434,7 +437,7 @@ export default function WorkspacesView({ onOpen, onBack, workspaceContext, onAdd
                       color: "var(--text-primary)",
                     }}
                   >
-                    {getWorkspaceIcon(ws.id)}
+                    {(() => { const Icon = getWorkspaceIcon(ws.id); return <Icon size={20} weight="light" />; })()}
                   </div>
 
                   <div>

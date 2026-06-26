@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useReminderStore } from "@/store/reminderStore";
 import type { Task } from "@/lib/tauriCommands";
+import { X, Minus, Plus } from "@phosphor-icons/react";
 
 interface AddTaskModalProps {
   open: boolean;
@@ -371,7 +372,7 @@ export default function AddTaskModal({
                   e.currentTarget.style.borderColor = "var(--border-light)";
                 }}
               >
-                ✕
+                <X size={16} weight="light" />
               </button>
             </div>
 
@@ -544,7 +545,7 @@ export default function AddTaskModal({
                         e.currentTarget.style.color = "var(--text-muted)";
                       }}
                     >
-                      −
+                      <Minus size={14} weight="light" />
                     </button>
                     <input
                       type="number"
@@ -592,7 +593,7 @@ export default function AddTaskModal({
                         e.currentTarget.style.color = "var(--text-muted)";
                       }}
                     >
-                      +
+                      <Plus size={14} weight="light" />
                     </button>
                   </div>
                   <UnitDropdown
@@ -687,7 +688,7 @@ export default function AddTaskModal({
                             padding: 0,
                           }}
                       >
-                        ✕
+                        <X size={11} weight="light" />
                       </button>
                     </span>
                   ))}

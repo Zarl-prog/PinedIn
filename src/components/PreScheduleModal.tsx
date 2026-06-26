@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useReminderStore } from "@/store/reminderStore";
 import { localDateStr, localIsoString } from "@/lib/utils";
+import { X } from "@phosphor-icons/react";
 
 interface PreScheduleModalProps {
   open: boolean;
@@ -184,7 +185,7 @@ export default function PreScheduleModal({ open, onClose, workspaceId }: PreSche
                   e.currentTarget.style.borderColor = "var(--border-light)";
                 }}
               >
-                ✕
+                <X size={16} weight="light" />
               </button>
             </div>
 

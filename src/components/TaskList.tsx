@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useReminderStore } from "@/store/reminderStore";
+import { Check, Bell, Alarm, ClockCountdown, ArrowsClockwise, CaretRight, DotsThree, PencilSimple, Trash, X } from "@phosphor-icons/react";
 import {
   type Task,
   closeTaskCard,
@@ -233,7 +234,7 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                       transition: "transform 0.15s ease",
                       transform: completedExpanded ? "rotate(90deg)" : "rotate(0deg)",
                     }}>
-                      ›
+                      <CaretRight size={12} weight="light" />
                     </span>
                     Completed ({completedTasks.length})
                   </span>
@@ -442,7 +443,7 @@ function TaskCardItem({
               </span>
               {hasRecurrence && (
                 <span style={{ fontSize: "12px", color: "var(--text-muted)", flexShrink: 0 }} title={`Repeats ${task.recurrence}`}>
-                  ↻
+                  <ArrowsClockwise size={12} weight="light" />
                 </span>
               )}
             </div>
@@ -483,7 +484,7 @@ function TaskCardItem({
                   e.currentTarget.style.borderColor = "var(--border-light)";
                 }}
               >
-                ⋯
+                <DotsThree size={16} weight="light" />
               </button>
 
               <AnimatePresence>
@@ -530,7 +531,7 @@ function TaskCardItem({
                       onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-menu-hover)")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     >
-                      <span style={{ color: "var(--text-secondary)", fontSize: "12px", width: "12px" }}>✎</span>
+                      <PencilSimple size={14} weight="light" color="var(--text-secondary)" />
                       Edit
                     </button>
                     <button
@@ -553,7 +554,7 @@ function TaskCardItem({
                       onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-delete-hover)")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     >
-                      <span style={{ color: "var(--text-danger)", fontSize: "12px", width: "12px" }}>🗑</span>
+                      <Trash size={14} weight="light" color="var(--text-danger)" />
                       Delete
                     </button>
                   </motion.div>
@@ -652,21 +653,21 @@ function TaskCardItem({
                 onClick={(e) => { e.stopPropagation(); onComplete(); }}
                 style={{ flex: 1, textAlign: "center", padding: "8px 10px" }}
               >
-                ✓ Done
+                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Check size={14} weight="light" /> Done</span>
               </button>
               <button
                 className="v-action"
                 onClick={(e) => { e.stopPropagation(); onSnooze?.(); }}
                 style={{ flex: 1, textAlign: "center", padding: "8px 10px" }}
               >
-                💤 Snooze
+                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><ClockCountdown size={14} weight="light" /> Snooze</span>
               </button>
               <button
                 className="v-action"
                 onClick={(e) => { e.stopPropagation(); onRemind?.(); }}
                 style={{ flex: 1, textAlign: "center", padding: "8px 10px" }}
               >
-                🔔 Remind
+                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Bell size={14} weight="light" /> Remind</span>
               </button>
             </div>
           </motion.div>
@@ -698,7 +699,7 @@ function ScheduledRow({ task, onCancel }: { task: Task; onCancel: () => void }) 
         marginBottom: "6px",
       }}
     >
-      <span style={{ fontSize: "12px", color: "var(--text-muted)", flexShrink: 0 }}>⏰</span>
+      <Alarm size={14} weight="light" color="var(--text-muted)" />
       <span
         style={{
           fontSize: "13px",
@@ -751,7 +752,7 @@ function ScheduledRow({ task, onCancel }: { task: Task; onCancel: () => void }) 
           e.currentTarget.style.borderColor = "var(--border-light)";
         }}
       >
-        ✕
+        <X size={14} weight="light" />
       </button>
     </motion.div>
   );

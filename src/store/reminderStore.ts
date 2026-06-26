@@ -477,10 +477,14 @@ function sortTasks(a: Task, b: Task): number {
 
 function applyTheme(theme: string): void {
   const root = document.documentElement;
+  root.removeAttribute("data-theme");
   if (theme === "dark") {
     root.classList.add("dark");
   } else if (theme === "light") {
     root.classList.remove("dark");
+  } else if (theme === "parchment") {
+    root.classList.remove("dark");
+    root.setAttribute("data-theme", "parchment");
   } else {
     const prefersDark = window.matchMedia(
       "(prefers-color-scheme: dark)",

@@ -279,7 +279,7 @@ CREATE TABLE workspaces (
 
 ### Known Issues
 
-**Wayland:** Always-on-top floating cards may not work correctly on Wayland compositors. Run with `GDK_BACKEND=x11` for full functionality.
+**Wayland:** Always-on-top floating cards require the X11 backend on GNOME. Run with `GDK_BACKEND=x11 pinedin`, or install the [Always on Top](https://extensions.gnome.org/extension/8324/always-on-top) GNOME extension and pin PinedIn windows manually.
 
 **GNOME:** System tray requires the [AppIndicator extension](https://extensions.gnome.org/extension/615/appindicator-support).
 
@@ -289,6 +289,8 @@ CREATE TABLE workspaces (
 ```bash
 GDK_BACKEND=x11 ./PinedIn.AppImage
 ```
+
+Alternatively, install the [Always on Top](https://extensions.gnome.org/extension/8324/always-on-top) GNOME extension and pin PinedIn windows manually.
 
 ### Crash on launch
 If the app crashes immediately try:

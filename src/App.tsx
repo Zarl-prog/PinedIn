@@ -15,6 +15,7 @@ import { setZenMode, snapAllCardsToGrid, getCompactMode, setCompactMode, getShak
 import { checkForUpdates } from "@/lib/updater";
 import ShinyText from "@/components/ui/ShinyText";
 import type { Workspace } from "@/lib/tauriCommands";
+import { Warning, Info, ArrowRight, Circle, Play, Pause, DotOutline, Lightning, Diamond, GridFour } from "@phosphor-icons/react";
 
 type AppTab = "tasks" | "workspaces";
 
@@ -417,7 +418,7 @@ export default function App() {
           flexDirection: "column",
           gap: "8px"
         }}>
-          <span style={{ fontWeight: 600 }}>⚠ Wayland detected</span>
+          <span style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}><Warning size={15} weight="light" /> Wayland detected</span>
           <span style={{ color: "var(--text-secondary)" }}>
             Always-on-top floating cards require the X11 backend on GNOME.
             Run PinedIn with:
@@ -452,7 +453,7 @@ export default function App() {
           flexDirection: "column",
           gap: "8px"
         }}>
-          <span style={{ fontWeight: 600 }}>ℹ GNOME detected</span>
+          <span style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}><Info size={15} weight="light" /> GNOME detected</span>
           <span style={{ color: "var(--text-secondary)" }}>
             The system tray icon requires the AppIndicator extension on GNOME.
           </span>
@@ -461,7 +462,7 @@ export default function App() {
             target="_blank"
             style={{ color: "var(--text-primary)", fontSize: "10px" }}
           >
-            Install AppIndicator Extension →
+            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>Install AppIndicator Extension <ArrowRight size={14} weight="bold" /></span>
           </a>
           <button
             onClick={() => setShowGnomeTrayWarning(false)}
@@ -531,8 +532,8 @@ export default function App() {
             flexShrink: 0,
           }}
         >
-          <span style={{ color: "var(--text-primary)" }}>
-            ● Workspace active: <strong>{activeWorkspaceName}</strong>
+          <span style={{ color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "6px" }}>
+            <Circle size={12} weight="fill" /> Workspace active: <strong>{activeWorkspaceName}</strong>
           </span>
           <button
             onClick={() => invoke("deactivate_workspace")}
@@ -686,7 +687,7 @@ export default function App() {
               background: isPaused ? "var(--bg-hover)" : "",
             }}
           >
-            {isPaused ? "▶ Resume" : "|| Pause"}
+            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>{isPaused ? <><Play size={15} weight="light" /> Resume</> : <><Pause size={15} weight="light" /> Pause</>}</span>
           </button>
           <button
             onClick={toggleCompactMode}
@@ -697,7 +698,7 @@ export default function App() {
               background: compactMode ? "var(--bg-hover)" : "",
             }}
           >
-            ◉ Compact
+            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><DotOutline size={15} weight="light" /> Compact</span>
           </button>
           <button
             onClick={toggleZenMode}
@@ -708,13 +709,13 @@ export default function App() {
               background: zenMode ? "var(--bg-hover)" : "",
             }}
           >
-            {zenMode ? "◎ Zen On" : "◎ Zen"}
+            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>{zenMode ? <><Circle size={15} weight="light" /> Zen On</> : <><Circle size={15} weight="light" /> Zen</>}</span>
           </button>
           <button
             onClick={() => snapAllCardsToGrid()}
             className="feature-btn"
           >
-            ⊞ Align
+            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><GridFour size={15} weight="light" /> Align</span>
           </button>
           <button
             onClick={toggleShake}
@@ -725,7 +726,7 @@ export default function App() {
               background: shakeEnabled ? "var(--bg-hover)" : "",
             }}
           >
-            {shakeEnabled ? "⚡ Shake On" : "⚡ Shake"}
+            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>{shakeEnabled ? <><Lightning size={15} weight="light" /> Shake On</> : <><Lightning size={15} weight="light" /> Shake</>}</span>
           </button>
           <button
             onClick={toggleDigest}
@@ -736,7 +737,7 @@ export default function App() {
               background: digestEnabled ? "var(--bg-hover)" : "",
             }}
           >
-            ◈ Digest
+            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Diamond size={15} weight="light" /> Digest</span>
           </button>
         </div>
       )}

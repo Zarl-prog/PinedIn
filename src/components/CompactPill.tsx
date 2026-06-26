@@ -5,6 +5,7 @@ import { LogicalSize } from "@tauri-apps/api/dpi";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import type { Task } from "../lib/tauriCommands";
+import { Check, CaretLeft, CaretRight } from "@phosphor-icons/react";
 
 const COLLAPSED_W = 140;
 const COLLAPSED_H = 40;
@@ -187,7 +188,7 @@ export default function CompactPill() {
           flexShrink: 0,
         }}>
           {tasks.length === 0 ? (
-            <span style={{ fontSize: "11px", color: "var(--pill-text-muted, var(--card-text-muted, #444))", fontFamily: "'Geist Mono', monospace" }}>✓ All clear</span>
+            <span style={{ fontSize: "11px", color: "var(--pill-text-muted, var(--card-text-muted, #444))", fontFamily: "'Geist Mono', monospace", display: "flex", alignItems: "center", gap: "4px" }}><Check size={14} weight="light" /> All clear</span>
           ) : (
             <>
               <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: dotColor, flexShrink: 0 }} />
@@ -225,13 +226,13 @@ export default function CompactPill() {
 
               <div style={{ display: "flex", gap: "5px" }}>
                 <button onClick={(e) => { e.stopPropagation(); handlePrev(); }} style={{ width: "24px", height: "24px", borderRadius: "5px", border: "1px solid var(--pill-border, var(--card-border, #1a1a1a))", background: "transparent", color: "var(--pill-text-muted, var(--card-text-muted, #777))", fontSize: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  ‹
+                  <CaretLeft size={14} weight="light" />
                 </button>
                 <button onClick={(e) => { e.stopPropagation(); handleDone(); }} style={{ flex: 1, height: "24px", borderRadius: "5px", border: "1px solid var(--btn-done-border, rgba(34,197,94,0.3))", background: "var(--btn-done-bg, rgba(34,197,94,0.1))", color: "var(--btn-done-text, #22c55e)", fontSize: "10px", fontWeight: 600, cursor: "pointer", fontFamily: "'Geist Mono', monospace" }}>
-                  ✓ Done
+                  <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Check size={14} weight="light" /> Done</span>
                 </button>
                 <button onClick={(e) => { e.stopPropagation(); handleNext(); }} style={{ width: "24px", height: "24px", borderRadius: "5px", border: "1px solid var(--pill-border, var(--card-border, #1a1a1a))", background: "transparent", color: "var(--pill-text-muted, var(--card-text-muted, #777))", fontSize: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  ›
+                  <CaretRight size={14} weight="light" />
                 </button>
               </div>
             </motion.div>

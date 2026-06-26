@@ -3,6 +3,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
 import type { Task } from "../lib/tauriCommands";
 import { localDateStr } from "../lib/utils";
+import { Plus, DotsThree } from "@phosphor-icons/react";
 
 export default function QuickAdd() {
   const [value, setValue] = useState("");
@@ -66,7 +67,7 @@ export default function QuickAdd() {
         gap: "12px",
       }}
     >
-      <span style={{ color: accent, fontSize: "16px" }}>+</span>
+      <Plus size={16} weight="light" color={accent} />
       <input
         ref={inputRef}
         value={value}
@@ -92,8 +93,8 @@ export default function QuickAdd() {
           caretColor: "var(--text-primary)",
         }}
       />
-      <span style={{ fontSize: "11px", color: accent }}>
-        {status === "loading" ? "..." : "esc to close"}
+      <span style={{ fontSize: "11px", color: accent, display: "flex", alignItems: "center", gap: "4px" }}>
+        {status === "loading" ? <DotsThree size={14} weight="light" /> : "esc to close"}
       </span>
     </div>
   );

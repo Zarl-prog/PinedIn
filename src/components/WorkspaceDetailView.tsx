@@ -6,6 +6,7 @@ import { useReminderStore } from "@/store/reminderStore";
 import { completeTask as completeTaskCmd, uncompleteTask as uncompleteTaskCmd, deleteTask } from "@/lib/tauriCommands";
 import type { Task } from "@/lib/tauriCommands";
 import UrgencyBadge from "./UrgencyBadge";
+import { ArrowLeft, Circle, Play, Diamond, ArrowsClockwise, Alarm, X } from "@phosphor-icons/react";
 
 interface WorkspaceDetailViewProps {
   workspaceId: number;
@@ -195,7 +196,7 @@ export default function WorkspaceDetailView({
           className="feature-btn"
           style={{ fontSize: "12px", padding: "6px 12px" }}
         >
-          ← Workspaces
+          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><ArrowLeft size={14} weight="light" /> Workspaces</span>
         </button>
         <div>
           <h2
@@ -225,7 +226,7 @@ export default function WorkspaceDetailView({
                 padding: "7px 14px",
               }}
             >
-              ● Active — Deactivate
+              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Circle size={12} weight="fill" /> Active — Deactivate</span>
             </button>
           ) : (
             <button
@@ -233,7 +234,7 @@ export default function WorkspaceDetailView({
               className="feature-btn primary"
               style={{ padding: "7px 14px" }}
             >
-              ▶ Activate Workspace
+              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Play size={14} weight="light" /> Activate Workspace</span>
             </button>
           )}
           <button
@@ -270,7 +271,7 @@ export default function WorkspaceDetailView({
               gap: "12px",
             }}
           >
-            <div style={{ fontSize: "32px", opacity: 0.2, color: "var(--text-primary)" }}>◈</div>
+            <Diamond size={32} weight="light" style={{ opacity: 0.2, color: "var(--text-primary)" }} />
             <p style={{ fontSize: "12px", color: "var(--text-muted)", fontFamily: "'Geist Mono', monospace" }}>
               No tasks in this workspace yet
             </p>
@@ -369,7 +370,7 @@ function ScheduledRow({ task, onCancel }: ScheduledRowProps) {
         borderRadius: "8px",
       }}
     >
-      <span style={{ fontSize: "12px", color: "var(--text-muted)", flexShrink: 0 }}>⏰</span>
+      <Alarm size={14} weight="light" color="var(--text-muted)" />
       <span
         style={{
           fontSize: "13px",
@@ -422,7 +423,7 @@ function ScheduledRow({ task, onCancel }: ScheduledRowProps) {
           e.currentTarget.style.borderColor = "var(--border-light)";
         }}
       >
-        ✕
+        <X size={14} weight="light" />
       </button>
     </div>
   );
@@ -468,7 +469,7 @@ function TaskRow({ task, onComplete, onUncomplete, onDelete }: TaskRowProps) {
           </span>
           <UrgencyBadge urgency={task.urgency as "low" | "medium" | "critical"} />
           {task.recurrence && (
-            <span title={`Repeats ${task.recurrence}`} style={{ fontSize: "11px", color: "var(--text-dim)" }}>↻</span>
+            <span title={`Repeats ${task.recurrence}`} style={{ fontSize: "11px", color: "var(--text-dim)", display: "inline-flex", alignItems: "center" }}><ArrowsClockwise size={11} weight="light" /></span>
           )}
         </div>
         {task.description && (
@@ -519,7 +520,7 @@ function TaskRow({ task, onComplete, onUncomplete, onDelete }: TaskRowProps) {
           onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
           onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-dim)")}
         >
-          ✕
+          <X size={14} weight="light" />
         </button>
       )}
     </div>

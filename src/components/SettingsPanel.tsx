@@ -9,6 +9,7 @@ import {
   setShakeInterval,
 } from "@/lib/tauriCommands";
 import { checkAndInstall } from "@/lib/updater";
+import { X, Circle, Hourglass } from "@phosphor-icons/react";
 
 const SHAKE_OPTIONS: { value: number; label: string }[] = [
   { value: 10, label: "10s" },
@@ -194,7 +195,7 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                   e.currentTarget.style.borderColor = "var(--border-light)";
                 }}
               >
-                ✕
+                <X size={16} weight="light" />
               </button>
             </div>
 
@@ -376,7 +377,7 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                     marginBottom: "8px",
                   }}
                 >
-                  Updates {updateAvailable && <span style={{ color: "#ef4444", marginLeft: "6px", fontSize: "12px" }}>● Update v{updateAvailable} ready</span>}
+                  Updates {updateAvailable && <span style={{ color: "#ef4444", marginLeft: "6px", fontSize: "12px", display: "inline-flex", alignItems: "center", gap: "4px" }}><Circle size={10} weight="fill" />Update v{updateAvailable} ready</span>}
                 </label>
                 <div
                   style={{
@@ -430,7 +431,7 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                     style={{ flexShrink: 0, fontSize: "12px", padding: "6px 12px" }}
                   >
                     {updateStatus.state === "checking"
-                      ? "⏳"
+                      ? <Hourglass size={14} weight="light" />
                       : updateStatus.state === "available"
                         ? "Install"
                         : "Check"}

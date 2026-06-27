@@ -17,14 +17,14 @@
   --text-faint-card: rgba(0,0,0,0.25);
   --progress-track-card: #e0e0e0;
   --progress-fill-card: #1a1a1a;
-  --shadow-hover-card: 0 0 16px rgba(0,0,0,0.06);
-  --card-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  --shadow-hover-card: none;
+  --card-shadow: none;
   --shake-glow: rgba(255,255,255,0.4);
   --pill-bg: #1a1a1a;
   --pill-border: #2e2e2e;
   --pill-text: #ffffff;
   --pill-text-muted: #888888;
-  --pill-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  --pill-shadow: none;
 }
 
 .dark {
@@ -44,14 +44,14 @@
   --text-faint-card: rgba(255,255,255,0.2);
   --progress-track-card: #111111;
   --progress-fill-card: #ffffff;
-  --shadow-hover-card: 0 0 20px rgba(255,255,255,0.04);
-  --card-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  --shadow-hover-card: none;
+  --card-shadow: none;
   --shake-glow: rgba(255,255,255,0.4);
   --pill-bg: #060608;
   --pill-border: #1a1a1a;
   --pill-text: #ffffff;
   --pill-text-muted: #777777;
-  --pill-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  --pill-shadow: none;
 }
 
 [data-theme="parchment"] {
@@ -71,14 +71,14 @@
   --text-faint-card: rgba(255, 255, 255, 0.12);
   --progress-track-card: #3d2e22;
   --progress-fill-card: #c4a882;
-  --shadow-hover-card: 0 0 20px rgba(196, 168, 130, 0.08);
-  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-hover-card: none;
+  --card-shadow: none;
   --shake-glow: rgba(196, 168, 130, 0.3);
   --pill-bg: #3d2e22;
   --pill-border: #5a4633;
   --pill-text: #ede0d0;
   --pill-text-muted: #8e7a60;
-  --pill-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --pill-shadow: none;
 }
 
 * {

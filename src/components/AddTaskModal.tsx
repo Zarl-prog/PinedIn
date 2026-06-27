@@ -163,6 +163,21 @@ export default function AddTaskModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const tagInputRef = useRef<HTMLInputElement>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const resetForm = () => {
+    setTitle("");
+    setDescription("");
+    setUrgency("medium");
+    setDueDate("");
+    setRecurrence(null);
+    setTags([]);
+    setTagInput("");
+    setTimeLimitValue("");
+    setTimeLimitUnit("minutes");
+    setError(null);
+    setShowAdvanced(false);
+  };
 
   useEffect(() => {
     if (editTask) {
@@ -193,19 +208,6 @@ export default function AddTaskModal({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editTask?.id, open]);
-
-  const resetForm = () => {
-    setTitle("");
-    setDescription("");
-    setUrgency("medium");
-    setDueDate("");
-    setRecurrence(null);
-    setTags([]);
-    setTagInput("");
-    setTimeLimitValue("");
-    setTimeLimitUnit("minutes");
-    setError(null);
-  };
 
   const addTag = useCallback(
     (tag: string) => {
@@ -483,7 +485,7 @@ export default function AddTaskModal({
                     <line x1="8" y1="2" x2="8" y2="6" />
                     <line x1="3" y1="10" x2="21" y2="10" />
                   </svg>
-                  <input
+<input
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
@@ -493,20 +495,42 @@ export default function AddTaskModal({
                 </div>
               </div>
 
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    color: "var(--text-secondary)",
-                    marginBottom: "6px",
-                  }}
-                >
-                  Time Limit{" "}
-                  <span style={{ color: "var(--text-muted)" }}>(optional)</span>
-                </label>
-                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <button
+                type="button"
+                onClick={() => setShowAdvanced((v) => !v)}
+                className="feature-btn ghost"
+                style={{
+                  fontSize: "12px",
+                  padding: "6px 12px",
+                  alignSelf: "flex-start",
+                }}
+              >
+                {showAdvanced ? "− Basic" : "+ Advanced"}
+              </button>
+
+              <AnimatePresence>
+                {showAdvanced && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.15 }}
+                    style={{ overflow: "hidden", display: "flex", flexDirection: "column", gap: "14px" }}
+                  >
+                    <div>
+                      <label
+                        style={{
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: 500,
+                          color: "var(--text-secondary)",
+                          marginBottom: "6px",
+                        }}
+                      >
+                        Time Limit{" "}
+                        <span style={{ color: "var(--text-muted)" }}>(optional)</span>
+</label>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                   <div
                     style={{
                       display: "flex",
@@ -713,6 +737,8 @@ export default function AddTaskModal({
                   />
                 </div>
               </div>
+              </motion.div>
+              </AnimatePresence>
 
               {error && (
                 <p style={{ fontSize: "13px", color: "var(--text-danger)", fontWeight: 500, marginTop: "8px" }}>{error}</p>

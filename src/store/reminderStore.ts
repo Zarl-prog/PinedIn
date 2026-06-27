@@ -198,11 +198,10 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
       // Resolve startedAt: use explicit value if provided, otherwise
       // keep the existing started_at from the store so editing title/
       // description doesn't reset the task timer.
+      // resolve startedAt using the get() function from zustand's store context
       const existingTask =
-        useReminderStore.getState().tasks.find((t) => t.id === id) ||
-        Object.values(useReminderStore.getState().workspaceTasks)
-          .flat()
-          .find((t) => t.id === id);
+        get().tasks.find((t) => t.id === id) ||
+        Object.values(get().workspaceTasks).flat().find((t) => t.id === id);
 
       let resolvedStartedAt: string | null = startedAt;
       if (resolvedStartedAt === null) {
@@ -262,49 +261,48 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
     }
   },
 
-  removeTask: async (id) => {
-    try {
-      const target = get().tasks.find((t) => t.id === id) ||
-        Object.values(get().workspaceTasks).flat().find((t) => t.id === id);
-      if (target) {
-        get().pushUndo({ action: "delete", task: target });
-      }
-      await deleteTask(id);
-      set((state) => {
-        const target = state.tasks.find((t) => t.id === id) ||
-          Object.values(state.workspaceTasks).flat().find((t) => t.id === id);
-        if (target?.workspace_id) {
-          const wid = target.workspace_id;
-          const wsTasks = state.workspaceTasks[wid] || [];
-          return {
-            tasks: state.tasks.filter((t) => t.id !== id),
-            workspaceTasks: {
-              ...state.workspaceTasks,
-              [wid]: wsTasks.filter((t) => t.id !== id),
-            },
-          };
-        }
-        return { tasks: state.tasks.filter((t) => t.id !== id) };
-      });
-    } catch (error) {
-      console.error("Failed to delete task:", error);
-      throw error;
-    }
-  },
+removeTask: async (id) => {
+     try {
+       const target = get().tasks.find((t) => t.id === id) ||
+         Object.values(get().workspaceTasks).flat().find((t) => t.id === id);
+       if (target) {
+         get().pushUndo({ action: "delete", task: target });
+       }
+       await deleteTask(id);
+       set((state) => {
+         if (target?.workspace_id) {
+           const wid = target.workspace_id;
+           const wsTasks = state.workspaceTasks[wid] || [];
+           return {
+             tasks: state.tasks.filter((t) => t.id !== id),
+             workspaceTasks: {
+               ...state.workspaceTasks,
+               [wid]: wsTasks.filter((t) => t.id !== id),
+             },
+           };
+         }
+         return { tasks: state.tasks.filter((t) => t.id !== id) };
+       });
+     } catch (error) {
+       console.error("Failed to delete task:", error);
+       throw error;
+     }
+   },
 
-  completeTask: async (id) => {
+completeTask: async (id) => {
+    let workspaceId: number | null = null;
     try {
       const target = get().tasks.find((t) => t.id === id) ||
         Object.values(get().workspaceTasks).flat().find((t) => t.id === id);
       if (target) {
         get().pushUndo({ action: "complete", task: target });
+        workspaceId = target.workspace_id ?? null;
       }
       await completeTaskCmd(id);
+      // Update both tasks and workspaceTasks if workspace-scoped (original behavior)
       set((state) => {
-        const target = state.tasks.find((t) => t.id === id) ||
-          Object.values(state.workspaceTasks).flat().find((t) => t.id === id);
-        if (target?.workspace_id) {
-          const wid = target.workspace_id;
+        if (workspaceId !== null) {
+          const wid = workspaceId;
           const wsTasks = state.workspaceTasks[wid] || [];
           return {
             tasks: state.tasks.map((t) =>
@@ -329,13 +327,15 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
   },
 
   uncompleteTask: async (id) => {
+    let workspaceId: number | null = null;
     try {
+      const target = get().tasks.find((t) => t.id === id) ||
+        Object.values(get().workspaceTasks).flat().find((t) => t.id === id);
+      workspaceId = target?.workspace_id ?? null;
       await uncompleteTaskCmd(id);
       set((state) => {
-        const target = state.tasks.find((t) => t.id === id) ||
-          Object.values(state.workspaceTasks).flat().find((t) => t.id === id);
-        if (target?.workspace_id) {
-          const wid = target.workspace_id;
+        if (workspaceId !== null) {
+          const wid = workspaceId;
           const wsTasks = state.workspaceTasks[wid] || [];
           return {
             tasks: state.tasks.map((t) =>

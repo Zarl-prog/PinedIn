@@ -32,21 +32,23 @@ export default function CompactPill() {
   }
 
   const recalcTimerBorder = useCallback(() => {
-    setTasks(current => {
-      const color = current.reduce<string | null>((acc, t) => {
-        const c = getTimerColor(t);
-        if (!acc && c) return c;
-        return acc;
-      }, null);
-      setTimerBorderColor(color);
-      return current; // no actual state change, just side-effectful read
-    });
-  }, []); // no deps — reads tasks via setState callback to avoid stale closure
+    const color = tasks.reduce<string | null>((acc, t) => {
+      const c = getTimerColor(t);
+      if (!acc && c) return c;
+      return acc;
+    }, null);
+    setTimerBorderColor(color);
+  }, [tasks]);
 
-  async function refresh() {
-    const all = await invoke<Task[]>("get_incomplete_tasks");
-    setTasks(all);
-  }
+async function refresh() {
+     try {
+       const all = await invoke<Task[]>("get_incomplete_tasks");
+       setTasks(all);
+     } catch (e) {
+       console.error("[CompactPill] Failed to fetch tasks:", e);
+       // Show empty state - the UI already handles tasks.length === 0 case
+     }
+   }
 
   useEffect(() => {
     refresh();
@@ -130,15 +132,21 @@ export default function CompactPill() {
     }, 4000);
   }
 
-  async function handleDone() {
-    if (tasks.length === 0) return;
-    const taskToComplete = tasks[currentIndex];
-    if (!taskToComplete) return;
-    const nextIndex = currentIndex >= tasks.length - 1 ? 0 : currentIndex;
-    await invoke("complete_task", { id: taskToComplete.id });
-    await refresh();
-    setCurrentIndex(nextIndex);
-  }
+async function handleDone() {
+     if (tasks.length === 0) return;
+     const taskToComplete = tasks[currentIndex];
+     if (!taskToComplete) return;
+     const nextIndex = currentIndex >= tasks.length - 1 ? 0 : currentIndex;
+     try {
+       await invoke("complete_task", { id: taskToComplete.id });
+       await refresh();
+       setCurrentIndex(nextIndex);
+     } catch (e) {
+       console.error("[CompactPill] Failed to complete task:", e);
+       // Still try to refresh to sync state
+       refresh().catch(() => {});
+     }
+   }
 
   function handleNext() {
     setCurrentIndex(i => (i + 1) % tasks.length);

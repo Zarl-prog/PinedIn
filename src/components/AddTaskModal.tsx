@@ -738,6 +738,7 @@ export default function AddTaskModal({
                 </div>
               </div>
               </motion.div>
+              )}
               </AnimatePresence>
 
               {error && (

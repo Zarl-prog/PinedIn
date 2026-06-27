@@ -4,5 +4,6 @@
 # WebKit tries to use GPU acceleration and aborts.
 export WEBKIT_DISABLE_COMPOSITING_MODE=1
 export WEBKIT_DISABLE_DMABUF_RENDERER=1
+export GDK_BACKEND=x11
 APPDIR="$(dirname "$(readlink -f "$0")")"
 exec "$APPDIR/usr/bin/pinedin" "$@"

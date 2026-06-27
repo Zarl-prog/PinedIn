@@ -39,7 +39,7 @@
   --shiny-color-primary: #000000;
   --shiny-color-secondary: #555555;
 
-  --shadow-card: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-card: none;
   --shadow-hover: 0 0 16px rgba(0,0,0,0.06);
   --shadow-menu: 0 8px 24px rgba(0,0,0,0.12);
 
@@ -101,14 +101,14 @@
   --btn-remind-text: var(--text-secondary);
 
   --left-accent: var(--text-primary);
-  --card-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  --card-shadow: none;
   --shake-glow: rgba(255,255,255,0.4);
 
   --pill-bg: #060608;
   --pill-border: #2e2e2e;
   --pill-text: #ffffff;
   --pill-text-muted: #888888;
-  --pill-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  --pill-shadow: none;
 }
 
 .dark {
@@ -149,7 +149,7 @@
   --shiny-color-primary: #ffffff;
   --shiny-color-secondary: #888888;
 
-  --shadow-card: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow-card: none;
   --shadow-hover: 0 0 20px rgba(255,255,255,0.04);
   --shadow-menu: 0 8px 24px rgba(0,0,0,0.5);
 
@@ -211,14 +211,14 @@
   --btn-remind-text: var(--text-secondary);
 
   --left-accent: var(--text-primary);
-  --card-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  --card-shadow: none;
   --shake-glow: rgba(255,255,255,0.4);
 
   --pill-bg: #060608;
   --pill-border: #1a1a1a;
   --pill-text: #ffffff;
   --pill-text-muted: #777777;
-  --pill-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  --pill-shadow: none;
 }
 
 /* ─── Parchment Theme ──────────────────────────────────────────────── */
@@ -262,7 +262,7 @@
   --shiny-color-primary: #ede0d0;
   --shiny-color-secondary: #c4a882;
 
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5);
+  --shadow-card: none;
   --shadow-hover: 0 0 20px rgba(196, 168, 130, 0.08);
   --shadow-menu: 0 8px 24px rgba(0, 0, 0, 0.5);
 
@@ -324,14 +324,14 @@
   --btn-remind-text: #ce93d8;
 
   --left-accent: #c4a882;
-  --card-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  --card-shadow: none;
   --shake-glow: rgba(196,168,130,0.3);
 
   --pill-bg: #3d2e22;
   --pill-border: #5a4633;
   --pill-text: #ede0d0;
   --pill-text-muted: #8e7a60;
-  --pill-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  --pill-shadow: none;
 }
 
 * {

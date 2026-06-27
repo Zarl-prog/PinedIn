@@ -72,7 +72,9 @@
       },
       "appimage": {
         "bundleMediaFramework": true,
-        "files": {}
+        "files": {
+          "/usr/share/applications/pinedin.desktop": "../bin/pinedin.desktop"
+        }
       }
     }
   },

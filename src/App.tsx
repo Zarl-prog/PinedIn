@@ -12,7 +12,7 @@ import UndoToast from "@/components/UndoToast";
 import { useReminders } from "@/hooks/useReminders";
 import { useReminderStore } from "@/store/reminderStore";
 import { setZenMode, snapAllCardsToGrid, getCompactMode, setCompactMode, getShakeEnabled, setShakeEnabled } from "@/lib/tauriCommands";
-import { checkForUpdates } from "@/lib/updater";
+import { checkForUpdates, checkAndInstall } from "@/lib/updater";
 import ShinyText from "@/components/ui/ShinyText";
 import type { Workspace } from "@/lib/tauriCommands";
 import { Warning, Info, ArrowRight, Circle, Play, Pause, DotOutline, Lightning, Diamond, GridFour } from "@phosphor-icons/react";
@@ -815,10 +815,9 @@ export default function App() {
                 Dismiss
               </button>
               <button
-                onClick={async () => {
-                  const { checkAndInstall } = await import("@/lib/updater");
-                  await checkAndInstall();
-                }}
+onClick={async () => {
+                   await checkAndInstall();
+                 }}
                 style={{
                   flex: 1,
                   padding: "8px 0",

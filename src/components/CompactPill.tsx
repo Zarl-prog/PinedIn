@@ -89,28 +89,15 @@ async function refresh() {
   }, [expanded, tasks.length]);
 
   function handleClick() {
-    if (peekTimer.current) {
-      if (clickTimer.current) clearTimeout(clickTimer.current);
-      clickTimer.current = setTimeout(() => {
-        clearInterval(peekTimer.current!);
-        peekTimer.current = null;
-        setExpanded(false);
-        clickTimer.current = null;
-      }, 280);
-      return;
-    }
-    if (tasks.length === 0) return;
-    if (expanded) {
-      setExpanded(false);
-      return;
-    }
-    setExpanded(true);
-    setCurrentIndex(0);
-    peekTimer.current = setInterval(() => {
-      if (peekTimer.current) clearInterval(peekTimer.current);
+    // Expanded + click → debounced dismiss (so double-click can cancel it)
+    if (!peekTimer.current) return;
+    if (clickTimer.current) return;
+    clickTimer.current = setTimeout(() => {
+      clearInterval(peekTimer.current!);
       peekTimer.current = null;
       setExpanded(false);
-    }, 10000);
+      clickTimer.current = null;
+    }, 280);
   }
 
   function handleDoubleClick() {
@@ -191,7 +178,13 @@ async function handleDone() {
       onDoubleClick={handleDoubleClick}
       style={wrapperStyle}
     >
-      <div style={pillStyle}>
+      <div style={pillStyle}
+        onMouseDown={(e) => {
+          if (peekTimer.current) return;
+          if ((e.target as HTMLElement).closest("button")) return;
+          getCurrentWindow().startDragging();
+        }}
+      >
         <div style={{
           height: "36px",
           display: "flex",

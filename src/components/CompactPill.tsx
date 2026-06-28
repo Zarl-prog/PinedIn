@@ -189,10 +189,6 @@ async function handleDone() {
     <div
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
-      onMouseDown={async (e) => {
-        if ((e.target as HTMLElement).closest("button")) return;
-        await getCurrentWindow().startDragging();
-      }}
       style={wrapperStyle}
     >
       <div style={pillStyle}>

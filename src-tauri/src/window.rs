@@ -254,7 +254,7 @@ pub fn open_compact_pill_window(app: &AppHandle) {
     let (x, y) = get_pill_position(app);
 
     let builder = WebviewWindowBuilder::new(app, label, WebviewUrl::App("compact-pill.html".into()))
-        .inner_size(140.0, 40.0)
+        .inner_size(140.0, 36.0)
         .resizable(false)
         .decorations(false);
 

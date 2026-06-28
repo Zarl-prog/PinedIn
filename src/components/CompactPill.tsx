@@ -155,6 +155,8 @@ async function handleDone() {
     background: "transparent",
     boxSizing: "border-box",
     height: expanded && tasks.length > 0 ? "auto" : "100%",
+    display: "flex",
+    alignItems: "stretch",
   };
 
   const pillStyle: React.CSSProperties = {

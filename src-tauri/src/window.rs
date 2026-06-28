@@ -155,7 +155,15 @@ pub fn restack_task_cards(app: &AppHandle) {
 
 /// Open task card windows for all incomplete tasks, stacked vertically.
 pub fn open_all_task_cards(app: &AppHandle, tasks: &[Task]) {
-    for task in tasks {
+    for (i, task) in tasks.iter().enumerate() {
+        #[cfg(target_os = "linux")]
+        {
+            // Stagger each window by 200ms on Linux to prevent WebKitGTK
+            // crash from spawning too many WebView processes at once.
+            if i > 0 {
+                std::thread::sleep(std::time::Duration::from_millis(200 * i as u64));
+            }
+        }
         if let Err(e) = open_task_card(app, task, 0) {
             eprintln!(
                 "Failed to open task card for task {}: {e}",

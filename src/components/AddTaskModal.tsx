@@ -69,8 +69,14 @@ function UnitDropdown({
           whiteSpace: "nowrap",
           transition: "border-color 0.15s ease",
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--border-hover)")}
-        onMouseLeave={(e) => (e.currentTarget.style.borderColor = open ? "var(--text-muted)" : "var(--border)")}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.borderColor = "var(--border-hover)")
+        }
+        onMouseLeave={(e) =>
+          (e.currentTarget.style.borderColor = open
+            ? "var(--text-muted)"
+            : "var(--border)")
+        }
       >
         {selected.label}
         <svg
@@ -78,9 +84,18 @@ function UnitDropdown({
           height="10"
           viewBox="0 0 10 10"
           fill="none"
-          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.15s ease" }}
+          style={{
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 0.15s ease",
+          }}
         >
-          <path d="M2 3.5L5 6.5L8 3.5" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d="M2 3.5L5 6.5L8 3.5"
+            stroke="var(--text-muted)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       </button>
 
@@ -103,15 +118,22 @@ function UnitDropdown({
             <button
               key={opt.value}
               type="button"
-              onClick={() => { onChange(opt.value); setOpen(false); }}
+              onClick={() => {
+                onChange(opt.value);
+                setOpen(false);
+              }}
               style={{
                 display: "block",
                 width: "100%",
                 textAlign: "left",
                 padding: "8px 12px",
-                background: opt.value === value ? "var(--bg-hover)" : "transparent",
+                background:
+                  opt.value === value ? "var(--bg-hover)" : "transparent",
                 border: "none",
-                color: opt.value === value ? "var(--text-primary)" : "var(--text-secondary)",
+                color:
+                  opt.value === value
+                    ? "var(--text-primary)"
+                    : "var(--text-secondary)",
                 fontSize: "12px",
                 fontFamily: "'Geist Mono', monospace",
                 cursor: "pointer",
@@ -122,8 +144,12 @@ function UnitDropdown({
                 e.currentTarget.style.color = "var(--text-primary)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = opt.value === value ? "var(--bg-hover)" : "transparent";
-                e.currentTarget.style.color = opt.value === value ? "var(--text-primary)" : "var(--text-secondary)";
+                e.currentTarget.style.background =
+                  opt.value === value ? "var(--bg-hover)" : "transparent";
+                e.currentTarget.style.color =
+                  opt.value === value
+                    ? "var(--text-primary)"
+                    : "var(--text-secondary)";
               }}
             >
               {opt.label}
@@ -188,7 +214,10 @@ export default function AddTaskModal({
       setRecurrence(editTask.recurrence ?? null);
       setTags(
         editTask.tags
-          ? editTask.tags.split(",").map((t) => t.trim()).filter(Boolean)
+          ? editTask.tags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)
           : [],
       );
       if (editTask.time_limit_minutes && editTask.time_limit_minutes > 0) {
@@ -344,7 +373,13 @@ export default function AddTaskModal({
                 marginBottom: "16px",
               }}
             >
-              <span style={{ fontSize: "17px", fontWeight: 600, color: "var(--text-primary)" }}>
+              <span
+                style={{
+                  fontSize: "17px",
+                  fontWeight: 600,
+                  color: "var(--text-primary)",
+                }}
+              >
                 {editTask ? "Edit Task" : "New Task"}
               </span>
               <button
@@ -378,7 +413,9 @@ export default function AddTaskModal({
               </button>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "14px" }}
+            >
               <div>
                 <label
                   style={{
@@ -443,7 +480,11 @@ export default function AddTaskModal({
                       className={`pill-toggle${urgency === opt ? " selected" : ""}`}
                       style={{ flex: 1, textAlign: "center" }}
                     >
-                      {opt === "critical" ? "Critical" : opt === "medium" ? "Medium" : "Low"}
+                      {opt === "critical"
+                        ? "Critical"
+                        : opt === "medium"
+                          ? "Medium"
+                          : "Low"}
                     </button>
                   ))}
                 </div>
@@ -485,7 +526,7 @@ export default function AddTaskModal({
                     <line x1="8" y1="2" x2="8" y2="6" />
                     <line x1="3" y1="10" x2="21" y2="10" />
                   </svg>
-<input
+                  <input
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
@@ -509,7 +550,8 @@ export default function AddTaskModal({
                   border: "1px solid var(--border-light, #444)",
                   background: "transparent",
                   color: "var(--text-secondary)",
-                  transition: "background 0.15s ease, color 0.15s ease, border-color 0.15s ease",
+                  transition:
+                    "background 0.15s ease, color 0.15s ease, border-color 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = "var(--bg-hover)";
@@ -519,15 +561,33 @@ export default function AddTaskModal({
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "transparent";
                   e.currentTarget.style.color = "var(--text-secondary)";
-                  e.currentTarget.style.borderColor = "var(--border-light, #444)";
+                  e.currentTarget.style.borderColor =
+                    "var(--border-light, #444)";
                 }}
               >
-                <span style={{ display: "flex", alignItems: "center", gap: "6px", justifyContent: "center" }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    {showAdvanced
-                      ? <path d="M18 15l-6-6-6 6" />
-                      : <path d="M6 9l6 6 6-6" />
-                    }
+                <span
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    justifyContent: "center",
+                  }}
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    {showAdvanced ? (
+                      <path d="M18 15l-6-6-6 6" />
+                    ) : (
+                      <path d="M6 9l6 6 6-6" />
+                    )}
                   </svg>
                   {showAdvanced ? "Basic" : "Advanced"}
                 </span>
@@ -540,7 +600,12 @@ export default function AddTaskModal({
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.15 }}
-                    style={{ overflow: "hidden", display: "flex", flexDirection: "column", gap: "14px" }}
+                    style={{
+                      overflow: "hidden",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "14px",
+                    }}
                   >
                     <div>
                       <label
@@ -553,221 +618,256 @@ export default function AddTaskModal({
                         }}
                       >
                         Time Limit{" "}
-                        <span style={{ color: "var(--text-muted)" }}>(optional)</span>
-</label>
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      background: "var(--bg-input)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "6px",
-                      overflow: "hidden",
-                      width: "130px",
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setTimeLimitValue((v) => String(Math.max(1, (parseInt(v, 10) || 0) - 1) || ""))}
-                      style={{
-                        width: "30px",
-                        height: "34px",
-                        background: "transparent",
-                        border: "none",
-                        borderRight: "1px solid var(--border)",
-                        color: "var(--text-muted)",
-                        cursor: "pointer",
-                        fontSize: "16px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                        transition: "background 0.1s ease, color 0.1s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "var(--bg-hover)";
-                        e.currentTarget.style.color = "var(--text-primary)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "transparent";
-                        e.currentTarget.style.color = "var(--text-muted)";
-                      }}
-                    >
-                      <Minus size={14} weight="light" />
-                    </button>
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="No limit"
-                      value={timeLimitValue}
-                      onChange={(e) => setTimeLimitValue(e.target.value)}
-                      style={{
-                        flex: 1,
-                        width: 0,
-                        background: "transparent",
-                        border: "none",
-                        color: "var(--text-primary)",
-                        fontSize: "12px",
-                        fontFamily: "'Geist Mono', monospace",
-                        textAlign: "center",
-                        outline: "none",
-                        padding: "8px 4px",
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setTimeLimitValue((v) => String((parseInt(v, 10) || 0) + 1))}
-                      style={{
-                        width: "30px",
-                        height: "34px",
-                        background: "transparent",
-                        border: "none",
-                        borderLeft: "1px solid var(--border)",
-                        color: "var(--text-muted)",
-                        cursor: "pointer",
-                        fontSize: "16px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                        transition: "background 0.1s ease, color 0.1s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "var(--bg-hover)";
-                        e.currentTarget.style.color = "var(--text-primary)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "transparent";
-                        e.currentTarget.style.color = "var(--text-muted)";
-                      }}
-                    >
-                      <Plus size={14} weight="light" />
-                    </button>
-                  </div>
-                  <UnitDropdown
-                    value={timeLimitUnit}
-                    onChange={setTimeLimitUnit}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    color: "var(--text-secondary)",
-                    marginBottom: "6px",
-                  }}
-                >
-                  Repeat
-                </label>
-                <div style={{ display: "flex", gap: "6px" }}>
-                  {RECURRENCE_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.label}
-                      onClick={() => setRecurrence(opt.value)}
-                      className={`pill-toggle${recurrence === opt.value ? " selected" : ""}`}
-                      style={{ flex: 1, textAlign: "center" }}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    color: "var(--text-secondary)",
-                    marginBottom: "6px",
-                  }}
-                >
-                  Tags{" "}
-                  <span style={{ color: "var(--text-muted)" }}>(max 5)</span>
-                </label>
-                <div
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    alignItems: "center",
-                    gap: "4px",
-                    background: "var(--bg-input)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "8px",
-                    padding: "10px 12px",
-                    minHeight: "42px",
-                  }}
-                >
-                  {tags.map((tag) => (
-                    <span
-                      key={tag}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "3px",
-                        fontSize: "12px",
-                        color: "var(--text-secondary)",
-                        background: "var(--bg-tag)",
-                        border: "1px solid var(--border-light)",
-                        borderRadius: "999px",
-                        padding: "3px 10px",
-                      }}
-                    >
-                      {tag}
-                      <button
-                        onClick={() => removeTag(tag)}
+                        <span style={{ color: "var(--text-muted)" }}>
+                          (optional)
+                        </span>
+                      </label>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "8px",
+                          alignItems: "center",
+                        }}
+                      >
+                        <div
                           style={{
-                            display: "inline-flex",
+                            display: "flex",
                             alignItems: "center",
-                            justifyContent: "center",
-                            width: "12px",
-                            height: "12px",
-                            borderRadius: "999px",
+                            background: "var(--bg-input)",
+                            border: "1px solid var(--border)",
+                            borderRadius: "6px",
+                            overflow: "hidden",
+                            width: "130px",
+                          }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setTimeLimitValue((v) =>
+                                String(
+                                  Math.max(1, (parseInt(v, 10) || 0) - 1) || "",
+                                ),
+                              )
+                            }
+                            style={{
+                              width: "30px",
+                              height: "34px",
+                              background: "transparent",
+                              border: "none",
+                              borderRight: "1px solid var(--border)",
+                              color: "var(--text-muted)",
+                              cursor: "pointer",
+                              fontSize: "16px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexShrink: 0,
+                              transition:
+                                "background 0.1s ease, color 0.1s ease",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background =
+                                "var(--bg-hover)";
+                              e.currentTarget.style.color =
+                                "var(--text-primary)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = "transparent";
+                              e.currentTarget.style.color = "var(--text-muted)";
+                            }}
+                          >
+                            <Minus size={14} weight="light" />
+                          </button>
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="No limit"
+                            value={timeLimitValue}
+                            onChange={(e) => setTimeLimitValue(e.target.value)}
+                            style={{
+                              flex: 1,
+                              width: 0,
+                              background: "transparent",
+                              border: "none",
+                              color: "var(--text-primary)",
+                              fontSize: "12px",
+                              fontFamily: "'Geist Mono', monospace",
+                              textAlign: "center",
+                              outline: "none",
+                              padding: "8px 4px",
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setTimeLimitValue((v) =>
+                                String((parseInt(v, 10) || 0) + 1),
+                              )
+                            }
+                            style={{
+                              width: "30px",
+                              height: "34px",
+                              background: "transparent",
+                              border: "none",
+                              borderLeft: "1px solid var(--border)",
+                              color: "var(--text-muted)",
+                              cursor: "pointer",
+                              fontSize: "16px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexShrink: 0,
+                              transition:
+                                "background 0.1s ease, color 0.1s ease",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background =
+                                "var(--bg-hover)";
+                              e.currentTarget.style.color =
+                                "var(--text-primary)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = "transparent";
+                              e.currentTarget.style.color = "var(--text-muted)";
+                            }}
+                          >
+                            <Plus size={14} weight="light" />
+                          </button>
+                        </div>
+                        <UnitDropdown
+                          value={timeLimitUnit}
+                          onChange={setTimeLimitUnit}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        style={{
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: 500,
+                          color: "var(--text-secondary)",
+                          marginBottom: "6px",
+                        }}
+                      >
+                        Repeat
+                      </label>
+                      <div style={{ display: "flex", gap: "6px" }}>
+                        {RECURRENCE_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.label}
+                            onClick={() => setRecurrence(opt.value)}
+                            className={`pill-toggle${recurrence === opt.value ? " selected" : ""}`}
+                            style={{ flex: 1, textAlign: "center" }}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        style={{
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: 500,
+                          color: "var(--text-secondary)",
+                          marginBottom: "6px",
+                        }}
+                      >
+                        Tags{" "}
+                        <span style={{ color: "var(--text-muted)" }}>
+                          (max 5)
+                        </span>
+                      </label>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          alignItems: "center",
+                          gap: "4px",
+                          background: "var(--bg-input)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "8px",
+                          padding: "10px 12px",
+                          minHeight: "42px",
+                        }}
+                      >
+                        {tags.map((tag) => (
+                          <span
+                            key={tag}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "3px",
+                              fontSize: "12px",
+                              color: "var(--text-secondary)",
+                              background: "var(--bg-tag)",
+                              border: "1px solid var(--border-light)",
+                              borderRadius: "999px",
+                              padding: "3px 10px",
+                            }}
+                          >
+                            {tag}
+                            <button
+                              onClick={() => removeTag(tag)}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: "12px",
+                                height: "12px",
+                                borderRadius: "999px",
+                                border: "none",
+                                background: "transparent",
+                                color: "var(--text-muted)",
+                                cursor: "pointer",
+                                fontSize: "11px",
+                                padding: 0,
+                              }}
+                            >
+                              <X size={11} weight="light" />
+                            </button>
+                          </span>
+                        ))}
+                        <input
+                          ref={tagInputRef}
+                          type="text"
+                          value={tagInput}
+                          onChange={(e) => setTagInput(e.target.value)}
+                          onKeyDown={handleTagKeyDown}
+                          placeholder={tags.length < 5 ? "Add a tag..." : ""}
+                          disabled={tags.length >= 5}
+                          style={{
+                            minWidth: "80px",
+                            flex: 1,
                             border: "none",
                             background: "transparent",
-                            color: "var(--text-muted)",
-                            cursor: "pointer",
-                            fontSize: "11px",
-                            padding: 0,
+                            color: "var(--text-primary)",
+                            fontSize: "14px",
+                            fontFamily: "'Geist Mono', monospace",
+                            outline: "none",
                           }}
-                      >
-                        <X size={11} weight="light" />
-                      </button>
-                    </span>
-                  ))}
-                  <input
-                    ref={tagInputRef}
-                    type="text"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={handleTagKeyDown}
-                    placeholder={tags.length < 5 ? "Add a tag..." : ""}
-                    disabled={tags.length >= 5}
-                    style={{
-                      minWidth: "80px",
-                      flex: 1,
-                      border: "none",
-                      background: "transparent",
-                      color: "var(--text-primary)",
-                      fontSize: "14px",
-                      fontFamily: "'Geist Mono', monospace",
-                      outline: "none",
-                    }}
-                  />
-                </div>
-              </div>
-              </motion.div>
-              )}
+                        />
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
               </AnimatePresence>
 
               {error && (
-                <p style={{ fontSize: "13px", color: "var(--text-danger)", fontWeight: 500, marginTop: "8px" }}>{error}</p>
+                <p
+                  style={{
+                    fontSize: "13px",
+                    color: "var(--text-danger)",
+                    fontWeight: 500,
+                    marginTop: "8px",
+                  }}
+                >
+                  {error}
+                </p>
               )}
 
               <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>

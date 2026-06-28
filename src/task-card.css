@@ -97,7 +97,7 @@ html, body, #root {
   width: 308px;
   height: auto;
   overflow: hidden;
-  background: transparent !important;
+  background: var(--bg-float-card) !important;
 }
 
 #root {
@@ -114,7 +114,6 @@ body {
 }
 
 #root {
-  background: transparent;
   display: block;
 }
 

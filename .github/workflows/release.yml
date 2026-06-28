@@ -34,7 +34,8 @@ jobs:
             libgtk-3-dev \
             libsoup-3.0-dev \
             libjavascriptcoregtk-4.1-dev \
-            libfuse2
+            libfuse2 \
+            rpm
 
       - name: Install dependencies
         run: npm install
@@ -83,7 +84,7 @@ jobs:
           echo "Generating platform metadata..."
           VERSION="${RELEASE_TAG#v}"
 
-          for f in $(find "$BUNDLE_DIR" -type f \( -name "*.tar.gz" -o -name "*.zip" \) 2>/dev/null); do
+          for f in $(find "$BUNDLE_DIR" -type f \( -name "*.tar.gz" -o -name "*.zip" -o -name "*.rpm" \) 2>/dev/null); do
             BASENAME=$(basename "$f")
             case "$BASENAME" in
               control.tar.gz|data.tar.gz) continue ;;
@@ -95,6 +96,7 @@ jobs:
               *x86_64-setup.mui.zip*)    PLAT="windows-x86_64" ;;
               *x86_64.AppImage.tar.gz*)  PLAT="linux-x86_64" ;;
               *amd64.AppImage.tar.gz*)   PLAT="linux-x86_64" ;;
+              *.rpm)                   PLAT="linux-x86_64" ;;
               *x86_64.dmg.tar.gz*)       PLAT="darwin-x86_64" ;;
               *aarch64.dmg.tar.gz*)      PLAT="darwin-aarch64" ;;
               *x86_64.app.tar.gz*)       PLAT="darwin-x86_64" ;;

@@ -81,21 +81,13 @@ export default function CompactPill() {
     return () => clearInterval(id);
   }, [tasks]);
 
-  useEffect(() => {
-    const win = getCurrentWindow();
-    if (expanded && tasks.length > 0) {
-      win.setSize(new LogicalSize(EXPANDED_W, EXPANDED_H));
-    } else {
-      win.setSize(new LogicalSize(COLLAPSED_W, COLLAPSED_H));
-    }
-  }, [expanded, tasks.length]);
-
   function handleClick() {
     if (!peekTimer.current) return;
     if (clickTimer.current) return;
     clickTimer.current = setTimeout(() => {
       clearInterval(peekTimer.current!);
       peekTimer.current = null;
+      getCurrentWindow().setSize(new LogicalSize(COLLAPSED_W, COLLAPSED_H));
       setExpanded(false);
       clickTimer.current = null;
     }, 280);
@@ -110,14 +102,17 @@ export default function CompactPill() {
     if (peekTimer.current) {
       clearInterval(peekTimer.current);
       peekTimer.current = null;
+      getCurrentWindow().setSize(new LogicalSize(COLLAPSED_W, COLLAPSED_H));
       setExpanded(false);
       return;
     }
+    getCurrentWindow().setSize(new LogicalSize(EXPANDED_W, EXPANDED_H));
     setExpanded(true);
     setCurrentIndex(0);
     peekTimer.current = setInterval(() => {
       if (peekTimer.current) clearInterval(peekTimer.current);
       peekTimer.current = null;
+      getCurrentWindow().setSize(new LogicalSize(COLLAPSED_W, COLLAPSED_H));
       setExpanded(false);
     }, 4000);
   }

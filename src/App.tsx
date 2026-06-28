@@ -355,8 +355,8 @@ export default function App() {
           <button
             onClick={() => getCurrentWindow().minimize()}
             style={{
-              width: "11px",
-              height: "11px",
+              width: "12px",
+              height: "12px",
               borderRadius: "999px",
               border: "1px solid var(--border-hover)",
               background: "var(--bg-hover)",
@@ -371,8 +371,8 @@ export default function App() {
           <button
             onClick={() => getCurrentWindow().toggleMaximize()}
             style={{
-              width: "11px",
-              height: "11px",
+              width: "12px",
+              height: "12px",
               borderRadius: "999px",
               border: "1px solid var(--border-hover)",
               background: "var(--bg-hover)",
@@ -387,8 +387,8 @@ export default function App() {
           <button
             onClick={() => getCurrentWindow().close()}
             style={{
-              width: "11px",
-              height: "11px",
+              width: "12px",
+              height: "12px",
               borderRadius: "999px",
               border: "1px solid var(--border-hover)",
               background: "var(--bg-hover)",

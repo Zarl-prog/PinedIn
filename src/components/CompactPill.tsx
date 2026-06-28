@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { LogicalSize } from "@tauri-apps/api/dpi";
 import { listen } from "@tauri-apps/api/event";
@@ -14,8 +14,10 @@ const EXPANDED_H = 120;
 export default function CompactPill() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [hovered, setHovered] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [timerBorderColor, setTimerBorderColor] = useState<string | null>(null);
+  const peekTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function getTimerColor(task: Task): string | null {
     if (!task.time_limit_minutes || !task.started_at) return null;
@@ -49,7 +51,11 @@ export default function CompactPill() {
   useEffect(() => {
     refresh();
     const unlisten = listen("tasks-updated", refresh);
-    return () => { unlisten.then(f => f()); };
+    return () => {
+      unlisten.then(f => f());
+      if (peekTimer.current) clearInterval(peekTimer.current);
+      if (clickTimer.current) clearTimeout(clickTimer.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -71,12 +77,44 @@ export default function CompactPill() {
 
   useEffect(() => {
     const win = getCurrentWindow();
-    if (hovered && tasks.length > 0) {
+    if (expanded && tasks.length > 0) {
       win.setSize(new LogicalSize(EXPANDED_W, EXPANDED_H));
     } else {
       win.setSize(new LogicalSize(COLLAPSED_W, COLLAPSED_H));
     }
-  }, [hovered, tasks.length]);
+  }, [expanded, tasks.length]);
+
+  function handleClick() {
+    if (!peekTimer.current) return;
+    if (clickTimer.current) return;
+    clickTimer.current = setTimeout(() => {
+      clearInterval(peekTimer.current!);
+      peekTimer.current = null;
+      setExpanded(false);
+      clickTimer.current = null;
+    }, 280);
+  }
+
+  function handleDoubleClick() {
+    if (clickTimer.current) {
+      clearTimeout(clickTimer.current);
+      clickTimer.current = null;
+    }
+    if (tasks.length === 0) return;
+    if (peekTimer.current) {
+      clearInterval(peekTimer.current);
+      peekTimer.current = null;
+      setExpanded(false);
+      return;
+    }
+    setExpanded(true);
+    setCurrentIndex(0);
+    peekTimer.current = setInterval(() => {
+      if (peekTimer.current) clearInterval(peekTimer.current);
+      peekTimer.current = null;
+      setExpanded(false);
+    }, 4000);
+  }
 
   async function handleDone() {
     if (tasks.length === 0) return;
@@ -109,13 +147,13 @@ export default function CompactPill() {
       ? "#f59e0b"
       : "#22c55e";
 
-  const isExpanded = hovered && tasks.length > 0;
+  const isExpanded = expanded && tasks.length > 0;
 
   if (isExpanded) {
     return (
       <div
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+        onClick={handleClick}
+        onDoubleClick={handleDoubleClick}
         onMouseDown={(e) => {
           if ((e.target as HTMLElement).closest("button")) return;
           getCurrentWindow().startDragging();
@@ -165,8 +203,8 @@ export default function CompactPill() {
 
   return (
     <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
       onMouseDown={(e) => {
         if ((e.target as HTMLElement).closest("button")) return;
         getCurrentWindow().startDragging();

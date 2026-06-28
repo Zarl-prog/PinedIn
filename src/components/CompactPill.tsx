@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback, useRef, type CSSProperties } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { LogicalSize } from "@tauri-apps/api/dpi";
 import { listen } from "@tauri-apps/api/event";
@@ -8,17 +7,15 @@ import type { Task } from "../lib/tauriCommands";
 import { Check, CaretLeft, CaretRight } from "@phosphor-icons/react";
 
 const COLLAPSED_W = 140;
-const COLLAPSED_H = 32;
-const EXPANDED_W = 240;
-const EXPANDED_H = 140;
+const COLLAPSED_H = 36;
+const EXPANDED_W = 260;
+const EXPANDED_H = 120;
 
 export default function CompactPill() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [expanded, setExpanded] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const [timerBorderColor, setTimerBorderColor] = useState<string | null>(null);
-  const peekTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function getTimerColor(task: Task): string | null {
     if (!task.time_limit_minutes || !task.started_at) return null;
@@ -31,43 +28,36 @@ export default function CompactPill() {
     return "#ef4444";
   }
 
-  const recalcTimerBorder = useCallback(() => {
+  const recalcTimerBorder = () => {
     const color = tasks.reduce<string | null>((acc, t) => {
       const c = getTimerColor(t);
       if (!acc && c) return c;
       return acc;
     }, null);
     setTimerBorderColor(color);
-  }, [tasks]);
+  };
 
-async function refresh() {
-     try {
-       const all = await invoke<Task[]>("get_incomplete_tasks");
-       setTasks(all);
-     } catch (e) {
-       console.error("[CompactPill] Failed to fetch tasks:", e);
-       // Show empty state - the UI already handles tasks.length === 0 case
-     }
-   }
+  async function refresh() {
+    try {
+      const all = await invoke<Task[]>("get_incomplete_tasks");
+      setTasks(all);
+    } catch (e) {
+      console.error("[CompactPill] Failed to fetch tasks:", e);
+    }
+  }
 
   useEffect(() => {
     refresh();
     const unlisten = listen("tasks-updated", refresh);
-    return () => {
-      unlisten.then(f => f());
-      if (peekTimer.current) clearInterval(peekTimer.current);
-      if (clickTimer.current) clearTimeout(clickTimer.current);
-    };
+    return () => { unlisten.then(f => f()); };
   }, []);
 
-  // Re-assert always-on-top + skip-taskbar (GNOME/Wayland workaround)
   useEffect(() => {
     invoke("reassert_window_properties");
     const timer = setTimeout(() => invoke("reassert_window_properties"), 500);
     return () => clearTimeout(timer);
   }, []);
 
-  // 1-second interval only when timed tasks exist
   useEffect(() => {
     const hasTimed = tasks.some(t => t.time_limit_minutes && t.started_at);
     if (!hasTimed) {
@@ -77,65 +67,31 @@ async function refresh() {
     recalcTimerBorder();
     const id = setInterval(recalcTimerBorder, 1000);
     return () => clearInterval(id);
-  }, [tasks, recalcTimerBorder]);
+  }, [tasks]);
 
   useEffect(() => {
     const win = getCurrentWindow();
-    if (expanded && tasks.length > 0) {
+    if (hovered && tasks.length > 0) {
       win.setSize(new LogicalSize(EXPANDED_W, EXPANDED_H));
     } else {
       win.setSize(new LogicalSize(COLLAPSED_W, COLLAPSED_H));
     }
-  }, [expanded, tasks.length]);
+  }, [hovered, tasks.length]);
 
-  function handleClick() {
-    // Expanded + click → debounced dismiss (so double-click can cancel it)
-    if (!peekTimer.current) return;
-    if (clickTimer.current) return;
-    clickTimer.current = setTimeout(() => {
-      clearInterval(peekTimer.current!);
-      peekTimer.current = null;
-      setExpanded(false);
-      clickTimer.current = null;
-    }, 280);
-  }
-
-  function handleDoubleClick() {
-    if (clickTimer.current) {
-      clearTimeout(clickTimer.current);
-      clickTimer.current = null;
-    }
+  async function handleDone() {
     if (tasks.length === 0) return;
-    if (peekTimer.current) {
-      clearInterval(peekTimer.current);
-      peekTimer.current = null;
-      setExpanded(false);
-      return;
+    const taskToComplete = tasks[currentIndex];
+    if (!taskToComplete) return;
+    const nextIndex = currentIndex >= tasks.length - 1 ? 0 : currentIndex;
+    try {
+      await invoke("complete_task", { id: taskToComplete.id });
+      await refresh();
+      setCurrentIndex(nextIndex);
+    } catch (e) {
+      console.error("[CompactPill] Failed to complete task:", e);
+      refresh().catch(() => {});
     }
-    setExpanded(true);
-    setCurrentIndex(0);
-    peekTimer.current = setInterval(() => {
-      if (peekTimer.current) clearInterval(peekTimer.current);
-      peekTimer.current = null;
-      setExpanded(false);
-    }, 4000);
   }
-
-async function handleDone() {
-     if (tasks.length === 0) return;
-     const taskToComplete = tasks[currentIndex];
-     if (!taskToComplete) return;
-     const nextIndex = currentIndex >= tasks.length - 1 ? 0 : currentIndex;
-     try {
-       await invoke("complete_task", { id: taskToComplete.id });
-       await refresh();
-       setCurrentIndex(nextIndex);
-     } catch (e) {
-       console.error("[CompactPill] Failed to complete task:", e);
-       // Still try to refresh to sync state
-       refresh().catch(() => {});
-     }
-   }
 
   function handleNext() {
     setCurrentIndex(i => (i + 1) % tasks.length);
@@ -153,102 +109,96 @@ async function handleDone() {
       ? "#f59e0b"
       : "#22c55e";
 
-  const wrapperStyle: CSSProperties = {
-    background: "transparent",
-    boxSizing: "border-box",
-    height: expanded && tasks.length > 0 ? "auto" : "100%",
-    display: "flex",
-    alignItems: "stretch",
-  };
+  const isExpanded = hovered && tasks.length > 0;
 
-  const pillStyle: React.CSSProperties = {
-    background: "var(--pill-bg, var(--card-bg, #060608))",
-    border: `1.5px solid ${timerBorderColor || "var(--pill-border, var(--card-border, #1a1a1a))"}`,
-    borderRadius: "999px",
-    boxShadow: "var(--pill-shadow, 0 4px 16px rgba(0,0,0,0.5))",
-    overflow: "hidden",
-    cursor: "pointer",
-    userSelect: "none",
-    display: "flex",
-    flexDirection: "column",
-    transition: "border-color 0.5s ease",
-    width: "100%",
-  };
-
-  return (
-    <div
-      onClick={handleClick}
-      onDoubleClick={handleDoubleClick}
-      style={wrapperStyle}
-    >
-      <div style={pillStyle}
+  if (isExpanded) {
+    return (
+      <div
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
         onMouseDown={(e) => {
-          if (peekTimer.current) return;
           if ((e.target as HTMLElement).closest("button")) return;
           getCurrentWindow().startDragging();
         }}
-      >
-        <div style={{
-          height: COLLAPSED_H - 4,
+        style={{
+          width: EXPANDED_W,
+          height: EXPANDED_H,
+          background: "var(--pill-bg, #060608)",
+          border: `1.5px solid ${timerBorderColor || "var(--pill-border, #1a1a1a)"}`,
+          borderRadius: "16px",
+          padding: "10px 14px",
           display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "6px",
-          padding: "0 14px",
-          flexShrink: 0,
-        }}>
-          {tasks.length === 0 ? (
-            <span style={{ fontSize: "11px", color: "var(--pill-text-muted, var(--card-text-muted, #444))", fontFamily: "'Geist Mono', monospace", display: "flex", alignItems: "center", gap: "4px" }}><Check size={14} weight="light" /> All clear</span>
-          ) : (
-            <>
-              <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: dotColor, flexShrink: 0 }} />
-              <span style={{ fontSize: "11px", color: "var(--pill-text, var(--card-text-primary, #ffffff))", fontFamily: "'Geist Mono', monospace", fontWeight: 600 }}>
-                {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
-              </span>
-            </>
-          )}
+          flexDirection: "column",
+          gap: "8px",
+          overflow: "hidden",
+          cursor: "grab",
+          userSelect: "none",
+          boxSizing: "border-box",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: dotColor, flexShrink: 0 }} />
+          <span style={{ fontSize: "11px", color: "var(--pill-text, #ffffff)", fontFamily: "'Geist Mono', monospace", fontWeight: 600 }}>
+            {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
+          </span>
         </div>
-
-        <AnimatePresence>
-          {expanded && tasks.length > 0 && currentTask && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.15 }}
-              style={{
-                padding: "0 12px 10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "8px",
-                borderTop: "1px solid var(--divider, #151515)",
-                overflow: "hidden",
-              }}
-            >
-              <div style={{ paddingTop: "8px" }}>
-                <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--pill-text, var(--card-text-primary, #ffffff))", fontFamily: "'Geist Mono', monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {currentTask.title}
-                </div>
-                <div style={{ fontSize: "10px", color: "var(--pill-text-muted, var(--card-text-secondary, #555))", marginTop: "2px", fontFamily: "'Geist Mono', monospace" }}>
-                  {currentIndex + 1} / {tasks.length}
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: "5px" }}>
-                <button onClick={(e) => { e.stopPropagation(); handlePrev(); }} style={{ width: "24px", height: "24px", borderRadius: "5px", border: "1px solid var(--pill-border, var(--card-border, #1a1a1a))", background: "transparent", color: "var(--pill-text-muted, var(--card-text-muted, #777))", fontSize: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <CaretLeft size={14} weight="light" />
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); handleDone(); }} style={{ flex: 1, height: "24px", borderRadius: "5px", border: "1px solid var(--btn-done-border, rgba(34,197,94,0.3))", background: "var(--btn-done-bg, rgba(34,197,94,0.1))", color: "var(--btn-done-text, #22c55e)", fontSize: "10px", fontWeight: 600, cursor: "pointer", fontFamily: "'Geist Mono', monospace" }}>
-                  <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Check size={14} weight="light" /> Done</span>
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); handleNext(); }} style={{ width: "24px", height: "24px", borderRadius: "5px", border: "1px solid var(--pill-border, var(--card-border, #1a1a1a))", background: "transparent", color: "var(--pill-text-muted, var(--card-text-muted, #777))", fontSize: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <CaretRight size={14} weight="light" />
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--pill-text, #ffffff)", fontFamily: "'Geist Mono', monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {currentTask?.title}
+        </div>
+        <div style={{ fontSize: "10px", color: "var(--pill-text-muted, #777)", fontFamily: "'Geist Mono', monospace" }}>
+          {currentIndex + 1} / {tasks.length}
+        </div>
+        <div style={{ display: "flex", gap: "5px" }}>
+          <button onClick={(e) => { e.stopPropagation(); handlePrev(); }} style={{ width: "24px", height: "24px", borderRadius: "5px", border: "1px solid var(--pill-border, #1a1a1a)", background: "transparent", color: "var(--pill-text-muted, #777)", fontSize: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <CaretLeft size={14} weight="light" />
+          </button>
+          <button onClick={(e) => { e.stopPropagation(); handleDone(); }} style={{ flex: 1, height: "24px", borderRadius: "5px", border: "1px solid var(--btn-done-border, rgba(34,197,94,0.3))", background: "var(--btn-done-bg, rgba(34,197,94,0.1))", color: "var(--btn-done-text, #22c55e)", fontSize: "10px", fontWeight: 600, cursor: "pointer", fontFamily: "'Geist Mono', monospace" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Check size={14} weight="light" /> Done</span>
+          </button>
+          <button onClick={(e) => { e.stopPropagation(); handleNext(); }} style={{ width: "24px", height: "24px", borderRadius: "5px", border: "1px solid var(--pill-border, #1a1a1a)", background: "transparent", color: "var(--pill-text-muted, #777)", fontSize: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <CaretRight size={14} weight="light" />
+          </button>
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onMouseDown={(e) => {
+        if ((e.target as HTMLElement).closest("button")) return;
+        getCurrentWindow().startDragging();
+      }}
+      style={{
+        width: COLLAPSED_W,
+        height: COLLAPSED_H,
+        background: "var(--pill-bg, #060608)",
+        border: `1.5px solid ${timerBorderColor || "var(--pill-border, #1a1a1a)"}`,
+        borderRadius: "999px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "6px",
+        cursor: "grab",
+        userSelect: "none",
+        overflow: "hidden",
+        flexShrink: 0,
+        transition: "border-color 0.5s ease",
+        boxSizing: "border-box",
+      }}
+    >
+      {tasks.length === 0 ? (
+        <span style={{ fontSize: "11px", color: "var(--pill-text-muted, #444)", fontFamily: "'Geist Mono', monospace", display: "flex", alignItems: "center", gap: "4px" }}><Check size={14} weight="light" /> All clear</span>
+      ) : (
+        <>
+          <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: dotColor, flexShrink: 0 }} />
+          <span style={{ fontSize: "11px", color: "var(--pill-text, #ffffff)", fontFamily: "'Geist Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>
+            {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
+          </span>
+        </>
+      )}
     </div>
   );
 }

@@ -8,7 +8,7 @@ import type { Task } from "../lib/tauriCommands";
 import { Check, CaretLeft, CaretRight } from "@phosphor-icons/react";
 
 const COLLAPSED_W = 140;
-const COLLAPSED_H = 40;
+const COLLAPSED_H = 32;
 const EXPANDED_W = 240;
 const EXPANDED_H = 140;
 
@@ -109,6 +109,8 @@ async function refresh() {
     if (peekTimer.current) {
       clearInterval(peekTimer.current);
       peekTimer.current = null;
+      setExpanded(false);
+      return;
     }
     setExpanded(true);
     setCurrentIndex(0);
@@ -187,7 +189,7 @@ async function handleDone() {
         }}
       >
         <div style={{
-          height: "36px",
+          height: COLLAPSED_H - 4,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",

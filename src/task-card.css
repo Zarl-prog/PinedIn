@@ -85,6 +85,14 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  will-change: auto !important;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.card-root {
+  contain: strict;
+  content-visibility: auto;
 }
 
 html::-webkit-scrollbar,
@@ -96,8 +104,9 @@ body::-webkit-scrollbar,
 html, body, #root {
   width: 308px;
   height: auto;
-  overflow: hidden;
+  overflow: hidden !important;
   background: transparent !important;
+  isolation: isolate;
 }
 
 #root {

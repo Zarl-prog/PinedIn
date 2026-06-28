@@ -278,18 +278,28 @@ export default function TaskCard({
     window.addEventListener("mouseup", onUp);
   }, []);
 
+  async function handleCollapse() {
+    setExpanded(false);
+    setShowRemindPicker(false);
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await getCurrentWindow().setSize(new LogicalSize(308, COLLAPSED_HEIGHT));
+  }
+
+  async function handleExpand() {
+    setExpanded(true);
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await getCurrentWindow().setSize(new LogicalSize(308, EXPANDED_HEIGHT));
+  }
+
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
     if (didDrag.current) return;
-    setExpanded((prev) => {
-      const next = !prev;
-      setShowRemindPicker(false);
-      getCurrentWindow().setSize(
-        new LogicalSize(308, next ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT)
-      );
-      return next;
-    });
-  }, []);
+    if (expanded) {
+      handleCollapse();
+    } else {
+      handleExpand();
+    }
+  }, [expanded]);
 
   const handleDone = useCallback(async () => {
     await invoke("complete_task", { id: taskId });
@@ -328,6 +338,7 @@ export default function TaskCard({
     >
       <motion.div
         ref={containerRef}
+        className="card-root"
         onMouseDown={handleMouseDown}
         onDoubleClick={handleDoubleClick}
         animate={controls}
@@ -480,20 +491,13 @@ export default function TaskCard({
           </div>
         </div>
 
-        <motion.div
-          initial={false}
-          animate={{
-            height: expanded ? "auto" : 0,
-            opacity: expanded ? 1 : 0,
-            scale: expanded ? 1 : 0.98,
-            marginTop: expanded ? 12 : 0
+        <div
+          style={{
+            overflow: "hidden",
+            transformOrigin: "top",
+            borderRadius: "0 0 14px 14px",
+            display: expanded ? "block" : "none",
           }}
-          transition={{
-            height: { type: "spring", stiffness: 350, damping: 35 },
-            opacity: { duration: 0.15 },
-            scale: { duration: 0.15 }
-          }}
-          style={{ overflow: "hidden", transformOrigin: "top", borderRadius: "0 0 14px 14px" }}
         >
           <div
             style={{
@@ -557,7 +561,7 @@ export default function TaskCard({
               </div>
             </motion.div>
           )}
-        </motion.div>
+        </div>
 
         {showTimeLimitBar && (
           <div

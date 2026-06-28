@@ -153,7 +153,6 @@ async function handleDone() {
 
   const wrapperStyle: CSSProperties = {
     background: "transparent",
-    padding: "2px",
     boxSizing: "border-box",
     height: expanded && tasks.length > 0 ? "auto" : "100%",
   };

@@ -46,6 +46,8 @@ function applyTheme(theme: string) {
 }
 
 (async () => {
+  document.addEventListener("contextmenu", (e) => e.preventDefault());
+
   try {
     const settings = await invoke<{ theme: string }>("get_settings");
     stopSystemTheme();

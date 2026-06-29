@@ -88,10 +88,12 @@
   will-change: auto !important;
   transform: translateZ(0);
   backface-visibility: hidden;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .card-root {
-  contain: strict;
+  contain: layout style paint;
   content-visibility: auto;
 }
 

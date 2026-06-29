@@ -62,6 +62,8 @@ interface TaskData {
 }
 
 async function main() {
+  document.addEventListener("contextmenu", (e) => e.preventDefault());
+
   try {
     const settings = await invoke<{ theme: string }>("get_settings");
     stopSystemTheme();

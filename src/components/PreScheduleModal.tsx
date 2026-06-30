@@ -21,9 +21,6 @@ export default function PreScheduleModal({ open, onClose, workspaceId }: PreSche
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [urgency, setUrgency] = useState<"low" | "medium" | "critical">(
-    "medium",
-  );
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,7 +47,6 @@ export default function PreScheduleModal({ open, onClose, workspaceId }: PreSche
   const resetForm = () => {
     setTitle("");
     setDescription("");
-    setUrgency("medium");
     setScheduledDate("");
     setScheduledTime("");
     setError(null);
@@ -87,7 +83,6 @@ export default function PreScheduleModal({ open, onClose, workspaceId }: PreSche
       await addPrescheduledTask(
         title.trim(),
         description.trim(),
-        urgency,
         localIsoString(scheduledAt),
         scheduledDate,
         null,
@@ -232,32 +227,6 @@ export default function PreScheduleModal({ open, onClose, workspaceId }: PreSche
                   className="input-field"
                   style={{ resize: "none", lineHeight: 1.5 }}
                 />
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    color: "var(--text-secondary)",
-                    marginBottom: "6px",
-                  }}
-                >
-                  Urgency
-                </label>
-                <div style={{ display: "flex", gap: "6px" }}>
-                  {(["low", "medium", "critical"] as const).map((opt) => (
-                    <button
-                      key={opt}
-                      onClick={() => setUrgency(opt)}
-                      className={`pill-toggle${urgency === opt ? " selected" : ""}`}
-                      style={{ flex: 1, textAlign: "center" }}
-                    >
-                      {opt === "critical" ? "Critical" : opt === "medium" ? "Medium" : "Low"}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               <div>

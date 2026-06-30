@@ -35,7 +35,6 @@ export default function QuickAdd() {
       await invoke<Task>("create_task", {
         title,
         description: "",
-        urgency: "critical",
         dueTime: today,
         recurrence: null,
         tags: null,

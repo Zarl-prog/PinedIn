@@ -177,9 +177,6 @@ export default function AddTaskModal({
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [urgency, setUrgency] = useState<"low" | "medium" | "critical">(
-    "medium",
-  );
   const [dueDate, setDueDate] = useState("");
   const [recurrence, setRecurrence] = useState<string | null>(null);
   const [tags, setTags] = useState<string[]>([]);
@@ -194,7 +191,6 @@ export default function AddTaskModal({
   const resetForm = () => {
     setTitle("");
     setDescription("");
-    setUrgency("medium");
     setDueDate("");
     setRecurrence(null);
     setTags([]);
@@ -209,7 +205,6 @@ export default function AddTaskModal({
     if (editTask) {
       setTitle(editTask.title);
       setDescription(editTask.description);
-      setUrgency(editTask.urgency as "low" | "medium" | "critical");
       setDueDate(editTask.due_time || "");
       setRecurrence(editTask.recurrence ?? null);
       setTags(
@@ -289,7 +284,6 @@ export default function AddTaskModal({
           editTask.id,
           title.trim(),
           description.trim(),
-          urgency,
           dueDate || "",
           recurrence,
           tagsString || null,
@@ -299,7 +293,6 @@ export default function AddTaskModal({
         await addTask(
           title.trim(),
           description.trim(),
-          urgency,
           dueDate || "",
           recurrence,
           tagsString,
@@ -458,36 +451,6 @@ export default function AddTaskModal({
                   className="input-field"
                   style={{ resize: "none", lineHeight: 1.5 }}
                 />
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    color: "var(--text-secondary)",
-                    marginBottom: "6px",
-                  }}
-                >
-                  Urgency
-                </label>
-                <div style={{ display: "flex", gap: "6px" }}>
-                  {(["low", "medium", "critical"] as const).map((opt) => (
-                    <button
-                      key={opt}
-                      onClick={() => setUrgency(opt)}
-                      className={`pill-toggle${urgency === opt ? " selected" : ""}`}
-                      style={{ flex: 1, textAlign: "center" }}
-                    >
-                      {opt === "critical"
-                        ? "Critical"
-                        : opt === "medium"
-                          ? "Medium"
-                          : "Low"}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               <div>

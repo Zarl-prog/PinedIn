@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
+import { flushSync } from "react-dom";
 import { motion, useAnimation } from "framer-motion";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { LogicalSize } from "@tauri-apps/api/dpi";
@@ -10,14 +11,12 @@ import {
   fireTimeLimitNotification,
 } from "@/lib/tauriCommands";
 import { useReminderStore } from "@/store/reminderStore";
-import UrgencyBadge from "./UrgencyBadge";
 import { Check, Bell, ClockCountdown, ArrowsClockwise } from "@phosphor-icons/react";
 
 interface TaskCardProps {
   taskId: number;
   title: string;
   description: string;
-  urgency: string;
   dueTime: string;
   createdAt: string;
   recurrence?: string | null;
@@ -60,7 +59,6 @@ export default function TaskCard({
   taskId,
   title,
   description,
-  urgency,
   dueTime,
   createdAt,
   recurrence,
@@ -115,7 +113,7 @@ export default function TaskCard({
   const controls = useAnimation();
 
   const playAttention = useCallback(async () => {
-    const amplitude = urgency === "critical" ? [-12, 12, -10, 10, -6, 6] : [-8, 8, -6, 6, -4, 4];
+    const amplitude = [-8, 8, -6, 6, -4, 4];
     await controls.start({
       x: [0, ...amplitude, 0],
       boxShadow: [
@@ -129,7 +127,7 @@ export default function TaskCard({
         boxShadow: { duration: 0.6, ease: "easeInOut" },
       },
     });
-  }, [urgency, controls]);
+  }, [controls]);
 
   useEffect(() => {
     const intervalMs = intervalSeconds * 1000;
@@ -279,9 +277,8 @@ export default function TaskCard({
   }, []);
 
   async function handleCollapse() {
-    setExpanded(false);
+    flushSync(() => setExpanded(false));
     setShowRemindPicker(false);
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     await getCurrentWindow().setSize(new LogicalSize(308, COLLAPSED_HEIGHT));
   }
 
@@ -397,7 +394,6 @@ export default function TaskCard({
                 aria-label="Task heartbeat"
                 title="Task heartbeat — blinks red once an hour"
               />
-              <UrgencyBadge urgency={(urgency as "low" | "medium" | "critical")} />
             </div>
           </div>
 
@@ -491,77 +487,78 @@ export default function TaskCard({
           </div>
         </div>
 
-        <div
-          style={{
-            overflow: "hidden",
-            transformOrigin: "top",
-            borderRadius: "0 0 14px 14px",
-            display: expanded ? "block" : "none",
-          }}
-        >
+        {expanded && (
           <div
             style={{
-              display: "flex",
-              gap: "6px",
-              padding: "0 14px 14px",
+              overflow: "hidden",
+              transformOrigin: "top",
+              borderRadius: "0 0 14px 14px",
             }}
           >
-            <button
-              className="v-action"
-              onClick={(e) => { e.stopPropagation(); handleDone(); }}
-              style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0", background: "var(--btn-done-bg)", color: "var(--btn-done-text)", borderColor: "var(--btn-done-border)" }}
+            <div
+              style={{
+                display: "flex",
+                gap: "6px",
+                padding: "0 14px 14px",
+              }}
             >
-              <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Check size={14} weight="light" /> Done</span>
-            </button>
-            <button
-              className="v-action"
-              onClick={(e) => { e.stopPropagation(); handleSnooze(); }}
-              style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0", background: "var(--btn-snooze-bg)", color: "var(--btn-snooze-text)", borderColor: "var(--btn-snooze-border, var(--border-light))" }}
-            >
-              <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><ClockCountdown size={14} weight="light" /> Snooze</span>
-            </button>
-            <button
-              className="v-action"
-              onClick={(e) => { e.stopPropagation(); handleRemindClick(e); }}
-              style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0", background: "var(--btn-remind-bg)", color: "var(--btn-remind-text)", borderColor: "var(--btn-remind-border, var(--border-light))" }}
-            >
-              <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Bell size={14} weight="light" /> Remind</span>
-            </button>
-          </div>
+              <button
+                className="v-action"
+                onClick={(e) => { e.stopPropagation(); handleDone(); }}
+                style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0", background: "var(--btn-done-bg)", color: "var(--btn-done-text)", borderColor: "var(--btn-done-border)" }}
+              >
+                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Check size={14} weight="light" /> Done</span>
+              </button>
+              <button
+                className="v-action"
+                onClick={(e) => { e.stopPropagation(); handleSnooze(); }}
+                style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0", background: "var(--btn-snooze-bg)", color: "var(--btn-snooze-text)", borderColor: "var(--btn-snooze-border, var(--border-light))" }}
+              >
+                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><ClockCountdown size={14} weight="light" /> Snooze</span>
+              </button>
+              <button
+                className="v-action"
+                onClick={(e) => { e.stopPropagation(); handleRemindClick(e); }}
+                style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0", background: "var(--btn-remind-bg)", color: "var(--btn-remind-text)", borderColor: "var(--btn-remind-border, var(--border-light))" }}
+              >
+                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Bell size={14} weight="light" /> Remind</span>
+              </button>
+            </div>
 
-          {showRemindPicker && (
-            <motion.div
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.1 }}
-              style={{ marginTop: "4px", padding: "0 14px 14px" }}
-            >
-              <div style={{ fontSize: "11px", color: "var(--text-dim-card)", marginBottom: "6px" }}>
-                Remind me in…
-              </div>
-              <div style={{ display: "flex", gap: "6px" }}>
-                {REMIND_OPTIONS.map((mins) => (
-                  <button
-                    key={mins}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemindConfirm(mins);
-                    }}
-                    className="v-action"
-                    style={{
-                      flex: 1,
-                      textAlign: "center",
-                      fontSize: "11px",
-                      padding: "7px 10px",
-                    }}
-                  >
-                    {mins < 60 ? `${mins}m` : "1h"}
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </div>
+            {showRemindPicker && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.1 }}
+                style={{ marginTop: "4px", padding: "0 14px 14px" }}
+              >
+                <div style={{ fontSize: "11px", color: "var(--text-dim-card)", marginBottom: "6px" }}>
+                  Remind me in…
+                </div>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  {REMIND_OPTIONS.map((mins) => (
+                    <button
+                      key={mins}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemindConfirm(mins);
+                      }}
+                      className="v-action"
+                      style={{
+                        flex: 1,
+                        textAlign: "center",
+                        fontSize: "11px",
+                        padding: "7px 10px",
+                      }}
+                    >
+                      {mins < 60 ? `${mins}m` : "1h"}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </div>
+        )}
 
         {showTimeLimitBar && (
           <div

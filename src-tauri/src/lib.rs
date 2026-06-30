@@ -1,5 +1,6 @@
 pub mod commands;
 pub mod db;
+pub mod mcp_server;
 pub mod notifications;
 pub mod scheduler;
 pub mod tray;
@@ -196,6 +197,10 @@ pub fn run() {
             tauri::async_runtime::spawn(async move {
                 check_for_updates(handle).await;
             });
+
+            // Start the MCP server so AI agents (Claude Desktop, Cursor, etc.)
+            // can add, list, and complete tasks via the Model Context Protocol.
+            mcp_server::start(app.handle().clone(), db_handle.clone());
 
             // Open the daily digest popup 2s after launch, but only if
             // the user has enabled it via the footer toggle.

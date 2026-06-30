@@ -26,7 +26,6 @@ export default function UndoToast() {
       await createTask(
         t.title,
         t.description,
-        t.urgency,
         t.due_time,
         t.recurrence,
         t.tags,

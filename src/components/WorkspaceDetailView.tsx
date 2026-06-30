@@ -5,7 +5,6 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useReminderStore } from "@/store/reminderStore";
 import { completeTask as completeTaskCmd, uncompleteTask as uncompleteTaskCmd, deleteTask } from "@/lib/tauriCommands";
 import type { Task } from "@/lib/tauriCommands";
-import UrgencyBadge from "./UrgencyBadge";
 import { ArrowLeft, Circle, Play, Diamond, ArrowsClockwise, Alarm, X } from "@phosphor-icons/react";
 
 interface WorkspaceDetailViewProps {
@@ -33,10 +32,6 @@ function formatCardDate(dateStr: string): string {
 }
 
 function sortTasks(a: Task, b: Task): number {
-  const urgencyOrder = { critical: 0, medium: 1, low: 2 };
-  const aOrder = urgencyOrder[a.urgency as keyof typeof urgencyOrder] ?? 3;
-  const bOrder = urgencyOrder[b.urgency as keyof typeof urgencyOrder] ?? 3;
-  if (aOrder !== bOrder) return aOrder - bOrder;
   return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
 }
 
@@ -357,7 +352,6 @@ interface ScheduledRowProps {
 }
 
 function ScheduledRow({ task, onCancel }: ScheduledRowProps) {
-  const urgency = task.urgency as "low" | "medium" | "critical";
   return (
     <div
       style={{
@@ -384,7 +378,6 @@ function ScheduledRow({ task, onCancel }: ScheduledRowProps) {
       >
         {task.title}
       </span>
-      <UrgencyBadge urgency={urgency} />
       <span
         style={{
           fontSize: "12px",
@@ -467,7 +460,6 @@ function TaskRow({ task, onComplete, onUncomplete, onDelete }: TaskRowProps) {
           <span className="task-title" style={{ fontSize: "14px", fontWeight: 500, color: "var(--text-primary)" }}>
             {task.title}
           </span>
-          <UrgencyBadge urgency={task.urgency as "low" | "medium" | "critical"} />
           {task.recurrence && (
             <span title={`Repeats ${task.recurrence}`} style={{ fontSize: "11px", color: "var(--text-dim)", display: "inline-flex", alignItems: "center" }}><ArrowsClockwise size={11} weight="light" /></span>
           )}

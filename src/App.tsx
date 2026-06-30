@@ -5,6 +5,7 @@ import { listen } from "@tauri-apps/api/event";
 import TaskList from "@/components/TaskList";
 import AddTaskModal from "@/components/AddTaskModal";
 import SettingsPanel from "@/components/SettingsPanel";
+import McpPanel from "@/components/McpPanel";
 import PreScheduleModal from "@/components/PreScheduleModal";
 import UpdateBanner from "@/components/UpdateBanner";
 import WorkspacesView from "@/components/WorkspacesView";
@@ -48,6 +49,7 @@ export default function App() {
   const isAddTaskOpen = useReminderStore((s) => s.isAddTaskOpen);
   const isSettingsOpen = useReminderStore((s) => s.isSettingsOpen);
   const isPreScheduleOpen = useReminderStore((s) => s.isPreScheduleOpen);
+  const isMcpOpen = useReminderStore((s) => s.isMcpOpen);
   const editingTask = useReminderStore((s) => s.editingTask);
   const isPaused = useReminderStore((s) => s.isPaused);
 
@@ -56,6 +58,7 @@ export default function App() {
   const setAddTaskOpen = useReminderStore.getState().setAddTaskOpen;
   const setSettingsOpen = useReminderStore.getState().setSettingsOpen;
   const setPreScheduleOpen = useReminderStore.getState().setPreScheduleOpen;
+  const setMcpOpen = useReminderStore.getState().setMcpOpen;
   const setEditingTask = useReminderStore.getState().setEditingTask;
   const togglePaused = useReminderStore.getState().togglePaused;
 
@@ -141,6 +144,9 @@ export default function App() {
       if (isPreScheduleOpen) {
         setPreScheduleOpen(false);
       }
+      if (isMcpOpen) {
+        setMcpOpen(false);
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -148,8 +154,10 @@ export default function App() {
     isAddTaskOpen,
     isSettingsOpen,
     isPreScheduleOpen,
+    isMcpOpen,
     setAddTaskOpen,
     setSettingsOpen,
+    setMcpOpen,
     setPreScheduleOpen,
     setEditingTask,
   ]);
@@ -253,6 +261,9 @@ export default function App() {
   function handleTabChange(tab: AppTab) {
     setActiveTab(tab);
     setWorkspaceContext(null);
+    if (tab === "tasks") {
+      invoke("deactivate_workspace").catch(() => {});
+    }
   }
 
   function handleWorkspaceOpen(id: number, name: string) {
@@ -320,6 +331,25 @@ export default function App() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <button
+            onClick={() => setMcpOpen(true)}
+            title="MCP Server"
+            className="feature-btn ghost"
+            style={{
+              padding: "4px",
+              borderRadius: "4px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#22c55e",
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
+          </button>
           <div style={{ position: "relative" }}>
             <button
               onClick={() => setSettingsOpen(true)}
@@ -763,6 +793,11 @@ export default function App() {
         open={isSettingsOpen}
         onClose={() => setSettingsOpen(false)}
         updateAvailable={updateAvailable}
+      />
+
+      <McpPanel
+        open={isMcpOpen}
+        onClose={() => setMcpOpen(false)}
       />
 
       {/* Update Modal */}

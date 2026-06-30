@@ -103,11 +103,7 @@ export default function CompactPill() {
 
   const currentTask = tasks[currentIndex];
 
-  const dotColor = tasks.some(t => t.urgency === "critical")
-    ? "#ef4444"
-    : tasks.some(t => t.urgency === "medium")
-      ? "#f59e0b"
-      : "#22c55e";
+  const dotColor = "#22c55e";
 
   const isExpanded = hovered && tasks.length > 0;
 

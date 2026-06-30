@@ -6,7 +6,6 @@ export interface Task {
   id?: number | null;
   title: string;
   description: string;
-  urgency: "low" | "medium" | "critical";
   due_time: string;
   completed: boolean;
   created_at: string;
@@ -28,7 +27,6 @@ export interface AppSettings {
 export async function createTask(
   title: string,
   description: string,
-  urgency: string,
   due_time: string,
   recurrence?: string | null,
   tags?: string | null,
@@ -38,7 +36,6 @@ export async function createTask(
   return invoke<Task>("create_task", {
     title,
     description,
-    urgency,
     dueTime: due_time,
     recurrence: recurrence ?? null,
     tags: tags ?? null,
@@ -59,7 +56,6 @@ export async function updateTask(
   id: number,
   title: string,
   description: string,
-  urgency: string,
   due_time: string,
   recurrence?: string | null,
   tags?: string | null,
@@ -70,7 +66,6 @@ export async function updateTask(
     id,
     title,
     description,
-    urgency,
     dueTime: due_time,
     recurrence: recurrence ?? null,
     tags: tags ?? null,
@@ -192,7 +187,6 @@ export async function getDailyDigest(): Promise<DigestData> {
 export async function addPrescheduledTask(
   title: string,
   body: string,
-  urgency: string,
   scheduledAt: string,
   dueDate: string | null,
   timeLimitMinutes: number | null,
@@ -202,7 +196,6 @@ export async function addPrescheduledTask(
   return invoke<number>("add_presceduled_task", {
     title,
     body,
-    urgency,
     scheduledAt,
     dueDate,
     timeLimitMinutes,

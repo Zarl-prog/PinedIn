@@ -8,7 +8,6 @@ import {
   type Task,
   closeTaskCard,
 } from "@/lib/tauriCommands";
-import UrgencyBadge from "./UrgencyBadge";
 import Skeleton from "./ui/Skeleton";
 
 interface TaskListProps {
@@ -376,7 +375,6 @@ function TaskCardItem({
   onRemind,
   completed = false,
 }: TaskCardItemProps) {
-  const urgency = task.urgency as "low" | "medium" | "critical";
   const hasDueDate = task.due_time && task.due_time.length > 0;
   const hasRecurrence = !!task.recurrence;
   const tags = task.tags
@@ -447,7 +445,6 @@ function TaskCardItem({
                 </span>
               )}
             </div>
-              <UrgencyBadge urgency={urgency} />
             {/* Three-dot context menu trigger */}
             <div ref={menuRef} style={{ position: "relative", flexShrink: 0 }}>
               <button
@@ -680,7 +677,6 @@ function TaskCardItem({
 // ─── Scheduled Row ───────────────────────────────────────────────────────────
 
 function ScheduledRow({ task, onCancel }: { task: Task; onCancel: () => void }) {
-  const urgency = task.urgency as "low" | "medium" | "critical";
   return (
     <motion.div
       layout
@@ -713,7 +709,6 @@ function ScheduledRow({ task, onCancel }: { task: Task; onCancel: () => void }) 
       >
         {task.title}
       </span>
-      <UrgencyBadge urgency={urgency} />
       <span
         style={{
           fontSize: "12px",

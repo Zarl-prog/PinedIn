@@ -51,7 +51,6 @@ interface TaskData {
   id?: number | null;
   title: string;
   description: string;
-  urgency: string;
   due_time: string;
   completed: boolean;
   created_at: string;
@@ -94,7 +93,6 @@ async function main() {
           taskId={taskId}
           title={task.title}
           description={task.description}
-          urgency={task.urgency}
           dueTime={task.due_time}
           createdAt={task.created_at}
           recurrence={task.recurrence}

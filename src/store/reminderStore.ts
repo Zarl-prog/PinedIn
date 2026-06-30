@@ -35,6 +35,7 @@ export interface OverlayState {
   isAddTaskOpen: boolean;
   isSettingsOpen: boolean;
   isPreScheduleOpen: boolean;
+  isMcpOpen: boolean;
   editingTask: Task | null;
   activeTags: string[];
   isPaused: boolean;
@@ -46,7 +47,6 @@ export interface OverlayState {
   addTask: (
     title: string,
     description: string,
-    urgency: Task["urgency"],
     dueTime: string,
     recurrence?: string | null,
     tags?: string,
@@ -57,7 +57,6 @@ export interface OverlayState {
     id: number,
     title: string,
     description: string,
-    urgency: Task["urgency"],
     dueTime: string,
     recurrence?: string | null,
     tags?: string | null,
@@ -73,7 +72,6 @@ export interface OverlayState {
   addPrescheduledTask: (
     title: string,
     body: string,
-    urgency: string,
     scheduledAt: string,
     dueDate: string | null,
     timeLimitMinutes: number | null,
@@ -92,6 +90,7 @@ export interface OverlayState {
   // Actions - UI
   setAddTaskOpen: (open: boolean) => void;
   setSettingsOpen: (open: boolean) => void;
+  setMcpOpen: (open: boolean) => void;
   setPreScheduleOpen: (open: boolean) => void;
   setEditingTask: (task: Task | null) => void;
   setOverlayVisible: (visible: boolean) => void;
@@ -115,6 +114,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
   isAddTaskOpen: false,
   isSettingsOpen: false,
   isPreScheduleOpen: false,
+  isMcpOpen: false,
   editingTask: null,
   activeTags: [],
   isPaused: false,
@@ -147,7 +147,6 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
   addTask: async (
     title,
     description,
-    urgency,
     dueTime,
     recurrence = null,
     tags = "",
@@ -158,7 +157,6 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
       const newTask = await createTask(
         title,
         description,
-        urgency,
         dueTime,
         recurrence,
         tags || null,
@@ -187,7 +185,6 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
     id,
     title,
     description,
-    urgency,
     dueTime,
     recurrence = null,
     tags = null,
@@ -217,7 +214,6 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
         id,
         title,
         description,
-        urgency,
         dueTime,
         recurrence,
         tags,
@@ -227,7 +223,6 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
       const updatedFields = {
         title,
         description,
-        urgency: urgency as Task["urgency"],
         due_time: dueTime,
         recurrence,
         tags,
@@ -373,7 +368,6 @@ completeTask: async (id) => {
   addPrescheduledTask: async (
     title,
     body,
-    urgency,
     scheduledAt,
     dueDate,
     timeLimitMinutes,
@@ -384,7 +378,6 @@ completeTask: async (id) => {
       const id = await addPrescheduledTaskCmd(
         title,
         body,
-        urgency,
         scheduledAt,
         dueDate,
         timeLimitMinutes,
@@ -456,6 +449,7 @@ completeTask: async (id) => {
 
   setAddTaskOpen: (open: boolean) => set({ isAddTaskOpen: open, editingTask: open ? get().editingTask : null }),
   setSettingsOpen: (open: boolean) => set({ isSettingsOpen: open }),
+  setMcpOpen: (open: boolean) => set({ isMcpOpen: open }),
   setPreScheduleOpen: (open: boolean) => set({ isPreScheduleOpen: open }),
   setEditingTask: (task: Task | null) => set({ editingTask: task, isAddTaskOpen: !!task }),
   setOverlayVisible: (visible) => set({ overlayVisible: visible }),
@@ -467,11 +461,6 @@ completeTask: async (id) => {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function sortTasks(a: Task, b: Task): number {
-  const urgencyOrder = { critical: 0, medium: 1, low: 2 };
-  const aOrder = urgencyOrder[a.urgency as keyof typeof urgencyOrder] ?? 3;
-  const bOrder = urgencyOrder[b.urgency as keyof typeof urgencyOrder] ?? 3;
-
-  if (aOrder !== bOrder) return aOrder - bOrder;
   return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
 }
 

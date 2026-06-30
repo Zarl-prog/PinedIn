@@ -481,44 +481,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   transform: scale(1.02);
 }
 
-/* ─── Badge Styles (.badge) ─────────────────────────────────────────────── */
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: var(--bg-badge);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-light);
-}
-
-.badge.critical {
-  background: var(--bg-badge);
-  color: var(--text-primary);
-  border-color: var(--border-strong);
-}
-
-.badge.high {
-  background: var(--bg-badge);
-  color: var(--text-secondary);
-  border-color: var(--border-hover);
-}
-
-.badge.medium {
-  background: var(--bg-badge);
-  color: var(--text-muted);
-  border-color: var(--border-light);
-}
-
-.badge.low {
-  background: var(--bg-badge);
-  color: var(--text-muted);
-  border-color: var(--border);
-}
-
 /* ─── Progress Bar Styles ───────────────────────────────────────────────── */
 
 .progress-track {

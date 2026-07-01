@@ -90,7 +90,9 @@
   backface-visibility: hidden;
 }
 
-
+.card-root {
+  contain: layout style;
+}
 
 html::-webkit-scrollbar,
 body::-webkit-scrollbar,

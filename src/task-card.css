@@ -88,14 +88,9 @@
   will-change: auto !important;
   transform: translateZ(0);
   backface-visibility: hidden;
-  -webkit-user-select: none;
-  user-select: none;
 }
 
-.card-root {
-  contain: layout style paint;
-  content-visibility: auto;
-}
+
 
 html::-webkit-scrollbar,
 body::-webkit-scrollbar,
@@ -129,24 +124,7 @@ body {
   display: block;
 }
 
-/* ─── Floating Card Styles (.v-float) ──────────────────────────────────── */
 
-.v-float {
-  background: var(--bg-float-card);
-  border: 1px solid var(--border-card);
-  border-radius: 14px;
-  padding: 12px 14px;
-  transition: border-color 0.15s ease, background 0.15s ease;
-  cursor: grab;
-  user-select: none;
-  width: 100%;
-  position: relative;
-}
-
-.v-float:hover {
-  border-color: var(--border-card-hover);
-  background: var(--bg-float-card-hover);
-}
 
 /* ─── Action Button Styles (.v-action) ──────────────────────────────────── */
 

@@ -97,8 +97,6 @@ async function main() {
           createdAt={task.created_at}
           recurrence={task.recurrence}
           tags={task.tags}
-          timeLimitMinutes={task.time_limit_minutes}
-          startedAt={task.started_at}
         />
       </React.StrictMode>
     );

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { LogicalSize } from "@tauri-apps/api/dpi";
 import { listen } from "@tauri-apps/api/event";
@@ -10,12 +10,16 @@ const COLLAPSED_W = 140;
 const COLLAPSED_H = 36;
 const EXPANDED_W = 260;
 const EXPANDED_H = 120;
+const AUTO_CLOSE_MS = 3000;
 
 export default function CompactPill() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [hovered, setHovered] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [timerBorderColor, setTimerBorderColor] = useState<string | null>(null);
+  const didDrag = useRef(false);
+  const mouseDownPos = useRef({ x: 0, y: 0 });
+  const autoCloseRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function getTimerColor(task: Task): string | null {
     if (!task.time_limit_minutes || !task.started_at) return null;
@@ -71,12 +75,59 @@ export default function CompactPill() {
 
   useEffect(() => {
     const win = getCurrentWindow();
-    if (hovered && tasks.length > 0) {
+    if (expanded) {
       win.setSize(new LogicalSize(EXPANDED_W, EXPANDED_H));
     } else {
       win.setSize(new LogicalSize(COLLAPSED_W, COLLAPSED_H));
     }
-  }, [hovered, tasks.length]);
+  }, [expanded]);
+
+  useEffect(() => {
+    if (!expanded) {
+      if (autoCloseRef.current) clearTimeout(autoCloseRef.current);
+      autoCloseRef.current = null;
+      return;
+    }
+    autoCloseRef.current = setTimeout(() => {
+      setExpanded(false);
+      autoCloseRef.current = null;
+    }, AUTO_CLOSE_MS);
+    return () => {
+      if (autoCloseRef.current) clearTimeout(autoCloseRef.current);
+    };
+  }, [expanded]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+    didDrag.current = false;
+    mouseDownPos.current = { x: e.clientX, y: e.clientY };
+
+    let dragInitiated = false;
+    const cleanup = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    const onMove = async (me: MouseEvent) => {
+      const dx = Math.abs(me.clientX - mouseDownPos.current.x);
+      const dy = Math.abs(me.clientY - mouseDownPos.current.y);
+      if ((dx > 6 || dy > 6) && !dragInitiated) {
+        dragInitiated = true;
+        didDrag.current = true;
+        try { await getCurrentWindow().startDragging(); }
+        catch { didDrag.current = false; }
+        finally { cleanup(); }
+      }
+    };
+    const onUp = () => cleanup();
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }, []);
+
+  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+    if (didDrag.current) return;
+    setExpanded((prev) => !prev);
+  }, []);
 
   async function handleDone() {
     if (tasks.length === 0) return;
@@ -102,20 +153,13 @@ export default function CompactPill() {
   }
 
   const currentTask = tasks[currentIndex];
-
   const dotColor = "#22c55e";
 
-  const isExpanded = hovered && tasks.length > 0;
-
-  if (isExpanded) {
+  if (expanded && tasks.length > 0) {
     return (
       <div
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        onMouseDown={(e) => {
-          if ((e.target as HTMLElement).closest("button")) return;
-          getCurrentWindow().startDragging();
-        }}
+        onMouseDown={handleMouseDown}
+        onDoubleClick={handleDoubleClick}
         style={{
           width: EXPANDED_W,
           height: EXPANDED_H,
@@ -161,12 +205,8 @@ export default function CompactPill() {
 
   return (
     <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onMouseDown={(e) => {
-        if ((e.target as HTMLElement).closest("button")) return;
-        getCurrentWindow().startDragging();
-      }}
+      onMouseDown={handleMouseDown}
+      onDoubleClick={handleDoubleClick}
       style={{
         width: COLLAPSED_W,
         height: COLLAPSED_H,

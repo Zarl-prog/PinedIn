@@ -1,11 +1,34 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { LogicalSize } from "@tauri-apps/api/dpi";
 import { invoke } from "@tauri-apps/api/core";
+import { Check, Bell, ClockCountdown, ArrowsClockwise } from "@phosphor-icons/react";
 
+const REMIND_OPTIONS = [5, 15, 30, 60] as const;
 const COLLAPSED_HEIGHT = 120;
-const EXPANDED_HEIGHT = 180;
+const EXPANDED_HEIGHT = 192;
+
+function getHoursAgo(createdAt: string): string {
+  const diff = Date.now() - new Date(createdAt).getTime();
+  const h = Math.floor(diff / 3600000);
+  return h < 1 ? "< 1h" : `${h}h`;
+}
+
+function formatCardDate(dateStr: string): string {
+  if (!dateStr) return "";
+  const due = new Date(dateStr + "T00:00:00");
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diff = due.getTime() - today.getTime();
+  if (diff === 0) return "Today";
+  if (diff === 86400000) return "Tomorrow";
+  if (diff === -86400000) return "Yesterday";
+  const days = Math.round(diff / 86400000);
+  if (days < -1) return `${Math.abs(days)}d overdue`;
+  if (days > 1) return `In ${days}d`;
+  return due.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
 
 export default function TaskCard({
   taskId,
@@ -15,6 +38,8 @@ export default function TaskCard({
   createdAt,
   recurrence,
   tags,
+  timeLimitMinutes,
+  startedAt,
 }: {
   taskId: number;
   title: string;
@@ -23,21 +48,95 @@ export default function TaskCard({
   createdAt: string;
   recurrence?: string | null;
   tags?: string | null;
+  timeLimitMinutes?: number | null;
+  startedAt?: string | null;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [showRemindPicker, setShowRemindPicker] = useState(false);
   const didDrag = useRef(false);
   const mouseDownPos = useRef({ x: 0, y: 0 });
+  const liveDotRef = useRef<HTMLSpanElement>(null);
+  const notifiedRef = useRef(false);
 
   useEffect(() => {
     getCurrentWindow().setSize(new LogicalSize(308, COLLAPSED_HEIGHT));
     invoke("reassert_window_properties");
   }, []);
 
+  useEffect(() => {
+    const dot = liveDotRef.current;
+    if (!dot) return;
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    const alert = () => {
+      dot.classList.remove("live");
+      dot.classList.add("alert");
+      timeout = setTimeout(() => {
+        dot.classList.remove("alert");
+        dot.classList.add("live");
+        timeout = null;
+      }, 60000);
+    };
+    const interval = setInterval(alert, 3600000);
+    return () => {
+      clearInterval(interval);
+      if (timeout) clearTimeout(timeout);
+    };
+  }, []);
+
+  const tagList = tags?.split(",").map((t) => t.trim()).filter(Boolean) ?? [];
+  const hasRecurrence = !!recurrence;
+
+  const progressPercent = useMemo(() => {
+    if (!dueTime) return 0;
+    const due = new Date(dueTime + "T23:59:59").getTime();
+    const now = Date.now();
+    const created = new Date(createdAt).getTime();
+    const total = due - created;
+    const elapsed = now - created;
+    if (total <= 0) return 100;
+    return Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
+  }, [dueTime, createdAt]);
+
+  const [tlProgress, setTlProgress] = useState(100);
+  const [tlColor, setTlColor] = useState("var(--card-progress-fill, var(--progress-fill-card))");
+  const [tlFlash, setTlFlash] = useState(false);
+
+  useEffect(() => {
+    if (!timeLimitMinutes || !startedAt) return;
+    const calc = () => {
+      const total = timeLimitMinutes * 60000;
+      const elapsed = Date.now() - new Date(startedAt).getTime();
+      const remaining = Math.max(0, total - elapsed);
+      const pct = (remaining / total) * 100;
+      setTlProgress(pct);
+      if (pct > 50) setTlColor("var(--card-progress-fill, var(--progress-fill-card))");
+      else if (pct > 25) setTlColor("#f59e0b");
+      else setTlColor("#ef4444");
+      if (pct === 0 && !notifiedRef.current) {
+        notifiedRef.current = true;
+        invoke("notify", { title: "Time limit reached", body: `"${title}" time is up` });
+      }
+    };
+    calc();
+    const interval = setInterval(calc, 1000);
+    return () => clearInterval(interval);
+  }, [timeLimitMinutes, startedAt, taskId, title]);
+
+  useEffect(() => {
+    if (tlProgress > 0 && tlProgress <= 10) {
+      const t = setInterval(() => setTlFlash((f) => !f), 500);
+      return () => clearInterval(t);
+    }
+    setTlFlash(false);
+  }, [tlProgress]);
+
+  const finalBarColor = tlProgress <= 10 ? (tlFlash ? "#ef4444" : "#7f1d1d") : tlColor;
+  const showTimeLimitBar = !!timeLimitMinutes && !!startedAt;
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
     didDrag.current = false;
     mouseDownPos.current = { x: e.clientX, y: e.clientY };
-
     let dragInitiated = false;
     const cleanup = () => {
       window.removeEventListener("mousemove", onMove);
@@ -64,6 +163,8 @@ export default function TaskCard({
     if (didDrag.current) return;
     const next = !expanded;
     setExpanded(next);
+    if (!next) setShowRemindPicker(false);
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     await getCurrentWindow().setSize(new LogicalSize(308, next ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT));
   }, [expanded]);
 
@@ -76,11 +177,9 @@ export default function TaskCard({
     await invoke("snooze_task", { id: taskId });
   }, [taskId]);
 
-  const handleRemind = useCallback(async () => {
-    await invoke("remind_task", { id: taskId, minutes: 15 });
+  const handleRemindConfirm = useCallback(async (minutes: number) => {
+    await invoke("remind_task", { id: taskId, minutes });
   }, [taskId]);
-
-  const tagList = tags?.split(",").map((t) => t.trim()).filter(Boolean) ?? [];
 
   return (
     <motion.div
@@ -96,17 +195,40 @@ export default function TaskCard({
         overflow: "hidden",
         cursor: "grab",
         userSelect: "none",
+        position: "relative",
       }}
     >
+      <div style={{
+        position: "absolute",
+        left: 0, top: 0, bottom: 0,
+        width: "3px",
+        background: "var(--left-accent, transparent)",
+        borderRadius: "3px 0 0 3px",
+      }} />
+
       <div style={{ padding: "12px 14px" }}>
-        <div style={{ fontSize: "13px", fontWeight: 500, color: "var(--text-primary-card)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {title}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <span style={{
+            fontSize: "13px", fontWeight: 500, color: "var(--text-primary-card)",
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            flex: 1, marginRight: "8px", display: "flex", alignItems: "center", gap: "4px",
+          }}>
+            {title}
+            {hasRecurrence && (
+              <span title={`Repeats ${recurrence}`} style={{ fontSize: "11px", color: "var(--text-dim-card)", flexShrink: 0 }}>
+                <ArrowsClockwise size={12} weight="light" />
+              </span>
+            )}
+          </span>
+          <span ref={liveDotRef} className="dot live" aria-label="Task heartbeat" />
         </div>
+
         {description && (
-          <p style={{ fontSize: "11px", color: "var(--text-dim-card)", marginTop: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <p style={{ fontSize: "11px", color: "var(--text-dim-card)", marginTop: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "160px" }}>
             {description}
           </p>
         )}
+
         {tagList.length > 0 && (
           <div style={{ display: "flex", gap: "4px", marginTop: "6px", flexWrap: "wrap" }}>
             {tagList.map((tag) => (
@@ -116,22 +238,69 @@ export default function TaskCard({
             ))}
           </div>
         )}
+
+        {dueTime && (
+          <div style={{ display: "flex", alignItems: "center", gap: "4px", marginTop: "6px", fontSize: "11px", color: "var(--text-dim-card)" }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim-card)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+            <span>{formatCardDate(dueTime)}</span>
+          </div>
+        )}
+
+        {createdAt && (
+          <div style={{ fontSize: "10px", color: "var(--text-faint-card)", marginTop: "2px", fontFamily: "'Geist Mono', monospace" }}>
+            {getHoursAgo(createdAt)}
+          </div>
+        )}
+
+        <div style={{ width: "100%", height: "1px", background: "var(--card-progress-track, var(--progress-track-card))", marginTop: "8px", borderRadius: "2px", overflow: "hidden" }}>
+          <div style={{ width: `${progressPercent}%`, height: "100%", background: "var(--card-progress-fill, var(--progress-fill-card))", transition: "width 0.4s ease", borderRadius: "2px" }} />
+        </div>
       </div>
 
       {expanded && (
-        <div style={{ padding: "0 14px 14px", display: "flex", gap: "6px" }}>
-          <button className="v-action" onClick={(e) => { e.stopPropagation(); handleDone(); }}
-            style={{ flex: 1, fontSize: "11px", padding: "8px 0", background: "var(--btn-done-bg)", color: "var(--btn-done-text)", border: "1px solid var(--btn-done-border)", borderRadius: "8px", cursor: "pointer", textAlign: "center" }}>
-            Done
-          </button>
-          <button className="v-action" onClick={(e) => { e.stopPropagation(); handleSnooze(); }}
-            style={{ flex: 1, fontSize: "11px", padding: "8px 0", background: "var(--btn-snooze-bg)", color: "var(--btn-snooze-text)", border: "1px solid var(--btn-snooze-border, var(--border-light))", borderRadius: "8px", cursor: "pointer", textAlign: "center" }}>
-            Snooze
-          </button>
-          <button className="v-action" onClick={(e) => { e.stopPropagation(); handleRemind(); }}
-            style={{ flex: 1, fontSize: "11px", padding: "8px 0", background: "var(--btn-remind-bg)", color: "var(--btn-remind-text)", border: "1px solid var(--btn-remind-border, var(--border-light))", borderRadius: "8px", cursor: "pointer", textAlign: "center" }}>
-            Remind
-          </button>
+        <div>
+          <div style={{ padding: "0 14px 14px", display: "flex", gap: "6px" }}>
+            <button className="v-action" onClick={(e) => { e.stopPropagation(); handleDone(); }}
+              style={{ flex: 1, fontSize: "11px", padding: "8px 0", background: "var(--btn-done-bg)", color: "var(--btn-done-text)", border: "1px solid var(--btn-done-border)", borderRadius: "8px", cursor: "pointer", textAlign: "center" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Check size={14} weight="light" /> Done</span>
+            </button>
+            <button className="v-action" onClick={(e) => { e.stopPropagation(); handleSnooze(); }}
+              style={{ flex: 1, fontSize: "11px", padding: "8px 0", background: "var(--btn-snooze-bg)", color: "var(--btn-snooze-text)", border: "1px solid var(--btn-snooze-border, var(--border-light))", borderRadius: "8px", cursor: "pointer", textAlign: "center" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><ClockCountdown size={14} weight="light" /> Snooze</span>
+            </button>
+            <button className="v-action" onClick={(e) => { e.stopPropagation(); setShowRemindPicker((p) => !p); }}
+              style={{ flex: 1, fontSize: "11px", padding: "8px 0", background: "var(--btn-remind-bg)", color: "var(--btn-remind-text)", border: "1px solid var(--btn-remind-border, var(--border-light))", borderRadius: "8px", cursor: "pointer", textAlign: "center" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Bell size={14} weight="light" /> Remind</span>
+            </button>
+          </div>
+
+          {showRemindPicker && (
+            <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.1 }}
+              style={{ padding: "0 14px 14px" }}>
+              <div style={{ fontSize: "11px", color: "var(--text-dim-card)", marginBottom: "6px" }}>Remind me in…</div>
+              <div style={{ display: "flex", gap: "6px" }}>
+                {REMIND_OPTIONS.map((mins) => (
+                  <button key={mins} onClick={(e) => { e.stopPropagation(); handleRemindConfirm(mins); }}
+                    className="v-action"
+                    style={{ flex: 1, fontSize: "11px", padding: "7px 10px", cursor: "pointer" }}>
+                    {mins < 60 ? `${mins}m` : "1h"}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </div>
+      )}
+
+      {showTimeLimitBar && (
+        <div style={{ width: "100%", height: "4px", background: "var(--card-border, var(--border-card))", borderRadius: "0 0 14px 14px", overflow: "hidden" }}>
+          <motion.div
+            animate={{ width: `${tlProgress}%`, backgroundColor: finalBarColor }}
+            transition={{ duration: 0.8, ease: "linear" }}
+            style={{ height: "100%" }}
+          />
         </div>
       )}
     </motion.div>

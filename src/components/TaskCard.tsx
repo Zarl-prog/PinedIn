@@ -1,16 +1,8 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
-import { flushSync } from "react-dom";
-import { motion, useAnimation } from "framer-motion";
+import { motion } from "framer-motion";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { LogicalSize } from "@tauri-apps/api/dpi";
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
-import {
-  getShakeInterval,
-  getShakeEnabled,
-  fireTimeLimitNotification,
-} from "@/lib/tauriCommands";
-import { useReminderStore } from "@/store/reminderStore";
 import { Check, Bell, ClockCountdown, ArrowsClockwise } from "@phosphor-icons/react";
 
 interface TaskCardProps {
@@ -63,91 +55,16 @@ export default function TaskCard({
   createdAt,
   recurrence,
   tags,
-  timeLimitMinutes,
-  startedAt,
 }: TaskCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showRemindPicker, setShowRemindPicker] = useState(false);
-  const [hovered, setHovered] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const liveDotRef = useRef<HTMLSpanElement>(null);
-  const expandedRef = useRef(expanded);
-  expandedRef.current = expanded;
 
-  // ─── Shake interval — loaded from DB, updated live via event ────────────
-  const [intervalSeconds, setIntervalSeconds] = useState(30);
-  const [shakeEnabled, setShakeEnabled] = useState(true);
-
-  useEffect(() => {
-    getShakeInterval()
-      .then((s) => setIntervalSeconds(s))
-      .catch(() => {});
-    const unlisten = listen<number>("shake_interval_updated", (e) => {
-      setIntervalSeconds(e.payload);
-    });
-    return () => {
-      unlisten.then((f) => f());
-    };
-  }, []);
-
-  useEffect(() => {
-    getShakeEnabled()
-      .then(setShakeEnabled)
-      .catch(() => {});
-    const unlisten = listen<boolean>("shake_enabled_updated", (e) => {
-      setShakeEnabled(e.payload);
-    });
-    return () => {
-      unlisten.then((f) => f());
-    };
-  }, []);
-
-  // Re-assert always-on-top + skip-taskbar after mount (GNOME/Wayland needs
-  // the window to be fully realized before it accepts these hints)
   useEffect(() => {
     invoke("reassert_window_properties");
     const timer = setTimeout(() => invoke("reassert_window_properties"), 500);
     return () => clearTimeout(timer);
   }, []);
-
-  const controls = useAnimation();
-
-  const playAttention = useCallback(async () => {
-    const amplitude = [-8, 8, -6, 6, -4, 4];
-    await controls.start({
-      x: [0, ...amplitude, 0],
-      boxShadow: [
-        "0 0 0px var(--shake-glow, rgba(255,255,255,0))",
-        "0 0 20px var(--shake-glow, rgba(255,255,255,0.4))",
-        "0 0 10px var(--shake-glow, rgba(255,255,255,0.2))",
-        "0 0 0px var(--shake-glow, rgba(255,255,255,0))",
-      ],
-      transition: {
-        x: { duration: 0.4, ease: "easeInOut" },
-        boxShadow: { duration: 0.6, ease: "easeInOut" },
-      },
-    });
-  }, [controls]);
-
-  useEffect(() => {
-    const intervalMs = intervalSeconds * 1000;
-    const interval = setInterval(() => {
-      if (expandedRef.current) return;
-      if (useReminderStore.getState().isPaused) return;
-      if (!shakeEnabled) return;
-      playAttention();
-    }, intervalMs);
-    return () => clearInterval(interval);
-  }, [intervalSeconds, playAttention, shakeEnabled]);
-
-  useEffect(() => {
-    const t = setTimeout(() => {
-      if (useReminderStore.getState().isPaused) return;
-      if (!shakeEnabled) return;
-      playAttention();
-    }, 3000);
-    return () => clearTimeout(t);
-  }, [shakeEnabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const hasRecurrence = !!recurrence;
   const tagList = tags
@@ -158,7 +75,6 @@ export default function TaskCard({
     if (!dueTime) return 0;
     const due = new Date(dueTime + "T23:59:59").getTime();
     const now = Date.now();
-    // Use the task's actual creation time so the bar shows true elapsed progress
     const created = new Date(createdAt).getTime();
     const total = due - created;
     const elapsed = now - created;
@@ -166,75 +82,8 @@ export default function TaskCard({
     return Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
   }, [dueTime, createdAt]);
 
-  const [progress, setProgress] = useState(100);
-  const [barColor, setBarColor] = useState("var(--card-progress-fill, var(--progress-fill-card))");
-  const [flash, setFlash] = useState(false);
-  const notifiedRef = useRef(false);
-
-  useEffect(() => {
-    if (!timeLimitMinutes || !startedAt) return;
-
-    function calculate() {
-      const totalMs = timeLimitMinutes! * 60 * 1000;
-      const startedAtMs = new Date(startedAt!).getTime();
-      const now = Date.now();
-      const elapsed = now - startedAtMs;
-      const remaining = Math.max(0, totalMs - elapsed);
-      const pct = (remaining / totalMs) * 100;
-
-      setProgress(pct);
-
-      if (pct > 50) setBarColor("var(--card-progress-fill, var(--progress-fill-card))");
-      else if (pct > 25) setBarColor("#f59e0b");
-      else setBarColor("#ef4444");
-
-      if (pct === 0 && !notifiedRef.current) {
-        notifiedRef.current = true;
-        fireTimeLimitNotification(taskId, title).catch(() => {});
-      }
-    }
-
-    calculate();
-    const interval = setInterval(calculate, 1000);
-    return () => clearInterval(interval);
-  }, [timeLimitMinutes, startedAt, taskId, title]);
-
-  useEffect(() => {
-    if (progress <= 10 && progress > 0) {
-      const t = setInterval(() => setFlash((f) => !f), 500);
-      return () => clearInterval(t);
-    }
-    setFlash(false);
-  }, [progress]);
-
-  const finalBarColor = progress <= 10 ? (flash ? "#ef4444" : "#7f1d1d") : barColor;
-  const showTimeLimitBar = !!timeLimitMinutes && !!startedAt;
-
   useEffect(() => {
     getCurrentWindow().setSize(new LogicalSize(308, COLLAPSED_HEIGHT));
-  }, []);
-
-  useEffect(() => {
-    const dot = liveDotRef.current;
-    if (!dot) return;
-
-    let alertTimeout: ReturnType<typeof setTimeout> | null = null;
-
-    const startAlert = () => {
-      dot.classList.remove("live");
-      dot.classList.add("alert");
-      alertTimeout = setTimeout(() => {
-        dot.classList.remove("alert");
-        dot.classList.add("live");
-        alertTimeout = null;
-      }, 60_000);
-    };
-
-    const interval = setInterval(startAlert, 60 * 60 * 1000);
-    return () => {
-      clearInterval(interval);
-      if (alertTimeout) clearTimeout(alertTimeout);
-    };
   }, []);
 
   const mouseDownPos = useRef({ x: 0, y: 0 });
@@ -276,26 +125,16 @@ export default function TaskCard({
     window.addEventListener("mouseup", onUp);
   }, []);
 
-  async function handleCollapse() {
-    flushSync(() => setExpanded(false));
-    setShowRemindPicker(false);
-    await getCurrentWindow().setSize(new LogicalSize(308, COLLAPSED_HEIGHT));
-  }
-
-  async function handleExpand() {
-    setExpanded(true);
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-    await getCurrentWindow().setSize(new LogicalSize(308, EXPANDED_HEIGHT));
-  }
-
-  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+  const handleDoubleClick = useCallback(async (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
     if (didDrag.current) return;
-    if (expanded) {
-      handleCollapse();
-    } else {
-      handleExpand();
-    }
+
+    const next = !expanded;
+    setExpanded(next);
+    if (!next) setShowRemindPicker(false);
+
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await getCurrentWindow().setSize(new LogicalSize(308, next ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT));
   }, [expanded]);
 
   const handleDone = useCallback(async () => {
@@ -323,43 +162,26 @@ export default function TaskCard({
   );
 
   return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+    <motion.div
+      ref={containerRef}
+      className="card-root"
+      onMouseDown={handleMouseDown}
+      onDoubleClick={handleDoubleClick}
+      animate={{ height: expanded ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT }}
+      transition={{ type: "spring", stiffness: 300, damping: 28 }}
       style={{
-        background: "transparent",
+        background: "var(--card-bg, #0f0f11)",
+        border: "1px solid var(--card-border, rgba(255,255,255,0.08))",
+        borderRadius: "12px",
+        boxShadow: "var(--card-shadow, 0 8px 32px rgba(0,0,0,0.6))",
+        overflow: "hidden",
         width: "280px",
-        padding: "6px",
-        boxSizing: "border-box",
+        cursor: "grab",
+        userSelect: "none",
+        position: "relative",
       }}
     >
-      <motion.div
-        ref={containerRef}
-        className="card-root"
-        onMouseDown={handleMouseDown}
-        onDoubleClick={handleDoubleClick}
-        animate={controls}
-        style={{
-          background: "var(--card-bg, #0f0f11)",
-          border: "1px solid var(--card-border, rgba(255,255,255,0.08))",
-          borderRadius: "12px",
-          boxShadow: "var(--card-shadow, 0 8px 32px rgba(0,0,0,0.6))",
-          overflow: "hidden",
-          width: "100%",
-          cursor: "grab",
-          userSelect: "none",
-          position: "relative",
-        }}
-      >
-        <div style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: "3px",
-          background: "var(--left-accent, transparent)",
-          borderRadius: "3px 0 0 3px",
-        }} />
+      <div>
         <div style={{ padding: "12px 14px", pointerEvents: "none" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <span
@@ -387,14 +209,6 @@ export default function TaskCard({
                 </span>
               )}
             </span>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
-              <span
-                ref={liveDotRef}
-                className="dot live"
-                aria-label="Task heartbeat"
-                title="Task heartbeat — blinks red once an hour"
-              />
-            </div>
           </div>
 
           {description && (
@@ -559,28 +373,7 @@ export default function TaskCard({
             )}
           </div>
         )}
-
-        {showTimeLimitBar && (
-          <div
-            style={{
-              width: "100%",
-              height: "4px",
-              background: "var(--card-border, var(--border-card))",
-              borderRadius: "0 0 14px 14px",
-              overflow: "hidden",
-            }}
-          >
-            <motion.div
-              animate={{
-                width: `${progress}%`,
-                backgroundColor: finalBarColor,
-              }}
-              transition={{ duration: 0.8, ease: "linear" }}
-              style={{ height: "100%" }}
-            />
-          </div>
-        )}
-      </motion.div>
-    </div>
+      </div>
+    </motion.div>
   );
 }

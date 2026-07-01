@@ -487,78 +487,77 @@ export default function TaskCard({
           </div>
         </div>
 
-        {expanded && (
+        <div
+          style={{
+            overflow: "hidden",
+            transformOrigin: "top",
+            borderRadius: "0 0 14px 14px",
+            display: expanded ? "block" : "none",
+          }}
+        >
           <div
             style={{
-              overflow: "hidden",
-              transformOrigin: "top",
-              borderRadius: "0 0 14px 14px",
+              display: "flex",
+              gap: "6px",
+              padding: "0 14px 14px",
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                gap: "6px",
-                padding: "0 14px 14px",
-              }}
+            <button
+              className="v-action"
+              onClick={(e) => { e.stopPropagation(); handleDone(); }}
+              style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0", background: "var(--btn-done-bg)", color: "var(--btn-done-text)", borderColor: "var(--btn-done-border)" }}
             >
-              <button
-                className="v-action"
-                onClick={(e) => { e.stopPropagation(); handleDone(); }}
-                style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0", background: "var(--btn-done-bg)", color: "var(--btn-done-text)", borderColor: "var(--btn-done-border)" }}
-              >
-                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Check size={14} weight="light" /> Done</span>
-              </button>
-              <button
-                className="v-action"
-                onClick={(e) => { e.stopPropagation(); handleSnooze(); }}
-                style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0", background: "var(--btn-snooze-bg)", color: "var(--btn-snooze-text)", borderColor: "var(--btn-snooze-border, var(--border-light))" }}
-              >
-                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><ClockCountdown size={14} weight="light" /> Snooze</span>
-              </button>
-              <button
-                className="v-action"
-                onClick={(e) => { e.stopPropagation(); handleRemindClick(e); }}
-                style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0", background: "var(--btn-remind-bg)", color: "var(--btn-remind-text)", borderColor: "var(--btn-remind-border, var(--border-light))" }}
-              >
-                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Bell size={14} weight="light" /> Remind</span>
-              </button>
-            </div>
-
-            {showRemindPicker && (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.1 }}
-                style={{ marginTop: "4px", padding: "0 14px 14px" }}
-              >
-                <div style={{ fontSize: "11px", color: "var(--text-dim-card)", marginBottom: "6px" }}>
-                  Remind me in…
-                </div>
-                <div style={{ display: "flex", gap: "6px" }}>
-                  {REMIND_OPTIONS.map((mins) => (
-                    <button
-                      key={mins}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemindConfirm(mins);
-                      }}
-                      className="v-action"
-                      style={{
-                        flex: 1,
-                        textAlign: "center",
-                        fontSize: "11px",
-                        padding: "7px 10px",
-                      }}
-                    >
-                      {mins < 60 ? `${mins}m` : "1h"}
-                    </button>
-                  ))}
-                </div>
-              </motion.div>
-            )}
+              <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Check size={14} weight="light" /> Done</span>
+            </button>
+            <button
+              className="v-action"
+              onClick={(e) => { e.stopPropagation(); handleSnooze(); }}
+              style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0", background: "var(--btn-snooze-bg)", color: "var(--btn-snooze-text)", borderColor: "var(--btn-snooze-border, var(--border-light))" }}
+            >
+              <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><ClockCountdown size={14} weight="light" /> Snooze</span>
+            </button>
+            <button
+              className="v-action"
+              onClick={(e) => { e.stopPropagation(); handleRemindClick(e); }}
+              style={{ flex: 1, textAlign: "center", fontSize: "11px", padding: "8px 0", background: "var(--btn-remind-bg)", color: "var(--btn-remind-text)", borderColor: "var(--btn-remind-border, var(--border-light))" }}
+            >
+              <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Bell size={14} weight="light" /> Remind</span>
+            </button>
           </div>
-        )}
+
+          {showRemindPicker && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.1 }}
+              style={{ marginTop: "4px", padding: "0 14px 14px" }}
+            >
+              <div style={{ fontSize: "11px", color: "var(--text-dim-card)", marginBottom: "6px" }}>
+                Remind me in…
+              </div>
+              <div style={{ display: "flex", gap: "6px" }}>
+                {REMIND_OPTIONS.map((mins) => (
+                  <button
+                    key={mins}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemindConfirm(mins);
+                    }}
+                    className="v-action"
+                    style={{
+                      flex: 1,
+                      textAlign: "center",
+                      fontSize: "11px",
+                      padding: "7px 10px",
+                    }}
+                  >
+                    {mins < 60 ? `${mins}m` : "1h"}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </div>
 
         {showTimeLimitBar && (
           <div

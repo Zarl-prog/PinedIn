@@ -900,11 +900,8 @@ export default function AddTaskModal({
                 >
                   {isSubmitting ? "Saving..." : editTask ? "Save" : "Add Task"}
                   <span style={{ display: "inline-flex", alignItems: "center", gap: "2px", fontSize: "10px", opacity: 0.5, marginLeft: "8px" }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="5" width="18" height="14" rx="2" />
-                      <path d="M8 11v2" />
-                      <path d="M12 11v2" />
-                      <path d="M16 13v-2" />
+                    <svg width="13" height="13" viewBox="0 -960 960 960" fill="currentColor">
+                      <path d="M480-120q-33 0-56.5-23.5T400-200q0-33 23.5-56.5T480-280q33 0 56.5 23.5T560-200q0 33-23.5 56.5T480-120Zm0-280q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm0-280q-33 0-56.5-23.5T400-760q0-33 23.5-56.5T480-840q33 0 56.5 23.5T560-760q0 33-23.5 56.5T480-680Z"/>
                     </svg>
                     <svg width="13" height="13" viewBox="0 -960 960 960" fill="currentColor">
                       <path d="M360-240 120-480l240-240 56 56-144 144h488v-160h80v240H272l144 144-56 56Z"/>

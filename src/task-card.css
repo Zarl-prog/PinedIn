@@ -22,10 +22,10 @@
   --shadow-hover-card: none;
   --card-shadow: none;
   --shake-glow: rgba(255,255,255,0.4);
-  --pill-bg: #1a1a1a;
-  --pill-border: #2e2e2e;
-  --pill-text: #ffffff;
-  --pill-text-muted: #888888;
+  --pill-bg: #ffffff;
+  --pill-border: #000000;
+  --pill-text: #000000;
+  --pill-text-muted: #666666;
   --pill-shadow: none;
 }
 

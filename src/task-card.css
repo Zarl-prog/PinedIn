@@ -3,6 +3,7 @@
 :root {
   --bg-float-card: #ffffff;
   --card-bg: #ffffff;
+  --card-border: #000000;
   --bg-float-card-hover: #fafafa;
   --bg-badge-card: #e8e8e8;
   --bg-tag-card: #f0f0f0;
@@ -31,6 +32,7 @@
 .dark {
   --bg-float-card: #080808;
   --card-bg: #080808;
+  --card-border: #2a2a2a;
   --bg-float-card-hover: #0a0a0a;
   --bg-badge-card: #111111;
   --bg-tag-card: #0d0d0d;
@@ -59,6 +61,7 @@
 [data-theme="parchment"] {
   --bg-float-card: #231c16;
   --card-bg: #231c16;
+  --card-border: #3d2e22;
   --bg-float-card-hover: #2d241c;
   --bg-badge-card: #2d241c;
   --bg-tag-card: #2d241c;

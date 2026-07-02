@@ -268,4 +268,9 @@ export async function deleteWorkspace(workspaceId: number): Promise<void> {
   return invoke("delete_workspace", { workspaceId });
 }
 
+// ─── Onboarding ──────────────────────────────────────────────────────────────
+export async function completeOnboarding(): Promise<void> {
+  return invoke("complete_onboarding");
+}
+
 

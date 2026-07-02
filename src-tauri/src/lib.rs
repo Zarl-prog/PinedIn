@@ -219,6 +219,21 @@ pub fn run() {
                 });
             }
 
+            // ── First-launch onboarding ─────────────────────────────
+            let onboarding_done = db_handle
+                .get_setting("onboarding_completed")
+                .unwrap_or_default()
+                .map(|v| v == "true")
+                .unwrap_or(false);
+
+            if !onboarding_done {
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_millis(800)).await;
+                    let _ = handle.emit("show_onboarding", ());
+                });
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -269,6 +284,7 @@ pub fn run() {
             commands::focus_next_card,
             commands::focus_prev_card,
             commands::reassert_window_properties,
+            commands::complete_onboarding,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

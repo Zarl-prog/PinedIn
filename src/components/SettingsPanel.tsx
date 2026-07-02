@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSettings } from "@/hooks/useSettings";
+import { useReminderStore } from "@/store/reminderStore";
 import {
   isAutostartEnabled,
   enableAutostart,
   disableAutostart,
   getShakeInterval,
   setShakeInterval,
-  getSettingsMap,
-  updateSetting as updateSettingCmd,
 } from "@/lib/tauriCommands";
 import { checkAndInstall } from "@/lib/updater";
 import { X, Circle, Hourglass, PencilSimpleLine } from "@phosphor-icons/react";
@@ -43,12 +42,10 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
     error?: string;
   }>({ state: "idle" });
   const [shakeInterval, setShakeIntervalState] = useState(30);
-  const [customizeMode, setCustomizeMode] = useState(false);
 
   useEffect(() => {
     if (open) {
       getShakeInterval().then(setShakeIntervalState).catch(() => {});
-      getSettingsMap().then((map) => setCustomizeMode(map.customize_mode === "true")).catch(() => {});
     }
   }, [open]);
 
@@ -381,55 +378,33 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                     marginBottom: "8px",
                   }}
                 >
-                  Customize your tasks ✏️
+                  Customize your tasks
                 </label>
-                <div
+                <button
+                  onClick={() => { useReminderStore.getState().setCustomizeOpen(true); onClose(); }}
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "space-between",
+                    gap: "10px",
+                    width: "100%",
                     background: "var(--bg-input)",
                     border: "1px solid var(--border)",
                     borderRadius: "8px",
                     padding: "14px 16px",
+                    cursor: "pointer",
+                    color: "var(--text-primary)",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    textAlign: "left",
+                    transition: "border-color 0.15s",
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--border-hover, var(--text-muted))"}
+                  onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
                 >
-                  <div>
-                    <span
-                      style={{
-                        display: "block",
-                        fontSize: "14px",
-                        fontWeight: 500,
-                        color: "var(--text-primary)",
-                      }}
-                    >
-                      {customizeMode ? "Enabled" : "Disabled"}
-                    </span>
-                    <span
-                      style={{
-                        display: "block",
-                        fontSize: "13px",
-                        color: "var(--text-muted)",
-                        marginTop: "2px",
-                      }}
-                    >
-                      Drag edges to resize task cards
-                    </span>
-                  </div>
-                  <button
-                    onClick={async () => {
-                      const next = !customizeMode;
-                      setCustomizeMode(next);
-                      await updateSettingCmd("customize_mode", next ? "true" : "false");
-                    }}
-                    className={`toggle-track${customizeMode ? " active" : ""}`}
-                    style={{ flexShrink: 0 }}
-                  >
-                    <span
-                      className={`toggle-thumb${customizeMode ? " active" : ""}`}
-                    />
-                  </button>
-                </div>
+                  <PencilSimpleLine size={20} weight="light" style={{ flexShrink: 0, opacity: 0.7 }} />
+                  <span>Resize your task cards by dragging their edges</span>
+                  <span style={{ marginLeft: "auto", fontSize: "12px", opacity: 0.5 }}>→</span>
+                </button>
               </div>
 
               {/* Updates */}

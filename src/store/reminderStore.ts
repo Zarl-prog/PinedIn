@@ -34,6 +34,7 @@ export interface OverlayState {
   isLoading: boolean;
   isAddTaskOpen: boolean;
   isSettingsOpen: boolean;
+  isCustomizeOpen: boolean;
   isPreScheduleOpen: boolean;
   isMcpOpen: boolean;
   editingTask: Task | null;
@@ -92,6 +93,7 @@ export interface OverlayState {
   setSettingsOpen: (open: boolean) => void;
   setMcpOpen: (open: boolean) => void;
   setPreScheduleOpen: (open: boolean) => void;
+  setCustomizeOpen: (open: boolean) => void;
   setEditingTask: (task: Task | null) => void;
   setOverlayVisible: (visible: boolean) => void;
   togglePaused: () => void;
@@ -114,6 +116,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
   isAddTaskOpen: false,
   isSettingsOpen: false,
   isPreScheduleOpen: false,
+  isCustomizeOpen: false,
   isMcpOpen: false,
   editingTask: null,
   activeTags: [],
@@ -451,6 +454,7 @@ completeTask: async (id) => {
   setSettingsOpen: (open: boolean) => set({ isSettingsOpen: open }),
   setMcpOpen: (open: boolean) => set({ isMcpOpen: open }),
   setPreScheduleOpen: (open: boolean) => set({ isPreScheduleOpen: open }),
+  setCustomizeOpen: (open: boolean) => set({ isCustomizeOpen: open }),
   setEditingTask: (task: Task | null) => set({ editingTask: task, isAddTaskOpen: !!task }),
   setOverlayVisible: (visible) => set({ overlayVisible: visible }),
   togglePaused: () => set((state) => ({ isPaused: !state.isPaused })),

@@ -6,6 +6,7 @@ import TaskList from "@/components/TaskList";
 import AddTaskModal from "@/components/AddTaskModal";
 import SettingsPanel from "@/components/SettingsPanel";
 import McpPanel from "@/components/McpPanel";
+import CustomizeCardModal from "@/components/CustomizeCardModal";
 import PreScheduleModal from "@/components/PreScheduleModal";
 import UpdateBanner from "@/components/UpdateBanner";
 import WorkspacesView from "@/components/WorkspacesView";
@@ -799,6 +800,8 @@ export default function App() {
         open={isMcpOpen}
         onClose={() => setMcpOpen(false)}
       />
+
+      <CustomizeCardModal />
 
       {/* Update Modal */}
       {showUpdateModal && updateAvailable && (

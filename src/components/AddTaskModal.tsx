@@ -183,10 +183,75 @@ export default function AddTaskModal({
   const [tagInput, setTagInput] = useState("");
   const [timeLimitValue, setTimeLimitValue] = useState("");
   const [timeLimitUnit, setTimeLimitUnit] = useState<TimeLimitUnit>("minutes");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const tagInputRef = useRef<HTMLInputElement>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmitRef = useRef<() => Promise<void>>();
+
+  const handleSubmit = async () => {
+    if (!title.trim()) {
+      setError("Title is required");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const tagsString = tags.length > 0 ? tags.join(",") : "";
+      const timeLimitMinutes = timeLimitValue
+        ? parseInt(timeLimitValue, 10) * (timeLimitUnit === "hours" ? 60 : 1)
+        : null;
+      const safeTimeLimit =
+        timeLimitMinutes && timeLimitMinutes > 0 ? timeLimitMinutes : null;
+
+      if (editTask?.id) {
+        await editTaskAction(
+          editTask.id,
+          title.trim(),
+          description.trim(),
+          dueDate || "",
+          recurrence,
+          tagsString || null,
+          safeTimeLimit,
+        );
+      } else {
+        await addTask(
+          title.trim(),
+          description.trim(),
+          dueDate || "",
+          recurrence,
+          tagsString,
+          safeTimeLimit,
+          workspaceId ?? null,
+        );
+      }
+      onClose();
+      resetForm();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save task");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    handleSubmitRef.current = handleSubmit;
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        handleSubmitRef.current?.();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [open]);
 
   const resetForm = () => {
     setTitle("");
@@ -261,53 +326,6 @@ export default function AddTaskModal({
     },
     [tagInput, tags, addTag, removeTag],
   );
-
-  const handleSubmit = async () => {
-    if (!title.trim()) {
-      setError("Title is required");
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError(null);
-
-    try {
-      const tagsString = tags.length > 0 ? tags.join(",") : "";
-      const timeLimitMinutes = timeLimitValue
-        ? parseInt(timeLimitValue, 10) * (timeLimitUnit === "hours" ? 60 : 1)
-        : null;
-      const safeTimeLimit =
-        timeLimitMinutes && timeLimitMinutes > 0 ? timeLimitMinutes : null;
-
-      if (editTask?.id) {
-        await editTaskAction(
-          editTask.id,
-          title.trim(),
-          description.trim(),
-          dueDate || "",
-          recurrence,
-          tagsString || null,
-          safeTimeLimit,
-        );
-      } else {
-        await addTask(
-          title.trim(),
-          description.trim(),
-          dueDate || "",
-          recurrence,
-          tagsString,
-          safeTimeLimit,
-          workspaceId ?? null,
-        );
-      }
-      onClose();
-      resetForm();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save task");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleClose = () => {
     if (!isSubmitting) {
@@ -881,6 +899,7 @@ export default function AddTaskModal({
                   }}
                 >
                   {isSubmitting ? "Saving..." : editTask ? "Save" : "Add Task"}
+                  <span style={{ fontSize: "10px", opacity: 0.5, marginLeft: "6px" }}>Ctrl+Enter</span>
                 </button>
               </div>
             </div>

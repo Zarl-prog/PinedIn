@@ -92,8 +92,16 @@ export async function uncompleteTask(id: number): Promise<void> {
 
 // ─── Settings Commands ──────────────────────────────────────────────────────
 
+export interface SettingsMap {
+  [key: string]: string;
+}
+
 export async function getSettings(): Promise<AppSettings> {
   return invoke<AppSettings>("get_settings");
+}
+
+export async function getSettingsMap(): Promise<SettingsMap> {
+  return invoke<SettingsMap>("get_settings_map");
 }
 
 export async function updateSetting(

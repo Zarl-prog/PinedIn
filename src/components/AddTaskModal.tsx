@@ -906,9 +906,8 @@ export default function AddTaskModal({
                       <path d="M12 11v2" />
                       <path d="M16 13v-2" />
                     </svg>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 12h13" />
-                      <path d="M13 7l5 5-5 5" />
+                    <svg width="13" height="13" viewBox="0 -960 960 960" fill="currentColor">
+                      <path d="M360-240 120-480l240-240 56 56-144 144h488v-160h80v240H272l144 144-56 56Z"/>
                     </svg>
                   </span>
                 </button>

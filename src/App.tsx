@@ -7,6 +7,7 @@ import AddTaskModal from "@/components/AddTaskModal";
 import SettingsPanel from "@/components/SettingsPanel";
 import McpPanel from "@/components/McpPanel";
 import CustomizeCardModal from "@/components/CustomizeCardModal";
+import Onboarding from "@/components/Onboarding";
 import PreScheduleModal from "@/components/PreScheduleModal";
 import UpdateBanner from "@/components/UpdateBanner";
 import WorkspacesView from "@/components/WorkspacesView";
@@ -291,6 +292,7 @@ export default function App() {
         boxSizing: "border-box"
       }}
     >
+      <Onboarding />
       {/* Top accent border — makes window edge very visible */}
       <div style={{
         height: "1px",

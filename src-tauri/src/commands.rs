@@ -876,3 +876,10 @@ pub fn reassert_window_properties(window: Window) -> Result<(), String> {
     let _ = window.set_skip_taskbar(true);
     Ok(())
 }
+
+#[tauri::command]
+pub fn complete_onboarding(app: AppHandle) -> Result<(), String> {
+    let state = app.state::<Arc<DbHandle>>();
+    state.update_setting("onboarding_completed", "true")
+        .map_err(|e| e.to_string())
+}

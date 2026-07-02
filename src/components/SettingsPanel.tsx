@@ -7,9 +7,11 @@ import {
   disableAutostart,
   getShakeInterval,
   setShakeInterval,
+  getSettingsMap,
+  updateSetting as updateSettingCmd,
 } from "@/lib/tauriCommands";
 import { checkAndInstall } from "@/lib/updater";
-import { X, Circle, Hourglass } from "@phosphor-icons/react";
+import { X, Circle, Hourglass, PencilSimpleLine } from "@phosphor-icons/react";
 
 const SHAKE_OPTIONS: { value: number; label: string }[] = [
   { value: 10, label: "10s" },
@@ -41,10 +43,12 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
     error?: string;
   }>({ state: "idle" });
   const [shakeInterval, setShakeIntervalState] = useState(30);
+  const [customizeMode, setCustomizeMode] = useState(false);
 
   useEffect(() => {
     if (open) {
       getShakeInterval().then(setShakeIntervalState).catch(() => {});
+      getSettingsMap().then((map) => setCustomizeMode(map.customize_mode === "true")).catch(() => {});
     }
   }, [open]);
 
@@ -363,6 +367,68 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                       {option.label}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Customize tasks */}
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    color: "var(--text-secondary)",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Customize your tasks ✏️
+                </label>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    background: "var(--bg-input)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "8px",
+                    padding: "14px 16px",
+                  }}
+                >
+                  <div>
+                    <span
+                      style={{
+                        display: "block",
+                        fontSize: "14px",
+                        fontWeight: 500,
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      {customizeMode ? "Enabled" : "Disabled"}
+                    </span>
+                    <span
+                      style={{
+                        display: "block",
+                        fontSize: "13px",
+                        color: "var(--text-muted)",
+                        marginTop: "2px",
+                      }}
+                    >
+                      Drag edges to resize task cards
+                    </span>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      const next = !customizeMode;
+                      setCustomizeMode(next);
+                      await updateSettingCmd("customize_mode", next ? "true" : "false");
+                    }}
+                    className={`toggle-track${customizeMode ? " active" : ""}`}
+                    style={{ flexShrink: 0 }}
+                  >
+                    <span
+                      className={`toggle-thumb${customizeMode ? " active" : ""}`}
+                    />
+                  </button>
                 </div>
               </div>
 

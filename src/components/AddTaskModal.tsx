@@ -833,6 +833,27 @@ export default function AddTaskModal({
                 </p>
               )}
 
+              <div style={{ display: "flex", justifyContent: "center", marginTop: "12px" }}>
+                <button
+                  onClick={() => { onClose(); useReminderStore.getState().setSettingsOpen(true); }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "var(--text-muted)",
+                    fontSize: "12px",
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                    textUnderlineOffset: "3px",
+                    opacity: 0.7,
+                    transition: "opacity 0.15s",
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.opacity = "1"}
+                  onMouseLeave={(e) => e.currentTarget.style.opacity = "0.7"}
+                >
+                  Customize your tasks ✏️
+                </button>
+              </div>
+
               <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
                 <button
                   onClick={handleClose}

@@ -1,12 +1,14 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { LogicalSize } from "@tauri-apps/api/dpi";
+import { LogicalSize, LogicalPosition } from "@tauri-apps/api/dpi";
 import { invoke } from "@tauri-apps/api/core";
 import { Check, Bell, ClockCountdown, ArrowsClockwise, CaretDown } from "@phosphor-icons/react";
 
 const REMIND_OPTIONS = [5, 15, 30, 60] as const;
-const FIXED_HEIGHT = 115;
+const SQUARE_SIZE = 80;
+const FULL_WIDTH = 122;
+const FULL_HEIGHT = 110;
 
 function getHoursAgo(createdAt: string): string {
   const diff = Date.now() - new Date(createdAt).getTime();
@@ -57,8 +59,15 @@ export default function TaskCard({
   const liveDotRef = useRef<HTMLSpanElement>(null);
   const notifiedRef = useRef(false);
 
+  const tagList = tags?.split(",").map((t) => t.trim()).filter(Boolean) ?? [];
+  const hasRecurrence = !!recurrence;
+  const isMinimal = !description && tagList.length === 0 && !dueTime && !createdAt && !timeLimitMinutes && !startedAt;
+  const CARD_W = isMinimal ? SQUARE_SIZE : FULL_WIDTH;
+  const windowW = isMinimal ? SQUARE_SIZE : FULL_WIDTH + 28;
+  const CARD_H = isMinimal ? SQUARE_SIZE : FULL_HEIGHT;
+
   useEffect(() => {
-    getCurrentWindow().setSize(new LogicalSize(308, FIXED_HEIGHT));
+    getCurrentWindow().setSize(new LogicalSize(windowW, CARD_H));
     invoke("reassert_window_properties");
   }, []);
 
@@ -82,8 +91,33 @@ export default function TaskCard({
     };
   }, []);
 
-  const tagList = tags?.split(",").map((t) => t.trim()).filter(Boolean) ?? [];
-  const hasRecurrence = !!recurrence;
+  const [customizeMode, setCustomizeMode] = useState(false);
+  const [dynW, setDynW] = useState(CARD_W);
+  const [dynH, setDynH] = useState(CARD_H);
+  const resizeUnlisten = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    invoke<Record<string, string>>("get_settings_map").then((map) => {
+      setCustomizeMode(map.customize_mode === "true");
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!customizeMode) {
+      setDynW(CARD_W);
+      setDynH(CARD_H);
+      return;
+    }
+    const win = getCurrentWindow();
+    win.outerSize().then((s) => { setDynW(s.width); setDynH(s.height); });
+    win.onResized(({ payload: { width, height } }) => {
+      setDynW(width); setDynH(height);
+    }).then((u) => { resizeUnlisten.current = u; });
+    return () => {
+      resizeUnlisten.current?.();
+      resizeUnlisten.current = null;
+    };
+  }, [customizeMode]);
 
   const progressPercent = useMemo(() => {
     if (!dueTime) return 0;
@@ -170,6 +204,57 @@ export default function TaskCard({
     await invoke("remind_task", { id: taskId, minutes });
   }, [taskId]);
 
+  // ─── Resize mode ──────────────────────────────────────────────────────────
+
+  const handleResizeStart = useCallback((handle: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const mx = e.clientX, my = e.clientY;
+    const win = getCurrentWindow();
+    const MIN_W = 100;
+    const MIN_H = 80;
+
+    Promise.all([win.outerSize(), win.outerPosition()]).then(([size, pos]) => {
+      let { width: winW, height: winH } = size;
+      let { x: winX, y: winY } = pos;
+
+      const onMove = (me: MouseEvent) => {
+        const dx = me.clientX - mx;
+        const dy = me.clientY - my;
+
+        let newX = winX, newY = winY, newW = winW, newH = winH;
+
+        if (handle.includes("right")) newW = Math.max(MIN_W, winW + dx);
+        if (handle.includes("left")) { newW = Math.max(MIN_W, winW - dx); newX = winX + (winW - newW); }
+        if (handle.includes("bottom")) newH = Math.max(MIN_H, winH + dy);
+        if (handle.includes("top")) { newH = Math.max(MIN_H, winH - dy); newY = winY + (winH - newH); }
+
+        win.setSize(new LogicalSize(newW, newH));
+        win.setPosition(new LogicalPosition(newX, newY));
+      };
+
+      const onUp = () => {
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
+      };
+
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+    });
+  }, []);
+
+  const handles = ["top-left", "top", "top-right", "right", "bottom-right", "bottom", "bottom-left", "left"];
+  const handlePos: Record<string, { top?: string; left?: string; right?: string; bottom?: string; cursor: string }> = {
+    "top-left":      { top: "-4px", left: "-4px", cursor: "nwse-resize" },
+    "top":           { top: "-4px", left: "50%", cursor: "ns-resize" },
+    "top-right":     { top: "-4px", right: "-4px", cursor: "nesw-resize" },
+    "right":         { right: "-4px", top: "50%", cursor: "ew-resize" },
+    "bottom-right":  { bottom: "-4px", right: "-4px", cursor: "nwse-resize" },
+    "bottom":        { bottom: "-4px", left: "50%", cursor: "ns-resize" },
+    "bottom-left":   { bottom: "-4px", left: "-4px", cursor: "nesw-resize" },
+    "left":          { left: "-4px", top: "50%", cursor: "ew-resize" },
+  };
+
   return (
     <div
       onMouseDown={handleMouseDown}
@@ -177,8 +262,8 @@ export default function TaskCard({
         background: "var(--card-bg, #0f0f11)",
         border: "1px solid var(--card-border, rgba(255,255,255,0.08))",
         borderRadius: "12px",
-        width: "280px",
-        height: showTimeLimitBar ? `${FIXED_HEIGHT + 4}px` : `${FIXED_HEIGHT}px`,
+        width: customizeMode ? `${dynW}px` : `${CARD_W}px`,
+        height: customizeMode ? `${dynH}px` : showTimeLimitBar ? `${CARD_H + 4}px` : `${CARD_H}px`,
         overflow: "hidden",
         cursor: "grab",
         userSelect: "none",
@@ -225,43 +310,69 @@ export default function TaskCard({
         }} />
       </button>
 
-      {showActions ? (
+      {showActions ? (() => {
+        const h = customizeMode ? dynH : CARD_H;
+        const btnPad = Math.max(4, Math.min(12, Math.floor(h * 0.06)));
+        const btnGap = Math.max(2, Math.min(8, Math.floor(h * 0.035)));
+        const btnFont = Math.max(9, Math.min(14, Math.floor(h / 9)));
+        const btnIcon = btnFont + 2;
+        const contPad = Math.max(6, Math.min(14, Math.floor(h * 0.08)));
+        return (
         <div style={{
           flex: 1,
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          padding: "12px 14px",
+          padding: `${contPad}px 14px`,
+          gap: `${btnGap}px`,
         }}>
-          <div style={{ display: "flex", gap: "6px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: `${btnGap}px` }}>
             <button className="v-action" onClick={(e) => { e.stopPropagation(); handleDone(); }}
-              style={{ flex: 1, fontSize: "11px", padding: "8px 0", background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "8px", cursor: "pointer", textAlign: "center" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Check size={14} weight="light" /> Done</span>
+              style={{ width: "100%", fontSize: `${btnFont}px`, padding: `${btnPad}px 0`, background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "6px", cursor: "pointer", textAlign: "center" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Check size={btnIcon} weight="light" /> Done</span>
             </button>
             <button className="v-action" onClick={(e) => { e.stopPropagation(); handleSnooze(); }}
-              style={{ flex: 1, fontSize: "11px", padding: "8px 0", background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "8px", cursor: "pointer", textAlign: "center" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><ClockCountdown size={14} weight="light" /> Snooze</span>
+              style={{ width: "100%", fontSize: `${btnFont}px`, padding: `${btnPad}px 0`, background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "6px", cursor: "pointer", textAlign: "center" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><ClockCountdown size={btnIcon} weight="light" /> Snooze</span>
             </button>
             <button className="v-action" onClick={(e) => { e.stopPropagation(); setShowRemindPicker((p) => !p); }}
-              style={{ flex: 1, fontSize: "11px", padding: "8px 0", background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "8px", cursor: "pointer", textAlign: "center" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Bell size={14} weight="light" /> Remind</span>
+              style={{ width: "100%", fontSize: `${btnFont}px`, padding: `${btnPad}px 0`, background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "6px", cursor: "pointer", textAlign: "center" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Bell size={btnIcon} weight="light" /> Remind</span>
             </button>
           </div>
 
           {showRemindPicker && (
             <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.1 }}
-              style={{ marginTop: "8px" }}>
-              <div style={{ display: "flex", gap: "6px" }}>
+              style={{ marginTop: "4px" }}>
+              <div style={{ display: "flex", gap: "4px" }}>
                 {REMIND_OPTIONS.map((mins) => (
                   <button key={mins} onClick={(e) => { e.stopPropagation(); handleRemindConfirm(mins); }}
                     className="v-action"
-                    style={{ flex: 1, fontSize: "11px", padding: "7px 10px", cursor: "pointer" }}>
+                    style={{ flex: 1, fontSize: `${btnFont}px`, padding: `${Math.max(3, btnPad - 2)}px 10px`, cursor: "pointer" }}>
                     {mins < 60 ? `${mins}m` : "1h"}
                   </button>
                 ))}
               </div>
             </motion.div>
           )}
+        </div>
+        );
+      })() : isMinimal ? (
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 14px" }}>
+          <span ref={liveDotRef} className="dot live" aria-label="Task heartbeat"
+            style={{ position: "absolute", right: "38px", top: "8px" }} />
+          <span style={{
+            fontSize: "13px", fontWeight: 500, color: "var(--text-primary-card)",
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            textAlign: "center", maxWidth: "100%",
+          }}>
+            {title}
+            {hasRecurrence && (
+              <span title={`Repeats ${recurrence}`} style={{ fontSize: "11px", color: "var(--text-dim-card)", flexShrink: 0, marginLeft: "4px" }}>
+                <ArrowsClockwise size={12} weight="light" />
+              </span>
+            )}
+          </span>
         </div>
       ) : (
         <div style={{ padding: "12px 14px", flex: 1, display: "flex", flexDirection: "column" }}>
@@ -329,6 +440,29 @@ export default function TaskCard({
           />
         </div>
       )}
+
+      {customizeMode && handles.map((h) => {
+        const pos = handlePos[h];
+        const transform = pos.left === "50%" ? "translateX(-50%)" : pos.top === "50%" ? "translateY(-50%)" : undefined;
+        return (
+          <div
+            key={h}
+            onMouseDown={(e) => handleResizeStart(h, e)}
+            style={{
+              position: "absolute",
+              width: "8px",
+              height: "8px",
+              borderRadius: "50%",
+              background: "white",
+              border: "1px solid rgba(255,255,255,0.3)",
+              zIndex: 10,
+              ...pos,
+              cursor: pos.cursor,
+              transform,
+            }}
+          />
+        );
+      })}
     </div>
   );
 }

@@ -235,15 +235,15 @@ export default function TaskCard({
         }}>
           <div style={{ display: "flex", gap: "6px" }}>
             <button className="v-action" onClick={(e) => { e.stopPropagation(); handleDone(); }}
-              style={{ flex: 1, fontSize: "11px", padding: "8px 0", background: "rgba(34,197,94,0.08)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.25)", borderRadius: "8px", cursor: "pointer", textAlign: "center" }}>
+              style={{ flex: 1, fontSize: "11px", padding: "8px 0", background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "8px", cursor: "pointer", textAlign: "center" }}>
               <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Check size={14} weight="light" /> Done</span>
             </button>
             <button className="v-action" onClick={(e) => { e.stopPropagation(); handleSnooze(); }}
-              style={{ flex: 1, fontSize: "11px", padding: "8px 0", background: "rgba(234,179,8,0.08)", color: "#eab308", border: "1px solid rgba(234,179,8,0.25)", borderRadius: "8px", cursor: "pointer", textAlign: "center" }}>
+              style={{ flex: 1, fontSize: "11px", padding: "8px 0", background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "8px", cursor: "pointer", textAlign: "center" }}>
               <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><ClockCountdown size={14} weight="light" /> Snooze</span>
             </button>
             <button className="v-action" onClick={(e) => { e.stopPropagation(); setShowRemindPicker((p) => !p); }}
-              style={{ flex: 1, fontSize: "11px", padding: "8px 0", background: "rgba(139,92,246,0.08)", color: "#8b5cf6", border: "1px solid rgba(139,92,246,0.25)", borderRadius: "8px", cursor: "pointer", textAlign: "center" }}>
+              style={{ flex: 1, fontSize: "11px", padding: "8px 0", background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "8px", cursor: "pointer", textAlign: "center" }}>
               <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Bell size={14} weight="light" /> Remind</span>
             </button>
           </div>

@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import CompactPill from "./components/CompactPill";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import "./task-card.css";
 
 let systemMediaListener: (() => void) | null = null;
 

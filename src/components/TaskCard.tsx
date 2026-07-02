@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { LogicalSize, LogicalPosition } from "@tauri-apps/api/dpi";
+import { LogicalSize } from "@tauri-apps/api/dpi";
 import { invoke } from "@tauri-apps/api/core";
 import { Check, Bell, ClockCountdown, ArrowsClockwise, CaretDown } from "@phosphor-icons/react";
 
@@ -58,16 +58,27 @@ export default function TaskCard({
   const mouseDownPos = useRef({ x: 0, y: 0 });
   const liveDotRef = useRef<HTMLSpanElement>(null);
   const notifiedRef = useRef(false);
+  const [customW, setCustomW] = useState<number | null>(null);
+  const [customH, setCustomH] = useState<number | null>(null);
+
+  useEffect(() => {
+    invoke<Record<string, string>>("get_settings_map").then((map) => {
+      if (map.custom_card_width && map.custom_card_height) {
+        setCustomW(parseInt(map.custom_card_width));
+        setCustomH(parseInt(map.custom_card_height));
+      }
+    }).catch(() => {});
+  }, []);
 
   const tagList = tags?.split(",").map((t) => t.trim()).filter(Boolean) ?? [];
   const hasRecurrence = !!recurrence;
   const isMinimal = !description && tagList.length === 0 && !dueTime && !createdAt && !timeLimitMinutes && !startedAt;
-  const CARD_W = isMinimal ? SQUARE_SIZE : FULL_WIDTH;
-  const windowW = isMinimal ? SQUARE_SIZE : FULL_WIDTH + 28;
-  const CARD_H = isMinimal ? SQUARE_SIZE : FULL_HEIGHT;
+  const cardW = isMinimal ? SQUARE_SIZE : customW || FULL_WIDTH;
+  const cardH = isMinimal ? SQUARE_SIZE : customH || FULL_HEIGHT;
+  const windowW = isMinimal ? SQUARE_SIZE : (customW || FULL_WIDTH) + 28;
 
   useEffect(() => {
-    getCurrentWindow().setSize(new LogicalSize(windowW, CARD_H));
+    getCurrentWindow().setSize(new LogicalSize(windowW, cardH));
     invoke("reassert_window_properties");
   }, []);
 
@@ -90,34 +101,6 @@ export default function TaskCard({
       if (timeout) clearTimeout(timeout);
     };
   }, []);
-
-  const [customizeMode, setCustomizeMode] = useState(false);
-  const [dynW, setDynW] = useState(CARD_W);
-  const [dynH, setDynH] = useState(CARD_H);
-  const resizeUnlisten = useRef<(() => void) | null>(null);
-
-  useEffect(() => {
-    invoke<Record<string, string>>("get_settings_map").then((map) => {
-      setCustomizeMode(map.customize_mode === "true");
-    }).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (!customizeMode) {
-      setDynW(CARD_W);
-      setDynH(CARD_H);
-      return;
-    }
-    const win = getCurrentWindow();
-    win.outerSize().then((s) => { setDynW(s.width); setDynH(s.height); });
-    win.onResized(({ payload: { width, height } }) => {
-      setDynW(width); setDynH(height);
-    }).then((u) => { resizeUnlisten.current = u; });
-    return () => {
-      resizeUnlisten.current?.();
-      resizeUnlisten.current = null;
-    };
-  }, [customizeMode]);
 
   const progressPercent = useMemo(() => {
     if (!dueTime) return 0;
@@ -204,56 +187,11 @@ export default function TaskCard({
     await invoke("remind_task", { id: taskId, minutes });
   }, [taskId]);
 
-  // ─── Resize mode ──────────────────────────────────────────────────────────
-
-  const handleResizeStart = useCallback((handle: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    const mx = e.clientX, my = e.clientY;
-    const win = getCurrentWindow();
-    const MIN_W = 100;
-    const MIN_H = 80;
-
-    Promise.all([win.outerSize(), win.outerPosition()]).then(([size, pos]) => {
-      let { width: winW, height: winH } = size;
-      let { x: winX, y: winY } = pos;
-
-      const onMove = (me: MouseEvent) => {
-        const dx = me.clientX - mx;
-        const dy = me.clientY - my;
-
-        let newX = winX, newY = winY, newW = winW, newH = winH;
-
-        if (handle.includes("right")) newW = Math.max(MIN_W, winW + dx);
-        if (handle.includes("left")) { newW = Math.max(MIN_W, winW - dx); newX = winX + (winW - newW); }
-        if (handle.includes("bottom")) newH = Math.max(MIN_H, winH + dy);
-        if (handle.includes("top")) { newH = Math.max(MIN_H, winH - dy); newY = winY + (winH - newH); }
-
-        win.setSize(new LogicalSize(newW, newH));
-        win.setPosition(new LogicalPosition(newX, newY));
-      };
-
-      const onUp = () => {
-        window.removeEventListener("mousemove", onMove);
-        window.removeEventListener("mouseup", onUp);
-      };
-
-      window.addEventListener("mousemove", onMove);
-      window.addEventListener("mouseup", onUp);
-    });
-  }, []);
-
-  const handles = ["top-left", "top", "top-right", "right", "bottom-right", "bottom", "bottom-left", "left"];
-  const handlePos: Record<string, { top?: string; left?: string; right?: string; bottom?: string; cursor: string }> = {
-    "top-left":      { top: "-4px", left: "-4px", cursor: "nwse-resize" },
-    "top":           { top: "-4px", left: "50%", cursor: "ns-resize" },
-    "top-right":     { top: "-4px", right: "-4px", cursor: "nesw-resize" },
-    "right":         { right: "-4px", top: "50%", cursor: "ew-resize" },
-    "bottom-right":  { bottom: "-4px", right: "-4px", cursor: "nwse-resize" },
-    "bottom":        { bottom: "-4px", left: "50%", cursor: "ns-resize" },
-    "bottom-left":   { bottom: "-4px", left: "-4px", cursor: "nesw-resize" },
-    "left":          { left: "-4px", top: "50%", cursor: "ew-resize" },
-  };
+  const btnPad = Math.max(4, Math.min(12, Math.floor(cardH * 0.06)));
+  const btnGap = Math.max(2, Math.min(8, Math.floor(cardH * 0.035)));
+  const btnFont = Math.max(9, Math.min(14, Math.floor(cardH / 9)));
+  const btnIcon = btnFont + 2;
+  const contPad = Math.max(6, Math.min(14, Math.floor(cardH * 0.08)));
 
   return (
     <div
@@ -262,8 +200,8 @@ export default function TaskCard({
         background: "var(--card-bg, #0f0f11)",
         border: "1px solid var(--card-border, rgba(255,255,255,0.08))",
         borderRadius: "12px",
-        width: customizeMode ? `${dynW}px` : `${CARD_W}px`,
-        height: customizeMode ? `${dynH}px` : showTimeLimitBar ? `${CARD_H + 4}px` : `${CARD_H}px`,
+        width: `${cardW}px`,
+        height: showTimeLimitBar ? `${cardH + 4}px` : `${cardH}px`,
         overflow: "hidden",
         cursor: "grab",
         userSelect: "none",
@@ -310,14 +248,7 @@ export default function TaskCard({
         }} />
       </button>
 
-      {showActions ? (() => {
-        const h = customizeMode ? dynH : CARD_H;
-        const btnPad = Math.max(4, Math.min(12, Math.floor(h * 0.06)));
-        const btnGap = Math.max(2, Math.min(8, Math.floor(h * 0.035)));
-        const btnFont = Math.max(9, Math.min(14, Math.floor(h / 9)));
-        const btnIcon = btnFont + 2;
-        const contPad = Math.max(6, Math.min(14, Math.floor(h * 0.08)));
-        return (
+      {showActions ? (
         <div style={{
           flex: 1,
           display: "flex",
@@ -356,8 +287,7 @@ export default function TaskCard({
             </motion.div>
           )}
         </div>
-        );
-      })() : isMinimal ? (
+      ) : isMinimal ? (
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 14px" }}>
           <span ref={liveDotRef} className="dot live" aria-label="Task heartbeat"
             style={{ position: "absolute", right: "38px", top: "8px" }} />
@@ -440,29 +370,6 @@ export default function TaskCard({
           />
         </div>
       )}
-
-      {customizeMode && handles.map((h) => {
-        const pos = handlePos[h];
-        const transform = pos.left === "50%" ? "translateX(-50%)" : pos.top === "50%" ? "translateY(-50%)" : undefined;
-        return (
-          <div
-            key={h}
-            onMouseDown={(e) => handleResizeStart(h, e)}
-            style={{
-              position: "absolute",
-              width: "8px",
-              height: "8px",
-              borderRadius: "50%",
-              background: "white",
-              border: "1px solid rgba(255,255,255,0.3)",
-              zIndex: 10,
-              ...pos,
-              cursor: pos.cursor,
-              transform,
-            }}
-          />
-        );
-      })}
     </div>
   );
 }

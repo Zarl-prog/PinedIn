@@ -835,7 +835,7 @@ export default function AddTaskModal({
 
               <div style={{ display: "flex", justifyContent: "center", marginTop: "12px" }}>
                 <button
-                  onClick={() => { onClose(); useReminderStore.getState().setSettingsOpen(true); }}
+                  onClick={() => { onClose(); useReminderStore.getState().setCustomizeOpen(true); }}
                   style={{
                     background: "none",
                     border: "none",

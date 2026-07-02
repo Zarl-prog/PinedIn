@@ -584,7 +584,6 @@ export default function App() {
           display: "flex",
           flexDirection: "column",
           padding: activeTab === "tasks" ? "16px" : 0,
-          paddingBottom: activeTab === "tasks" ? "52px" : 0,
           minHeight: 0,
           overflow: "hidden",
           position: "relative",
@@ -666,7 +665,7 @@ export default function App() {
           </>
         )}
 
-        {activeTab === "workspaces" && (
+        {activeTab === "workspaces" && 
           <div
             style={{
               flex: 1,
@@ -688,18 +687,14 @@ export default function App() {
               />
             </ErrorBoundary>
           </div>
-        )}
+        }
       </div>
 
       {/* ─── Bottom Bar ──────────────────────────────────────── */}
-      {activeTab === "tasks" && (
-        <div
+      <div
           style={{
-            position: "fixed",
-            bottom: 0,
-            left: 0,
-            right: 0,
             height: "44px",
+            minHeight: "44px",
             background: "var(--bg-app)",
             borderTop: "1px solid var(--divider)",
             display: "flex",
@@ -771,7 +766,6 @@ export default function App() {
             <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Diamond size={15} weight="light" /> Digest</span>
           </button>
         </div>
-      )}
 
       {/* Modals */}
       <AddTaskModal

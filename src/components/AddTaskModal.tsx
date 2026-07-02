@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useReminderStore } from "@/store/reminderStore";
 import type { Task } from "@/lib/tauriCommands";
-import { X, Minus, Plus } from "@phosphor-icons/react";
+import { X, Minus, Plus, PencilSimpleLine } from "@phosphor-icons/react";
 
 interface AddTaskModalProps {
   open: boolean;
@@ -850,7 +850,7 @@ export default function AddTaskModal({
                   onMouseEnter={(e) => e.currentTarget.style.opacity = "1"}
                   onMouseLeave={(e) => e.currentTarget.style.opacity = "0.7"}
                 >
-                  Customize your tasks ✏️
+                  <PencilSimpleLine size={14} weight="light" style={{ marginRight: "4px" }} /> Customize your tasks
                 </button>
               </div>
 

@@ -3,25 +3,25 @@ import { motion, AnimatePresence } from "framer-motion";
 import { invoke } from "@tauri-apps/api/core";
 import { emit } from "@tauri-apps/api/event";
 import { useReminderStore } from "@/store/reminderStore";
-import { X, PencilSimpleLine, ArrowsOut } from "@phosphor-icons/react";
+import { X, PencilSimpleLine } from "@phosphor-icons/react";
 
 const DEFAULT_W = 122;
 const DEFAULT_H = 110;
-const MIN_W = 100;
-const MIN_H = 80;
-const MAX_W = 500;
-const MAX_H = 400;
+const MIN_W = 120;
+const MIN_H = 100;
+const MAX_W = 220;
+const MAX_H = 190;
 
 const HANDLES = ["top-left", "top", "top-right", "right", "bottom-right", "bottom", "bottom-left", "left"];
 const HANDLE_POS: Record<string, { top?: string; left?: string; right?: string; bottom?: string; cursor: string }> = {
-  "top-left":      { top: "-5px", left: "-5px", cursor: "nwse-resize" },
-  "top":           { top: "-5px", left: "50%", cursor: "ns-resize" },
-  "top-right":     { top: "-5px", right: "-5px", cursor: "nesw-resize" },
-  "right":         { right: "-5px", top: "50%", cursor: "ew-resize" },
-  "bottom-right":  { bottom: "-5px", right: "-5px", cursor: "nwse-resize" },
-  "bottom":        { bottom: "-5px", left: "50%", cursor: "ns-resize" },
-  "bottom-left":   { bottom: "-5px", left: "-5px", cursor: "nesw-resize" },
-  "left":          { left: "-5px", top: "50%", cursor: "ew-resize" },
+  "top-left":      { top: "-6px", left: "-6px", cursor: "nwse-resize" },
+  "top":           { top: "-4px", left: "0", cursor: "ns-resize" },
+  "top-right":     { top: "-6px", right: "-6px", cursor: "nesw-resize" },
+  "right":         { right: "-4px", top: "0", cursor: "ew-resize" },
+  "bottom-right":  { bottom: "-6px", right: "-6px", cursor: "nwse-resize" },
+  "bottom":        { bottom: "-4px", left: "0", cursor: "ns-resize" },
+  "bottom-left":   { bottom: "-6px", left: "-6px", cursor: "nesw-resize" },
+  "left":          { left: "-4px", top: "0", cursor: "ew-resize" },
 };
 
 export default function CustomizeCardModal() {
@@ -92,12 +92,6 @@ export default function CustomizeCardModal() {
     setTimeout(() => setOpen(false), 800);
   };
 
-  const btnPad = Math.max(4, Math.min(12, Math.floor(h * 0.06)));
-  const btnGap = Math.max(2, Math.min(8, Math.floor(h * 0.035)));
-  const btnFont = Math.max(9, Math.min(14, Math.floor(h / 9)));
-  const btnIcon = btnFont + 2;
-  const contPad = Math.max(6, Math.min(14, Math.floor(h * 0.08)));
-
   return (
     <AnimatePresence>
       {open && (
@@ -155,55 +149,25 @@ export default function CustomizeCardModal() {
                 position: "relative",
                 width: `${w}px`, height: `${h}px`,
                 background: "var(--card-bg, #0f0f11)",
-                border: "1px solid var(--card-border, rgba(255,255,255,0.08))",
-                borderRadius: "12px",
-                display: "flex", flexDirection: "column",
-                overflow: "hidden",
+                border: "5px solid var(--card-border, rgba(255,255,255,0.15))",
+                borderRadius: "16px",
                 transition: dragging.current ? "none" : "width 0.1s ease, height 0.1s ease",
               }}>
-                <div style={{
-                  position: "absolute", left: 0, top: 0, bottom: 0,
-                  width: "3px", background: "var(--left-accent, transparent)",
-                  borderRadius: "3px 0 0 3px",
-                }} />
-
-                <div style={{ padding: `${contPad}px 10px`, flex: 1, display: "flex", flexDirection: "column" }}>
-                  <span style={{
-                    fontSize: "13px", fontWeight: 500, color: "var(--text-primary-card)",
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  }}>
-                    Task Title
-                  </span>
-                  {h > 90 && (
-                    <p style={{ fontSize: "11px", color: "var(--text-dim-card)", marginTop: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      Task description preview
-                    </p>
-                  )}
-                  {h > 100 && (
-                    <div style={{ marginTop: "auto" }}>
-                      <div style={{ width: "100%", height: "1px", background: "var(--card-progress-track, var(--progress-track-card))", marginTop: "6px", borderRadius: "2px", overflow: "hidden" }}>
-                        <div style={{ width: "40%", height: "100%", background: "var(--card-progress-fill, var(--progress-fill-card))", borderRadius: "2px" }} />
-                      </div>
-                    </div>
-                  )}
-                </div>
 
                 {HANDLES.map((hnd) => {
                   const pos = HANDLE_POS[hnd];
+                  const isEdge = hnd === "top" || hnd === "bottom" || hnd === "left" || hnd === "right";
+                  const size = isEdge ? { width: hnd === "left" || hnd === "right" ? "8px" : "100%", height: hnd === "top" || hnd === "bottom" ? "8px" : "100%" } : { width: "12px", height: "12px" };
                   return (
                     <div
                       key={hnd}
                       onMouseDown={(e) => handleMouseDown(hnd, e)}
                       style={{
                         position: "absolute",
-                        width: "10px", height: "10px",
-                        borderRadius: "50%",
-                        background: "white",
-                        border: "1px solid rgba(255,255,255,0.3)",
                         zIndex: 10,
                         ...pos,
+                        ...size,
                         cursor: pos.cursor,
-                        transform: pos.left === "50%" ? "translateX(-50%)" : pos.top === "50%" ? "translateY(-50%)" : undefined,
                       }}
                     />
                   );

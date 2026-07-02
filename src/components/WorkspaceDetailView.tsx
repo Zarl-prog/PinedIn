@@ -5,7 +5,7 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useReminderStore } from "@/store/reminderStore";
 import { completeTask as completeTaskCmd, uncompleteTask as uncompleteTaskCmd, deleteTask } from "@/lib/tauriCommands";
 import type { Task } from "@/lib/tauriCommands";
-import { ArrowLeft, Circle, Play, Diamond, ArrowsClockwise, Alarm, X } from "@phosphor-icons/react";
+import { ArrowLeft, Circle, Play, Diamond, ArrowsClockwise, Alarm, X, PencilSimpleLine } from "@phosphor-icons/react";
 
 interface WorkspaceDetailViewProps {
   workspaceId: number;
@@ -245,6 +245,14 @@ export default function WorkspaceDetailView({
             style={{ padding: "6px 12px", fontSize: "11px" }}
           >
             + Add Task
+          </button>
+          <button
+            onClick={() => useReminderStore.getState().setCustomizeOpen(true)}
+            className="feature-btn"
+            style={{ padding: "6px 8px", display: "flex", alignItems: "center", justifyContent: "center" }}
+            title="Customize your tasks"
+          >
+            <PencilSimpleLine size={16} weight="light" />
           </button>
         </div>
       </div>

@@ -201,7 +201,7 @@ export default function TaskCard({
         style={{
           position: "absolute",
           right: "8px",
-          top: "8px",
+          bottom: "8px",
           zIndex: 1,
           width: "22px",
           height: "22px",
@@ -235,15 +235,15 @@ export default function TaskCard({
         }}>
           <div style={{ display: "flex", gap: "6px" }}>
             <button className="v-action" onClick={(e) => { e.stopPropagation(); handleDone(); }}
-              style={{ flex: 1, fontSize: "11px", padding: "8px 0", background: "var(--btn-done-bg)", color: "var(--btn-done-text)", border: "1px solid var(--btn-done-border)", borderRadius: "8px", cursor: "pointer", textAlign: "center" }}>
+              style={{ flex: 1, fontSize: "11px", padding: "8px 0", background: "rgba(34,197,94,0.08)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.25)", borderRadius: "8px", cursor: "pointer", textAlign: "center" }}>
               <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Check size={14} weight="light" /> Done</span>
             </button>
             <button className="v-action" onClick={(e) => { e.stopPropagation(); handleSnooze(); }}
-              style={{ flex: 1, fontSize: "11px", padding: "8px 0", background: "var(--btn-snooze-bg)", color: "var(--btn-snooze-text)", border: "1px solid var(--btn-snooze-border, var(--border-light))", borderRadius: "8px", cursor: "pointer", textAlign: "center" }}>
+              style={{ flex: 1, fontSize: "11px", padding: "8px 0", background: "rgba(234,179,8,0.08)", color: "#eab308", border: "1px solid rgba(234,179,8,0.25)", borderRadius: "8px", cursor: "pointer", textAlign: "center" }}>
               <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><ClockCountdown size={14} weight="light" /> Snooze</span>
             </button>
             <button className="v-action" onClick={(e) => { e.stopPropagation(); setShowRemindPicker((p) => !p); }}
-              style={{ flex: 1, fontSize: "11px", padding: "8px 0", background: "var(--btn-remind-bg)", color: "var(--btn-remind-text)", border: "1px solid var(--btn-remind-border, var(--border-light))", borderRadius: "8px", cursor: "pointer", textAlign: "center" }}>
+              style={{ flex: 1, fontSize: "11px", padding: "8px 0", background: "rgba(139,92,246,0.08)", color: "#8b5cf6", border: "1px solid rgba(139,92,246,0.25)", borderRadius: "8px", cursor: "pointer", textAlign: "center" }}>
               <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Bell size={14} weight="light" /> Remind</span>
             </button>
           </div>

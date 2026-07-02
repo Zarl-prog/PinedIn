@@ -899,7 +899,18 @@ export default function AddTaskModal({
                   }}
                 >
                   {isSubmitting ? "Saving..." : editTask ? "Save" : "Add Task"}
-                  <span style={{ fontSize: "10px", opacity: 0.5, marginLeft: "6px" }}>Ctrl+Enter</span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "2px", fontSize: "10px", opacity: 0.5, marginLeft: "8px" }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="5" width="18" height="14" rx="2" />
+                      <path d="M8 11v2" />
+                      <path d="M12 11v2" />
+                      <path d="M16 13v-2" />
+                    </svg>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 12h13" />
+                      <path d="M13 7l5 5-5 5" />
+                    </svg>
+                  </span>
                 </button>
               </div>
             </div>

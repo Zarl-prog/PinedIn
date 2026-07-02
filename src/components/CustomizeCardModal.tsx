@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { invoke } from "@tauri-apps/api/core";
+import { emit } from "@tauri-apps/api/event";
 import { useReminderStore } from "@/store/reminderStore";
 import { X, PencilSimpleLine, ArrowsOut } from "@phosphor-icons/react";
 
@@ -76,6 +77,7 @@ export default function CustomizeCardModal() {
   const handleSave = async () => {
     await invoke("update_setting", { key: "custom_card_width", value: String(w) });
     await invoke("update_setting", { key: "custom_card_height", value: String(h) });
+    await emit("customize-card-size", { width: w, height: h });
     setSaved(true);
     setTimeout(() => setOpen(false), 800);
   };
@@ -85,6 +87,7 @@ export default function CustomizeCardModal() {
     setH(DEFAULT_H);
     await invoke("update_setting", { key: "custom_card_width", value: String(DEFAULT_W) });
     await invoke("update_setting", { key: "custom_card_height", value: String(DEFAULT_H) });
+    await emit("customize-card-size", { width: DEFAULT_W, height: DEFAULT_H });
     setSaved(true);
     setTimeout(() => setOpen(false), 800);
   };

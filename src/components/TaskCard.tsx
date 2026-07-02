@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { LogicalSize } from "@tauri-apps/api/dpi";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { Check, Bell, ClockCountdown, ArrowsClockwise, CaretDown } from "@phosphor-icons/react";
 
 const REMIND_OPTIONS = [5, 15, 30, 60] as const;
@@ -61,25 +62,29 @@ export default function TaskCard({
   const [customW, setCustomW] = useState<number | null>(null);
   const [customH, setCustomH] = useState<number | null>(null);
 
-  useEffect(() => {
-    invoke<Record<string, string>>("get_settings_map").then((map) => {
-      if (map.custom_card_width && map.custom_card_height) {
-        setCustomW(parseInt(map.custom_card_width));
-        setCustomH(parseInt(map.custom_card_height));
-      }
-    }).catch(() => {});
-  }, []);
-
   const tagList = tags?.split(",").map((t) => t.trim()).filter(Boolean) ?? [];
   const hasRecurrence = !!recurrence;
   const isMinimal = !description && tagList.length === 0 && !dueTime && !createdAt && !timeLimitMinutes && !startedAt;
-  const cardW = isMinimal ? SQUARE_SIZE : customW || FULL_WIDTH;
-  const cardH = isMinimal ? SQUARE_SIZE : customH || FULL_HEIGHT;
-  const windowW = isMinimal ? SQUARE_SIZE : (customW || FULL_WIDTH) + 28;
 
   useEffect(() => {
-    getCurrentWindow().setSize(new LogicalSize(windowW, cardH));
-    invoke("reassert_window_properties");
+    invoke<Record<string, string>>("get_settings_map").then((map) => {
+      let cw = FULL_WIDTH, ch = FULL_HEIGHT;
+      if (map.custom_card_width && map.custom_card_height) {
+        cw = parseInt(map.custom_card_width);
+        ch = parseInt(map.custom_card_height);
+        setCustomW(cw);
+        setCustomH(ch);
+      }
+      const w = isMinimal ? SQUARE_SIZE : cw + 28;
+      const h = isMinimal ? SQUARE_SIZE : ch;
+      getCurrentWindow().setSize(new LogicalSize(w, h));
+      invoke("reassert_window_properties");
+    }).catch(() => {
+      const w = isMinimal ? SQUARE_SIZE : FULL_WIDTH + 28;
+      const h = isMinimal ? SQUARE_SIZE : FULL_HEIGHT;
+      getCurrentWindow().setSize(new LogicalSize(w, h));
+      invoke("reassert_window_properties");
+    });
   }, []);
 
   useEffect(() => {
@@ -101,6 +106,22 @@ export default function TaskCard({
       if (timeout) clearTimeout(timeout);
     };
   }, []);
+
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
+    listen<{ width: number; height: number }>("customize-card-size", (event) => {
+      const { width, height } = event.payload;
+      const w = isMinimal ? SQUARE_SIZE : width;
+      const h = isMinimal ? SQUARE_SIZE : height;
+      getCurrentWindow().setSize(new LogicalSize(w, h));
+      invoke("reassert_window_properties");
+      if (!isMinimal) { setCustomW(width); setCustomH(height); }
+    }).then((u) => { unlisten = u; });
+    return () => { unlisten?.(); };
+  }, [isMinimal]);
+
+  const cardW = isMinimal ? SQUARE_SIZE : customW || FULL_WIDTH;
+  const cardH = isMinimal ? SQUARE_SIZE : customH || FULL_HEIGHT;
 
   const progressPercent = useMemo(() => {
     if (!dueTime) return 0;

@@ -6,7 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { Check, Bell, ClockCountdown, ArrowsClockwise, CaretDown } from "@phosphor-icons/react";
 
 const REMIND_OPTIONS = [5, 15, 30, 60] as const;
-const FIXED_HEIGHT = 130;
+const FIXED_HEIGHT = 115;
 
 function getHoursAgo(createdAt: string): string {
   const diff = Date.now() - new Date(createdAt).getTime();
@@ -195,36 +195,35 @@ export default function TaskCard({
         borderRadius: "3px 0 0 3px",
       }} />
 
-      <div style={{
-        position: "absolute",
-        right: "8px",
-        top: "8px",
-        zIndex: 1,
-      }}>
-        <button
-          onClick={(e) => { e.stopPropagation(); setShowActions((p) => !p); setShowRemindPicker(false); }}
-          style={{
-            width: "20px",
-            height: "20px",
-            borderRadius: "4px",
-            border: "none",
-            background: "transparent",
-            color: "var(--text-dim-card)",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            transition: "color 0.15s ease",
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.color = "var(--text-primary-card)"}
-          onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-dim-card)"}
-        >
-          <CaretDown size={14} weight="light" style={{
-            transform: showActions ? "rotate(180deg)" : "rotate(0deg)",
-            transition: "transform 0.2s ease",
-          }} />
-        </button>
-      </div>
+      <button
+        onClick={(e) => { e.stopPropagation(); setShowActions((p) => !p); setShowRemindPicker(false); }}
+        title={showActions ? "Show task info" : "Show actions"}
+        style={{
+          position: "absolute",
+          right: "8px",
+          top: "8px",
+          zIndex: 1,
+          width: "22px",
+          height: "22px",
+          borderRadius: "6px",
+          border: "1px solid var(--border-card-light, rgba(255,255,255,0.1))",
+          background: "var(--card-bg, #0f0f11)",
+          color: "var(--text-dim-card)",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          opacity: 0.6,
+          transition: "opacity 0.15s ease",
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.opacity = "1"}
+        onMouseLeave={(e) => e.currentTarget.style.opacity = "0.6"}
+      >
+        <CaretDown size={12} weight="bold" style={{
+          transform: showActions ? "rotate(180deg)" : "rotate(0deg)",
+          transition: "transform 0.2s ease",
+        }} />
+      </button>
 
       {showActions ? (
         <div style={{

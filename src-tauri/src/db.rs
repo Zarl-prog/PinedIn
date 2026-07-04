@@ -847,16 +847,25 @@ impl DbHandle {
 
     pub fn delete_workspace(&self, id: i64) -> Result<(), String> {
         let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
-        conn.execute(
+        conn.execute_batch("BEGIN").map_err(|e| format!("Transaction error: {e}"))?;
+
+        if let Err(e) = conn.execute(
             "DELETE FROM tasks WHERE workspace_id = ?1",
             rusqlite::params![id],
-        )
-        .map_err(|e| format!("Failed to delete workspace tasks: {e}"))?;
-        conn.execute(
+        ) {
+            let _ = conn.execute_batch("ROLLBACK");
+            return Err(format!("Failed to delete workspace tasks: {e}"));
+        }
+
+        if let Err(e) = conn.execute(
             "DELETE FROM workspaces WHERE id = ?1",
             rusqlite::params![id],
-        )
-        .map_err(|e| format!("Failed to delete workspace: {e}"))?;
+        ) {
+            let _ = conn.execute_batch("ROLLBACK");
+            return Err(format!("Failed to delete workspace: {e}"));
+        }
+
+        conn.execute_batch("COMMIT").map_err(|e| format!("Commit error: {e}"))?;
         Ok(())
     }
 

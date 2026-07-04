@@ -59,17 +59,17 @@ export default function TaskList({ searchQuery }: TaskListProps) {
       .then(setActiveWorkspaceId)
       .catch(() => {});
 
-    const unlisten1 = listen("workspace_activated", () => {
+    const p1 = listen("workspace_activated", () => {
       invoke<number | null>("get_active_workspace_id")
         .then(setActiveWorkspaceId)
         .catch(() => {});
     });
-    const unlisten2 = listen("workspace_deactivated", () => {
+    const p2 = listen("workspace_deactivated", () => {
       setActiveWorkspaceId(null);
     });
     return () => {
-      unlisten1.then((f) => f());
-      unlisten2.then((f) => f());
+      p1.then((f) => f(), () => {});
+      p2.then((f) => f(), () => {});
     };
   }, []);
 

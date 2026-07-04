@@ -85,15 +85,15 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const unlistenActivated = listen<{ name: string }>("workspace_activated", (e) => {
+    const p1 = listen<{ name: string }>("workspace_activated", (e) => {
       setActiveWorkspaceName(e.payload.name);
     });
-    const unlistenDeactivated = listen("workspace_deactivated", () => {
+    const p2 = listen("workspace_deactivated", () => {
       setActiveWorkspaceName(null);
     });
     return () => {
-      unlistenActivated.then((f) => f());
-      unlistenDeactivated.then((f) => f());
+      p1.then((f) => f(), () => {});
+      p2.then((f) => f(), () => {});
     };
   }, []);
 
@@ -110,7 +110,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const unlisten = listen<number>("open_edit_task", (event) => {
+    const p = listen<number>("open_edit_task", (event) => {
       const taskId = event.payload;
       const task = useReminderStore.getState().tasks.find((t) => t.id === taskId);
       const allTasks = Object.values(useReminderStore.getState().workspaceTasks).flat();
@@ -120,16 +120,16 @@ export default function App() {
       }
     });
     return () => {
-      unlisten.then((f) => f());
+      p.then((f) => f(), () => {});
     };
   }, []); // all refs are stable
 
   useEffect(() => {
-    const unlisten = listen("tasks-updated", () => {
+    const p = listen("tasks-updated", () => {
       fetchTasks();
     });
     return () => {
-      unlisten.then((f) => f());
+      p.then((f) => f(), () => {});
     };
   }, []); // fetchTasks is stable via getState()
 
@@ -193,11 +193,11 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const u1 = listen("compact_mode_enabled", () => setCompactModeLocal(true));
-    const u2 = listen("compact_mode_disabled", () => setCompactModeLocal(false));
+    const p1 = listen("compact_mode_enabled", () => setCompactModeLocal(true));
+    const p2 = listen("compact_mode_disabled", () => setCompactModeLocal(false));
     return () => {
-      u1.then((f) => f());
-      u2.then((f) => f());
+      p1.then((f) => f(), () => {});
+      p2.then((f) => f(), () => {});
     };
   }, []);
 
@@ -244,17 +244,17 @@ export default function App() {
   const [showGnomeTrayWarning, setShowGnomeTrayWarning] = useState(false);
 
   useEffect(() => {
-    const unlisten = listen("show_wayland_warning", () => {
+    const p = listen("show_wayland_warning", () => {
       setShowWaylandWarning(true);
     });
-    return () => { unlisten.then(f => f()); };
+    return () => { p.then(f => f(), () => {}); };
   }, []);
 
   useEffect(() => {
-    const unlisten = listen("show_gnome_tray_warning", () => {
+    const p = listen("show_gnome_tray_warning", () => {
       setShowGnomeTrayWarning(true);
     });
-    return () => { unlisten.then(f => f()); };
+    return () => { p.then(f => f(), () => {}); };
   }, []);
 
   const [searchQuery, setSearchQuery] = useState("");

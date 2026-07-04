@@ -8,10 +8,10 @@ export default function UpdateBanner() {
   const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
-    const unlisten = listen<string>("update_available", e => {
+    const p = listen<string>("update_available", e => {
       setVersion(e.payload);
     });
-    return () => { unlisten.then(f => f()); };
+    return () => { p.then(f => f(), () => {}); };
   }, []);
 
   async function handleUpdate() {

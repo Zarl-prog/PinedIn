@@ -52,8 +52,8 @@ export default function CompactPill() {
 
   useEffect(() => {
     refresh();
-    const unlisten = listen("tasks-updated", refresh);
-    return () => { unlisten.then(f => f()); };
+    const p = listen("tasks-updated", refresh);
+    return () => { p.then(f => f(), () => {}); };
   }, []);
 
   useEffect(() => {

@@ -154,8 +154,8 @@ export default function Onboarding() {
   const [step, setStep] = useState(0);
 
   useEffect(() => {
-    const unlisten = listen("show_onboarding", () => setVisible(true));
-    return () => { unlisten.then(f => f()); };
+    const p = listen("show_onboarding", () => setVisible(true));
+    return () => { p.then(f => f(), () => {}); };
   }, []);
 
   async function handleComplete() {

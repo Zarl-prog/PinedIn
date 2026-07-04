@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import CompactPill from "./components/CompactPill";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import "./task-card.css";
@@ -63,7 +64,9 @@ function applyTheme(theme: string) {
 
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
-      <CompactPill />
+      <ErrorBoundary>
+        <CompactPill />
+      </ErrorBoundary>
     </React.StrictMode>
   );
 })();

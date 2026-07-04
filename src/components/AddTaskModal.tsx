@@ -184,6 +184,7 @@ export default function AddTaskModal({
   const [timeLimitValue, setTimeLimitValue] = useState("");
   const [timeLimitUnit, setTimeLimitUnit] = useState<TimeLimitUnit>("minutes");
   const tagInputRef = useRef<HTMLInputElement>(null);
+  const submittingRef = useRef(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -195,6 +196,9 @@ export default function AddTaskModal({
       setError("Title is required");
       return;
     }
+
+    if (submittingRef.current) return;
+    submittingRef.current = true;
 
     setIsSubmitting(true);
     setError(null);
@@ -234,6 +238,7 @@ export default function AddTaskModal({
       setError(err instanceof Error ? err.message : "Failed to save task");
     } finally {
       setIsSubmitting(false);
+      submittingRef.current = false;
     }
   };
 

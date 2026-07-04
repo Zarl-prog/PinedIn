@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import TaskCard from "./components/TaskCard";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -89,6 +90,7 @@ async function main() {
 
     ReactDOM.createRoot(document.getElementById("root")!).render(
       <React.StrictMode>
+        <ErrorBoundary>
         <TaskCard
           taskId={taskId}
           title={task.title}
@@ -100,6 +102,7 @@ async function main() {
           timeLimitMinutes={task.time_limit_minutes}
           startedAt={task.started_at}
         />
+        </ErrorBoundary>
       </React.StrictMode>
     );
   } catch (err) {

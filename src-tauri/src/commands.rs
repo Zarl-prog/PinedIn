@@ -368,7 +368,55 @@ pub fn get_settings(db: State<'_, Arc<DbHandle>>) -> Result<AppSettings, String>
 pub fn enable_autostart(app: AppHandle) -> Result<(), String> {
     app.autolaunch()
         .enable()
-        .map_err(|e| format!("Failed to enable autostart: {e}"))
+        .map_err(|e| format!("Failed to enable autostart: {e}"))?;
+
+    // On Linux, patch the autostart .desktop file to add a 5-second
+    // delay so PinedIn doesn't start before the desktop environment,
+    // display server, and WebKitGTK are fully initialized. Without
+    // this, systemd launches PinedIn too early and WebKit fails to
+    // load the bundled frontend (appears as "unable to connect to
+    // localhost" even though no localhost is involved).
+    #[cfg(target_os = "linux")]
+    {
+        let autostart_dir = std::env::var("XDG_CONFIG_HOME")
+            .ok()
+            .map(|p| std::path::PathBuf::from(p).join("autostart"))
+            .or_else(|| {
+                std::env::var("HOME")
+                    .ok()
+                    .map(|h| std::path::PathBuf::from(h).join(".config").join("autostart"))
+            });
+        if let Some(dir) = autostart_dir {
+            let desktop_file = dir.join(format!("{}.desktop", app.package_info().name));
+            if let Ok(content) = std::fs::read_to_string(&desktop_file) {
+                let mut lines: Vec<String> = content.lines().map(|l| l.to_string()).collect();
+
+                // Replace or add X-GNOME-Autostart-Delay
+                let delay_line = "X-GNOME-Autostart-Delay=5".to_string();
+                let delay_idx = lines.iter().position(|l| l.starts_with("X-GNOME-Autostart-Delay"));
+                match delay_idx {
+                    Some(i) => lines[i] = delay_line,
+                    None => lines.push(delay_line),
+                }
+
+                // Wrap Exec with a bash sleep so the delay applies on
+                // all Linux desktops, not just GNOME.
+                if let Some(exec_idx) = lines.iter().position(|l| l.starts_with("Exec=")) {
+                    let exec = lines[exec_idx].replacen("Exec=", "", 1);
+                    // Only wrap if not already wrapped
+                    if !exec.starts_with("bash -c 'sleep") {
+                        lines[exec_idx] = format!("Exec=bash -c 'sleep 5 && {}'", exec);
+                    }
+                }
+
+                if let Err(e) = std::fs::write(&desktop_file, lines.join("\n") + "\n") {
+                    eprintln!("[autostart] Failed to patch desktop file: {e}");
+                }
+            }
+        }
+    }
+
+    Ok(())
 }
 
 #[tauri::command]

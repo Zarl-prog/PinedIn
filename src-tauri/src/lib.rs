@@ -125,13 +125,15 @@ pub fn run() {
                     let _ = main_window.show();
                 }
 
-                // Retry: if WebKit fails to load the bundled frontend on
-                // first attempt (race with system init on Linux autostart),
-                // reload the page after 2 seconds as a safety net.
+                // Retry: if WebKit failed to load the bundled frontend on
+                // the first attempt (race with system init on Linux autostart),
+                // reload only if the page body is still empty after 3 seconds.
                 let retry_window = main_window.clone();
                 tauri::async_runtime::spawn(async move {
-                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-                    let _ = retry_window.eval("window.location.reload();");
+                    tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+                    let _ = retry_window.eval(
+                        "if (!document.body || !document.body.children.length) window.location.reload();"
+                    );
                 });
             } else {
                 eprintln!("[startup] Main window not found — continuing without window operations");

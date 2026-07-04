@@ -12,33 +12,28 @@ export function useReminders() {
   const fetchScheduledTasks = useReminderStore.getState().fetchScheduledTasks;
 
   useEffect(() => {
-    const unlisteners: UnlistenFn[] = [];
     let mounted = true;
-
-    async function setup() {
-      const unlisten1 = await listen("tasks-updated", () => {
+    const setupPromise = Promise.all([
+      listen("tasks-updated", () => {
         if (!mounted) return;
         fetchTasks();
         fetchScheduledTasks();
-      });
-      unlisteners.push(unlisten1);
-
-      const unlisten2 = await listen("open-quick-task", () => {
+      }),
+      listen("open-quick-task", () => {
         if (!mounted) return;
         useReminderStore.getState().setAddTaskOpen(true);
-      });
-      unlisteners.push(unlisten2);
-    }
+      }),
+    ]);
 
-    setup();
     fetchTasks();
     fetchScheduledTasks();
 
     return () => {
       mounted = false;
-      for (const unlisten of unlisteners) {
-        unlisten();
-      }
+      setupPromise.then(([u1, u2]) => {
+        u1();
+        u2();
+      });
     };
-  }, []); // stable refs — no deps needed
+  }, []);
 }

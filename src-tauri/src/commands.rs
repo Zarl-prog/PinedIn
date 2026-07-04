@@ -214,6 +214,7 @@ pub fn uncomplete_task(
                 let index = tasks.iter().position(|t| t.id == Some(id)).unwrap_or(0);
                 let _ = window::open_task_card(&app, &task, index);
             }
+            window::restack_task_cards(&app);
         }
 
         emit_tasks_updated(&app, &db);
@@ -255,23 +256,17 @@ pub fn snooze_task(
     // Close the card window
     window::close_task_card(&app, id);
 
-    // Re-read the task data before it goes out of scope
-    let task = db.get_task_by_id(id)?;
-
     // Spawn a thread to reopen the card after 30 minutes
     let app_clone = app.clone();
     let db_clone = Arc::clone(&*db);
     std::thread::spawn(move || {
         std::thread::sleep(std::time::Duration::from_secs(30 * 60));
 
-        // Bail if the task was deleted, completed, or already has a card
-        let still_present = db_clone
-            .get_task_by_id(id)
-            .map(|t| !t.completed)
-            .unwrap_or(false);
-        if !still_present {
-            return;
-        }
+        // Re-fetch the task — snapshot may be stale after 30 min
+        let task = match db_clone.get_task_by_id(id) {
+            Ok(t) if !t.completed => t,
+            _ => return,
+        };
 
         // Don't reopen a card if compact mode is active
         if crate::commands::get_compact_mode_state(&app_clone) {
@@ -285,6 +280,7 @@ pub fn snooze_task(
         } else {
             let _ = window::open_task_card(&app_clone, &task, 0);
         }
+        window::restack_task_cards(&app_clone);
     });
 
     Ok(())
@@ -297,20 +293,22 @@ pub fn remind_task(
     id: i64,
     minutes: u64,
 ) -> Result<(), String> {
+    if minutes == 0 {
+        return Err("Remind interval must be at least 1 minute".into());
+    }
     window::close_task_card(&app, id);
 
-    let task = db.get_task_by_id(id)?;
     let app_clone = app.clone();
     let db_clone = Arc::clone(&*db);
     std::thread::spawn(move || {
         std::thread::sleep(std::time::Duration::from_secs(minutes * 60));
-        let still_present = db_clone
-            .get_task_by_id(id)
-            .map(|t| !t.completed)
-            .unwrap_or(false);
-        if !still_present {
-            return;
-        }
+
+        // Re-fetch the task — snapshot may be stale after N minutes
+        let task = match db_clone.get_task_by_id(id) {
+            Ok(t) if !t.completed => t,
+            _ => return,
+        };
+
         // Don't reopen a card if compact mode is active
         if crate::commands::get_compact_mode_state(&app_clone) {
             return;
@@ -321,6 +319,7 @@ pub fn remind_task(
         } else {
             let _ = window::open_task_card(&app_clone, &task, 0);
         }
+        window::restack_task_cards(&app_clone);
     });
 
     Ok(())

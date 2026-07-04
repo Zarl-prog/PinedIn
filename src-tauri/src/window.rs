@@ -3,8 +3,8 @@ use crate::db::Task;
 use std::sync::atomic::Ordering;
 use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, WebviewUrl, WebviewWindowBuilder};
 
-const CARD_WIDTH: f64 = 308.0;
-const CARD_HEIGHT: f64 = 120.0;
+pub const CARD_WIDTH: f64 = 308.0;
+pub const CARD_HEIGHT: f64 = 120.0;
 const TOP_MARGIN: f64 = 80.0;
 const RIGHT_MARGIN: f64 = 24.0;
 const CARD_GAP: f64 = 12.0;

@@ -481,7 +481,8 @@ impl DbHandle {
             "SELECT id, title, description, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at, workspace_id
              FROM tasks
              WHERE completed = 0 AND is_presceduled = 0
-             ORDER BY created_at DESC"
+             ORDER BY created_at DESC
+             LIMIT 500"
         ).map_err(|e| format!("Failed to prepare query: {e}"))?;
 
         let tasks = stmt

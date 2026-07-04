@@ -375,6 +375,11 @@ pub fn update_setting(
 }
 
 #[tauri::command]
+pub fn get_settings_map(db: State<'_, Arc<DbHandle>>) -> Result<std::collections::HashMap<String, String>, String> {
+    db.get_settings_map()
+}
+
+#[tauri::command]
 pub fn get_shake_interval(db: State<'_, Arc<DbHandle>>) -> Result<u64, String> {
     let map = db.get_settings_map()?;
     let value = map

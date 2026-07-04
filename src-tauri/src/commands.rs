@@ -472,8 +472,8 @@ pub struct DigestData {
 
 #[tauri::command]
 pub fn get_daily_digest(db: State<'_, Arc<DbHandle>>) -> Result<DigestData, String> {
-    let today = chrono::Utc::now().date_naive().to_string();
-    let yesterday = (chrono::Utc::now() - chrono::Duration::days(1))
+    let today = chrono::Local::now().date_naive().to_string();
+    let yesterday = (chrono::Local::now() - chrono::Duration::days(1))
         .date_naive()
         .to_string();
 

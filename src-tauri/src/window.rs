@@ -266,7 +266,7 @@ pub fn open_compact_pill_window(app: &AppHandle) {
         .resizable(false)
         .decorations(false);
 
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "linux")]
     let builder = builder.transparent(true);
 
     if let Ok(window) = builder

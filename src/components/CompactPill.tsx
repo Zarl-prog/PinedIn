@@ -174,6 +174,7 @@ export default function CompactPill() {
           cursor: "grab",
           userSelect: "none",
           boxSizing: "border-box",
+          backgroundColor: "#000000",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -204,26 +205,27 @@ export default function CompactPill() {
   }
 
   return (
-    <div
-      onMouseDown={handleMouseDown}
-      onDoubleClick={handleDoubleClick}
-      style={{
-        width: COLLAPSED_W,
-        height: COLLAPSED_H,
-        background: "var(--pill-bg, #060608)",
-        border: `1.5px solid ${timerBorderColor || "var(--pill-border, #1a1a1a)"}`,
-        borderRadius: "999px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "6px",
-        cursor: "grab",
-        userSelect: "none",
-        overflow: "hidden",
-        flexShrink: 0,
-        transition: "border-color 0.5s ease",
-        boxSizing: "border-box",
-      }}
+      <div
+        onMouseDown={handleMouseDown}
+        onDoubleClick={handleDoubleClick}
+        style={{
+          width: COLLAPSED_W,
+          height: COLLAPSED_H,
+          background: "var(--pill-bg, #060608)",
+          border: `1.5px solid ${timerBorderColor || "var(--pill-border, #1a1a1a)"}`,
+          borderRadius: "999px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "6px",
+          cursor: "grab",
+          userSelect: "none",
+          overflow: "hidden",
+          flexShrink: 0,
+          transition: "border-color 0.5s ease",
+          boxSizing: "border-box",
+          backgroundColor: "#000000",
+        }}
     >
       {tasks.length === 0 ? (
         <span style={{ fontSize: "11px", color: "var(--pill-text-muted, #444)", fontFamily: "'Geist Mono', monospace", display: "flex", alignItems: "center", gap: "4px" }}><Check size={14} weight="light" /> All clear</span>

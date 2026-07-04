@@ -125,7 +125,7 @@ export default function WorkspaceDetailView({
   }
 
   async function handleComplete(task: Task) {
-    if (!task.id) return;
+    if (task.id == null) return;
     try {
       await completeTaskCmd(task.id);
       await fetchWorkspaceTasks(workspaceId);
@@ -135,7 +135,7 @@ export default function WorkspaceDetailView({
   }
 
   async function handleUncomplete(task: Task) {
-    if (!task.id) return;
+    if (task.id == null) return;
     try {
       await uncompleteTaskCmd(task.id);
       await fetchWorkspaceTasks(workspaceId);
@@ -145,7 +145,7 @@ export default function WorkspaceDetailView({
   }
 
   async function handleDelete(task: Task) {
-    if (!task.id) return;
+    if (task.id == null) return;
     try {
       await deleteTask(task.id);
       await fetchWorkspaceTasks(workspaceId);
@@ -294,7 +294,7 @@ export default function WorkspaceDetailView({
                     key={task.id}
                     task={task}
                     onCancel={() => {
-                      if (task.id) handleCancelScheduled(task.id);
+                      if (task.id != null) handleCancelScheduled(task.id);
                     }}
                   />
                 ))}

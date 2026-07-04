@@ -207,7 +207,7 @@ export default function AddTaskModal({
       const safeTimeLimit =
         timeLimitMinutes && timeLimitMinutes > 0 ? timeLimitMinutes : null;
 
-      if (editTask?.id) {
+      if (editTask?.id != null) {
         await editTaskAction(
           editTask.id,
           title.trim(),

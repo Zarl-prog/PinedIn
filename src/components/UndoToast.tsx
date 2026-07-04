@@ -20,21 +20,27 @@ export default function UndoToast() {
 
   async function handleUndo() {
     if (!undoEntry) return;
-    clearUndo();
     const t = undoEntry.task;
-    if (undoEntry.action === "delete") {
-      await createTask(
-        t.title,
-        t.description,
-        t.due_time,
-        t.recurrence,
-        t.tags,
-        t.time_limit_minutes ?? null,
-        t.workspace_id ?? null,
-      );
-    } else if (undoEntry.action === "complete") {
-      await uncompleteTask(t.id!);
+    try {
+      if (undoEntry.action === "delete") {
+        await createTask(
+          t.title,
+          t.description,
+          t.due_time,
+          t.recurrence,
+          t.tags,
+          t.time_limit_minutes ?? null,
+          t.workspace_id ?? null,
+        );
+      } else if (undoEntry.action === "complete") {
+        if (t.id == null) return;
+        await uncompleteTask(t.id);
+      }
+    } catch (e) {
+      console.error("Undo failed:", e);
+      return;
     }
+    clearUndo();
   }
 
   return (

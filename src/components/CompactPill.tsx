@@ -136,7 +136,9 @@ export default function CompactPill() {
     const nextIndex = currentIndex >= tasks.length - 1 ? 0 : currentIndex;
     try {
       await invoke("complete_task", { id: taskToComplete.id });
-      await refresh();
+      const all = await invoke<Task[]>("get_incomplete_tasks");
+      setTasks(all);
+      if (all.length === 0) setExpanded(false);
       setCurrentIndex(nextIndex);
     } catch (e) {
       console.error("[CompactPill] Failed to complete task:", e);
@@ -145,11 +147,11 @@ export default function CompactPill() {
   }
 
   function handleNext() {
-    setCurrentIndex(i => (i + 1) % tasks.length);
+    setCurrentIndex(i => (i + 1) % Math.max(tasks.length, 1));
   }
 
   function handlePrev() {
-    setCurrentIndex(i => (i - 1 + tasks.length) % tasks.length);
+    setCurrentIndex(i => (i - 1 + Math.max(tasks.length, 1)) % Math.max(tasks.length, 1));
   }
 
   const currentTask = tasks[currentIndex];

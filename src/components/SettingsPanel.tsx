@@ -106,7 +106,11 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
   };
 
   const handleThemeChange = async (theme: string) => {
-    await updateSetting("theme", theme);
+    try {
+      await updateSetting("theme", theme);
+    } catch (err) {
+      console.error("Failed to update theme:", err);
+    }
   };
 
   const themeOptions = [

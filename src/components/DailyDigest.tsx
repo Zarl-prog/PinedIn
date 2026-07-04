@@ -18,7 +18,7 @@ export default function DailyDigest() {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    invoke<DigestData>("get_daily_digest").then(setData);
+    invoke<DigestData>("get_daily_digest").then(setData).catch(() => setData({ overdue: 0, due_today: 0, unfinished_yesterday: 0, total_active: 0 }));
   }, []);
 
   // Countdown timer. Starts immediately so the window always
@@ -44,7 +44,7 @@ export default function DailyDigest() {
     setDismissed(true);
     setVisible(false);
     await new Promise(r => setTimeout(r, 300));
-    await getCurrentWindow().close();
+    await getCurrentWindow().close().catch(() => {});
   }
 
   function getMessage() {

@@ -32,7 +32,9 @@ function formatCardDate(dateStr: string): string {
 }
 
 function sortTasks(a: Task, b: Task): number {
-  return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
+  const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
+  return ta - tb;
 }
 
 export default function WorkspaceDetailView({

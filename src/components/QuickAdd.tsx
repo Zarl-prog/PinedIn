@@ -75,6 +75,7 @@ export default function QuickAdd() {
           setValue(e.target.value);
           if (status === "error") setStatus("idle");
         }}
+        maxLength={500}
         onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
         placeholder={
           status === "error"

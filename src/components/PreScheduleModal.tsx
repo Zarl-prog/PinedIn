@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useReminderStore } from "@/store/reminderStore";
 import { localDateStr, localIsoString } from "@/lib/utils";
@@ -23,6 +23,7 @@ export default function PreScheduleModal({ open, onClose, workspaceId }: PreSche
   const [description, setDescription] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
+  const submittingRef = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,6 +78,10 @@ export default function PreScheduleModal({ open, onClose, workspaceId }: PreSche
       setError("Scheduled time must be in the future");
       return;
     }
+
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+
     setIsSubmitting(true);
     setError(null);
     try {
@@ -95,6 +100,7 @@ export default function PreScheduleModal({ open, onClose, workspaceId }: PreSche
       setError(err instanceof Error ? err.message : "Failed to schedule task");
     } finally {
       setIsSubmitting(false);
+      submittingRef.current = false;
     }
   };
 

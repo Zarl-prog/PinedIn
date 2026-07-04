@@ -250,6 +250,7 @@ pub fn run() {
             commands::enable_autostart,
             commands::disable_autostart,
             commands::is_autostart_enabled,
+            commands::get_settings_map,
             commands::get_settings,
             commands::update_setting,
             commands::get_shake_interval,

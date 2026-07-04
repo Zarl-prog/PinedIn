@@ -12,7 +12,9 @@ const FULL_WIDTH = 122;
 const FULL_HEIGHT = 110;
 
 function getHoursAgo(createdAt: string): string {
-  const diff = Date.now() - new Date(createdAt).getTime();
+  const t = createdAt ? new Date(createdAt).getTime() : 0;
+  if (!t) return "";
+  const diff = Date.now() - t;
   const h = Math.floor(diff / 3600000);
   return h < 1 ? "< 1h" : `${h}h`;
 }
@@ -142,7 +144,8 @@ export default function TaskCard({
     if (!timeLimitMinutes || !startedAt) return;
     const calc = () => {
       const total = timeLimitMinutes * 60000;
-      const elapsed = Date.now() - new Date(startedAt).getTime();
+      const started = new Date(startedAt).getTime();
+      const elapsed = started ? Date.now() - started : 0;
       const remaining = Math.max(0, total - elapsed);
       const pct = (remaining / total) * 100;
       setTlProgress(pct);

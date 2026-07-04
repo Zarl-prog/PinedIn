@@ -72,7 +72,11 @@ export default function WorkspacesView({ onOpen, onBack, workspaceContext, onAdd
 
   async function handleCreate() {
     if (!newName.trim()) return;
-    await saveWorkspace(newName.trim());
+    try {
+      await saveWorkspace(newName.trim());
+    } catch (e) {
+      console.error("Failed to create workspace:", e);
+    }
     setNewName("");
     setCreating(false);
     getWorkspaces().then(setWorkspaces).catch((e) => console.error("Failed to refresh workspaces:", e));
@@ -94,7 +98,11 @@ export default function WorkspacesView({ onOpen, onBack, workspaceContext, onAdd
 
   async function confirmDelete(id: number) {
     setDeleteTarget(null);
-    await deleteWorkspace(id);
+    try {
+      await deleteWorkspace(id);
+    } catch (e) {
+      console.error("Failed to delete workspace:", e);
+    }
     getWorkspaces().then(setWorkspaces).catch((e) => console.error("Failed to refresh workspaces:", e));
   }
 

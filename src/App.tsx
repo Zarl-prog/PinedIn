@@ -26,6 +26,8 @@ class ErrorBoundary extends Component<
   { children: ReactNode },
   { hasError: boolean }
 > {
+  private timeoutId: ReturnType<typeof setTimeout> | null = null;
+
   constructor(props: { children: ReactNode }) {
     super(props);
     this.state = { hasError: false };
@@ -36,7 +38,10 @@ class ErrorBoundary extends Component<
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error("ErrorBoundary caught:", error, info.componentStack);
     // Auto-recover after a short delay so the user never sees a broken state
-    setTimeout(() => this.setState({ hasError: false }), 50);
+    this.timeoutId = setTimeout(() => this.setState({ hasError: false }), 50);
+  }
+  componentWillUnmount() {
+    if (this.timeoutId) clearTimeout(this.timeoutId);
   }
   render() {
     if (this.state.hasError) return null;
@@ -386,7 +391,7 @@ export default function App() {
             )}
           </div>
           <button
-            onClick={() => getCurrentWindow().minimize()}
+            onClick={() => getCurrentWindow().minimize().catch(() => {})}
             style={{
               width: "12px",
               height: "12px",
@@ -402,7 +407,7 @@ export default function App() {
             onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
           />
           <button
-            onClick={() => getCurrentWindow().toggleMaximize()}
+            onClick={() => getCurrentWindow().toggleMaximize().catch(() => {})}
             style={{
               width: "12px",
               height: "12px",
@@ -418,7 +423,7 @@ export default function App() {
             onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
           />
           <button
-            onClick={() => getCurrentWindow().close()}
+            onClick={() => getCurrentWindow().close().catch(() => {})}
             style={{
               width: "12px",
               height: "12px",

@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import QuickAdd from "./components/QuickAdd";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
@@ -46,6 +47,8 @@ function applyTheme(theme: string) {
 }
 
 (async () => {
+  document.addEventListener("contextmenu", (e) => e.preventDefault());
+
   try {
     const settings = await invoke<{ theme: string }>("get_settings");
     stopSystemTheme();
@@ -60,7 +63,9 @@ function applyTheme(theme: string) {
 
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
-      <QuickAdd />
+      <ErrorBoundary>
+        <QuickAdd />
+      </ErrorBoundary>
     </React.StrictMode>
   );
 })();

@@ -589,7 +589,18 @@ pub fn load_workspace(app: AppHandle, workspace_id: i64) -> Result<(), String> {
 #[tauri::command]
 pub fn delete_workspace(app: AppHandle, workspace_id: i64) -> Result<(), String> {
     let db = app.state::<Arc<DbHandle>>();
-    db.delete_workspace(workspace_id).map_err(|e| e.to_string())
+    db.delete_workspace(workspace_id).map_err(|e| e.to_string())?;
+
+    // Clear active_workspace_id if it matched the deleted workspace
+    let active = db.get_setting("active_workspace_id");
+    if let Ok(Some(val)) = active {
+        if val == workspace_id.to_string() {
+            let _ = db.update_setting("active_workspace_id", "");
+        }
+    }
+
+    emit_tasks_updated(&app, &db);
+    Ok(())
 }
 
 // ─── Compact Mode ──────────────────────────────────────────────────────────────

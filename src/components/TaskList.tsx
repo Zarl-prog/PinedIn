@@ -115,7 +115,7 @@ export default function TaskList({ searchQuery }: TaskListProps) {
   const completedTasks = filteredTasks.filter((t) => t.completed);
 
   const handleDelete = async (task: Task) => {
-    if (!task.id) return;
+    if (task.id == null) return;
     try {
       await removeTask(task.id);
       // Explicitly close the floating card window in case the task
@@ -168,7 +168,7 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                   setMenuOpenId(menuOpenId === task.id ? null : (task.id ?? null))
                 }
                 onComplete={() => {
-                  if (task.id) {
+                  if (task.id != null) {
                     completeTask(task.id).catch(reportError);
                   }
                   setExpandedId(null);
@@ -184,7 +184,7 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                   setMenuOpenId(null);
                 }}
                 onSnooze={async () => {
-                  if (!task.id) return;
+                  if (task.id == null) return;
                   try {
                     await invoke("snooze_task", { id: task.id });
                   } catch (e) {
@@ -193,7 +193,7 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                   setExpandedId(null);
                 }}
                 onRemind={async () => {
-                  if (!task.id) return;
+                  if (task.id == null) return;
                   try {
                     await invoke("remind_task", { id: task.id, minutes: 30 });
                   } catch (e) {
@@ -243,7 +243,7 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                         e.stopPropagation();
                         Promise.all(
                           completedTasks.map((t) =>
-                            t.id ? removeTask(t.id).catch(reportError) : Promise.resolve()
+                            t.id != null ? removeTask(t.id).catch(reportError) : Promise.resolve()
                           )
                         ).then(() => setCompletedExpanded(false));
                       }}
@@ -288,7 +288,7 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                         setMenuOpenId(menuOpenId === task.id ? null : (task.id ?? null))
                       }
                       onComplete={() => {
-                        if (task.id) {
+                        if (task.id != null) {
                           uncompleteFromStore(task.id).catch(reportError);
                         }
                         setExpandedId(null);
@@ -331,7 +331,7 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                     key={task.id}
                     task={task}
                     onCancel={() => {
-                      if (task.id) {
+                      if (task.id != null) {
                         removeScheduledTask(task.id).catch(reportError);
                       }
                     }}

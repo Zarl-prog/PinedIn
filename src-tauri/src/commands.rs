@@ -368,6 +368,9 @@ pub fn update_setting(
     if key == "theme" {
         let _ = app.emit("theme_changed", &value);
     }
+    if key == "compact_mode" {
+        COMPACT_MODE.store(value == "true", Ordering::SeqCst);
+    }
     Ok(())
 }
 
@@ -635,7 +638,7 @@ pub fn set_compact_mode(app: AppHandle, db: State<'_, Arc<DbHandle>>, enabled: b
         // Reopen active task card windows — cap at 20 to avoid freezing
         let db = db.inner();
         if let Ok(tasks) = db.get_all_active_tasks() {
-            for (i, task) in tasks.iter().take(20).enumerate() {
+            for (i, task) in tasks.iter().enumerate() {
                 let _ = crate::window::open_task_card(&app, task, i);
             }
             crate::window::restack_task_cards(&app);

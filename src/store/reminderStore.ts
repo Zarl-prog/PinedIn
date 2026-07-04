@@ -260,13 +260,13 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
   },
 
 removeTask: async (id) => {
+     const target = get().tasks.find((t) => t.id === id) ||
+       Object.values(get().workspaceTasks).flat().find((t) => t.id === id);
      try {
-       const target = get().tasks.find((t) => t.id === id) ||
-         Object.values(get().workspaceTasks).flat().find((t) => t.id === id);
+       await deleteTask(id);
        if (target) {
          get().pushUndo({ action: "delete", task: target });
        }
-       await deleteTask(id);
        set((state) => {
          if (target?.workspace_id) {
            const wid = target.workspace_id;
@@ -292,11 +292,11 @@ completeTask: async (id) => {
     try {
       const target = get().tasks.find((t) => t.id === id) ||
         Object.values(get().workspaceTasks).flat().find((t) => t.id === id);
+      await completeTaskCmd(id);
       if (target) {
         get().pushUndo({ action: "complete", task: target });
         workspaceId = target.workspace_id ?? null;
       }
-      await completeTaskCmd(id);
       // Update both tasks and workspaceTasks if workspace-scoped (original behavior)
       set((state) => {
         if (workspaceId !== null) {

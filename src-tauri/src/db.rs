@@ -198,6 +198,15 @@ impl DbHandle {
                 [],
             );
         }
+
+        // Performance indices for common query patterns
+        conn.execute_batch(
+            "CREATE INDEX IF NOT EXISTS idx_tasks_workspace_state ON tasks(workspace_id, is_presceduled, completed);
+             CREATE INDEX IF NOT EXISTS idx_tasks_due ON tasks(due_time, completed, is_presceduled);
+             CREATE INDEX IF NOT EXISTS idx_tasks_scheduled ON tasks(is_presceduled, scheduled_at);
+             CREATE INDEX IF NOT EXISTS idx_tasks_active ON tasks(completed, is_presceduled, created_at DESC);"
+        ).map_err(|e| format!("Failed to create indices: {e}"))?;
+
         Ok(())
     }
 

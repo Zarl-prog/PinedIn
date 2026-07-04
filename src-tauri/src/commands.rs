@@ -1,13 +1,19 @@
 use crate::db::{DbHandle, Task};
 use crate::notifications;
 use crate::window;
+use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use tauri::{AppHandle, Emitter, Manager, State, Window};
 use tauri_plugin_autostart::ManagerExt;
 
 pub static ZEN_MODE: AtomicBool = AtomicBool::new(false);
 pub static COMPACT_MODE: AtomicBool = AtomicBool::new(false);
+
+static PENDING_SNOOZES: OnceLock<Mutex<HashSet<i64>>> = OnceLock::new();
+fn pending_snoozes() -> &'static Mutex<HashSet<i64>> {
+    PENDING_SNOOZES.get_or_init(|| Mutex::new(HashSet::new()))
+}
 
 pub fn emit_tasks_updated(app: &tauri::AppHandle, db: &DbHandle) {
     if let Ok(tasks) = db.get_all_tasks() {
@@ -27,6 +33,9 @@ pub fn create_task(
     time_limit_minutes: Option<i64>,
     workspace_id: Option<i64>,
 ) -> Result<Task, String> {
+    if title.trim().is_empty() {
+        return Err("Task title cannot be empty".into());
+    }
     let task = db.create_task_with_tags(
         &title,
         &description,
@@ -241,7 +250,10 @@ fn advance_due_date(current_date: &str, recurrence: &str) -> String {
         "monthly" => base_date
             .checked_add_months(chrono::Months::new(1))
             .unwrap_or(base_date + chrono::Duration::days(30)),
-        _ => return current_date.to_string(),
+        _ => {
+            eprintln!("Unknown recurrence type: {recurrence}");
+            return current_date.to_string();
+        }
     };
 
     new_date.format("%Y-%m-%d").to_string()
@@ -253,6 +265,14 @@ pub fn snooze_task(
     db: State<'_, Arc<DbHandle>>,
     id: i64,
 ) -> Result<(), String> {
+    // Guard: skip if a snooze thread is already pending for this task
+    {
+        let mut set = pending_snoozes().lock().map_err(|e| e.to_string())?;
+        if !set.insert(id) {
+            return Ok(());
+        }
+    }
+
     // Close the card window
     window::close_task_card(&app, id);
 
@@ -265,11 +285,19 @@ pub fn snooze_task(
         // Re-fetch the task — snapshot may be stale after 30 min
         let task = match db_clone.get_task_by_id(id) {
             Ok(t) if !t.completed => t,
-            _ => return,
+            _ => {
+                if let Ok(mut set) = pending_snoozes().lock() {
+                    set.remove(&id);
+                }
+                return;
+            }
         };
 
         // Don't reopen a card if compact mode is active
         if crate::commands::get_compact_mode_state(&app_clone) {
+            if let Ok(mut set) = pending_snoozes().lock() {
+                set.remove(&id);
+            }
             return;
         }
 
@@ -281,6 +309,10 @@ pub fn snooze_task(
             let _ = window::open_task_card(&app_clone, &task, 0);
         }
         window::restack_task_cards(&app_clone);
+
+        if let Ok(mut set) = pending_snoozes().lock() {
+            set.remove(&id);
+        }
     });
 
     Ok(())
@@ -509,8 +541,8 @@ pub fn snap_all_cards_to_grid(app: AppHandle) -> Result<(), String> {
     let screen_width = monitor.size().width as f64 / monitor.scale_factor();
     let screen_height = monitor.size().height as f64 / monitor.scale_factor();
 
-    let card_width = 300.0;
-    let card_height = 120.0;
+    let card_width = crate::window::CARD_WIDTH;
+    let card_height = crate::window::CARD_HEIGHT;
     let padding = 10.0;
     let x = screen_width - card_width - padding;
     let start_y = 80.0;
@@ -698,6 +730,9 @@ pub fn add_presceduled_task(
     tags: Option<String>,
     workspace_id: Option<i64>,
 ) -> Result<i64, String> {
+    if title.trim().is_empty() {
+        return Err("Task title cannot be empty".into());
+    }
     // Validate scheduled_at is not in the past — parse as RFC 3339/ISO
     // datetime so the comparison is timezone-aware and correct.
     let scheduled_dt = chrono::DateTime::parse_from_rfc3339(&scheduled_at)

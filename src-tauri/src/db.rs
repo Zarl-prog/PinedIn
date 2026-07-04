@@ -586,6 +586,78 @@ impl DbHandle {
         Ok(())
     }
 
+    /// Atomically create a recurred task and mark the original as completed.
+    /// Both operations share one SQLite transaction so a failure on either
+    /// side rolls back the whole unit.
+    pub fn complete_with_recurrence(
+        &self,
+        id: i64,
+        title: &str,
+        description: &str,
+        new_due: &str,
+        recurrence: Option<&str>,
+        tags: Option<&str>,
+        time_limit_minutes: Option<i64>,
+        workspace_id: Option<i64>,
+    ) -> Result<Task, String> {
+        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let started_at = if time_limit_minutes.is_some() {
+            Some(chrono::Local::now().to_rfc3339())
+        } else {
+            None
+        };
+
+        conn.execute_batch("BEGIN").map_err(|e| format!("Transaction error: {e}"))?;
+
+        if let Err(e) = conn.execute(
+            "INSERT INTO tasks (title, description, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at, workspace_id)
+             VALUES (?1, ?2, ?3, 0, ?4, ?5, ?6, ?7, ?8, 0, NULL, ?9)",
+            rusqlite::params![
+                title,
+                description,
+                new_due,
+                now,
+                recurrence,
+                tags,
+                time_limit_minutes,
+                started_at,
+                workspace_id
+            ],
+        ) {
+            let _ = conn.execute_batch("ROLLBACK");
+            return Err(format!("Failed to create recurred task: {e}"));
+        }
+
+        let new_id = conn.last_insert_rowid();
+
+        if let Err(e) = conn.execute(
+            "UPDATE tasks SET completed=1 WHERE id=?1",
+            rusqlite::params![id],
+        ) {
+            let _ = conn.execute_batch("ROLLBACK");
+            return Err(format!("Failed to complete original task: {e}"));
+        }
+
+        conn.execute_batch("COMMIT").map_err(|e| format!("Commit error: {e}"))?;
+
+        Ok(Task {
+            id: Some(new_id),
+            title: title.to_string(),
+            description: description.to_string(),
+            due_time: new_due.to_string(),
+            completed: false,
+            created_at: now,
+            recurrence: recurrence.map(|s| s.to_string()),
+            tags: tags.map(|s| s.to_string()),
+            time_limit_minutes,
+            started_at,
+            is_presceduled: 0,
+            scheduled_at: None,
+            workspace_id,
+        })
+    }
+
     pub fn uncomplete_task(&self, id: i64) -> Result<(), String> {
         let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
         conn.execute(

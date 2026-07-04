@@ -158,8 +158,9 @@ pub fn complete_task(
         // Advance the due date by the recurrence interval
         let new_due = advance_due_date(&task.due_time, recurrence);
 
-        // Create a new task with the same properties but advanced due date
-        let new_task = db.create_task_with_tags(
+        // Atomically create recurred task + mark original completed
+        let new_task = db.complete_with_recurrence(
+            id,
             &task.title,
             &task.description,
             &new_due,
@@ -168,9 +169,6 @@ pub fn complete_task(
             task.time_limit_minutes,
             task.workspace_id,
         )?;
-
-        // Mark the original as completed
-        db.complete_task(id)?;
         window::close_task_card(&app, id);
 
         // Open a new floating card for the recurred task

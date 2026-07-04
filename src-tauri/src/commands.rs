@@ -650,17 +650,17 @@ pub fn set_compact_mode(app: AppHandle, db: State<'_, Arc<DbHandle>>, enabled: b
 
 #[tauri::command]
 pub fn set_zen_mode(app: AppHandle, hidden: bool) -> Result<(), String> {
-    ZEN_MODE.store(hidden, Ordering::SeqCst);
     let windows = app.webview_windows();
     for (label, window) in windows {
         if label.starts_with("task_") {
             if hidden {
-                window.hide().map_err(|e| e.to_string())?;
+                let _ = window.hide();
             } else {
-                window.show().map_err(|e| e.to_string())?;
+                let _ = window.show();
             }
         }
     }
+    ZEN_MODE.store(hidden, Ordering::SeqCst);
     Ok(())
 }
 

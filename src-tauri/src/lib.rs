@@ -29,6 +29,26 @@ fn is_wayland() -> bool {
         && std::env::var("GDK_BACKEND").unwrap_or_default() != "x11"
 }
 
+/// Wait up to 10 seconds for the display server to be ready.
+/// On Linux with systemd autostart, PinedIn can launch before the
+/// desktop environment is fully initialized, causing WebKit to fail
+/// loading the bundled frontend. This check polls for DISPLAY or
+/// WAYLAND_DISPLAY before allowing any window creation.
+#[cfg(target_os = "linux")]
+fn wait_for_display() {
+    for i in 0..10 {
+        if std::env::var("DISPLAY").is_ok() || std::env::var("WAYLAND_DISPLAY").is_ok() {
+            if i > 0 {
+                eprintln!("[startup] Display ready after {i}s wait");
+            }
+            return;
+        }
+        eprintln!("[startup] Display not ready (attempt {}/10), waiting 1s...", i + 1);
+        std::thread::sleep(std::time::Duration::from_secs(1));
+    }
+    eprintln!("[startup] Display did not become ready after 10s — proceeding anyway");
+}
+
 pub fn run() {
     // Set Linux environment variables for X11 compatibility before any windows are created.
     // This ensures always-on-top windows work correctly on Wayland/X11 hybrid setups.
@@ -37,6 +57,7 @@ pub fn run() {
         std::env::set_var("GDK_BACKEND", "x11");
         std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
         std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+        wait_for_display();
     }
 
     tauri::Builder::default()
@@ -103,6 +124,15 @@ pub fn run() {
                     let _ = main_window.hide();
                     let _ = main_window.show();
                 }
+
+                // Retry: if WebKit fails to load the bundled frontend on
+                // first attempt (race with system init on Linux autostart),
+                // reload the page after 2 seconds as a safety net.
+                let retry_window = main_window.clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                    let _ = retry_window.eval("window.location.reload();");
+                });
             } else {
                 eprintln!("[startup] Main window not found — continuing without window operations");
             }

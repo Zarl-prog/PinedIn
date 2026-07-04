@@ -16,7 +16,11 @@ export default function UpdateBanner() {
 
   async function handleUpdate() {
     setUpdating(true);
-    await invoke("install_update");
+    try {
+      await invoke("install_update");
+    } catch {
+      setUpdating(false);
+    }
   }
 
   return (

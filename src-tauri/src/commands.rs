@@ -3,7 +3,7 @@ use crate::notifications;
 use crate::window;
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
 use tauri::{AppHandle, Emitter, Manager, State, Window};
 use tauri_plugin_autostart::ManagerExt;
 
@@ -617,6 +617,12 @@ pub fn load_workspace(app: AppHandle, workspace_id: i64) -> Result<(), String> {
             }
         }
     }
+
+    // Also activate the workspace so task list context matches
+    let workspace_name = workspace.name.clone();
+    db.update_setting("active_workspace_id", &workspace_id.to_string())?;
+    let _ = app.emit("workspace_activated", serde_json::json!({ "name": workspace_name }));
+    emit_tasks_updated(&app, &db);
     Ok(())
 }
 

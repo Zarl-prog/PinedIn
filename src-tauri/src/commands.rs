@@ -387,30 +387,43 @@ pub fn enable_autostart(app: AppHandle) -> Result<(), String> {
                     .map(|h| std::path::PathBuf::from(h).join(".config").join("autostart"))
             });
         if let Some(dir) = autostart_dir {
-            let desktop_file = dir.join(format!("{}.desktop", app.package_info().name));
-            if let Ok(content) = std::fs::read_to_string(&desktop_file) {
-                let mut lines: Vec<String> = content.lines().map(|l| l.to_string()).collect();
+            // Try multiple possible filenames — the autostart plugin uses
+            // the app identifier (com.pinedin.desktop) or package name
+            // (pinedin) depending on platform/version.
+            let candidates = [
+                format!("{}.desktop", app.package_info().name),
+                format!("{}.desktop", app.package_info().crate_name),
+                format!("{}.desktop", app.config().identifier.clone()),
+            ];
+            let desktop_file = candidates.iter().find_map(|name| {
+                let path = dir.join(name);
+                if path.exists() { Some(path) } else { None }
+            });
+            if let Some(ref desktop_file) = desktop_file {
+                if let Ok(content) = std::fs::read_to_string(desktop_file) {
+                    let mut lines: Vec<String> = content.lines().map(|l| l.to_string()).collect();
 
-                // Replace or add X-GNOME-Autostart-Delay
-                let delay_line = "X-GNOME-Autostart-Delay=5".to_string();
-                let delay_idx = lines.iter().position(|l| l.starts_with("X-GNOME-Autostart-Delay"));
-                match delay_idx {
-                    Some(i) => lines[i] = delay_line,
-                    None => lines.push(delay_line),
-                }
-
-                // Wrap Exec with a bash sleep so the delay applies on
-                // all Linux desktops, not just GNOME.
-                if let Some(exec_idx) = lines.iter().position(|l| l.starts_with("Exec=")) {
-                    let exec = lines[exec_idx].replacen("Exec=", "", 1);
-                    // Only wrap if not already wrapped
-                    if !exec.starts_with("bash -c 'sleep") {
-                        lines[exec_idx] = format!("Exec=bash -c 'sleep 5 && {}'", exec);
+                    // Replace or add X-GNOME-Autostart-Delay
+                    let delay_line = "X-GNOME-Autostart-Delay=5".to_string();
+                    let delay_idx = lines.iter().position(|l| l.starts_with("X-GNOME-Autostart-Delay"));
+                    match delay_idx {
+                        Some(i) => lines[i] = delay_line,
+                        None => lines.push(delay_line),
                     }
-                }
 
-                if let Err(e) = std::fs::write(&desktop_file, lines.join("\n") + "\n") {
-                    eprintln!("[autostart] Failed to patch desktop file: {e}");
+                    // Wrap Exec with a bash sleep so the delay applies on
+                    // all Linux desktops, not just GNOME.
+                    if let Some(exec_idx) = lines.iter().position(|l| l.starts_with("Exec=")) {
+                        let exec = lines[exec_idx].replacen("Exec=", "", 1);
+                        // Only wrap if not already wrapped
+                        if !exec.starts_with("bash -c 'sleep") {
+                            lines[exec_idx] = format!("Exec=bash -c 'sleep 5 && {}'", exec);
+                        }
+                    }
+
+                    if let Err(e) = std::fs::write(desktop_file, lines.join("\n") + "\n") {
+                        eprintln!("[autostart] Failed to patch desktop file: {e}");
+                    }
                 }
             }
         }

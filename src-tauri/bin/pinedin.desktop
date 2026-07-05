@@ -1,9 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=PinedIn
-Comment=Floating task overlay for your desktop
-Exec=env WEBKIT_DISABLE_COMPOSITING_MODE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 GDK_BACKEND=x11 /usr/bin/pinedin %U
-Icon=pinedin
-Categories=Productivity;
-Terminal=false
-StartupNotify=true

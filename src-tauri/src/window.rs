@@ -13,6 +13,27 @@ const QUICK_ADD_WIDTH: f64 = 480.0;
 const QUICK_ADD_HEIGHT: f64 = 64.0;
 const QUICK_ADD_TOP_MARGIN: f64 = 120.0;
 
+#[cfg(target_os = "linux")]
+fn build_with_retry<F>(build_fn: F, max_retries: u32) -> Result<tauri::WebviewWindow, tauri::Error>
+where
+    F: Fn() -> Result<tauri::WebviewWindow, tauri::Error>,
+{
+    let mut last_error = None;
+    for attempt in 0..max_retries {
+        match build_fn() {
+            Ok(window) => return Ok(window),
+            Err(e) => {
+                eprintln!("Window creation attempt {} failed: {}", attempt + 1, e);
+                last_error = Some(e);
+                if attempt + 1 < max_retries {
+                    std::thread::sleep(std::time::Duration::from_millis(500));
+                }
+            }
+        }
+    }
+    Err(last_error.unwrap())
+}
+
 fn monitor_size(app: &AppHandle) -> (f64, f64) {
     if let Some(monitor) = app.primary_monitor().ok().flatten().or_else(|| {
         app.available_monitors()
@@ -80,22 +101,30 @@ pub fn open_task_card(app: &AppHandle, task: &Task, _index: usize) -> Result<(),
     let x = (screen_w - CARD_WIDTH - RIGHT_MARGIN).max(0.0);
     let y = stack_offset_y(app) + CARD_GAP;
 
-    let builder = WebviewWindowBuilder::new(app, &label, WebviewUrl::App("task-card.html".into()))
-        .inner_size(CARD_WIDTH, CARD_HEIGHT)
-        .resizable(false)
-        .decorations(false);
+    let build_fn = || {
+        let mut builder = WebviewWindowBuilder::new(app, &label, WebviewUrl::App("task-card.html".into()))
+            .inner_size(CARD_WIDTH, CARD_HEIGHT)
+            .resizable(false)
+            .decorations(false);
+        #[cfg(not(target_os = "macos"))]
+        {
+            builder = builder.transparent(true);
+        }
+        builder
+            .shadow(false)
+            .always_on_top(true)
+            .skip_taskbar(true)
+            .focused(false)
+            .position(x, y)
+            .build()
+    };
 
-    #[cfg(not(target_os = "macos"))]
-    let builder = builder.transparent(true);
+    #[cfg(target_os = "linux")]
+    let result = build_with_retry(build_fn, 3);
+    #[cfg(not(target_os = "linux"))]
+    let result = build_fn();
 
-    let window = builder
-        .shadow(false)
-        .always_on_top(true)
-        .skip_taskbar(true)
-        .focused(false)
-        .position(x, y)
-        .build()
-        .map_err(|e| format!("Failed to create task card window: {e}"))?;
+    let window = result.map_err(|e| format!("Failed to create task card window: {e}"))?;
 
     // Re-assert always-on-top after creation — some window managers
     // (notably GNOME/Mutter on Wayland) ignore the builder hint during
@@ -146,8 +175,11 @@ pub fn restack_task_cards(app: &AppHandle) {
                 .map(|s| LogicalSize::new(s.width as f64 / scale, s.height as f64 / scale))
                 .unwrap_or(LogicalSize::new(CARD_WIDTH, CARD_HEIGHT));
             let _ = window.set_position(LogicalPosition::new(x, y));
-            #[cfg(any(target_os = "linux", target_os = "windows"))]
-            let _ = window.set_always_on_top(true);
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
+    let _ = window.set_always_on_top(true);
+
+    #[cfg(target_os = "windows")]
+    let _ = window.set_background_color(Some(tauri::utils::config::Color(0, 0, 0, 255)));
             y += size.height + CARD_GAP;
         }
     }
@@ -187,42 +219,59 @@ pub fn open_task_card_window_at(app: &AppHandle, task: &Task, x: f64, y: f64) {
         return;
     }
 
-    let builder = WebviewWindowBuilder::new(app, &label, WebviewUrl::App("task-card.html".into()))
-        .inner_size(CARD_WIDTH, CARD_HEIGHT)
-        .resizable(false)
-        .decorations(false);
-
-    #[cfg(not(target_os = "macos"))]
-    let builder = builder.transparent(true);
-
-    if let Ok(window) = builder
-        .shadow(false)
-        .always_on_top(true)
-        .skip_taskbar(true)
-        .focused(false)
-        .position(x, y)
-        .build()
-    {
-        #[cfg(any(target_os = "linux", target_os = "windows"))]
-        let _ = window.set_always_on_top(true);
-
-        if ZEN_MODE.load(Ordering::SeqCst) {
-            let _ = window.hide();
+    let build_fn = || {
+        let mut builder = WebviewWindowBuilder::new(app, &label, WebviewUrl::App("task-card.html".into()))
+            .inner_size(CARD_WIDTH, CARD_HEIGHT)
+            .resizable(false)
+            .decorations(false);
+        #[cfg(not(target_os = "macos"))]
+        {
+            builder = builder.transparent(true);
         }
-    } else {
-        eprintln!("Failed to open task card window");
+        builder
+            .shadow(false)
+            .always_on_top(true)
+            .skip_taskbar(true)
+            .focused(false)
+            .position(x, y)
+            .build()
+    };
+
+    #[cfg(target_os = "linux")]
+    let result = build_with_retry(build_fn, 3);
+    #[cfg(not(target_os = "linux"))]
+    let result = build_fn();
+
+    let window = match result {
+        Ok(w) => w,
+        Err(e) => {
+            eprintln!("Failed to open task card window: {e}");
+            return;
+        }
+    };
+
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
+    let _ = window.set_always_on_top(true);
+
+    if ZEN_MODE.load(Ordering::SeqCst) {
+        let _ = window.hide();
     }
 }
 
 /// Open a minimal 480x64 quick-add popup, centered horizontally near
 /// the top of the primary monitor. If the popup is already open, just
-/// focus it instead of creating a second instance. The window is opaque
-/// (so its rounded border reads against the desktop), always-on-top,
-/// and auto-focused so the user can start typing immediately.
+/// show and focus it instead of creating a second instance. The window
+/// is opaque (so its rounded border reads against the desktop),
+/// always-on-top, and auto-focused so the user can start typing
+/// immediately.
 pub fn open_quick_add_window(app: &AppHandle) {
+    #[cfg(target_os = "linux")]
+    std::thread::sleep(std::time::Duration::from_millis(300));
+
     let label = "quick_add";
 
     if let Some(w) = app.get_webview_window(label) {
+        let _ = w.show();
         let _ = w.set_focus();
         return;
     }
@@ -230,16 +279,46 @@ pub fn open_quick_add_window(app: &AppHandle) {
     let x = get_center_x(app);
     let y = get_top_y(app);
 
-    let _ = WebviewWindowBuilder::new(app, label, WebviewUrl::App("quick-add.html".into()))
-        .inner_size(QUICK_ADD_WIDTH, QUICK_ADD_HEIGHT)
-        .resizable(false)
-        .decorations(false)
-        .always_on_top(true)
-        .skip_taskbar(true)
-        .focused(true)
-        .position(x, y)
-        .build()
-        .map_err(|e| eprintln!("Failed to open quick add window: {e}"));
+    let build_fn = || {
+        let mut builder = WebviewWindowBuilder::new(app, label, WebviewUrl::App("quick-add.html".into()))
+            .inner_size(QUICK_ADD_WIDTH, QUICK_ADD_HEIGHT)
+            .resizable(false)
+            .decorations(false)
+            .always_on_top(true)
+            .skip_taskbar(true)
+            .focused(true)
+            .position(x, y);
+        #[cfg(target_os = "linux")]
+        {
+            builder = builder
+                .min_inner_size(QUICK_ADD_WIDTH, QUICK_ADD_HEIGHT)
+                .max_inner_size(QUICK_ADD_WIDTH, QUICK_ADD_HEIGHT);
+        }
+        builder.build()
+    };
+
+    #[cfg(target_os = "linux")]
+    let result = build_with_retry(build_fn, 3);
+    #[cfg(not(target_os = "linux"))]
+    let result = build_fn();
+
+    match result {
+        Ok(window) => {
+            #[cfg(target_os = "linux")]
+            {
+                let retry_window = window.clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                    let _ = retry_window.eval(
+                        "if (!document.body || !document.body.children.length) window.location.reload();"
+                    );
+                });
+            }
+        }
+        Err(e) => {
+            eprintln!("Failed to open quick add window: {e}");
+        }
+    }
 }
 
 // ─── Compact Pill Window ───────────────────────────────────────────────────────
@@ -261,26 +340,38 @@ pub fn open_compact_pill_window(app: &AppHandle) {
 
     let (x, y) = get_pill_position(app);
 
-    let builder = WebviewWindowBuilder::new(app, label, WebviewUrl::App("compact-pill.html".into()))
-        .inner_size(140.0, 36.0)
-        .resizable(false)
-        .decorations(false);
+    let build_fn = || {
+        let mut builder = WebviewWindowBuilder::new(app, label, WebviewUrl::App("compact-pill.html".into()))
+            .inner_size(140.0, 36.0)
+            .resizable(false)
+            .decorations(false);
+        #[cfg(target_os = "linux")]
+        {
+            builder = builder.transparent(true);
+        }
+        builder
+            .always_on_top(true)
+            .skip_taskbar(true)
+            .focused(false)
+            .position(x, y)
+            .build()
+    };
 
     #[cfg(target_os = "linux")]
-    let builder = builder.transparent(true);
+    let result = build_with_retry(build_fn, 3);
+    #[cfg(not(target_os = "linux"))]
+    let result = build_fn();
 
-    if let Ok(window) = builder
-        .always_on_top(true)
-        .skip_taskbar(true)
-        .focused(false)
-        .position(x, y)
-        .build()
-    {
-        #[cfg(any(target_os = "linux", target_os = "windows"))]
-        let _ = window.set_always_on_top(true);
-    } else {
-        eprintln!("Failed to open compact pill window");
-    }
+    let window = match result {
+        Ok(w) => w,
+        Err(e) => {
+            eprintln!("Failed to open compact pill window: {e}");
+            return;
+        }
+    };
+
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
+    let _ = window.set_always_on_top(true);
 }
 
 pub fn close_compact_pill_window(app: &AppHandle) {
@@ -301,7 +392,7 @@ pub fn open_daily_digest_window(app: &AppHandle) {
         return;
     }
 
-    let _ =
+    let build_fn = || {
         WebviewWindowBuilder::new(app, label, WebviewUrl::App("daily-digest.html".into()))
             .inner_size(420.0, 220.0)
             .resizable(false)
@@ -311,5 +402,14 @@ pub fn open_daily_digest_window(app: &AppHandle) {
             .focused(false)
             .center()
             .build()
-            .map_err(|e| eprintln!("Failed to open daily digest window: {e}"));
+    };
+
+    #[cfg(target_os = "linux")]
+    {
+        let _ = build_with_retry(build_fn, 3);
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        let _ = build_fn().map_err(|e| eprintln!("Failed to open daily digest window: {e}"));
+    }
 }

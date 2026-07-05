@@ -20,6 +20,7 @@ export default function CompactPill() {
   const didDrag = useRef(false);
   const mouseDownPos = useRef({ x: 0, y: 0 });
   const autoCloseRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isHoveringRef = useRef(false);
 
   function getTimerColor(task: Task): string | null {
     if (!task.time_limit_minutes || !task.started_at) return null;
@@ -88,6 +89,9 @@ export default function CompactPill() {
       autoCloseRef.current = null;
       return;
     }
+    if (isHoveringRef.current) {
+      return;
+    }
     autoCloseRef.current = setTimeout(() => {
       setExpanded(false);
       autoCloseRef.current = null;
@@ -96,6 +100,25 @@ export default function CompactPill() {
       if (autoCloseRef.current) clearTimeout(autoCloseRef.current);
     };
   }, [expanded]);
+
+  function handleMouseEnter() {
+    if (!expanded) return;
+    isHoveringRef.current = true;
+    if (autoCloseRef.current) {
+      clearTimeout(autoCloseRef.current);
+      autoCloseRef.current = null;
+    }
+  }
+
+  function handleMouseLeave() {
+    if (!expanded) return;
+    isHoveringRef.current = false;
+    if (autoCloseRef.current) clearTimeout(autoCloseRef.current);
+    autoCloseRef.current = setTimeout(() => {
+      setExpanded(false);
+      autoCloseRef.current = null;
+    }, AUTO_CLOSE_MS);
+  }
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
@@ -126,8 +149,10 @@ export default function CompactPill() {
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
     if (didDrag.current) return;
-    setExpanded((prev) => !prev);
-  }, []);
+    const wasExpanded = expanded;
+    if (!wasExpanded) isHoveringRef.current = true;
+    setExpanded(!wasExpanded);
+  }, [expanded]);
 
   async function handleDone() {
     if (tasks.length === 0) return;
@@ -162,6 +187,8 @@ export default function CompactPill() {
       <div
         onMouseDown={handleMouseDown}
         onDoubleClick={handleDoubleClick}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         style={{
           width: EXPANDED_W,
           height: EXPANDED_H,

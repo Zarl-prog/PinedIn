@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { Task } from "../lib/tauriCommands";
 import { localDateStr } from "../lib/utils";
 import { Plus, DotsThree } from "@phosphor-icons/react";
+import "../index.css";
 
 export default function QuickAdd() {
   const [value, setValue] = useState("");
@@ -57,13 +58,16 @@ export default function QuickAdd() {
       style={{
         width: "480px",
         height: "64px",
-        background: "var(--bg-app)",
-        border: `1px solid ${status === "error" ? "var(--text-danger)" : "var(--border-light)"}`,
-        borderRadius: "12px",
+        maxHeight: "64px",
+        overflow: "hidden",
+        background: "#000000",
         display: "flex",
         alignItems: "center",
-        padding: "0 16px",
         gap: "12px",
+        padding: "0 16px",
+        border: `1px solid ${status === "error" ? "var(--text-danger)" : "#222"}`,
+        borderRadius: "12px",
+        boxSizing: "border-box",
       }}
     >
       <Plus size={16} weight="light" color={accent} />

@@ -10,6 +10,8 @@ use db::DbHandle;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tauri::{Emitter, Manager};
+use tauri::utils::config::Color;
+use tauri_plugin_single_instance::init as single_instance_init;
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
 use tauri_plugin_notification::NotificationExt;
@@ -27,6 +29,18 @@ pub struct QuitFlag(pub Arc<AtomicBool>);
 fn is_wayland() -> bool {
     std::env::var("WAYLAND_DISPLAY").is_ok()
         && std::env::var("GDK_BACKEND").unwrap_or_default() != "x11"
+}
+
+/// Set WebKit environment variables required for Linux compatibility.
+/// These prevent compositing and dmabuf issues that cause WebView
+/// creation failures, particularly on Fedora and other modern distros.
+pub fn set_linux_webkit_env() {
+    #[cfg(target_os = "linux")]
+    {
+        std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
+        std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+        std::env::set_var("WEBKIT_FORCE_SANDBOX", "0");
+    }
 }
 
 /// Wait up to 10 seconds for the display server to be ready.
@@ -61,12 +75,19 @@ pub fn run() {
     }
 
     tauri::Builder::default()
+        .plugin(single_instance_init(|app, _args, _cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+                let _ = window.unminimize();
+            }
+        }))
         .plugin(
             tauri_plugin_window_state::Builder::default()
                 // Deny-list the main window: we own its close behaviour
                 // (minimize-to-tray), and the plugin's own close handler
                 // would otherwise race with ours and destroy the window.
-                .with_denylist(&["main"])
+                .with_denylist(&["main", "quick_add"])
                 .build(),
         )
         .plugin(tauri_plugin_notification::init())
@@ -78,6 +99,8 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .setup(|app| {
+            set_linux_webkit_env();
+
             // Register the quit flag in app state so the tray menu and
             // the close handler can both reach it.
             let quit_flag = QuitFlag::default();
@@ -119,6 +142,9 @@ pub fn run() {
 
                 // Force remove native decorations
                 let _ = main_window.set_decorations(false);
+                // Set opaque black background — helps window manager
+                // render the taskbar preview correctly on Linux X11.
+                let _ = main_window.set_background_color(Some(Color(0, 0, 0, 255)));
                 #[cfg(target_os = "windows")]
                 {
                     let _ = main_window.hide();

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Plug, CaretDown, CaretUp } from "@phosphor-icons/react";
 
@@ -38,11 +38,28 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
   const [expanded, setExpanded] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [scrolledToBottom, setScrolledToBottom] = useState(true);
+
+  useEffect(() => {
+    if (expanded && scrollRef.current) {
+      const el = scrollRef.current;
+      setScrolledToBottom(el.scrollHeight - el.scrollTop - el.clientHeight < 10);
+    } else if (!expanded) {
+      setScrolledToBottom(true);
+    }
+  }, [expanded]);
 
   function handleCopy(text: string, setter: (v: boolean) => void) {
     navigator.clipboard.writeText(text);
     setter(true);
     setTimeout(() => setter(false), 1500);
+  }
+
+  function handleScroll() {
+    const el = scrollRef.current;
+    if (!el) return;
+    setScrolledToBottom(el.scrollHeight - el.scrollTop - el.clientHeight < 10);
   }
   return (
     <AnimatePresence>
@@ -245,7 +262,10 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
                   }}
                 >
                   <div
+                    ref={scrollRef}
+                    onScroll={handleScroll}
                     style={{
+                      position: "relative",
                       maxHeight: expanded ? "300px" : "none",
                       overflowY: expanded ? "auto" : "visible",
                     }}
@@ -260,12 +280,29 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
                       whiteSpace: "pre-wrap",
                       wordBreak: "break-word",
                       padding: "12px 14px",
+                      paddingBottom: expanded && !scrolledToBottom ? "32px" : "12px",
                     }}
                   >
                     {expanded
                       ? MCP_PROMPT
                       : MCP_PROMPT.split("\n").slice(0, PREVIEW_LINES).join("\n") + "\n…"}
                   </pre>
+                  {expanded && !scrolledToBottom && (
+                    <div
+                      style={{
+                        position: "sticky",
+                        bottom: 0,
+                        width: "100%",
+                        display: "flex",
+                        justifyContent: "center",
+                        pointerEvents: "none",
+                        marginTop: "-24px",
+                        paddingBottom: "4px",
+                      }}
+                    >
+                      <CaretDown size={14} weight="bold" color="var(--text-muted)" />
+                    </div>
+                  )}
                   </div>
                   <button
                     onClick={() => setExpanded(!expanded)}

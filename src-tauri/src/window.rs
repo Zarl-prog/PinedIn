@@ -9,10 +9,6 @@ const TOP_MARGIN: f64 = 80.0;
 const RIGHT_MARGIN: f64 = 24.0;
 const CARD_GAP: f64 = 12.0;
 
-const QUICK_ADD_WIDTH: f64 = 480.0;
-const QUICK_ADD_HEIGHT: f64 = 64.0;
-const QUICK_ADD_TOP_MARGIN: f64 = 120.0;
-
 #[cfg(target_os = "linux")]
 fn build_with_retry<F>(build_fn: F, max_retries: u32) -> Result<tauri::WebviewWindow, tauri::Error>
 where
@@ -45,19 +41,6 @@ fn monitor_size(app: &AppHandle) -> (f64, f64) {
         return (size.width as f64 / scale, size.height as f64 / scale);
     }
     (1920.0, 1080.0)
-}
-
-/// Horizontal center position for the quick-add popup, in logical pixels.
-fn get_center_x(app: &AppHandle) -> f64 {
-    let (screen_w, _) = monitor_size(app);
-    ((screen_w - QUICK_ADD_WIDTH) / 2.0).max(0.0)
-}
-
-/// Vertical top position for the quick-add popup. Sits in the upper
-/// third of the screen like Spotlight / Raycast, leaving the rest of
-/// the desktop visible below.
-fn get_top_y(_app: &AppHandle) -> f64 {
-    QUICK_ADD_TOP_MARGIN
 }
 
 /// Sum the height of all currently-open task card windows.
@@ -255,69 +238,6 @@ pub fn open_task_card_window_at(app: &AppHandle, task: &Task, x: f64, y: f64) {
 
     if ZEN_MODE.load(Ordering::SeqCst) {
         let _ = window.hide();
-    }
-}
-
-/// Open a minimal 480x64 quick-add popup, centered horizontally near
-/// the top of the primary monitor. If the popup is already open, just
-/// show and focus it instead of creating a second instance. The window
-/// is opaque (so its rounded border reads against the desktop),
-/// always-on-top, and auto-focused so the user can start typing
-/// immediately.
-pub fn open_quick_add_window(app: &AppHandle) {
-    #[cfg(target_os = "linux")]
-    std::thread::sleep(std::time::Duration::from_millis(300));
-
-    let label = "quick_add";
-
-    if let Some(w) = app.get_webview_window(label) {
-        let _ = w.show();
-        let _ = w.set_focus();
-        return;
-    }
-
-    let x = get_center_x(app);
-    let y = get_top_y(app);
-
-    let build_fn = || {
-        let mut builder = WebviewWindowBuilder::new(app, label, WebviewUrl::App("quick-add.html".into()))
-            .inner_size(QUICK_ADD_WIDTH, QUICK_ADD_HEIGHT)
-            .resizable(false)
-            .decorations(false)
-            .always_on_top(true)
-            .skip_taskbar(true)
-            .focused(true)
-            .position(x, y);
-        #[cfg(target_os = "linux")]
-        {
-            builder = builder
-                .min_inner_size(QUICK_ADD_WIDTH, QUICK_ADD_HEIGHT)
-                .max_inner_size(QUICK_ADD_WIDTH, QUICK_ADD_HEIGHT);
-        }
-        builder.build()
-    };
-
-    #[cfg(target_os = "linux")]
-    let result = build_with_retry(build_fn, 3);
-    #[cfg(not(target_os = "linux"))]
-    let result = build_fn();
-
-    match result {
-        Ok(window) => {
-            #[cfg(target_os = "linux")]
-            {
-                let retry_window = window.clone();
-                tauri::async_runtime::spawn(async move {
-                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-                    let _ = retry_window.eval(
-                        "if (!document.body || !document.body.children.length) window.location.reload();"
-                    );
-                });
-            }
-        }
-        Err(e) => {
-            eprintln!("Failed to open quick add window: {e}");
-        }
     }
 }
 

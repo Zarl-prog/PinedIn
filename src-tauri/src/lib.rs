@@ -13,7 +13,6 @@ use tauri::{Emitter, Manager};
 use tauri::utils::config::Color;
 use tauri_plugin_single_instance::init as single_instance_init;
 use tauri_plugin_autostart::MacosLauncher;
-use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
 use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_window_state::StateFlags;
 
@@ -87,7 +86,7 @@ pub fn run() {
                 // Deny-list the main window: we own its close behaviour
                 // (minimize-to-tray), and the plugin's own close handler
                 // would otherwise race with ours and destroy the window.
-                .with_denylist(&["main", "quick_add"])
+                .with_denylist(&["main"])
                 .build(),
         )
         .plugin(tauri_plugin_notification::init())
@@ -97,7 +96,6 @@ pub fn run() {
         ))
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .setup(|app| {
             set_linux_webkit_env();
 
@@ -231,24 +229,6 @@ pub fn run() {
             // startup so tasks whose time arrived while the app was
             // closed get caught up.
             scheduler::start_scheduler(app.handle().clone());
-
-            // Register global hotkey: Ctrl+Shift+Space on Windows/Linux,
-            // Cmd+Shift+Space on macOS — opens quick-add popup from anywhere.
-            // Unregister any stale shortcut from a previously crashed
-            // instance first to avoid "already registered" panic.
-            let _ = app.global_shortcut().unregister_all();
-            #[cfg(target_os = "macos")]
-            let modifiers = Modifiers::SUPER | Modifiers::SHIFT;
-            #[cfg(not(target_os = "macos"))]
-            let modifiers = Modifiers::CONTROL | Modifiers::SHIFT;
-            if let Err(e) = app.global_shortcut().on_shortcut(
-                Shortcut::new(Some(modifiers), Code::Space),
-                |app, _shortcut, _event| {
-                    window::open_quick_add_window(app);
-                },
-            ) {
-                eprintln!("[startup] Failed to register global shortcut: {e}");
-            }
 
             // Spawn a background update check on startup - silent unless one is found
             let handle = app.handle().clone();

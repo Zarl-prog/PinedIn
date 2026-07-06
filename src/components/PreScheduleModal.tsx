@@ -117,6 +117,7 @@ export default function PreScheduleModal({ open, onClose, workspaceId }: PreSche
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            padding: "24px",
           }}
         >
           <motion.div

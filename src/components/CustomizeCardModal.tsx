@@ -98,6 +98,7 @@ export default function CustomizeCardModal() {
         <div style={{
           position: "fixed", inset: 0, zIndex: 200,
           display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "24px",
         }}>
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}

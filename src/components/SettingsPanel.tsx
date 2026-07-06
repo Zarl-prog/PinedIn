@@ -131,6 +131,7 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            padding: "24px",
           }}
         >
           <motion.div

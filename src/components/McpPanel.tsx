@@ -244,6 +244,12 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
                     overflow: "hidden",
                   }}
                 >
+                  <div
+                    style={{
+                      maxHeight: expanded ? "300px" : "none",
+                      overflowY: expanded ? "auto" : "visible",
+                    }}
+                  >
                   <pre
                     style={{
                       margin: 0,
@@ -260,6 +266,7 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
                       ? MCP_PROMPT
                       : MCP_PROMPT.split("\n").slice(0, PREVIEW_LINES).join("\n") + "\n…"}
                   </pre>
+                  </div>
                   <button
                     onClick={() => setExpanded(!expanded)}
                     style={{

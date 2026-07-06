@@ -194,7 +194,8 @@ export default function Onboarding() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            backdropFilter: "blur(4px)"
+            backdropFilter: "blur(4px)",
+            padding: "24px",
           }}
         >
           <AnimatePresence mode="wait">
@@ -209,7 +210,8 @@ export default function Onboarding() {
                   background: "#000",
                   border: "1px solid #1a1a1a",
                   borderRadius: "16px",
-                  width: "480px",
+                  width: "100%",
+                  maxWidth: "480px",
                   padding: "40px",
                   display: "flex",
                   flexDirection: "column",
@@ -339,7 +341,8 @@ export default function Onboarding() {
                   background: "#000",
                   border: "1px solid #1a1a1a",
                   borderRadius: "16px",
-                  width: "420px",
+                  width: "100%",
+                  maxWidth: "420px",
                   padding: "32px",
                   position: "relative"
                 }}

@@ -350,6 +350,7 @@ export default function AddTaskModal({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            padding: "24px",
           }}
         >
           <motion.div

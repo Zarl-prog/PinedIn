@@ -55,6 +55,7 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            padding: "24px",
           }}
         >
           <motion.div
@@ -240,7 +241,6 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
                     background: "var(--bg-code, #0a0a0a)",
                     border: "1px solid var(--border-light)",
                     borderRadius: "6px",
-                    padding: "12px 14px",
                     overflow: "hidden",
                   }}
                 >
@@ -253,35 +253,38 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
                       fontFamily: "'Geist Mono', monospace",
                       whiteSpace: "pre-wrap",
                       wordBreak: "break-word",
+                      padding: "12px 14px",
                     }}
                   >
                     {expanded
                       ? MCP_PROMPT
                       : MCP_PROMPT.split("\n").slice(0, PREVIEW_LINES).join("\n") + "\n…"}
                   </pre>
+                  <button
+                    onClick={() => setExpanded(!expanded)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      width: "100%",
+                      padding: "8px 14px",
+                      background: "transparent",
+                      border: "none",
+                      borderTop: "1px solid var(--border-light)",
+                      color: "var(--text-muted)",
+                      cursor: "pointer",
+                      fontSize: "11px",
+                      fontFamily: "'Geist Mono', monospace",
+                      fontWeight: 600,
+                      transition: "color 0.15s ease",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-primary)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; }}
+                  >
+                    {expanded ? <CaretUp size={12} /> : <CaretDown size={12} />}
+                    {expanded ? "Collapse" : "Show full prompt"}
+                  </button>
                 </div>
-                <button
-                  onClick={() => setExpanded(!expanded)}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "var(--text-muted)",
-                    cursor: "pointer",
-                    fontSize: "11px",
-                    fontFamily: "'Geist Mono', monospace",
-                    fontWeight: 600,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    padding: "4px 0 0 0",
-                    transition: "color 0.15s ease",
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-primary)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; }}
-                >
-                  {expanded ? <CaretUp size={12} /> : <CaretDown size={12} />}
-                  {expanded ? "Collapse" : "Show full prompt"}
-                </button>
               </div>
 
               {/* Quick tip */}

@@ -36,6 +36,14 @@ const PREVIEW_LINES = 4;
 
 export default function McpPanel({ open, onClose }: McpPanelProps) {
   const [expanded, setExpanded] = useState(false);
+  const [urlCopied, setUrlCopied] = useState(false);
+  const [promptCopied, setPromptCopied] = useState(false);
+
+  function handleCopy(text: string, setter: (v: boolean) => void) {
+    navigator.clipboard.writeText(text);
+    setter(true);
+    setTimeout(() => setter(false), 1500);
+  }
   return (
     <AnimatePresence>
       {open && (
@@ -157,7 +165,7 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
                     http://127.0.0.1:7890/sse
                   </code>
                   <button
-                    onClick={() => navigator.clipboard.writeText("http://127.0.0.1:7890/sse")}
+                    onClick={() => handleCopy("http://127.0.0.1:7890/sse", setUrlCopied)}
                     style={{
                       background: "var(--bg-badge)",
                       border: "1px solid var(--border)",
@@ -179,7 +187,7 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
                       e.currentTarget.style.borderColor = "var(--border)";
                     }}
                   >
-                    Copy
+                    {urlCopied ? "Copied!" : "Copy"}
                   </button>
                 </div>
               </div>
@@ -201,7 +209,7 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
                     Zero-config prompt for any AI
                   </span>
                   <button
-                    onClick={() => navigator.clipboard.writeText(MCP_PROMPT)}
+                    onClick={() => handleCopy(MCP_PROMPT, setPromptCopied)}
                     style={{
                       background: "#22c55e",
                       border: "none",
@@ -224,7 +232,7 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
                       e.currentTarget.style.transform = "scale(1)";
                     }}
                   >
-                    Copy Prompt
+                    {promptCopied ? "Copied!" : "Copy Prompt"}
                   </button>
                 </div>
                 <div

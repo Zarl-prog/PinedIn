@@ -11,7 +11,6 @@ export default defineConfig(async () => ({
       input: {
         main: "index.html",
         taskCard: "task-card.html",
-        quickAdd: "quick-add.html",
         dailyDigest: "daily-digest.html",
         compactPill: "compact-pill.html"
       }

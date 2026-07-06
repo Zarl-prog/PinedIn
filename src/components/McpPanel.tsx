@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plug, CaretDown, CaretUp } from "@phosphor-icons/react";
+import { X, Plug, CaretDown, CaretUp, ArrowDown } from "@phosphor-icons/react";
 
 const MCP_PROMPT = `I have a local PinedIn task manager running on my machine. It exposes an MCP-compatible HTTP API.
 
@@ -296,11 +296,24 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
                         display: "flex",
                         justifyContent: "center",
                         pointerEvents: "none",
-                        marginTop: "-24px",
-                        paddingBottom: "4px",
+                        marginTop: "-28px",
+                        paddingBottom: "6px",
                       }}
                     >
-                      <CaretDown size={14} weight="bold" color="var(--text-muted)" />
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: "24px",
+                          height: "24px",
+                          borderRadius: "50%",
+                          background: "var(--bg-badge)",
+                          border: "1px solid var(--border-light)",
+                        }}
+                      >
+                        <ArrowDown size={14} weight="bold" color="var(--text-secondary)" />
+                      </div>
                     </div>
                   )}
                   </div>

@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plug } from "@phosphor-icons/react";
+import { X, Plug, CaretDown, CaretUp } from "@phosphor-icons/react";
 
 const MCP_PROMPT = `I have a local PinedIn task manager running on my machine. It exposes an MCP-compatible HTTP API.
 
@@ -31,7 +32,10 @@ interface McpPanelProps {
   onClose: () => void;
 }
 
+const PREVIEW_LINES = 4;
+
 export default function McpPanel({ open, onClose }: McpPanelProps) {
+  const [expanded, setExpanded] = useState(false);
   return (
     <AnimatePresence>
       {open && (
@@ -229,8 +233,7 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
                     border: "1px solid var(--border-light)",
                     borderRadius: "6px",
                     padding: "12px 14px",
-                    maxHeight: "220px",
-                    overflowY: "auto",
+                    overflow: "hidden",
                   }}
                 >
                   <pre
@@ -244,9 +247,33 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
                       wordBreak: "break-word",
                     }}
                   >
-                    {MCP_PROMPT}
+                    {expanded
+                      ? MCP_PROMPT
+                      : MCP_PROMPT.split("\n").slice(0, PREVIEW_LINES).join("\n") + "\n…"}
                   </pre>
                 </div>
+                <button
+                  onClick={() => setExpanded(!expanded)}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "var(--text-muted)",
+                    cursor: "pointer",
+                    fontSize: "11px",
+                    fontFamily: "'Geist Mono', monospace",
+                    fontWeight: 600,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "4px 0 0 0",
+                    transition: "color 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-primary)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; }}
+                >
+                  {expanded ? <CaretUp size={12} /> : <CaretDown size={12} />}
+                  {expanded ? "Collapse" : "Show full prompt"}
+                </button>
               </div>
 
               {/* Quick tip */}

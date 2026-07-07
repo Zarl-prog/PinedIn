@@ -279,6 +279,7 @@ pub fn open_quick_add_window(app: &AppHandle) {
 
     match builder.build() {
         Ok(w) => {
+            let _ = w.set_background_color(Some(tauri::utils::config::Color(0, 0, 0, 255)));
             #[cfg(target_os = "linux")]
             {
                 let retry = w.clone();

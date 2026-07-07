@@ -10,6 +10,7 @@ export default defineConfig(async () => ({
     rollupOptions: {
       input: {
         main: "index.html",
+        quickAdd: "quick-add.html",
         taskCard: "task-card.html",
         dailyDigest: "daily-digest.html",
         compactPill: "compact-pill.html"

@@ -83,6 +83,30 @@ pub fn create_task(
 }
 
 #[tauri::command]
+pub fn quick_add_task(
+    app: tauri::AppHandle,
+    db: State<'_, Arc<DbHandle>>,
+    title: String,
+    due_date: String,
+) -> Result<(), String> {
+    if title.trim().is_empty() {
+        return Err("Task title cannot be empty".into());
+    }
+    let task = db.create_task(&title, "", &due_date)?;
+    emit_tasks_updated(&app, &db);
+
+    if let Some(task_id) = task.id {
+        if let Ok(task) = db.get_task_by_id(task_id) {
+            if !get_compact_mode_state(&app) {
+                let _ = window::open_task_card(&app, &task, 0);
+            }
+        }
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
 pub fn get_all_tasks(db: State<'_, Arc<DbHandle>>) -> Result<Vec<Task>, String> {
     db.get_all_tasks()
 }

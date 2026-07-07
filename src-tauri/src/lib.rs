@@ -26,7 +26,7 @@ use tauri_plugin_window_state::StateFlags;
 pub struct QuitFlag(pub Arc<AtomicBool>);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-fn is_wayland() -> bool {
+pub(crate) fn is_wayland() -> bool {
     std::env::var("WAYLAND_DISPLAY").is_ok()
         && std::env::var("GDK_BACKEND").unwrap_or_default() != "x11"
 }
@@ -64,11 +64,12 @@ fn wait_for_display() {
 }
 
 pub fn run() {
-    // Set Linux environment variables for X11 compatibility before any windows are created.
-    // This ensures always-on-top windows work correctly on Wayland/X11 hybrid setups.
+    // Set WebKit environment variables for Linux before any windows are created.
+    // GDK_BACKEND is NOT forced — on Wayland the native backend is used,
+    // on X11 the system default applies. This lets quick-add and other
+    // secondary windows work correctly under either display server.
     #[cfg(target_os = "linux")]
     {
-        std::env::set_var("GDK_BACKEND", "x11");
         std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
         std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
         wait_for_display();

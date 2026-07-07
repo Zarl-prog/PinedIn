@@ -244,8 +244,10 @@ pub fn open_task_card_window_at(app: &AppHandle, task: &Task, x: f64, y: f64) {
 // ─── Quick Add Window ──────────────────────────────────────────────────────────
 
 pub fn open_quick_add_window(app: &AppHandle) {
+    let on_wayland = cfg!(target_os = "linux") && crate::is_wayland();
+
     #[cfg(target_os = "linux")]
-    {
+    if !on_wayland {
         std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
         std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
     }
@@ -260,7 +262,7 @@ pub fn open_quick_add_window(app: &AppHandle) {
 
     let (x, y) = get_quick_add_position(app);
 
-    let builder = WebviewWindowBuilder::new(
+    let mut builder = WebviewWindowBuilder::new(
         app,
         label,
         WebviewUrl::App("quick-add.html".into())
@@ -274,11 +276,19 @@ pub fn open_quick_add_window(app: &AppHandle) {
     .always_on_top(true)
     .skip_taskbar(true)
     .focused(true)
-    .position(x, y)
-    .transparent(true);
+    .position(x, y);
+
+    if on_wayland {
+        builder = builder.transparent(false);
+    } else {
+        builder = builder.transparent(true);
+    }
 
     match builder.build() {
         Ok(w) => {
+            if on_wayland {
+                let _ = w.set_background_color(Some(tauri::utils::config::Color(0, 0, 0, 255)));
+            }
             #[cfg(target_os = "linux")]
             {
                 let retry = w.clone();

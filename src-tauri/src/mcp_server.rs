@@ -11,7 +11,7 @@ use axum::{
 use serde_json::{json, Value};
 use std::convert::Infallible;
 use std::sync::Arc;
-use tauri::AppHandle;
+use tauri::{AppHandle, Emitter};
 use tokio::sync::broadcast;
 use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::StreamExt;
@@ -147,6 +147,10 @@ fn handle_tools_list(id: &Option<Value>) -> Result<Option<Value>, StatusCode> {
                             "due_date": {
                                 "type": "string",
                                 "description": "Due date in YYYY-MM-DD format"
+                            },
+                            "workspace_id": {
+                                "type": "number",
+                                "description": "Optional workspace ID to add the task to"
                             }
                         },
                         "required": ["title"]
@@ -279,6 +283,34 @@ fn handle_tools_list(id: &Option<Value>) -> Result<Option<Value>, StatusCode> {
                         },
                         "required": ["task_id", "minutes"]
                     }
+                },
+                {
+                    "name": "update_setting",
+                    "description": "Change any PinedIn setting by key/value pair (e.g. compact_mode, daily_digest_enabled)",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "key": { "type": "string", "description": "Setting key (e.g. compact_mode, shake_enabled)" },
+                            "value": { "type": "string", "description": "Setting value (e.g. true, false)" }
+                        },
+                        "required": ["key", "value"]
+                    }
+                },
+                {
+                    "name": "activate_workspace",
+                    "description": "Switch the view to show only tasks from a specific workspace",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "workspace_id": { "type": "number", "description": "The workspace ID to activate" }
+                        },
+                        "required": ["workspace_id"]
+                    }
+                },
+                {
+                    "name": "deactivate_workspace",
+                    "description": "Show tasks from all workspaces again",
+                    "inputSchema": { "type": "object", "properties": {} }
                 }
             ]
         }
@@ -316,6 +348,9 @@ async fn handle_tool_call(
         "delete_workspace" => tool_delete_workspace(arguments, state),
         "get_workspace_tasks" => tool_get_workspace_tasks(arguments, state),
         "snooze_task" => tool_snooze_task(arguments, state),
+        "update_setting" => tool_update_setting(arguments, state),
+        "activate_workspace" => tool_activate_workspace(arguments, state),
+        "deactivate_workspace" => tool_deactivate_workspace(state),
         _ => return Ok(Some(json!({
             "jsonrpc": "2.0",
             "id": id,
@@ -364,9 +399,13 @@ fn tool_add_task(
         .map(|s| s.to_string())
         .unwrap_or_default();
 
+    let workspace_id = arguments
+        .get("workspace_id")
+        .and_then(|v| v.as_i64());
+
     let task = state
         .db
-        .create_task_with_tags(&title, &description, &due_date, None, None, None, None)?;
+        .create_task_with_tags(&title, &description, &due_date, None, None, None, workspace_id)?;
 
     if let Some(task_id) = task.id {
         let _ = window::open_task_card(&state.app_handle, &task, 0);
@@ -665,4 +704,48 @@ fn tool_snooze_task(
     let _ = window::close_task_card(&state.app_handle, task_id);
     let _ = commands::emit_tasks_updated(&state.app_handle, &state.db);
     Ok(format!("Task {} snoozed until {}.", task_id, due))
+}
+
+fn tool_update_setting(
+    arguments: serde_json::Map<String, Value>,
+    state: &McpState,
+) -> Result<String, String> {
+    let key = arguments
+        .get("key")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "Missing required argument: key".to_string())?
+        .to_string();
+    let value = arguments
+        .get("value")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "Missing required argument: value".to_string())?
+        .to_string();
+
+    state.db.update_setting(&key, &value)?;
+
+    if key == "compact_mode" {
+        let _ = state.app_handle.emit("compact_mode_changed", value == "true");
+    }
+
+    Ok(format!("Setting '{}' set to '{}'.", key, value))
+}
+
+fn tool_activate_workspace(
+    arguments: serde_json::Map<String, Value>,
+    state: &McpState,
+) -> Result<String, String> {
+    let workspace_id = arguments
+        .get("workspace_id")
+        .and_then(|v| v.as_i64())
+        .ok_or_else(|| "Missing required argument: workspace_id".to_string())?;
+
+    state.db.update_setting("active_workspace_id", &workspace_id.to_string())?;
+    let _ = state.app_handle.emit("active_workspace_changed", workspace_id);
+    Ok(format!("Activated workspace {}.", workspace_id))
+}
+
+fn tool_deactivate_workspace(state: &McpState) -> Result<String, String> {
+    state.db.update_setting("active_workspace_id", "")?;
+    let _ = state.app_handle.emit("active_workspace_changed", serde_json::Value::Null);
+    Ok("Showing all workspaces.".to_string())
 }

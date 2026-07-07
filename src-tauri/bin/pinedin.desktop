@@ -1,9 +1,0 @@
-[Desktop Entry]
-Name=PinedIn
-Comment=Floating task overlay for your desktop
-Exec=pinedin
-Icon=pinedin
-Terminal=false
-Type=Application
-Categories=Utility;
-StartupNotify=true

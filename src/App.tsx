@@ -596,10 +596,9 @@ export default function App() {
           position: "relative",
         }}
       >
+        <UpdateBanner />
         {activeTab === "tasks" && (
           <>
-            <UpdateBanner />
-
             {/* Tasks Header */}
             <div
               style={{

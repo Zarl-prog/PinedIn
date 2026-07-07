@@ -118,7 +118,7 @@ fn handle_initialize(id: &Option<Value>) -> Result<Option<Value>, StatusCode> {
             },
             "serverInfo": {
                 "name": "pinedin",
-                "version": "0.3.10"
+                "version": env!("CARGO_PKG_VERSION")
             }
         }
     })))

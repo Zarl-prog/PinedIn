@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
-import { Lightning } from "@phosphor-icons/react";
+import { Plus } from "@phosphor-icons/react";
 
 export default function QuickAdd() {
   const [value, setValue] = useState("");
@@ -87,7 +87,7 @@ export default function QuickAdd() {
       overflow: "hidden",
       boxSizing: "border-box"
     }}>
-      <Lightning
+      <Plus
         size={15}
         weight="light"
         color="#333"

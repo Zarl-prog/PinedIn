@@ -288,6 +288,17 @@ pub fn open_quick_add_window(app: &AppHandle) {
     #[cfg(any(target_os = "linux", target_os = "windows"))]
     let _ = window.set_always_on_top(true);
 
+    #[cfg(target_os = "linux")]
+    let _ = window.set_visible_on_all_workspaces(true);
+
+    let w_clone = window.clone();
+    window.on_window_event(move |event| {
+        if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+            api.prevent_close();
+            let _ = w_clone.hide();
+        }
+    });
+
     #[cfg(target_os = "windows")]
     let _ = window.set_background_color(Some(tauri::utils::config::Color(0, 0, 0, 255)));
 }

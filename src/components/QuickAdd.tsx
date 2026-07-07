@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
 import { Lightning } from "@phosphor-icons/react";
@@ -7,6 +7,8 @@ export default function QuickAdd() {
   const [value, setValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const didDrag = useRef(false);
+  const mouseDownPos = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     const t = setTimeout(() => inputRef.current?.focus(), 50);
@@ -29,6 +31,31 @@ export default function QuickAdd() {
     return () => window.removeEventListener("blur", handleBlur);
   }, []);
 
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("input")) return;
+    didDrag.current = false;
+    mouseDownPos.current = { x: e.clientX, y: e.clientY };
+    let dragInitiated = false;
+    const cleanup = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    const onMove = async (me: MouseEvent) => {
+      const dx = Math.abs(me.clientX - mouseDownPos.current.x);
+      const dy = Math.abs(me.clientY - mouseDownPos.current.y);
+      if ((dx > 6 || dy > 6) && !dragInitiated) {
+        dragInitiated = true;
+        didDrag.current = true;
+        try { await getCurrentWindow().startDragging(); }
+        catch { didDrag.current = false; }
+        finally { cleanup(); }
+      }
+    };
+    const onUp = () => cleanup();
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }, []);
+
   async function handleSubmit() {
     const title = value.trim();
     if (!title || submitting) return;
@@ -46,7 +73,7 @@ export default function QuickAdd() {
   }
 
   return (
-    <div className="quick-add-container" style={{
+    <div onMouseDown={handleMouseDown} className="quick-add-container" style={{
       width: "480px",
       height: "100%",
       maxHeight: "100%",

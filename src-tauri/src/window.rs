@@ -268,9 +268,9 @@ pub fn open_quick_add_window(app: &AppHandle) {
         WebviewUrl::App("quick-add.html".into())
     )
     .title("")
-    .inner_size(480.0, 49.0)
-    .min_inner_size(480.0, 49.0)
-    .max_inner_size(480.0, 49.0)
+    .inner_size(480.0, 65.0)
+    .min_inner_size(480.0, 65.0)
+    .max_inner_size(480.0, 65.0)
     .resizable(false)
     .decorations(false)
     .always_on_top(true)
@@ -283,6 +283,7 @@ pub fn open_quick_add_window(app: &AppHandle) {
     } else {
         builder = builder.transparent(true);
     }
+    builder = builder.decorations(true);
 
     match builder.build() {
         Ok(w) => {

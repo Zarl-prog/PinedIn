@@ -64,12 +64,11 @@ fn wait_for_display() {
 }
 
 pub fn run() {
-    // Set WebKit environment variables for Linux before any windows are created.
-    // GDK_BACKEND is NOT forced — on Wayland the native backend is used,
-    // on X11 the system default applies. This lets quick-add and other
-    // secondary windows work correctly under either display server.
+    // Force X11 backend on Linux so global shortcuts and transparent
+    // windows work reliably (Wayland's security model blocks both).
     #[cfg(target_os = "linux")]
     {
+        std::env::set_var("GDK_BACKEND", "x11");
         std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
         std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
         wait_for_display();

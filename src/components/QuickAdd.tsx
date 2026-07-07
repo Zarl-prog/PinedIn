@@ -75,8 +75,8 @@ export default function QuickAdd() {
   return (
     <div onMouseDown={handleMouseDown} className="quick-add-container" style={{
       width: "480px",
-      height: "110px",
-      maxHeight: "110px",
+      height: "65px",
+      maxHeight: "65px",
       background: "#000000",
       border: "1px solid #2a2a2a",
       borderRadius: "14px",

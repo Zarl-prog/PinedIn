@@ -188,6 +188,97 @@ fn handle_tools_list(id: &Option<Value>) -> Result<Option<Value>, StatusCode> {
                         },
                         "required": ["titles"]
                     }
+                },
+                {
+                    "name": "update_task",
+                    "description": "Edit an existing task's title, description, due date, or other fields",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "task_id": { "type": "number", "description": "The ID of the task to update" },
+                            "title": { "type": "string", "description": "New title" },
+                            "description": { "type": "string", "description": "New description" },
+                            "due_date": { "type": "string", "description": "New due date in YYYY-MM-DD format" }
+                        },
+                        "required": ["task_id"]
+                    }
+                },
+                {
+                    "name": "delete_task",
+                    "description": "Permanently delete a task by its ID",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "task_id": { "type": "number", "description": "The ID of the task to delete" }
+                        },
+                        "required": ["task_id"]
+                    }
+                },
+                {
+                    "name": "list_all_tasks",
+                    "description": "List all tasks including completed ones",
+                    "inputSchema": { "type": "object", "properties": {} }
+                },
+                {
+                    "name": "get_task_by_id",
+                    "description": "Get detailed information about a single task",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "task_id": { "type": "number", "description": "The ID of the task" }
+                        },
+                        "required": ["task_id"]
+                    }
+                },
+                {
+                    "name": "create_workspace",
+                    "description": "Create a new workspace to organize tasks",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "name": { "type": "string", "description": "The name of the workspace" }
+                        },
+                        "required": ["name"]
+                    }
+                },
+                {
+                    "name": "list_workspaces",
+                    "description": "List all workspaces",
+                    "inputSchema": { "type": "object", "properties": {} }
+                },
+                {
+                    "name": "delete_workspace",
+                    "description": "Delete a workspace and all its tasks",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "workspace_id": { "type": "number", "description": "The ID of the workspace to delete" }
+                        },
+                        "required": ["workspace_id"]
+                    }
+                },
+                {
+                    "name": "get_workspace_tasks",
+                    "description": "Get all tasks in a workspace",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "workspace_id": { "type": "number", "description": "The workspace ID" }
+                        },
+                        "required": ["workspace_id"]
+                    }
+                },
+                {
+                    "name": "snooze_task",
+                    "description": "Snooze a task for a given number of minutes (hides its floating card temporarily)",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "task_id": { "type": "number", "description": "The ID of the task to snooze" },
+                            "minutes": { "type": "number", "description": "Number of minutes to snooze" }
+                        },
+                        "required": ["task_id", "minutes"]
+                    }
                 }
             ]
         }
@@ -216,6 +307,15 @@ async fn handle_tool_call(
         "list_tasks" => tool_list_tasks(state),
         "complete_task" => tool_complete_task(arguments, state),
         "add_multiple_tasks" => tool_add_multiple_tasks(arguments, state).await,
+        "update_task" => tool_update_task(arguments, state),
+        "delete_task" => tool_delete_task(arguments, state),
+        "list_all_tasks" => tool_list_all_tasks(state),
+        "get_task_by_id" => tool_get_task_by_id(arguments, state),
+        "create_workspace" => tool_create_workspace(arguments, state),
+        "list_workspaces" => tool_list_workspaces(state),
+        "delete_workspace" => tool_delete_workspace(arguments, state),
+        "get_workspace_tasks" => tool_get_workspace_tasks(arguments, state),
+        "snooze_task" => tool_snooze_task(arguments, state),
         _ => return Ok(Some(json!({
             "jsonrpc": "2.0",
             "id": id,
@@ -368,4 +468,201 @@ async fn tool_add_multiple_tasks(
         added.len(),
         added.join(", ")
     ))
+}
+
+fn tool_update_task(
+    arguments: serde_json::Map<String, Value>,
+    state: &McpState,
+) -> Result<String, String> {
+    let task_id = arguments
+        .get("task_id")
+        .and_then(|v| v.as_i64())
+        .ok_or_else(|| "Missing required argument: task_id".to_string())?;
+
+    let existing = state.db.get_task_by_id(task_id)?;
+
+    let title = arguments
+        .get("title")
+        .and_then(|v| v.as_str())
+        .unwrap_or(&existing.title);
+    let description = arguments
+        .get("description")
+        .and_then(|v| v.as_str())
+        .unwrap_or(&existing.description);
+    let due_time = arguments
+        .get("due_date")
+        .and_then(|v| v.as_str())
+        .unwrap_or(&existing.due_time);
+
+    state.db.update_task(
+        task_id,
+        title,
+        description,
+        due_time,
+        None,
+        None,
+        None,
+        None,
+    )?;
+
+    let _ = commands::emit_tasks_updated(&state.app_handle, &state.db);
+    Ok(format!("Task {} updated successfully.", task_id))
+}
+
+fn tool_delete_task(
+    arguments: serde_json::Map<String, Value>,
+    state: &McpState,
+) -> Result<String, String> {
+    let task_id = arguments
+        .get("task_id")
+        .and_then(|v| v.as_i64())
+        .ok_or_else(|| "Missing required argument: task_id".to_string())?;
+
+    state.db.delete_task(task_id)?;
+    let _ = window::close_task_card(&state.app_handle, task_id);
+    let _ = commands::emit_tasks_updated(&state.app_handle, &state.db);
+    Ok(format!("Task {} deleted.", task_id))
+}
+
+fn tool_list_all_tasks(state: &McpState) -> Result<String, String> {
+    let tasks = state.db.get_all_tasks()?;
+    if tasks.is_empty() {
+        return Ok("No tasks.".to_string());
+    }
+    let lines: Vec<String> = tasks
+        .iter()
+        .map(|t| {
+            let status = if t.completed { "[done]" } else { "[active]" };
+            let id = t.id.unwrap_or(0);
+            format!(
+                "{} #{} {} (due: {})",
+                status, id, t.title,
+                if t.due_time.is_empty() { "no date" } else { &t.due_time }
+            )
+        })
+        .collect();
+    Ok(lines.join("\n"))
+}
+
+fn tool_get_task_by_id(
+    arguments: serde_json::Map<String, Value>,
+    state: &McpState,
+) -> Result<String, String> {
+    let task_id = arguments
+        .get("task_id")
+        .and_then(|v| v.as_i64())
+        .ok_or_else(|| "Missing required argument: task_id".to_string())?;
+
+    let task = state.db.get_task_by_id(task_id)?;
+    let id = task.id.unwrap_or(0);
+    let ws = task.workspace_id.map(|id| id.to_string()).unwrap_or_else(|| "none".to_string());
+    Ok(format!(
+        "ID: {}\nTitle: {}\nDescription: {}\nDue: {}\nCompleted: {}\nWorkspace: {}",
+        id,
+        task.title,
+        task.description,
+        if task.due_time.is_empty() { "none" } else { &task.due_time },
+        if task.completed { "yes" } else { "no" },
+        ws
+    ))
+}
+
+fn tool_create_workspace(
+    arguments: serde_json::Map<String, Value>,
+    state: &McpState,
+) -> Result<String, String> {
+    let name = arguments
+        .get("name")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "Missing required argument: name".to_string())?
+        .to_string();
+
+    let id = state.db.save_workspace(&name, "{}")?;
+    Ok(format!("Workspace '{}' created with ID {}.", name, id))
+}
+
+fn tool_list_workspaces(state: &McpState) -> Result<String, String> {
+    let workspaces = state.db.get_all_workspaces()?;
+    if workspaces.is_empty() {
+        return Ok("No workspaces.".to_string());
+    }
+    let lines: Vec<String> = workspaces
+        .iter()
+        .map(|w| format!("- #{} {}", w.id, w.name))
+        .collect();
+    Ok(lines.join("\n"))
+}
+
+fn tool_delete_workspace(
+    arguments: serde_json::Map<String, Value>,
+    state: &McpState,
+) -> Result<String, String> {
+    let workspace_id = arguments
+        .get("workspace_id")
+        .and_then(|v| v.as_i64())
+        .ok_or_else(|| "Missing required argument: workspace_id".to_string())?;
+
+    state.db.delete_workspace(workspace_id)?;
+    Ok(format!("Workspace {} deleted.", workspace_id))
+}
+
+fn tool_get_workspace_tasks(
+    arguments: serde_json::Map<String, Value>,
+    state: &McpState,
+) -> Result<String, String> {
+    let workspace_id = arguments
+        .get("workspace_id")
+        .and_then(|v| v.as_i64())
+        .ok_or_else(|| "Missing required argument: workspace_id".to_string())?;
+
+    let tasks = state.db.get_workspace_tasks(workspace_id)?;
+    if tasks.is_empty() {
+        return Ok("No tasks in this workspace.".to_string());
+    }
+    let lines: Vec<String> = tasks
+        .iter()
+        .map(|t| {
+            let id = t.id.unwrap_or(0);
+            format!(
+                "- #{} {} (due: {})",
+                id, t.title,
+                if t.due_time.is_empty() { "no date" } else { &t.due_time }
+            )
+        })
+        .collect();
+    Ok(lines.join("\n"))
+}
+
+fn tool_snooze_task(
+    arguments: serde_json::Map<String, Value>,
+    state: &McpState,
+) -> Result<String, String> {
+    let task_id = arguments
+        .get("task_id")
+        .and_then(|v| v.as_i64())
+        .ok_or_else(|| "Missing required argument: task_id".to_string())?;
+    let minutes = arguments
+        .get("minutes")
+        .and_then(|v| v.as_i64())
+        .ok_or_else(|| "Missing required argument: minutes".to_string())?;
+
+    let task = state.db.get_task_by_id(task_id)?;
+    let now = chrono::Utc::now();
+    let snooze_until = now + chrono::Duration::minutes(minutes);
+    let due = snooze_until.format("%Y-%m-%d %H:%M").to_string();
+
+    state.db.update_task(
+        task_id,
+        &task.title,
+        &task.description,
+        &due,
+        None,
+        None,
+        None,
+        None,
+    )?;
+
+    let _ = window::close_task_card(&state.app_handle, task_id);
+    let _ = commands::emit_tasks_updated(&state.app_handle, &state.db);
+    Ok(format!("Task {} snoozed until {}.", task_id, due))
 }

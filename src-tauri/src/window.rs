@@ -241,6 +241,69 @@ pub fn open_task_card_window_at(app: &AppHandle, task: &Task, x: f64, y: f64) {
     }
 }
 
+// ─── Quick Add Window ──────────────────────────────────────────────────────────
+
+pub fn open_quick_add_window(app: &AppHandle) {
+    #[cfg(target_os = "linux")]
+    {
+        std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
+        std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+    }
+
+    let label = "quick_add";
+
+    if let Some(w) = app.get_webview_window(label) {
+        let _ = w.show();
+        let _ = w.set_focus();
+        return;
+    }
+
+    let (x, y) = get_quick_add_position(app);
+
+    let builder = WebviewWindowBuilder::new(
+        app,
+        label,
+        WebviewUrl::App("quick-add.html".into())
+    )
+    .title("")
+    .inner_size(480.0, 64.0)
+    .min_inner_size(480.0, 64.0)
+    .max_inner_size(480.0, 64.0)
+    .resizable(false)
+    .decorations(false)
+    .always_on_top(true)
+    .skip_taskbar(true)
+    .focused(true)
+    .position(x, y)
+    .transparent(false);
+
+    match builder.build() {
+        Ok(w) => {
+            #[cfg(target_os = "linux")]
+            {
+                let retry = w.clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                    let _ = retry.eval(
+                        "if (!document.body || !document.body.children.length) window.location.reload();"
+                    );
+                });
+            }
+        }
+        Err(e) => eprintln!("Failed to open quick add window: {}", e)
+    }
+}
+
+fn get_quick_add_position(app: &AppHandle) -> (f64, f64) {
+    if let Some(monitor) = app.primary_monitor().ok().flatten() {
+        let width = monitor.size().width as f64 / monitor.scale_factor();
+        let x = (width / 2.0) - 240.0;
+        let y = 80.0;
+        return (x, y);
+    }
+    (400.0, 80.0)
+}
+
 // ─── Compact Pill Window ───────────────────────────────────────────────────────
 
 fn get_pill_position(app: &AppHandle) -> (f64, f64) {

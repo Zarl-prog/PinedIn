@@ -22,6 +22,14 @@ export interface AppSettings {
   theme: "light" | "dark" | "parchment" | "system";
 }
 
+// ─── Quick Add ────────────────────────────────────────────────────────────────
+export async function quickAddTask(
+  title: string,
+  dueDate: string,
+): Promise<void> {
+  return invoke("quick_add_task", { title, dueDate });
+}
+
 // ─── Task Commands ──────────────────────────────────────────────────────────
 
 export async function createTask(

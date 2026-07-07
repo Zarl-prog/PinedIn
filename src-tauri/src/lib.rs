@@ -11,6 +11,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tauri::{Emitter, Manager};
 use tauri::utils::config::Color;
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
 use tauri_plugin_single_instance::init as single_instance_init;
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_notification::NotificationExt;
@@ -86,7 +87,7 @@ pub fn run() {
                 // Deny-list the main window: we own its close behaviour
                 // (minimize-to-tray), and the plugin's own close handler
                 // would otherwise race with ours and destroy the window.
-                .with_denylist(&["main"])
+                .with_denylist(&["main", "quick_add"])
                 .build(),
         )
         .plugin(tauri_plugin_notification::init())
@@ -95,6 +96,7 @@ pub fn run() {
             Some(vec![]),
         ))
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .setup(|app| {
             set_linux_webkit_env();
@@ -230,6 +232,21 @@ pub fn run() {
             // closed get caught up.
             scheduler::start_scheduler(app.handle().clone());
 
+            // Register global hotkey: Ctrl+Shift+Space — opens quick-add popup
+            let _ = app.global_shortcut().unregister_all();
+            #[cfg(target_os = "macos")]
+            let modifiers = Modifiers::SUPER | Modifiers::SHIFT;
+            #[cfg(not(target_os = "macos"))]
+            let modifiers = Modifiers::CONTROL | Modifiers::SHIFT;
+            if let Err(e) = app.global_shortcut().on_shortcut(
+                Shortcut::new(Some(modifiers), Code::Space),
+                |app, _shortcut, _event| {
+                    window::open_quick_add_window(app);
+                },
+            ) {
+                eprintln!("[startup] Failed to register global shortcut: {e}");
+            }
+
             // Spawn a background update check on startup - silent unless one is found
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
@@ -276,6 +293,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::create_task,
+            commands::quick_add_task,
             commands::get_all_tasks,
             commands::get_incomplete_tasks,
             commands::get_task_by_id,

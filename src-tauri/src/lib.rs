@@ -330,10 +330,16 @@ pub fn run() {
 
 async fn check_for_updates(app: tauri::AppHandle) {
     use tauri_plugin_updater::UpdaterExt;
-    if let Ok(updater) = app.updater() {
-        if let Ok(Some(update)) = updater.check().await {
-            let _ = app.emit("update_available", update.version.clone());
-        }
+    match app.updater() {
+        Ok(updater) => match updater.check().await {
+            Ok(Some(update)) => {
+                eprintln!("[updater] Update available: v{}", update.version);
+                let _ = app.emit("update_available", update.version.clone());
+            }
+            Ok(None) => eprintln!("[updater] No update available"),
+            Err(e) => eprintln!("[updater] Check failed: {e}"),
+        },
+        Err(e) => eprintln!("[updater] Updater not available: {e}"),
     }
 }
 

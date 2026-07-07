@@ -20,6 +20,7 @@ export default function CompactPill() {
   const didDrag = useRef(false);
   const mouseDownPos = useRef({ x: 0, y: 0 });
   const autoCloseRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const allClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isHoveringRef = useRef(false);
 
   function getTimerColor(task: Task): string | null {
@@ -82,6 +83,23 @@ export default function CompactPill() {
       win.setSize(new LogicalSize(COLLAPSED_W, COLLAPSED_H));
     }
   }, [expanded]);
+
+  useEffect(() => {
+    if (allClearTimerRef.current) {
+      clearTimeout(allClearTimerRef.current);
+      allClearTimerRef.current = null;
+    }
+    if (tasks.length > 0) return;
+    allClearTimerRef.current = setTimeout(() => {
+      getCurrentWindow().close();
+    }, 5000);
+    return () => {
+      if (allClearTimerRef.current) {
+        clearTimeout(allClearTimerRef.current);
+        allClearTimerRef.current = null;
+      }
+    };
+  }, [tasks.length]);
 
   useEffect(() => {
     if (!expanded) {

@@ -4,7 +4,7 @@ use tauri::{
     image::Image,
     menu::{MenuBuilder, MenuItemBuilder},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Emitter, Manager,
+    Manager,
 };
 
 pub fn is_gnome() -> bool {
@@ -63,12 +63,7 @@ pub fn setup_tray(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Erro
                 }
             }
             "quick_task" => {
-                let _ = app_handle.emit("open-quick-task", ());
-                if let Some(window) = app_handle.get_webview_window("main") {
-                    let _ = window.show();
-                    let _ = window.unminimize();
-                    let _ = window.set_focus();
-                }
+                crate::window::open_quick_add_window(app_handle);
             }
             "quit" => {
                 // Flip the shared quit flag so the main window's

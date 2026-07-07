@@ -256,7 +256,7 @@ pub fn open_quick_add_window(app: &AppHandle) {
 
     let build_fn = || {
         let mut builder = WebviewWindowBuilder::new(app, label, WebviewUrl::App("quick-add.html".into()))
-            .inner_size(480.0, 120.0)
+            .inner_size(480.0, 50.0)
             .resizable(false)
             .decorations(false);
         #[cfg(not(target_os = "macos"))]

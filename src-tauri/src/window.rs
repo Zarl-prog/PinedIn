@@ -268,9 +268,9 @@ pub fn open_quick_add_window(app: &AppHandle) {
         WebviewUrl::App("quick-add.html".into())
     )
     .title("")
-    .inner_size(480.0, 64.0)
-    .min_inner_size(480.0, 64.0)
-    .max_inner_size(480.0, 64.0)
+    .inner_size(320.0, 64.0)
+    .min_inner_size(320.0, 64.0)
+    .max_inner_size(320.0, 64.0)
     .resizable(false)
     .decorations(false)
     .always_on_top(true)
@@ -307,7 +307,7 @@ pub fn open_quick_add_window(app: &AppHandle) {
 fn get_quick_add_position(app: &AppHandle) -> (f64, f64) {
     if let Some(monitor) = app.primary_monitor().ok().flatten() {
         let width = monitor.size().width as f64 / monitor.scale_factor();
-        let x = (width / 2.0) - 240.0;
+        let x = (width / 2.0) - 160.0;
         let y = 80.0;
         return (x, y);
     }

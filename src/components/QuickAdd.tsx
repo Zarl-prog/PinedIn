@@ -47,9 +47,9 @@ export default function QuickAdd() {
 
   return (
     <div className="quick-add-container" style={{
-      width: "320px",
-      height: "64px",
-      maxHeight: "64px",
+      width: "480px",
+      height: "49px",
+      maxHeight: "49px",
       background: "#000000",
       border: "1px solid #2a2a2a",
       borderRadius: "14px",

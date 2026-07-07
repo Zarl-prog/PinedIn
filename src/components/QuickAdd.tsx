@@ -90,7 +90,7 @@ export default function QuickAdd() {
       <Plus
         size={15}
         weight="light"
-        color="#333"
+        color="#888"
         style={{ flexShrink: 0 }}
       />
 

@@ -244,14 +244,6 @@ pub fn open_task_card_window_at(app: &AppHandle, task: &Task, x: f64, y: f64) {
 // ─── Quick Add Window ──────────────────────────────────────────────────────────
 
 pub fn open_quick_add_window(app: &AppHandle) {
-    let on_wayland = cfg!(target_os = "linux") && crate::is_wayland();
-
-    #[cfg(target_os = "linux")]
-    if !on_wayland {
-        std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
-        std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
-    }
-
     let label = "quick_add";
 
     if let Some(w) = app.get_webview_window(label) {
@@ -262,47 +254,42 @@ pub fn open_quick_add_window(app: &AppHandle) {
 
     let (x, y) = get_quick_add_position(app);
 
-    let mut builder = WebviewWindowBuilder::new(
-        app,
-        label,
-        WebviewUrl::App("quick-add.html".into())
-    )
-    .title("")
-    .inner_size(480.0, 65.0)
-    .min_inner_size(480.0, 65.0)
-    .max_inner_size(480.0, 65.0)
-    .resizable(false)
-    .decorations(false)
-    .always_on_top(true)
-    .skip_taskbar(true)
-    .focused(true)
-    .position(x, y);
-
-    if on_wayland {
-        builder = builder.transparent(false);
-    } else {
-        builder = builder.transparent(true);
-    }
-    builder = builder.decorations(true);
-
-    match builder.build() {
-        Ok(w) => {
-            if on_wayland {
-                let _ = w.set_background_color(Some(tauri::utils::config::Color(0, 0, 0, 255)));
-            }
-            #[cfg(target_os = "linux")]
-            {
-                let retry = w.clone();
-                tauri::async_runtime::spawn(async move {
-                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-                    let _ = retry.eval(
-                        "if (!document.body || !document.body.children.length) window.location.reload();"
-                    );
-                });
-            }
+    let build_fn = || {
+        let mut builder = WebviewWindowBuilder::new(app, label, WebviewUrl::App("quick-add.html".into()))
+            .inner_size(480.0, 120.0)
+            .resizable(false)
+            .decorations(false);
+        #[cfg(not(target_os = "macos"))]
+        {
+            builder = builder.transparent(true);
         }
-        Err(e) => eprintln!("Failed to open quick add window: {}", e)
-    }
+        builder
+            .shadow(false)
+            .always_on_top(true)
+            .skip_taskbar(true)
+            .focused(true)
+            .position(x, y)
+            .build()
+    };
+
+    #[cfg(target_os = "linux")]
+    let result = build_with_retry(build_fn, 3);
+    #[cfg(not(target_os = "linux"))]
+    let result = build_fn();
+
+    let window = match result {
+        Ok(w) => w,
+        Err(e) => {
+            eprintln!("Failed to open quick add window: {e}");
+            return;
+        }
+    };
+
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
+    let _ = window.set_always_on_top(true);
+
+    #[cfg(target_os = "windows")]
+    let _ = window.set_background_color(Some(tauri::utils::config::Color(0, 0, 0, 255)));
 }
 
 fn get_quick_add_position(app: &AppHandle) -> (f64, f64) {

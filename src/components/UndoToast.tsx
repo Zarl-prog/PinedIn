@@ -54,8 +54,7 @@ export default function UndoToast() {
           style={{
             position: "fixed",
             bottom: "56px",
-            left: "50%",
-            transform: "translateX(-50%)",
+            right: "16px",
             zIndex: 9999,
             display: "flex",
             alignItems: "center",

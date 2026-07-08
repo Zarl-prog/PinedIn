@@ -10,7 +10,8 @@ import {
   setShakeInterval,
 } from "@/lib/tauriCommands";
 import { checkAndInstall } from "@/lib/updater";
-import { X, Circle, Hourglass, PencilSimpleLine } from "@phosphor-icons/react";
+import { X, Circle, Hourglass, PencilSimpleLine, Tag } from "@phosphor-icons/react";
+import { getVersion } from "@tauri-apps/api/app";
 
 const SHAKE_OPTIONS: { value: number; label: string }[] = [
   { value: 10, label: "10s" },
@@ -42,6 +43,11 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
     error?: string;
   }>({ state: "idle" });
   const [shakeInterval, setShakeIntervalState] = useState(30);
+  const [appVersion, setAppVersion] = useState("...");
+
+  useEffect(() => {
+    getVersion().then(setAppVersion).catch(() => setAppVersion("?"));
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -483,6 +489,14 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                         : "Check"}
                   </button>
                 </div>
+              </div>
+
+              {/* Version */}
+              <div style={{ marginTop: "4px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "12px" }}>
+                <Tag size={12} weight="light" color="var(--text-muted)" />
+                <span style={{ fontSize: "12px", color: "var(--text-muted)", fontFamily: "'Geist Mono', monospace" }}>
+                  v{appVersion}
+                </span>
               </div>
             </div>
           </motion.div>

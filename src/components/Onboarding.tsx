@@ -1,182 +1,198 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import {
-  X, ArrowRight, ArrowLeft, CheckCircle,
-  Cards, EyeClosed, Rows, SquaresFour, Robot
-} from "@phosphor-icons/react";
+import { ArrowRight, X, CheckCircle, Plus, List, Command, GearSix, Sparkle } from "@phosphor-icons/react";
 
-interface TooltipStep {
+interface Step {
   id: string;
   title: string;
   description: string;
-  icon: React.ReactNode;
-  position: "top" | "bottom" | "left" | "right" | "center";
-  demo?: React.ReactNode;
+  selector?: string;
+  placement?: "bottom" | "top" | "right" | "left";
+  highlightPadding?: number;
+  action?: "click" | "observe" | null;
+  observeSelector?: string;
 }
 
-const TOUR_STEPS: TooltipStep[] = [
+const STEPS: Step[] = [
   {
-    id: "floating-cards",
-    title: "Floating Task Cards",
-    description: "Every task you add becomes a small always-on-top card that floats over every app on your screen. Switch tabs, open a game, join a meeting — your tasks follow you everywhere.",
-    icon: <Cards size={20} weight="light" />,
-    position: "center",
-    demo: (
-      <div style={{
-        background: "#0f0f11",
-        border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: "12px",
-        padding: "12px 14px",
-        width: "220px",
-        margin: "12px auto 0"
-      }}>
-        <div style={{ fontSize: "12px", fontWeight: 600, color: "#fff", fontFamily: "'Geist Mono', monospace", marginBottom: "4px" }}>
-          Fix the auth bug
-        </div>
-        <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.38)", fontFamily: "'Geist Mono', monospace" }}>
-          Backend team · Due today
-        </div>
-        <div style={{ display: "flex", gap: "5px", marginTop: "10px" }}>
-          <div style={{ flex: 1, height: "26px", borderRadius: "6px", border: "1px solid rgba(34,197,94,0.3)", background: "rgba(34,197,94,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontSize: "10px", color: "#22c55e", fontFamily: "'Geist Mono', monospace" }}>✓ Done</span>
-          </div>
-          <div style={{ flex: 1, height: "26px", borderRadius: "6px", border: "1px solid rgba(245,158,11,0.3)", background: "rgba(245,158,11,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontSize: "10px", color: "#f59e0b", fontFamily: "'Geist Mono', monospace" }}>Snooze</span>
-          </div>
-          <div style={{ flex: 1, height: "26px", borderRadius: "6px", border: "1px solid rgba(167,139,250,0.3)", background: "rgba(167,139,250,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontSize: "10px", color: "#a78bfa", fontFamily: "'Geist Mono', monospace" }}>Remind</span>
-          </div>
-        </div>
-      </div>
-    )
+    id: "add-task",
+    title: "Create your first task",
+    description: "Click the \"+ Add Task\" button to create your first floating task card. Try it now!",
+    selector: "button:has(span:contains('+ Add Task'))",
+    placement: "bottom",
+    highlightPadding: 8,
+    action: "click",
   },
   {
-    id: "compact-mode",
-    title: "Compact Mode",
-    description: "Too many cards cluttering your screen? Switch to Compact Mode from the toolbar. All cards collapse into a single tiny pill in the corner. Double-click to peek at your current task — it auto-closes in 3 seconds.",
-    icon: <Rows size={20} weight="light" />,
-    position: "center",
-    demo: (
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", marginTop: "12px" }}>
-        <div style={{
-          background: "#000",
-          border: "1px solid #2a2a2a",
-          borderRadius: "999px",
-          padding: "8px 18px",
-          display: "flex",
-          alignItems: "center",
-          gap: "8px"
-        }}>
-          <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#f59e0b", display: "block" }} />
-          <span style={{ fontSize: "11px", color: "#fff", fontFamily: "'Geist Mono', monospace", fontWeight: 600 }}>3 tasks</span>
-        </div>
-        <span style={{ fontSize: "10px", color: "#444", fontFamily: "'Geist Mono', monospace" }}>double-click to peek</span>
-      </div>
-    )
+    id: "task-list",
+    title: "Your tasks, organized",
+    description: "Every task appears here in the task list. You can search, filter, and manage them all from this view.",
+    selector: ".tasks-body",
+    placement: "top",
+    highlightPadding: 4,
   },
   {
-    id: "zen-mode",
-    title: "Zen Mode",
-    description: "Need to focus without distractions? Press the Zen button in the toolbar to instantly hide all floating cards. Press it again to bring them back. Your tasks are still there — just out of the way.",
-    icon: <EyeClosed size={20} weight="light" />,
-    position: "center",
-    demo: (
-      <div style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "12px", justifyContent: "center" }}>
-        <div style={{ background: "#0f0f11", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "8px 12px", opacity: 1 }}>
-          <span style={{ fontSize: "11px", color: "#fff", fontFamily: "'Geist Mono', monospace" }}>Task card</span>
-        </div>
-        <ArrowRight size={14} color="#444" />
-        <div style={{ background: "#0f0f11", border: "1px solid rgba(255,255,255,0.04)", borderRadius: "8px", padding: "8px 12px", opacity: 0.08 }}>
-          <span style={{ fontSize: "11px", color: "#fff", fontFamily: "'Geist Mono', monospace" }}>Task card</span>
-        </div>
-      </div>
-    )
+    id: "toolbar",
+    title: "Power tools at your fingertips",
+    description: "Compact mode collapses cards into a pill. Zen mode hides them. Align snaps cards into a grid. Shake makes urgent tasks pulse.",
+    selector: ".feature-btn",
+    placement: "top",
+    highlightPadding: 8,
   },
   {
-    id: "workspaces",
-    title: "Workspaces",
-    description: "Create named workspaces like 'Deep Work' or 'Meetings'. Each workspace has its own set of tasks. Activate a workspace and only those tasks float on your screen — everything else hides.",
-    icon: <SquaresFour size={20} weight="light" />,
-    position: "center",
-    demo: (
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginTop: "12px", width: "240px", margin: "12px auto 0" }}>
-        {["Deep Work", "Meetings"].map(name => (
-          <div key={name} style={{
-            background: "#0a0a0a",
-            border: "1px solid #1a1a1a",
-            borderRadius: "10px",
-            padding: "10px",
-          }}>
-            <div style={{ fontSize: "16px", marginBottom: "6px" }}>⬡</div>
-            <div style={{ fontSize: "11px", fontWeight: 600, color: "#fff", fontFamily: "'Geist Mono', monospace" }}>{name}</div>
-            <div style={{ fontSize: "10px", color: "#444", fontFamily: "'Geist Mono', monospace", marginTop: "2px" }}>3 tasks</div>
-          </div>
-        ))}
-      </div>
-    )
+    id: "settings",
+    title: "Tweak everything",
+    description: "Change themes, adjust card shake intervals, configure autostart, and check for updates — all from Settings.",
+    selector: ".feature-btn.ghost",
+    placement: "left",
+    highlightPadding: 8,
   },
   {
-    id: "mcp",
-    title: "AI Integration (MCP)",
-    description: "PinedIn runs a local MCP server on port 7890. Connect Claude Desktop, Cursor, or any MCP-compatible AI and say 'Add these tasks from my meeting notes' — cards appear on your screen instantly.",
-    icon: <Robot size={20} weight="light" />,
-    position: "center",
-    demo: (
-      <div style={{ marginTop: "12px", width: "260px", margin: "12px auto 0" }}>
-        <div style={{
-          background: "#0a0a0a",
-          border: "1px solid #1a1a1a",
-          borderRadius: "8px",
-          padding: "10px 12px",
-          fontFamily: "'Geist Mono', monospace"
-        }}>
-          <div style={{ fontSize: "10px", color: "#444", marginBottom: "6px" }}>Claude Desktop config</div>
-          <code style={{ fontSize: "10px", color: "#888", display: "block", lineHeight: 1.6 }}>
-            {`"pinedin": {`}<br/>
-            {`  "url": "http://127.0.0.1`}<br/>
-            {`         :7890/sse"`}<br/>
-            {`}`}
-          </code>
-        </div>
-        <div style={{ fontSize: "10px", color: "#444", fontFamily: "'Geist Mono', monospace", textAlign: "center", marginTop: "6px" }}>
-          Find this in Settings → MCP Server
-        </div>
-      </div>
-    )
-  }
+    id: "finish",
+    title: "You're all set!",
+    description: "You now know the essentials. Start adding tasks, try compact mode when things get busy, and use zen mode when you need focus.",
+    placement: "bottom",
+  },
 ];
+
+function useScrollLock(locked: boolean) {
+  useEffect(() => {
+    if (locked) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [locked]);
+}
 
 export default function Onboarding() {
   const [visible, setVisible] = useState(false);
   const [phase, setPhase] = useState<"welcome" | "tour" | "done">("welcome");
-  const [step, setStep] = useState(0);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [highlightRect, setHighlightRect] = useState<DOMRect | null>(null);
+  const [tooltipReady, setTooltipReady] = useState(false);
+  const [clickedAddTask, setClickedAddTask] = useState(false);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const spotlightRef = useRef<HTMLDivElement>(null);
+
+  useScrollLock(visible);
 
   useEffect(() => {
     const p = listen("show_onboarding", () => setVisible(true));
     return () => { p.then(f => f(), () => {}); };
   }, []);
 
+  useEffect(() => {
+    if (phase !== "tour") return;
+    if (stepIndex >= STEPS.length) { handleComplete(); return; }
+
+    const step = STEPS[stepIndex];
+    if (!step.selector) { setHighlightRect(null); setTooltipReady(true); return; }
+
+    const update = () => {
+      const el = document.querySelector(step.selector!) as HTMLElement | null;
+      if (el) {
+        const r = el.getBoundingClientRect();
+        setHighlightRect(r);
+        setTooltipReady(true);
+      } else {
+        setHighlightRect(null);
+        setTooltipReady(false);
+        const retry = setTimeout(update, 300);
+        return () => clearTimeout(retry);
+      }
+    };
+
+    update();
+    const interval = setInterval(update, 500);
+    return () => clearInterval(interval);
+  }, [phase, stepIndex]);
+
+  useEffect(() => {
+    if (phase !== "tour") return;
+    const step = STEPS[stepIndex];
+    if (!step.observeSelector) return;
+    const check = () => {
+      const el = document.querySelector(step.observeSelector!);
+      if (el) {
+        if (step.id === "add-task") setClickedAddTask(true);
+        setTimeout(() => setStepIndex(s => s + 1), 600);
+      }
+    };
+    const id = setInterval(check, 300);
+    return () => clearInterval(id);
+  }, [phase, stepIndex]);
+
   async function handleComplete() {
     setPhase("done");
     setVisible(false);
+    setClickedAddTask(false);
     await invoke("complete_onboarding");
   }
 
   function handleNext() {
-    if (step < TOUR_STEPS.length - 1) {
-      setStep(s => s + 1);
+    if (stepIndex < STEPS.length - 1) {
+      setStepIndex(s => s + 1);
     } else {
       handleComplete();
     }
   }
 
-  function handlePrev() {
-    if (step > 0) setStep(s => s - 1);
+  const currentStep = stepIndex < STEPS.length ? STEPS[stepIndex] : null;
+  const isLast = stepIndex === STEPS.length - 1;
+
+  function getTooltipPos(step: Step): React.CSSProperties {
+    if (!highlightRect || !step.selector) {
+      return { bottom: "40px", left: "50%", transform: "translateX(-50%)" };
+    }
+    const gap = 12;
+    const winW = window.innerWidth;
+    const winH = window.innerHeight;
+    const tW = 340;
+    const tH = 180;
+
+    switch (step.placement || "bottom") {
+      case "bottom": {
+        let left = highlightRect.left + highlightRect.width / 2 - tW / 2;
+        left = Math.max(12, Math.min(left, winW - tW - 12));
+        return { top: `${highlightRect.bottom + gap}px`, left: `${left}px`, width: `${tW}px` };
+      }
+      case "top": {
+        let left = highlightRect.left + highlightRect.width / 2 - tW / 2;
+        left = Math.max(12, Math.min(left, winW - tW - 12));
+        return { bottom: `${winH - highlightRect.top + gap}px`, left: `${left}px`, width: `${tW}px` };
+      }
+      case "left": {
+        let top = highlightRect.top + highlightRect.height / 2 - tH / 2;
+        top = Math.max(12, Math.min(top, winH - tH - 12));
+        return { right: `${winW - highlightRect.left + gap}px`, top: `${top}px`, width: `${tW}px` };
+      }
+      case "right": {
+        let top = highlightRect.top + highlightRect.height / 2 - tH / 2;
+        top = Math.max(12, Math.min(top, winH - tH - 12));
+        return { left: `${highlightRect.right + gap}px`, top: `${top}px`, width: `${tW}px` };
+      }
+      default:
+        return { bottom: "40px", left: "50%", transform: "translateX(-50%)", width: `${tW}px` };
+    }
   }
 
-  const currentStep = TOUR_STEPS[step];
+  const handleSpotlightClick = useCallback((e: React.MouseEvent) => {
+    const step = STEPS[stepIndex];
+    if (!step || !step.selector) return;
+    const el = document.querySelector(step.selector) as HTMLElement | null;
+    if (el && el.contains(e.target as Node)) {
+      if (step.action === "click") {
+        el.click();
+        if (step.id === "add-task") {
+          setClickedAddTask(true);
+        }
+      }
+    }
+  }, [stepIndex]);
 
   return (
     <AnimatePresence>
@@ -189,15 +205,78 @@ export default function Onboarding() {
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0,0,0,0.85)",
-            zIndex: 9999,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backdropFilter: "blur(4px)",
-            padding: "24px",
+            zIndex: 9998,
+            pointerEvents: phase === "welcome" ? "auto" : "auto",
           }}
         >
+          {phase === "tour" && highlightRect && currentStep?.selector && (
+            <>
+              {/* Full backdrop */}
+              <div
+                style={{
+                  position: "fixed",
+                  inset: 0,
+                  background: "rgba(0,0,0,0.7)",
+                  zIndex: 9998,
+                }}
+                onClick={() => {}}
+              />
+
+              {/* Cutout highlight */}
+              <svg
+                style={{
+                  position: "fixed",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  zIndex: 9999,
+                  pointerEvents: "none",
+                }}
+              >
+                <defs>
+                  <mask id="spotlight-mask">
+                    <rect width="100%" height="100%" fill="white" />
+                    <rect
+                      x={highlightRect.left - (currentStep.highlightPadding || 4)}
+                      y={highlightRect.top - (currentStep.highlightPadding || 4)}
+                      width={highlightRect.width + (currentStep.highlightPadding || 4) * 2}
+                      height={highlightRect.height + (currentStep.highlightPadding || 4) * 2}
+                      rx="8"
+                      fill="black"
+                    />
+                  </mask>
+                </defs>
+                <rect
+                  width="100%"
+                  height="100%"
+                  fill="rgba(0,0,0,0.7)"
+                  mask="url(#spotlight-mask)"
+                />
+              </svg>
+
+              {/* Interactive highlight border */}
+              <div
+                ref={spotlightRef}
+                onClick={handleSpotlightClick}
+                style={{
+                  position: "fixed",
+                  left: highlightRect.left - (currentStep.highlightPadding || 4) - 2,
+                  top: highlightRect.top - (currentStep.highlightPadding || 4) - 2,
+                  width: highlightRect.width + (currentStep.highlightPadding || 4) * 2 + 4,
+                  height: highlightRect.height + (currentStep.highlightPadding || 4) * 2 + 4,
+                  borderRadius: "10px",
+                  border: "2px solid rgba(255,255,255,0.4)",
+                  boxShadow: "0 0 30px rgba(255,255,255,0.1)",
+                  zIndex: 10000,
+                  pointerEvents: currentStep.action === "click" ? "auto" : "none",
+                  cursor: currentStep.action === "click" ? "pointer" : "default",
+                  transition: "all 0.3s ease",
+                }}
+              />
+            </>
+          )}
+
+          {/* Tooltip card */}
           <AnimatePresence mode="wait">
             {phase === "welcome" && (
               <motion.div
@@ -207,61 +286,42 @@ export default function Onboarding() {
                 exit={{ opacity: 0, scale: 0.95, y: -20 }}
                 transition={{ type: "spring", stiffness: 300, damping: 28 }}
                 style={{
+                  position: "fixed",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
                   background: "#000",
                   border: "1px solid #1a1a1a",
                   borderRadius: "16px",
                   width: "100%",
-                  maxWidth: "480px",
-                  padding: "40px",
+                  maxWidth: "460px",
+                  padding: "36px",
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  gap: "0",
-                  position: "relative",
-                  textAlign: "center"
+                  textAlign: "center",
+                  zIndex: 10001,
                 }}
               >
-                <button
-                  onClick={handleComplete}
-                  style={{
-                    position: "absolute",
-                    top: "16px",
-                    right: "16px",
-                    background: "transparent",
-                    border: "none",
-                    color: "#444",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    fontSize: "11px",
-                    fontFamily: "'Geist Mono', monospace"
-                  }}
-                >
-                  <X size={13} weight="light" /> Skip
-                </button>
-
                 <div style={{
-                  width: "64px",
-                  height: "64px",
+                  width: "60px",
+                  height: "60px",
                   background: "#fff",
-                  borderRadius: "16px",
+                  borderRadius: "14px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  marginBottom: "24px"
+                  marginBottom: "20px"
                 }}>
-                  <span style={{ fontSize: "28px", fontWeight: 700, color: "#000", fontFamily: "'Geist Mono', monospace" }}>P</span>
+                  <span style={{ fontSize: "26px", fontWeight: 700, color: "#000", fontFamily: "'Geist Mono', monospace" }}>P</span>
                 </div>
 
                 <h1 style={{
-                  fontSize: "24px",
+                  fontSize: "22px",
                   fontWeight: 700,
                   color: "#ffffff",
                   fontFamily: "'Geist Mono', monospace",
-                  letterSpacing: "-0.5px",
-                  marginBottom: "12px",
-                  lineHeight: 1.2
+                  marginBottom: "10px",
                 }}>
                   Welcome to PinedIn
                 </h1>
@@ -271,13 +331,13 @@ export default function Onboarding() {
                   color: "#666",
                   fontFamily: "'Geist Mono', monospace",
                   lineHeight: 1.6,
-                  marginBottom: "32px",
+                  marginBottom: "28px",
                   maxWidth: "340px"
                 }}>
-                  Your tasks are about to float above every app on your screen. You will never forget a task again.
+                  Tasks that float above every window, so you never lose track of what's next.
                 </p>
 
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", justifyContent: "center", marginBottom: "32px" }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", justifyContent: "center", marginBottom: "28px" }}>
                   {["Always on top", "No cloud", "Global hotkey", "AI ready", "Open source"].map(tag => (
                     <span key={tag} style={{
                       background: "#0a0a0a",
@@ -294,7 +354,7 @@ export default function Onboarding() {
                 </div>
 
                 <button
-                  onClick={() => setPhase("tour")}
+                  onClick={() => { setPhase("tour"); setStepIndex(0); }}
                   style={{
                     background: "#ffffff",
                     color: "#000000",
@@ -330,154 +390,108 @@ export default function Onboarding() {
               </motion.div>
             )}
 
-            {phase === "tour" && (
+            {phase === "tour" && currentStep && tooltipReady && (
               <motion.div
-                key={`tour-${step}`}
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -30 }}
-                transition={{ type: "spring", stiffness: 300, damping: 28 }}
+                key={`tooltip-${stepIndex}`}
+                ref={tooltipRef}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 300, damping: 28, delay: 0.1 }}
                 style={{
+                  position: "fixed",
+                  zIndex: 10002,
                   background: "#000",
                   border: "1px solid #1a1a1a",
-                  borderRadius: "16px",
-                  width: "100%",
-                  maxWidth: "420px",
-                  padding: "32px",
-                  position: "relative"
+                  borderRadius: "12px",
+                  padding: "20px",
+                  ...getTooltipPos(currentStep),
                 }}
               >
-                <div style={{
-                  position: "absolute",
-                  top: "20px",
-                  right: "20px",
-                  fontSize: "11px",
-                  color: "#333",
-                  fontFamily: "'Geist Mono', monospace"
-                }}>
-                  {step + 1} / {TOUR_STEPS.length}
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+                  <span style={{
+                    width: "28px",
+                    height: "28px",
+                    background: "#0a0a0a",
+                    border: "1px solid #1a1a1a",
+                    borderRadius: "7px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#fff",
+                    fontSize: "12px",
+                    flexShrink: 0,
+                  }}>
+                    {stepIndex === 0 ? <Plus size={14} /> :
+                     stepIndex === 1 ? <List size={14} /> :
+                     stepIndex === 2 ? <Command size={14} /> :
+                     stepIndex === 3 ? <GearSix size={14} /> :
+                     <Sparkle size={14} />}
+                  </span>
+                  <span style={{ fontSize: "13px", fontWeight: 600, color: "#fff", fontFamily: "'Geist Mono', monospace" }}>
+                    {currentStep.title}
+                  </span>
                 </div>
-
-                <div style={{ display: "flex", gap: "5px", marginBottom: "24px" }}>
-                  {TOUR_STEPS.map((_, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        height: "2px",
-                        flex: 1,
-                        borderRadius: "1px",
-                        background: i <= step ? "#ffffff" : "#1a1a1a",
-                        transition: "background 0.2s"
-                      }}
-                    />
-                  ))}
-                </div>
-
-                <div style={{
-                  width: "40px",
-                  height: "40px",
-                  background: "#0a0a0a",
-                  border: "1px solid #1a1a1a",
-                  borderRadius: "10px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#ffffff",
-                  marginBottom: "16px"
-                }}>
-                  {currentStep.icon}
-                </div>
-
-                <h2 style={{
-                  fontSize: "17px",
-                  fontWeight: 600,
-                  color: "#ffffff",
-                  fontFamily: "'Geist Mono', monospace",
-                  letterSpacing: "-0.3px",
-                  marginBottom: "10px"
-                }}>
-                  {currentStep.title}
-                </h2>
 
                 <p style={{
                   fontSize: "12px",
                   color: "#666",
                   fontFamily: "'Geist Mono', monospace",
                   lineHeight: 1.7,
-                  marginBottom: "0"
+                  margin: 0,
+                  marginBottom: "16px",
                 }}>
                   {currentStep.description}
                 </p>
 
-                {currentStep.demo && (
-                  <div style={{ marginTop: "16px" }}>
-                    {currentStep.demo}
-                  </div>
-                )}
-
                 <div style={{
                   display: "flex",
-                  justifyContent: "space-between",
                   alignItems: "center",
-                  marginTop: "28px"
+                  justifyContent: "space-between",
                 }}>
-                  <button
-                    onClick={handlePrev}
-                    disabled={step === 0}
-                    style={{
-                      background: "transparent",
-                      border: "1px solid #1a1a1a",
-                      borderRadius: "7px",
-                      padding: "8px 16px",
-                      color: step === 0 ? "#222" : "#666",
-                      fontSize: "11px",
-                      cursor: step === 0 ? "not-allowed" : "pointer",
-                      fontFamily: "'Geist Mono', monospace",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px"
-                    }}
-                  >
-                    <ArrowLeft size={12} weight="light" /> Back
-                  </button>
-
-                  <button
-                    onClick={handleComplete}
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      color: "#333",
-                      cursor: "pointer",
-                      fontSize: "11px",
-                      fontFamily: "'Geist Mono', monospace"
-                    }}
-                  >
-                    Skip tour
-                  </button>
-
-                  <button
-                    onClick={handleNext}
-                    style={{
-                      background: "#ffffff",
-                      color: "#000",
-                      border: "none",
-                      borderRadius: "7px",
-                      padding: "8px 16px",
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      fontFamily: "'Geist Mono', monospace",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                  >
-                    {step === TOUR_STEPS.length - 1 ? (
-                      <><CheckCircle size={13} weight="bold" /> Get started</>
+                  <span style={{ fontSize: "11px", color: "#333", fontFamily: "'Geist Mono', monospace" }}>
+                    {stepIndex + 1} / {STEPS.length}
+                  </span>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <button
+                      onClick={handleComplete}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        color: "#333",
+                        cursor: "pointer",
+                        fontSize: "11px",
+                        fontFamily: "'Geist Mono', monospace",
+                      }}
+                    >
+                      Skip
+                    </button>
+                    {currentStep.action === "click" && !isLast ? (
+                      <span style={{ fontSize: "11px", color: "#555", fontFamily: "'Geist Mono', monospace" }}>
+                        Click the highlighted button above
+                      </span>
                     ) : (
-                      <>Next <ArrowRight size={12} weight="light" /></>
+                      <button
+                        onClick={handleNext}
+                        style={{
+                          background: "#ffffff",
+                          color: "#000",
+                          border: "none",
+                          borderRadius: "6px",
+                          padding: "7px 14px",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          fontFamily: "'Geist Mono', monospace",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        {isLast ? <><CheckCircle size={13} weight="bold" /> Done</> : <>Next <ArrowRight size={12} weight="light" /></>}
+                      </button>
                     )}
-                  </button>
+                  </div>
                 </div>
               </motion.div>
             )}

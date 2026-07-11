@@ -1009,7 +1009,9 @@ fn tool_uncomplete_task(
     let task = state.db.get_task_by_id(task_id)?;
     state.db.uncomplete_task(task_id)?;
 
-    if !crate::commands::COMPACT_MODE.load(std::sync::atomic::Ordering::SeqCst) {
+    if crate::commands::COMPACT_MODE.load(std::sync::atomic::Ordering::SeqCst) {
+        crate::window::open_compact_pill_window(&state.app_handle);
+    } else {
         let _ = window::open_task_card(&state.app_handle, &task, 0);
         window::restack_task_cards(&state.app_handle);
     }
@@ -1047,6 +1049,7 @@ fn tool_remind_task(
             _ => return,
         };
         if crate::commands::COMPACT_MODE.load(std::sync::atomic::Ordering::SeqCst) {
+            crate::window::open_compact_pill_window(&app_clone);
             return;
         }
         if let Ok(tasks) = db_clone.get_incomplete_tasks() {

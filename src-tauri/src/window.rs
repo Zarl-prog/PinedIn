@@ -337,11 +337,12 @@ pub fn open_compact_pill_window(app: &AppHandle) {
             .inner_size(140.0, 36.0)
             .resizable(false)
             .decorations(false);
-        #[cfg(target_os = "linux")]
+        #[cfg(not(target_os = "macos"))]
         {
             builder = builder.transparent(true);
         }
         builder
+            .shadow(false)
             .always_on_top(true)
             .skip_taskbar(true)
             .focused(false)

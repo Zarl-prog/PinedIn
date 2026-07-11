@@ -109,12 +109,20 @@ body::-webkit-scrollbar,
   display: none;
 }
 
-html, body, #root {
+html {
+  background: transparent !important;
+}
+
+body.task-card-view, body.task-card-view #root {
   width: 308px;
   height: auto;
   overflow: hidden !important;
   background: transparent !important;
   isolation: isolate;
+}
+
+body, #root {
+  background: transparent !important;
 }
 
 #root {

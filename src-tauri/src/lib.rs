@@ -285,7 +285,6 @@ pub fn run() {
             commands::complete_task,
             commands::uncomplete_task,
             commands::snooze_task,
-            commands::remind_task,
             commands::enable_autostart,
             commands::disable_autostart,
             commands::is_autostart_enabled,

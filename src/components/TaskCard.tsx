@@ -4,9 +4,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { LogicalSize } from "@tauri-apps/api/dpi";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { Check, Bell, ClockCountdown, ArrowsClockwise, CaretDown } from "@phosphor-icons/react";
-
-const REMIND_OPTIONS = [15, 30] as const;
+import { Check, ClockCountdown, ArrowsClockwise, CaretDown } from "@phosphor-icons/react";
 const SQUARE_SIZE = 80;
 const FULL_WIDTH = 122;
 const FULL_HEIGHT = 110;
@@ -56,9 +54,6 @@ export default function TaskCard({
   startedAt?: string | null;
 }) {
   const [showActions, setShowActions] = useState(false);
-  const [showRemindPicker, setShowRemindPicker] = useState(false);
-  const [customMinutes, setCustomMinutes] = useState("");
-  const [remindStatus, setRemindStatus] = useState<string | null>(null);
   const didDrag = useRef(false);
   const mouseDownPos = useRef({ x: 0, y: 0 });
   const liveDotRef = useRef<HTMLSpanElement>(null);
@@ -209,18 +204,6 @@ export default function TaskCard({
     await invoke("snooze_task", { id: taskId });
   }, [taskId]);
 
-  const handleRemindConfirm = useCallback(async (minutes: number) => {
-    try {
-      await invoke("remind_task", { id: taskId, minutes });
-      setRemindStatus(`Remind in ${minutes}m`);
-      setShowRemindPicker(false);
-      setTimeout(() => setRemindStatus(null), 2000);
-    } catch (e) {
-      setRemindStatus(`Failed: ${e}`);
-      setTimeout(() => setRemindStatus(null), 3000);
-    }
-  }, [taskId]);
-
   const btnPad = Math.max(4, Math.min(12, Math.floor(cardH * 0.06)));
   const btnGap = Math.max(2, Math.min(8, Math.floor(cardH * 0.035)));
   const btnFont = Math.max(9, Math.min(14, Math.floor(cardH / 9)));
@@ -253,7 +236,7 @@ export default function TaskCard({
       }} />
 
       <button
-        onClick={(e) => { e.stopPropagation(); setShowActions((p) => !p); setShowRemindPicker(false); }}
+        onClick={(e) => { e.stopPropagation(); setShowActions((p) => !p); }}
         title={showActions ? "Show task info" : "Show actions"}
         style={{
           position: "absolute",
@@ -291,82 +274,14 @@ export default function TaskCard({
           padding: `${contPad}px 14px`,
           gap: `${btnGap}px`,
         }}>
-          {showRemindPicker ? (
-            <>
-              <button className="v-action" onClick={(e) => { e.stopPropagation(); handleRemindConfirm(15); }}
-                style={{ width: "100%", fontSize: `${btnFont}px`, padding: `${btnPad}px 0`, background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "6px", cursor: "pointer", textAlign: "center" }}>
-                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Bell size={btnIcon} weight="light" /> 15m</span>
-              </button>
-              <button className="v-action" onClick={(e) => { e.stopPropagation(); handleRemindConfirm(30); }}
-                style={{ width: "100%", fontSize: `${btnFont}px`, padding: `${btnPad}px 0`, background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "6px", cursor: "pointer", textAlign: "center" }}>
-                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Bell size={btnIcon} weight="light" /> 30m</span>
-              </button>
-              <div style={{ display: "flex", gap: "4px" }}>
-                <input
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  placeholder="Custom"
-                  value={customMinutes}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/\D/g, "");
-                    setCustomMinutes(val);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.stopPropagation();
-                      const val = parseInt(customMinutes, 10);
-                      if (isNaN(val) || val < 1) {
-                        setRemindStatus("Min 1 minute");
-                        setTimeout(() => setRemindStatus(null), 2000);
-                        return;
-                      }
-                      handleRemindConfirm(val);
-                      setCustomMinutes("");
-                    }
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  className="v-action"
-                  style={{
-                    width: "100%",
-                    fontSize: `${btnFont}px`,
-                    padding: `${btnPad}px 8px`,
-                    background: "transparent",
-                    color: "var(--text-primary-card)",
-                    border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))",
-                    borderRadius: "6px",
-                    outline: "none",
-                    fontFamily: "'Geist Mono', monospace",
-                    textAlign: "center",
-                  }}
-                />
-              </div>
-            </>
-          ) : (
-            <>
-              <button className="v-action" onClick={(e) => { e.stopPropagation(); handleDone(); }}
-                style={{ width: "100%", fontSize: `${btnFont}px`, padding: `${btnPad}px 0`, background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "6px", cursor: "pointer", textAlign: "center" }}>
-                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Check size={btnIcon} weight="light" /> Done</span>
-              </button>
-              <button className="v-action" onClick={(e) => { e.stopPropagation(); handleSnooze(); }}
-                style={{ width: "100%", fontSize: `${btnFont}px`, padding: `${btnPad}px 0`, background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "6px", cursor: "pointer", textAlign: "center" }}>
-                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><ClockCountdown size={btnIcon} weight="light" /> Snooze</span>
-              </button>
-              <button className="v-action" onClick={(e) => { e.stopPropagation(); setShowRemindPicker(true); }}
-                style={{ width: "100%", fontSize: `${btnFont}px`, padding: `${btnPad}px 0`, background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "6px", cursor: "pointer", textAlign: "center" }}>
-                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Bell size={btnIcon} weight="light" /> Remind</span>
-              </button>
-            </>
-          )}
-          {remindStatus && (
-            <div style={{
-              fontSize: `${Math.max(9, btnFont - 1)}px`,
-              color: "var(--text-dim-card)",
-              textAlign: "center",
-              marginTop: "2px",
-            }}>
-              {remindStatus}
-            </div>
-          )}
+          <button className="v-action" onClick={(e) => { e.stopPropagation(); handleDone(); }}
+            style={{ width: "100%", fontSize: `${btnFont}px`, padding: `${btnPad}px 0`, background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "6px", cursor: "pointer", textAlign: "center" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Check size={btnIcon} weight="light" /> Done</span>
+          </button>
+          <button className="v-action" onClick={(e) => { e.stopPropagation(); handleSnooze(); }}
+            style={{ width: "100%", fontSize: `${btnFont}px`, padding: `${btnPad}px 0`, background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "6px", cursor: "pointer", textAlign: "center" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><ClockCountdown size={btnIcon} weight="light" /> Snooze</span>
+          </button>
         </div>
       ) : isMinimal ? (
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 14px" }}>

@@ -11,7 +11,7 @@ pub mod window;
 use db::DbHandle;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use tauri::{Emitter, Manager};
+use tauri::{Emitter, Manager, RunEvent};
 use tauri::utils::config::Color;
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
 use tauri_plugin_single_instance::init as single_instance_init;
@@ -326,8 +326,16 @@ pub fn run() {
             commands::reassert_window_properties,
             commands::complete_onboarding,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app_handle, event| {
+            if let RunEvent::ExitRequested { api, .. } = event {
+                let quit_flag = app_handle.state::<QuitFlag>();
+                if !quit_flag.0.load(std::sync::atomic::Ordering::SeqCst) {
+                    api.prevent_exit();
+                }
+            }
+        });
 }
 
 async fn check_for_updates(app: tauri::AppHandle) {

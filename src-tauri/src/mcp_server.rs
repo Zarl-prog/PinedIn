@@ -1037,6 +1037,15 @@ fn tool_remind_task(
         return Err("Remind interval must be at least 1 minute".to_string());
     }
 
+    // Dedup: if a remind is already pending for this task, reject
+    {
+        let snoozes = commands::pending_snoozes();
+        let mut set = snoozes.lock().map_err(|e| format!("Lock error: {e}"))?;
+        if !set.insert(task_id) {
+            return Err("A remind is already pending for this task".into());
+        }
+    }
+
     window::close_task_card(&state.app_handle, task_id);
 
     let app_clone = state.app_handle.clone();
@@ -1044,6 +1053,15 @@ fn tool_remind_task(
     let minutes_u64 = minutes as u64;
     std::thread::spawn(move || {
         std::thread::sleep(std::time::Duration::from_secs(minutes_u64 * 60));
+
+        // Remove from pending set regardless of outcome
+        {
+            let snoozes = commands::pending_snoozes();
+            if let Ok(mut set) = snoozes.lock() {
+                set.remove(&task_id);
+            }
+        }
+
         let task = match db_clone.get_task_by_id(task_id) {
             Ok(t) if !t.completed => t,
             _ => return,

@@ -6,7 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { Check, Bell, ClockCountdown, ArrowsClockwise, CaretDown } from "@phosphor-icons/react";
 
-const REMIND_OPTIONS = [5, 15, 30, 60] as const;
+const REMIND_OPTIONS = [15, 30] as const;
 const SQUARE_SIZE = 80;
 const FULL_WIDTH = 122;
 const FULL_HEIGHT = 110;
@@ -57,6 +57,8 @@ export default function TaskCard({
 }) {
   const [showActions, setShowActions] = useState(false);
   const [showRemindPicker, setShowRemindPicker] = useState(false);
+  const [customMinutes, setCustomMinutes] = useState("");
+  const [remindStatus, setRemindStatus] = useState<string | null>(null);
   const didDrag = useRef(false);
   const mouseDownPos = useRef({ x: 0, y: 0 });
   const liveDotRef = useRef<HTMLSpanElement>(null);
@@ -208,7 +210,15 @@ export default function TaskCard({
   }, [taskId]);
 
   const handleRemindConfirm = useCallback(async (minutes: number) => {
-    await invoke("remind_task", { id: taskId, minutes });
+    try {
+      await invoke("remind_task", { id: taskId, minutes });
+      setRemindStatus(`Remind in ${minutes}m`);
+      setShowRemindPicker(false);
+      setTimeout(() => setRemindStatus(null), 2000);
+    } catch (e) {
+      setRemindStatus(`Failed: ${e}`);
+      setTimeout(() => setRemindStatus(null), 3000);
+    }
   }, [taskId]);
 
   const btnPad = Math.max(4, Math.min(12, Math.floor(cardH * 0.06)));
@@ -298,7 +308,7 @@ export default function TaskCard({
 
           {showRemindPicker && (
             <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.1 }}
-              style={{ marginTop: "4px" }}>
+              style={{ marginTop: "4px", display: "flex", flexDirection: "column", gap: "4px" }}>
               <div style={{ display: "flex", gap: "4px" }}>
                 {REMIND_OPTIONS.map((mins) => (
                   <button key={mins} onClick={(e) => { e.stopPropagation(); handleRemindConfirm(mins); }}
@@ -308,7 +318,61 @@ export default function TaskCard({
                   </button>
                 ))}
               </div>
+              <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                <input
+                  type="number"
+                  min={1}
+                  placeholder="Custom"
+                  value={customMinutes}
+                  onChange={(e) => setCustomMinutes(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    flex: 1,
+                    fontSize: `${btnFont}px`,
+                    padding: `${Math.max(3, btnPad - 2)}px 8px`,
+                    background: "transparent",
+                    color: "var(--text-primary-card)",
+                    border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))",
+                    borderRadius: "6px",
+                    outline: "none",
+                    fontFamily: "'Geist Mono', monospace",
+                    minWidth: 0,
+                  }}
+                />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const val = parseInt(customMinutes, 10);
+                    if (isNaN(val) || val < 1) {
+                      setRemindStatus("Min 1 minute");
+                      setTimeout(() => setRemindStatus(null), 2000);
+                      return;
+                    }
+                    handleRemindConfirm(val);
+                    setCustomMinutes("");
+                  }}
+                  className="v-action"
+                  style={{
+                    fontSize: `${btnFont}px`,
+                    padding: `${Math.max(3, btnPad - 2)}px 8px`,
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Set
+                </button>
+              </div>
             </motion.div>
+          )}
+          {remindStatus && (
+            <div style={{
+              fontSize: `${Math.max(9, btnFont - 1)}px`,
+              color: "var(--text-dim-card)",
+              textAlign: "center",
+              marginTop: "2px",
+            }}>
+              {remindStatus}
+            </div>
           )}
         </div>
       ) : isMinimal ? (

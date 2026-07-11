@@ -714,9 +714,7 @@ export default function App() {
             onClick={togglePaused}
             className="feature-btn"
             style={isPaused ? {
-              color: "var(--tab-active-text)",
               borderBottom: "2px solid var(--tab-active-bg)",
-              background: "var(--bg-hover)",
             } : undefined}
           >
             <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>{isPaused ? <><Play size={15} weight="light" /> Resume</> : <><Pause size={15} weight="light" /> Pause</>}</span>
@@ -725,9 +723,7 @@ export default function App() {
             onClick={toggleCompactMode}
             className="feature-btn"
             style={compactMode ? {
-              color: "var(--tab-active-text)",
               borderBottom: "2px solid var(--tab-active-bg)",
-              background: "var(--bg-hover)",
             } : undefined}
           >
             <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><DotOutline size={15} weight="light" /> Compact</span>
@@ -736,9 +732,7 @@ export default function App() {
             onClick={toggleZenMode}
             className="feature-btn"
             style={zenMode ? {
-              color: "var(--tab-active-text)",
               borderBottom: "2px solid var(--tab-active-bg)",
-              background: "var(--bg-hover)",
             } : undefined}
           >
             <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>{zenMode ? <><Circle size={15} weight="light" /> Zen On</> : <><Circle size={15} weight="light" /> Zen</>}</span>
@@ -753,9 +747,7 @@ export default function App() {
             onClick={toggleShake}
             className="feature-btn"
             style={shakeEnabled ? {
-              color: "var(--tab-active-text)",
               borderBottom: "2px solid var(--tab-active-bg)",
-              background: "var(--bg-hover)",
             } : undefined}
           >
             <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>{shakeEnabled ? <><Lightning size={15} weight="light" /> Shake On</> : <><Lightning size={15} weight="light" /> Shake</>}</span>
@@ -764,9 +756,7 @@ export default function App() {
             onClick={toggleDigest}
             className="feature-btn"
             style={digestEnabled ? {
-              color: "var(--tab-active-text)",
               borderBottom: "2px solid var(--tab-active-bg)",
-              background: "var(--bg-hover)",
             } : undefined}
           >
             <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Diamond size={15} weight="light" /> Digest</span>

@@ -125,7 +125,19 @@ export default function TaskCard({
   }, [isMinimal]);
 
   const cardW = isMinimal ? SQUARE_SIZE : customW || FULL_WIDTH;
-  const cardH = isMinimal ? SQUARE_SIZE : customH || FULL_HEIGHT;
+  const baseH = isMinimal ? SQUARE_SIZE : customH || FULL_HEIGHT;
+  const cardH = showActions
+    ? Math.max(baseH, showRemindPicker ? 190 : 140)
+    : baseH;
+
+  useEffect(() => {
+    if (isMinimal) return;
+    const h = showActions
+      ? Math.max(baseH, showRemindPicker ? 190 : 140)
+      : baseH;
+    getCurrentWindow().setSize(new LogicalSize(cardW, h + (showTimeLimitBar ? 4 : 0)));
+    invoke("reassert_window_properties");
+  }, [showActions, showRemindPicker, baseH, cardW, isMinimal]);
 
   const progressPercent = useMemo(() => {
     if (!dueTime) return 0;

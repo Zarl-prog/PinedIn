@@ -11,7 +11,7 @@ pub static ZEN_MODE: AtomicBool = AtomicBool::new(false);
 pub static COMPACT_MODE: AtomicBool = AtomicBool::new(false);
 
 static PENDING_SNOOZES: OnceLock<Mutex<HashSet<i64>>> = OnceLock::new();
-fn pending_snoozes() -> &'static Mutex<HashSet<i64>> {
+pub fn pending_snoozes() -> &'static Mutex<HashSet<i64>> {
     PENDING_SNOOZES.get_or_init(|| Mutex::new(HashSet::new()))
 }
 
@@ -356,12 +356,26 @@ pub fn remind_task(
     if minutes == 0 {
         return Err("Remind interval must be at least 1 minute".into());
     }
+
+    // Dedup: if a remind is already pending for this task, reject
+    {
+        let mut snoozes = pending_snoozes().lock().map_err(|e| format!("Lock error: {e}"))?;
+        if !snoozes.insert(id) {
+            return Err("A remind is already pending for this task".into());
+        }
+    }
+
     window::close_task_card(&app, id);
 
     let app_clone = app.clone();
     let db_clone = Arc::clone(&*db);
     std::thread::spawn(move || {
         std::thread::sleep(std::time::Duration::from_secs(minutes * 60));
+
+        // Remove from pending set regardless of outcome
+        if let Ok(mut snoozes) = pending_snoozes().lock() {
+            snoozes.remove(&id);
+        }
 
         // Re-fetch the task — snapshot may be stale after N minutes
         let task = match db_clone.get_task_by_id(id) {
@@ -371,6 +385,7 @@ pub fn remind_task(
 
         // Don't reopen a card if compact mode is active
         if crate::commands::get_compact_mode_state(&app_clone) {
+            crate::window::open_compact_pill_window(&app_clone);
             return;
         }
         if let Ok(tasks) = db_clone.get_incomplete_tasks() {

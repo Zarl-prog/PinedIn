@@ -330,18 +330,6 @@ fn handle_tools_list(id: &Option<Value>) -> Result<Option<Value>, StatusCode> {
                     }
                 },
                 {
-                    "name": "remind_task",
-                    "description": "Close a task's card and reopen it after N minutes",
-                    "inputSchema": {
-                        "type": "object",
-                        "properties": {
-                            "task_id": { "type": "number", "description": "The ID of the task" },
-                            "minutes": { "type": "number", "description": "Minutes to wait before reopening" }
-                        },
-                        "required": ["task_id", "minutes"]
-                    }
-                },
-                {
                     "name": "get_settings",
                     "description": "Get all PinedIn settings as key/value pairs",
                     "inputSchema": { "type": "object", "properties": {} }
@@ -542,7 +530,6 @@ async fn handle_tool_call(
         "deactivate_workspace" => tool_deactivate_workspace(state),
         "align_tasks" => tool_align_tasks(state),
         "uncomplete_task" => tool_uncomplete_task(arguments, state),
-        "remind_task" => tool_remind_task(arguments, state),
         "get_settings" => tool_get_settings(state),
         "get_shake_interval" => tool_get_shake_interval(state),
         "set_shake_interval" => tool_set_shake_interval(arguments, state),
@@ -1018,68 +1005,6 @@ fn tool_uncomplete_task(
 
     let _ = commands::emit_tasks_updated(&state.app_handle, &state.db);
     Ok(format!("Task {} re-opened.", task_id))
-}
-
-fn tool_remind_task(
-    arguments: serde_json::Map<String, Value>,
-    state: &McpState,
-) -> Result<String, String> {
-    let task_id = arguments
-        .get("task_id")
-        .and_then(|v| v.as_i64())
-        .ok_or_else(|| "Missing required argument: task_id".to_string())?;
-    let minutes = arguments
-        .get("minutes")
-        .and_then(|v| v.as_i64())
-        .ok_or_else(|| "Missing required argument: minutes".to_string())?;
-
-    if minutes == 0 {
-        return Err("Remind interval must be at least 1 minute".to_string());
-    }
-
-    // Dedup: if a remind is already pending for this task, reject
-    {
-        let snoozes = commands::pending_snoozes();
-        let mut set = snoozes.lock().map_err(|e| format!("Lock error: {e}"))?;
-        if !set.insert(task_id) {
-            return Err("A remind is already pending for this task".into());
-        }
-    }
-
-    window::close_task_card(&state.app_handle, task_id);
-
-    let app_clone = state.app_handle.clone();
-    let db_clone = Arc::clone(&state.db);
-    let minutes_u64 = minutes as u64;
-    std::thread::spawn(move || {
-        std::thread::sleep(std::time::Duration::from_secs(minutes_u64 * 60));
-
-        // Remove from pending set regardless of outcome
-        {
-            let snoozes = commands::pending_snoozes();
-            if let Ok(mut set) = snoozes.lock() {
-                set.remove(&task_id);
-            }
-        }
-
-        let task = match db_clone.get_task_by_id(task_id) {
-            Ok(t) if !t.completed => t,
-            _ => return,
-        };
-        if crate::commands::COMPACT_MODE.load(std::sync::atomic::Ordering::SeqCst) {
-            crate::window::open_compact_pill_window(&app_clone);
-            return;
-        }
-        if let Ok(tasks) = db_clone.get_incomplete_tasks() {
-            let index = tasks.iter().position(|t| t.id == Some(task_id)).unwrap_or(0);
-            let _ = window::open_task_card(&app_clone, &task, index);
-        } else {
-            let _ = window::open_task_card(&app_clone, &task, 0);
-        }
-        window::restack_task_cards(&app_clone);
-    });
-
-    Ok(format!("Task {} will re-appear in {} minutes.", task_id, minutes))
 }
 
 fn tool_get_settings(state: &McpState) -> Result<String, String> {

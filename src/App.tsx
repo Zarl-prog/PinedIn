@@ -713,33 +713,33 @@ export default function App() {
           <button
             onClick={togglePaused}
             className="feature-btn"
-            style={{
-              color: isPaused ? "var(--text-primary)" : "",
-              borderColor: isPaused ? "var(--border-hover)" : "",
-              background: isPaused ? "var(--bg-hover)" : "",
-            }}
+            style={isPaused ? {
+              color: "var(--tab-active-text)",
+              borderColor: "var(--tab-active-bg)",
+              background: "var(--tab-active-bg)",
+            } : undefined}
           >
             <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>{isPaused ? <><Play size={15} weight="light" /> Resume</> : <><Pause size={15} weight="light" /> Pause</>}</span>
           </button>
           <button
             onClick={toggleCompactMode}
             className="feature-btn"
-            style={{
-              color: compactMode ? "var(--text-primary)" : "",
-              borderColor: compactMode ? "var(--border-hover)" : "",
-              background: compactMode ? "var(--bg-hover)" : "",
-            }}
+            style={compactMode ? {
+              color: "var(--tab-active-text)",
+              borderColor: "var(--tab-active-bg)",
+              background: "var(--tab-active-bg)",
+            } : undefined}
           >
             <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><DotOutline size={15} weight="light" /> Compact</span>
           </button>
           <button
             onClick={toggleZenMode}
             className="feature-btn"
-            style={{
-              color: zenMode ? "var(--text-primary)" : "",
-              borderColor: zenMode ? "var(--border-hover)" : "",
-              background: zenMode ? "var(--bg-hover)" : "",
-            }}
+            style={zenMode ? {
+              color: "var(--tab-active-text)",
+              borderColor: "var(--tab-active-bg)",
+              background: "var(--tab-active-bg)",
+            } : undefined}
           >
             <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>{zenMode ? <><Circle size={15} weight="light" /> Zen On</> : <><Circle size={15} weight="light" /> Zen</>}</span>
           </button>
@@ -752,22 +752,22 @@ export default function App() {
           <button
             onClick={toggleShake}
             className="feature-btn"
-            style={{
-              color: shakeEnabled ? "var(--text-primary)" : "",
-              borderColor: shakeEnabled ? "var(--border-hover)" : "",
-              background: shakeEnabled ? "var(--bg-hover)" : "",
-            }}
+            style={shakeEnabled ? {
+              color: "var(--tab-active-text)",
+              borderColor: "var(--tab-active-bg)",
+              background: "var(--tab-active-bg)",
+            } : undefined}
           >
             <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>{shakeEnabled ? <><Lightning size={15} weight="light" /> Shake On</> : <><Lightning size={15} weight="light" /> Shake</>}</span>
           </button>
           <button
             onClick={toggleDigest}
             className="feature-btn"
-            style={{
-              color: digestEnabled ? "var(--text-primary)" : "",
-              borderColor: digestEnabled ? "var(--border-hover)" : "",
-              background: digestEnabled ? "var(--bg-hover)" : "",
-            }}
+            style={digestEnabled ? {
+              color: "var(--tab-active-text)",
+              borderColor: "var(--tab-active-bg)",
+              background: "var(--tab-active-bg)",
+            } : undefined}
           >
             <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Diamond size={15} weight="light" /> Digest</span>
           </button>

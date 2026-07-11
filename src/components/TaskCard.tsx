@@ -125,19 +125,7 @@ export default function TaskCard({
   }, [isMinimal]);
 
   const cardW = isMinimal ? SQUARE_SIZE : customW || FULL_WIDTH;
-  const baseH = isMinimal ? SQUARE_SIZE : customH || FULL_HEIGHT;
-  const cardH = showActions
-    ? Math.max(baseH, showRemindPicker ? 190 : 140)
-    : baseH;
-
-  useEffect(() => {
-    if (isMinimal) return;
-    const h = showActions
-      ? Math.max(baseH, showRemindPicker ? 190 : 140)
-      : baseH;
-    getCurrentWindow().setSize(new LogicalSize(cardW, h + (showTimeLimitBar ? 4 : 0)));
-    invoke("reassert_window_properties");
-  }, [showActions, showRemindPicker, baseH, cardW, isMinimal]);
+  const cardH = isMinimal ? SQUARE_SIZE : customH || FULL_HEIGHT;
 
   const progressPercent = useMemo(() => {
     if (!dueTime) return 0;
@@ -303,33 +291,16 @@ export default function TaskCard({
           padding: `${contPad}px 14px`,
           gap: `${btnGap}px`,
         }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: `${btnGap}px` }}>
-            <button className="v-action" onClick={(e) => { e.stopPropagation(); handleDone(); }}
-              style={{ width: "100%", fontSize: `${btnFont}px`, padding: `${btnPad}px 0`, background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "6px", cursor: "pointer", textAlign: "center" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Check size={btnIcon} weight="light" /> Done</span>
-            </button>
-            <button className="v-action" onClick={(e) => { e.stopPropagation(); handleSnooze(); }}
-              style={{ width: "100%", fontSize: `${btnFont}px`, padding: `${btnPad}px 0`, background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "6px", cursor: "pointer", textAlign: "center" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><ClockCountdown size={btnIcon} weight="light" /> Snooze</span>
-            </button>
-            <button className="v-action" onClick={(e) => { e.stopPropagation(); setShowRemindPicker((p) => !p); }}
-              style={{ width: "100%", fontSize: `${btnFont}px`, padding: `${btnPad}px 0`, background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "6px", cursor: "pointer", textAlign: "center" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Bell size={btnIcon} weight="light" /> Remind</span>
-            </button>
-          </div>
-
-          {showRemindPicker && (
-            <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.1 }}
-              style={{ marginTop: "4px", display: "flex", flexDirection: "column", gap: "4px" }}>
-              <div style={{ display: "flex", gap: "4px" }}>
-                {REMIND_OPTIONS.map((mins) => (
-                  <button key={mins} onClick={(e) => { e.stopPropagation(); handleRemindConfirm(mins); }}
-                    className="v-action"
-                    style={{ flex: 1, fontSize: `${btnFont}px`, padding: `${Math.max(3, btnPad - 2)}px 10px`, cursor: "pointer" }}>
-                    {mins < 60 ? `${mins}m` : "1h"}
-                  </button>
-                ))}
-              </div>
+          {showRemindPicker ? (
+            <>
+              <button className="v-action" onClick={(e) => { e.stopPropagation(); handleRemindConfirm(15); }}
+                style={{ width: "100%", fontSize: `${btnFont}px`, padding: `${btnPad}px 0`, background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "6px", cursor: "pointer", textAlign: "center" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Bell size={btnIcon} weight="light" /> 15m</span>
+              </button>
+              <button className="v-action" onClick={(e) => { e.stopPropagation(); handleRemindConfirm(30); }}
+                style={{ width: "100%", fontSize: `${btnFont}px`, padding: `${btnPad}px 0`, background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "6px", cursor: "pointer", textAlign: "center" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Bell size={btnIcon} weight="light" /> 30m</span>
+              </button>
               <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
                 <input
                   type="number"
@@ -338,10 +309,11 @@ export default function TaskCard({
                   value={customMinutes}
                   onChange={(e) => setCustomMinutes(e.target.value)}
                   onClick={(e) => e.stopPropagation()}
+                  className="v-action"
                   style={{
                     flex: 1,
                     fontSize: `${btnFont}px`,
-                    padding: `${Math.max(3, btnPad - 2)}px 8px`,
+                    padding: `${btnPad}px 8px`,
                     background: "transparent",
                     color: "var(--text-primary-card)",
                     border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))",
@@ -366,7 +338,7 @@ export default function TaskCard({
                   className="v-action"
                   style={{
                     fontSize: `${btnFont}px`,
-                    padding: `${Math.max(3, btnPad - 2)}px 8px`,
+                    padding: `${btnPad}px 12px`,
                     cursor: "pointer",
                     whiteSpace: "nowrap",
                   }}
@@ -374,7 +346,22 @@ export default function TaskCard({
                   Set
                 </button>
               </div>
-            </motion.div>
+            </>
+          ) : (
+            <>
+              <button className="v-action" onClick={(e) => { e.stopPropagation(); handleDone(); }}
+                style={{ width: "100%", fontSize: `${btnFont}px`, padding: `${btnPad}px 0`, background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "6px", cursor: "pointer", textAlign: "center" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Check size={btnIcon} weight="light" /> Done</span>
+              </button>
+              <button className="v-action" onClick={(e) => { e.stopPropagation(); handleSnooze(); }}
+                style={{ width: "100%", fontSize: `${btnFont}px`, padding: `${btnPad}px 0`, background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "6px", cursor: "pointer", textAlign: "center" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><ClockCountdown size={btnIcon} weight="light" /> Snooze</span>
+              </button>
+              <button className="v-action" onClick={(e) => { e.stopPropagation(); setShowRemindPicker(true); }}
+                style={{ width: "100%", fontSize: `${btnFont}px`, padding: `${btnPad}px 0`, background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "6px", cursor: "pointer", textAlign: "center" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Bell size={btnIcon} weight="light" /> Remind</span>
+              </button>
+            </>
           )}
           {remindStatus && (
             <div style={{

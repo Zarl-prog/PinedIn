@@ -305,7 +305,7 @@ export default function TaskCard({
                 <input
                   inputMode="numeric"
                   pattern="[0-9]*"
-                  placeholder="Custom (min)"
+                  placeholder="Custom"
                   value={customMinutes}
                   onChange={(e) => {
                     const val = e.target.value.replace(/\D/g, "");

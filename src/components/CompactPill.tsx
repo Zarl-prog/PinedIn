@@ -221,7 +221,6 @@ export default function CompactPill() {
           cursor: "grab",
           userSelect: "none",
           boxSizing: "border-box",
-          backgroundColor: "#000000",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -271,7 +270,6 @@ export default function CompactPill() {
           flexShrink: 0,
           transition: "border-color 0.5s ease",
           boxSizing: "border-box",
-          backgroundColor: "#000000",
         }}
     >
       {tasks.length === 0 ? (

@@ -40,7 +40,7 @@ fn check_and_spawn_due_tasks(app: &AppHandle) {
         return;
     }
 
-    // Don't open individual cards if compact mode is active
+    // Open pill in compact mode, individual cards otherwise
     let compact = crate::commands::get_compact_mode_state(app);
 
     let mut activated_any = false;
@@ -54,10 +54,10 @@ fn check_and_spawn_due_tasks(app: &AppHandle) {
             continue;
         }
         activated_any = true;
-        if !compact {
-            if let Err(e) = window::open_task_card(app, task, 0) {
-                eprintln!("[scheduler] Failed to open card for task {id}: {e}");
-            }
+        if compact {
+            crate::window::open_compact_pill_window(app);
+        } else if let Err(e) = window::open_task_card(app, task, 0) {
+            eprintln!("[scheduler] Failed to open card for task {id}: {e}");
         }
     }
 

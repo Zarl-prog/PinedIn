@@ -48,9 +48,9 @@ pub fn create_task(
     emit_tasks_updated(&app, &db);
     notifications::check_due_notifications(&app);
 
-    // Check compact mode before spawning — prevents white flash from
-    // briefly opening then immediately closing a task card window.
+    // Check compact mode — open pill instead of individual card
     if get_compact_mode_state(&app) {
+        crate::window::open_compact_pill_window(&app);
         return Ok(task);
     }
 
@@ -97,7 +97,9 @@ pub fn quick_add_task(
 
     if let Some(task_id) = task.id {
         if let Ok(task) = db.get_task_by_id(task_id) {
-            if !get_compact_mode_state(&app) {
+            if get_compact_mode_state(&app) {
+                crate::window::open_compact_pill_window(&app);
+            } else {
                 let _ = window::open_task_card(&app, &task, 0);
             }
         }
@@ -209,14 +211,14 @@ pub fn complete_task(
         let db_clone = Arc::clone(&*db);
         let new_task_clone = new_task.clone();
         std::thread::spawn(move || {
-            if !crate::commands::get_compact_mode_state(&app_clone) {
-                if let Ok(tasks) = db_clone.get_incomplete_tasks() {
-                    let index = tasks
-                        .iter()
-                        .position(|t| t.id == new_task_clone.id)
-                        .unwrap_or(0);
-                    let _ = window::open_task_card(&app_clone, &new_task_clone, index);
-                }
+            if crate::commands::get_compact_mode_state(&app_clone) {
+                crate::window::open_compact_pill_window(&app_clone);
+            } else if let Ok(tasks) = db_clone.get_incomplete_tasks() {
+                let index = tasks
+                    .iter()
+                    .position(|t| t.id == new_task_clone.id)
+                    .unwrap_or(0);
+                let _ = window::open_task_card(&app_clone, &new_task_clone, index);
             }
         });
 
@@ -240,8 +242,10 @@ pub fn uncomplete_task(
     if task.completed {
         db.uncomplete_task(id)?;
 
-        // Don't open individual cards in compact mode
-        if !get_compact_mode_state(&app) {
+        // Open pill in compact mode, individual card otherwise
+        if get_compact_mode_state(&app) {
+            crate::window::open_compact_pill_window(&app);
+        } else {
             // Find the task and its position among incomplete tasks, then open its card
             if let Ok(tasks) = db.get_incomplete_tasks() {
                 let index = tasks.iter().position(|t| t.id == Some(id)).unwrap_or(0);

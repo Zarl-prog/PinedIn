@@ -493,8 +493,8 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
 
               {/* Version */}
               <div style={{ marginTop: "4px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "12px" }}>
-                <Tag size={12} weight="light" color="var(--text-muted)" />
-                <span style={{ fontSize: "12px", color: "var(--text-muted)", fontFamily: "'Geist Mono', monospace" }}>
+                <Tag size={13} weight="light" color="var(--text-secondary)" />
+                <span style={{ fontSize: "13px", color: "var(--text-secondary)", fontFamily: "'Geist Mono', monospace" }}>
                   v{appVersion}
                 </span>
               </div>

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useReminderStore } from "@/store/reminderStore";
-import { Check, Bell, Alarm, ClockCountdown, ArrowsClockwise, CaretRight, DotsThree, PencilSimple, Trash, X } from "@phosphor-icons/react";
+import { Check, Alarm, ClockCountdown, ArrowsClockwise, CaretRight, DotsThree, PencilSimple, Trash, X } from "@phosphor-icons/react";
 import {
   type Task,
   closeTaskCard,
@@ -358,7 +358,6 @@ interface TaskCardItemProps {
   onEdit: () => void;
   onDelete: () => void;
   onSnooze?: () => Promise<void>;
-  onRemind?: () => Promise<void>;
   completed?: boolean;
 }
 
@@ -372,7 +371,6 @@ function TaskCardItem({
   onEdit,
   onDelete,
   onSnooze,
-  onRemind,
   completed = false,
 }: TaskCardItemProps) {
   const hasDueDate = task.due_time && task.due_time.length > 0;
@@ -658,13 +656,6 @@ function TaskCardItem({
                 style={{ flex: 1, textAlign: "center", padding: "8px 10px" }}
               >
                 <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><ClockCountdown size={14} weight="light" /> Snooze</span>
-              </button>
-              <button
-                className="v-action"
-                onClick={(e) => { e.stopPropagation(); onRemind?.(); }}
-                style={{ flex: 1, textAlign: "center", padding: "8px 10px" }}
-              >
-                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Bell size={14} weight="light" /> Remind</span>
               </button>
             </div>
           </motion.div>

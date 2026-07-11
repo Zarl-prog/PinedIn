@@ -301,17 +301,33 @@ export default function TaskCard({
                 style={{ width: "100%", fontSize: `${btnFont}px`, padding: `${btnPad}px 0`, background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "6px", cursor: "pointer", textAlign: "center" }}>
                 <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Bell size={btnIcon} weight="light" /> 30m</span>
               </button>
-              <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: "4px" }}>
                 <input
-                  type="number"
-                  min={1}
-                  placeholder="Custom"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="Custom (min)"
                   value={customMinutes}
-                  onChange={(e) => setCustomMinutes(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, "");
+                    setCustomMinutes(val);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.stopPropagation();
+                      const val = parseInt(customMinutes, 10);
+                      if (isNaN(val) || val < 1) {
+                        setRemindStatus("Min 1 minute");
+                        setTimeout(() => setRemindStatus(null), 2000);
+                        return;
+                      }
+                      handleRemindConfirm(val);
+                      setCustomMinutes("");
+                    }
+                  }}
                   onClick={(e) => e.stopPropagation()}
                   className="v-action"
                   style={{
-                    flex: 1,
+                    width: "100%",
                     fontSize: `${btnFont}px`,
                     padding: `${btnPad}px 8px`,
                     background: "transparent",
@@ -320,31 +336,9 @@ export default function TaskCard({
                     borderRadius: "6px",
                     outline: "none",
                     fontFamily: "'Geist Mono', monospace",
-                    minWidth: 0,
+                    textAlign: "center",
                   }}
                 />
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const val = parseInt(customMinutes, 10);
-                    if (isNaN(val) || val < 1) {
-                      setRemindStatus("Min 1 minute");
-                      setTimeout(() => setRemindStatus(null), 2000);
-                      return;
-                    }
-                    handleRemindConfirm(val);
-                    setCustomMinutes("");
-                  }}
-                  className="v-action"
-                  style={{
-                    fontSize: `${btnFont}px`,
-                    padding: `${btnPad}px 12px`,
-                    cursor: "pointer",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Set
-                </button>
               </div>
             </>
           ) : (

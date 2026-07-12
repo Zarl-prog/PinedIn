@@ -16,7 +16,6 @@ use tauri::utils::config::Color;
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
 use tauri_plugin_single_instance::init as single_instance_init;
 use tauri_plugin_autostart::MacosLauncher;
-use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_window_state::StateFlags;
 
 /// Shared flag flipped to `true` when the user explicitly chooses to quit
@@ -203,9 +202,7 @@ pub fn run() {
                 }
             }
 
-            // Request notification permission, then fire notifications for tasks due today
-            // and start the hourly background checker
-            let _ = app.handle().notification().request_permission();
+            // Fire notifications for tasks due today and start the hourly background checker
             notifications::start_notification_checker(app.handle().clone());
 
             // Start the pre-schedule checker. Wakes every 30s, finds any

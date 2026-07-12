@@ -192,15 +192,6 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                   }
                   setExpandedId(null);
                 }}
-                onRemind={async () => {
-                  if (task.id == null) return;
-                  try {
-                    await invoke("remind_task", { id: task.id, minutes: 30 });
-                  } catch (e) {
-                    reportError(e);
-                  }
-                  setExpandedId(null);
-                }}
               />
             ))}
 

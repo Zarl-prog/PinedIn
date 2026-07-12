@@ -97,9 +97,6 @@
   --btn-done-border: var(--border-light);
   --btn-snooze-bg: transparent;
   --btn-snooze-text: var(--text-secondary);
-  --btn-remind-bg: transparent;
-  --btn-remind-text: var(--text-secondary);
-
   --left-accent: var(--text-primary);
   --card-shadow: none;
   --shake-glow: rgba(255,255,255,0.4);
@@ -207,9 +204,6 @@
   --btn-done-border: var(--border-light);
   --btn-snooze-bg: transparent;
   --btn-snooze-text: var(--text-secondary);
-  --btn-remind-bg: transparent;
-  --btn-remind-text: var(--text-secondary);
-
   --left-accent: var(--text-primary);
   --card-shadow: none;
   --shake-glow: rgba(255,255,255,0.4);
@@ -320,8 +314,6 @@
   --btn-done-border: rgba(76,175,80,0.3);
   --btn-snooze-bg: rgba(255,183,77,0.12);
   --btn-snooze-text: #ffb74d;
-  --btn-remind-bg: rgba(186,104,200,0.12);
-  --btn-remind-text: #ce93d8;
 
   --left-accent: #c4a882;
   --card-shadow: none;

@@ -1,6 +1,6 @@
 [package]
 name = "pinedin"
-version = "0.4.3"
+version = "0.4.4"
 description = "PinedIn - Always-on-top focus reminder app"
 authors = ["PinedIn"]
 edition = "2021"

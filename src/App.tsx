@@ -338,7 +338,7 @@ export default function App() {
           <ShinyText text="PinedIn" speed={4} className="font-semibold" style={{ fontSize: "14px" }} />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <button
             onClick={() => setMcpOpen(true)}
             title="MCP Server"
@@ -393,51 +393,69 @@ export default function App() {
           <button
             onClick={() => getCurrentWindow().minimize().catch(() => {})}
             style={{
-              width: "12px",
-              height: "12px",
-              borderRadius: "999px",
-              border: "1px solid var(--border-hover)",
-              background: "var(--bg-hover)",
+              width: "28px",
+              height: "24px",
+              borderRadius: "0",
+              border: "none",
+              background: "transparent",
+              color: "var(--text-secondary)",
               cursor: "pointer",
               padding: 0,
-              transition: "background 0.15s ease",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "14px",
+              fontFamily: "'Segoe MDL2 Assets', 'Arial Unicode MS', sans-serif",
+              transition: "background 0.12s ease, color 0.12s ease",
             }}
             title="Minimize"
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--text-muted)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
-          />
+            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-hover)"; e.currentTarget.style.color = "var(--text-primary)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+          ><svg width="10" height="1" viewBox="0 0 10 1" fill="none"><rect width="10" height="1" fill="currentColor"/></svg></button>
           <button
             onClick={() => getCurrentWindow().toggleMaximize().catch(() => {})}
             style={{
-              width: "12px",
-              height: "12px",
-              borderRadius: "999px",
-              border: "1px solid var(--border-hover)",
-              background: "var(--bg-hover)",
+              width: "28px",
+              height: "24px",
+              borderRadius: "0",
+              border: "none",
+              background: "transparent",
+              color: "var(--text-secondary)",
               cursor: "pointer",
               padding: 0,
-              transition: "background 0.15s ease",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "14px",
+              fontFamily: "'Segoe MDL2 Assets', 'Arial Unicode MS', sans-serif",
+              transition: "background 0.12s ease, color 0.12s ease",
             }}
             title="Maximize"
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--text-muted)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
-          />
+            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-hover)"; e.currentTarget.style.color = "var(--text-primary)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+          ><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="0.5" y="0.5" width="9" height="9" stroke="currentColor" fill="none"/></svg></button>
           <button
             onClick={() => getCurrentWindow().close().catch(() => {})}
             style={{
-              width: "12px",
-              height: "12px",
-              borderRadius: "999px",
-              border: "1px solid var(--border-hover)",
-              background: "var(--bg-hover)",
+              width: "28px",
+              height: "24px",
+              borderRadius: "0",
+              border: "none",
+              background: "transparent",
+              color: "var(--text-secondary)",
               cursor: "pointer",
               padding: 0,
-              transition: "background 0.15s ease",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "14px",
+              fontFamily: "'Segoe MDL2 Assets', 'Arial Unicode MS', sans-serif",
+              transition: "background 0.12s ease, color 0.12s ease",
             }}
             title="Close"
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--text-muted)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
-          />
+            onMouseEnter={(e) => { e.currentTarget.style.background = "#ef4444"; e.currentTarget.style.color = "#ffffff"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+          ><svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1 1L8 8M8 1L1 8" stroke="currentColor" strokeWidth="1.2"/></svg></button>
         </div>
       </div>
 

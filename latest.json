@@ -3,6 +3,10 @@
   "notes": "Window controls: standard Min/Max/Close buttons; removed remind feature; fixed compact pill re-open; fixed Linux background persistence",
   "pub_date": "2026-07-14T15:15:44Z",
   "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUMExyQ3dxMFhnL3hkZ0tFejM5cld2MTd4OVpiV2tWNTBUMDNBNjZKT2ErakQ0VTZBOEpvY1g4Wm0rYkNFcDRXbGo0Q3BMYWg5eU53ZEc1OUUvZ0RuRkxCZWpMc084V1FJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg0MDQyMTIzCWZpbGU6UGluZWRJbl8wLjQuNF94NjQtc2V0dXAuZXhlCm9xZnF6UCtYbnowMEJuRTJ4TDhlL1JxOVU2MXBLMDVsZ2x6NEFRS1ROYlFZNmRGako3WG1MeTJTVW5CQ0lBelphRmZCYkpEa3hjTUtaR2NNWmRQY0RnPT0K",
+      "url": "https://github.com/Zarl-prog/PinedIn-Releases/releases/download/v0.4.4/PinedIn_0.4.4_x64-setup.exe"
+    },
     "linux-x86_64": {
       "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUMExyQ3dxMFhnL3h2KzNrdEtCVHFoVFo0OGNleFJMSk1ZY0pHLzNGamJjKzRMR3BuUnhpSE9tWEV0di9lM0NacXlLZm9KSEowMGdqd0hLcCt1cHJyOFZ1MTFlUm5aN0FVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg0MDQxODU4CWZpbGU6UGluZWRJbi0wLjQuNC0xLng4Nl82NC5ycG0KaGJCQWpESncvbWlnMVhjdWkzZCtzRHJvQ044M2gwSFpMdDNweEpVKzY2eUNQRHhXUUVCUzlUKy9uQjFTQlZabUN3dis5MnpvNnhteU1UMUJBSG5IQkE9PQo=",
       "url": "https://github.com/Zarl-prog/PinedIn-Releases/releases/download/v0.4.4/PinedIn-0.4.4-1.x86_64.rpm"

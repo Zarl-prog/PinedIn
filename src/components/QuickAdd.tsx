@@ -39,18 +39,10 @@ export default function QuickAdd() {
     setSaving(true);
     try {
       const today = new Date().toISOString().split("T")[0];
-      const taskId = await invoke<number>("add_task", {
+      await invoke("quick_add_task", {
         title,
-        body: "",
         dueDate: today,
-        timeLimitMinutes: null,
-        recurrence: null,
-        tags: null,
-        workspaceId: null
       });
-
-      // Open floating card for the new task
-      await invoke("open_task_card_for_new_task", { taskId });
       await getCurrentWindow().close();
     } catch (err) {
       console.error("Quick add failed:", err);

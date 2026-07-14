@@ -393,9 +393,9 @@ export default function App() {
           <button
             onClick={() => getCurrentWindow().minimize().catch(() => {})}
             style={{
-              width: "28px",
+              width: "24px",
               height: "24px",
-              borderRadius: "0",
+              borderRadius: "50%",
               border: "none",
               background: "transparent",
               color: "var(--text-secondary)",
@@ -404,8 +404,6 @@ export default function App() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: "14px",
-              fontFamily: "'Segoe MDL2 Assets', 'Arial Unicode MS', sans-serif",
               transition: "background 0.12s ease, color 0.12s ease",
             }}
             title="Minimize"
@@ -415,9 +413,9 @@ export default function App() {
           <button
             onClick={() => getCurrentWindow().toggleMaximize().catch(() => {})}
             style={{
-              width: "28px",
+              width: "24px",
               height: "24px",
-              borderRadius: "0",
+              borderRadius: "50%",
               border: "none",
               background: "transparent",
               color: "var(--text-secondary)",
@@ -426,8 +424,6 @@ export default function App() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: "14px",
-              fontFamily: "'Segoe MDL2 Assets', 'Arial Unicode MS', sans-serif",
               transition: "background 0.12s ease, color 0.12s ease",
             }}
             title="Maximize"
@@ -437,9 +433,9 @@ export default function App() {
           <button
             onClick={() => getCurrentWindow().close().catch(() => {})}
             style={{
-              width: "28px",
+              width: "24px",
               height: "24px",
-              borderRadius: "0",
+              borderRadius: "50%",
               border: "none",
               background: "transparent",
               color: "var(--text-secondary)",

@@ -6,7 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { Task } from "../lib/tauriCommands";
 import { Check, CaretLeft, CaretRight } from "@phosphor-icons/react";
 
-const COLLAPSED_W = 140;
+const COLLAPSED_W = 100;
 const COLLAPSED_H = 36;
 const EXPANDED_W = 260;
 const EXPANDED_H = 120;
@@ -198,7 +198,6 @@ export default function CompactPill() {
   }
 
   const currentTask = tasks[currentIndex];
-  const dotColor = "#22c55e";
 
   if (expanded && tasks.length > 0) {
     return (
@@ -224,7 +223,6 @@ export default function CompactPill() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: dotColor, flexShrink: 0 }} />
           <span style={{ fontSize: "11px", color: "var(--pill-text, #ffffff)", fontFamily: "'Geist Mono', monospace", fontWeight: 600 }}>
             {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
           </span>
@@ -276,7 +274,6 @@ export default function CompactPill() {
         <span style={{ fontSize: "11px", color: "var(--pill-text-muted, #444)", fontFamily: "'Geist Mono', monospace", display: "flex", alignItems: "center", gap: "4px" }}><Check size={14} weight="light" /> All clear</span>
       ) : (
         <>
-          <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: dotColor, flexShrink: 0 }} />
           <span style={{ fontSize: "11px", color: "var(--pill-text, #ffffff)", fontFamily: "'Geist Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>
             {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
           </span>

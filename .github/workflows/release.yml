@@ -1,179 +1,82 @@
 name: Release
+
 on:
   push:
-    tags:
-      - 'v*'
-  release:
-    types: [published]
+    tags: "v*"
 
 jobs:
-  release:
+  build-macos:
     strategy:
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
-    runs-on: ${{ matrix.os }}
-    permissions:
-      contents: write
+        target:
+          - aarch64-apple-darwin
+          - x86_64-apple-darwin
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: ${{ matrix.target }}
 
-      - name: Install Linux dependencies
-        if: matrix.os == 'ubuntu-latest'
+      - run: npm ci
+
+      - run: npm run build
+
+      - run: npx tauri build --target ${{ matrix.target }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PinedIn-${{ matrix.target }}
+          path: src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Linux deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
-            libgtk-3-dev \
-            libsoup-3.0-dev \
-            libjavascriptcoregtk-4.1-dev \
-            libfuse2 \
-            rpm
+          sudo apt-get install -y libwebkit2gtk-4.1-0 libwebkit2gtk-4.1-dev \
+            libappindicator3-1 librsvg2-dev patchelf
 
-      - name: Install dependencies
-        run: npm install
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
 
-      - name: Build the app
-        shell: bash
-        run: npm run tauri build
-        env:
-          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+      - run: npm ci
 
-      - name: Upload to public release repo
-        env:
-          GH_TOKEN: ${{ secrets.PINEDIN_RELEASES_TOKEN }}
-        shell: bash
-        run: |
-          echo "$GH_TOKEN" | gh auth login --with-token 2>/dev/null || true
+      - run: npm run build
 
-          BUNDLE_DIR="src-tauri/target/release/bundle"
-          [ ! -d "$BUNDLE_DIR" ] && echo "No bundle dir" && exit 0
+      - run: npx tauri build
 
-          RELEASE_TAG="${{ github.ref_name }}"
-          PUBLIC_REPO="Zarl-prog/PinedIn-Releases"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PinedIn-linux
+          path: src-tauri/target/release/bundle/*/
 
-          # Create the public release if it doesn't exist yet
-          gh release view "$RELEASE_TAG" --repo "$PUBLIC_REPO" &>/dev/null || \
-            gh release create "$RELEASE_TAG" \
-              --repo "$PUBLIC_REPO" \
-              --title "PinedIn $RELEASE_TAG" \
-              --notes "See the main repo for changelog."
-
-          # Upload installer files (.exe, .dmg, .AppImage, .deb, .rpm)
-          find "$BUNDLE_DIR" -type f \( -name "*.exe" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \) \
-            -exec gh release upload "$RELEASE_TAG" {} --repo "$PUBLIC_REPO" --clobber \;
-
-          # Upload updater archives (.tar.gz for macOS/Linux, .zip for Windows)
-          # and their .sig signature files — generated alongside installers by Tauri v2
-          find "$BUNDLE_DIR" -type f \( -name "*.tar.gz" -o -name "*.zip" \) \
-            -exec gh release upload "$RELEASE_TAG" {} --repo "$PUBLIC_REPO" --clobber \;
-          find "$BUNDLE_DIR" -type f -name "*.sig" \
-            -exec gh release upload "$RELEASE_TAG" {} --repo "$PUBLIC_REPO" --clobber \;
-
-          # Generate per-platform updater metadata file
-          echo "Generating platform metadata..."
-          VERSION="${RELEASE_TAG#v}"
-
-          for f in $(find "$BUNDLE_DIR" -type f \( -name "*.tar.gz" -o -name "*.zip" -o -name "*.rpm" -o -name "*.exe" -o -name "*.dmg" \) 2>/dev/null); do
-            BASENAME=$(basename "$f")
-            case "$BASENAME" in
-              control.tar.gz|data.tar.gz) continue ;;
-            esac
-            case "$BASENAME" in
-              *x64-setup.nsis.zip*)      PLAT="windows-x86_64" ;;
-              *x64-setup.mui.zip*)       PLAT="windows-x86_64" ;;
-              *x86_64-setup.nsis.zip*)   PLAT="windows-x86_64" ;;
-              *x86_64-setup.mui.zip*)    PLAT="windows-x86_64" ;;
-              *x64-setup.exe)            PLAT="windows-x86_64" ;;
-              *x86_64-setup.exe)         PLAT="windows-x86_64" ;;
-              *x86_64.AppImage.tar.gz*)  PLAT="linux-x86_64" ;;
-              *amd64.AppImage.tar.gz*)   PLAT="linux-x86_64" ;;
-              *.rpm)                   PLAT="linux-x86_64" ;;
-              *x86_64.dmg.tar.gz*)       PLAT="darwin-x86_64" ;;
-              *aarch64.dmg.tar.gz*)      PLAT="darwin-aarch64" ;;
-              *x86_64.dmg)               PLAT="darwin-x86_64" ;;
-              *aarch64.dmg)              PLAT="darwin-aarch64" ;;
-              *x86_64.app.tar.gz*)       PLAT="darwin-x86_64" ;;
-              *aarch64.app.tar.gz*)      PLAT="darwin-aarch64" ;;
-              *)                         continue ;;
-            esac
-            SIG_FILE="${f}.sig"
-            SIGNATURE=""
-            [ -f "$SIG_FILE" ] && SIGNATURE=$(cat "$SIG_FILE")
-            URL="https://github.com/$PUBLIC_REPO/releases/download/$RELEASE_TAG/$BASENAME"
-            printf '{"signature":"%s","url":"%s"}' "$SIGNATURE" "$URL" > /tmp/meta-$PLAT.json
-            echo "Uploading metadata for $PLAT..."
-            gh release upload "$RELEASE_TAG" /tmp/meta-$PLAT.json \
-              --repo "$PUBLIC_REPO" --clobber
-          done
-
-  merge-updater-metadata:
-    needs: [release]
+  create-release:
+    needs: [build-macos, build-linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
 
-      - name: Merge platform metadata into latest.json
-        env:
-          GH_TOKEN: ${{ secrets.PINEDIN_RELEASES_TOKEN }}
-        shell: bash
-        run: |
-          echo "$GH_TOKEN" | gh auth login --with-token 2>/dev/null || true
-
-          RELEASE_TAG="${{ github.ref_name }}"
-          PUBLIC_REPO="Zarl-prog/PinedIn-Releases"
-          VERSION="${RELEASE_TAG#v}"
-
-          cd /tmp
-
-          gh release download "$RELEASE_TAG" --repo "$PUBLIC_REPO" -p "meta-*.json" 2>/dev/null || true
-
-          PLATFORMS=""
-          for f in meta-*.json; do
-            [ ! -f "$f" ] && continue
-            PLAT="${f#meta-}"
-            PLAT="${PLAT%.json}"
-            CONTENT=$(cat "$f")
-            PLATFORMS="$PLATFORMS,\"$PLAT\":$CONTENT"
-          done
-
-          if [ -n "$PLATFORMS" ]; then
-            PLATFORMS="{${PLATFORMS:1}}"
-          else
-            PLATFORMS="{}"
-          fi
-
-          printf '{\n  "version": "%s",\n  "notes": "See the main repo for changelog.",\n  "pub_date": "%s",\n  "platforms": %s\n}\n' \
-            "$VERSION" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$PLATFORMS" > latest.json
-
-          echo "Uploading latest.json..."
-          cat latest.json
-          gh release upload "$RELEASE_TAG" latest.json \
-            --repo "$PUBLIC_REPO" --clobber
-
-      - name: Create GitHub Release in main repo
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          RELEASE_TAG="${{ github.ref_name }}"
-          gh release view "$RELEASE_TAG" --repo "Zarl-prog/PinedIn" &>/dev/null && \
-            echo "Release already exists in main repo" || \
-            gh release create "$RELEASE_TAG" \
-              --repo "Zarl-prog/PinedIn" \
-              --title "Release: $RELEASE_TAG" \
-              --notes "Download installers from the [public releases repo](https://github.com/Zarl-prog/PinedIn-Releases/releases/tag/$RELEASE_TAG)."
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            PinedIn-aarch64-apple-darwin/*.dmg
+            PinedIn-x86_64-apple-darwin/*.dmg
+            PinedIn-linux/**/*.AppImage
+            PinedIn-linux/**/*.deb
+            PinedIn-linux/**/*.rpm

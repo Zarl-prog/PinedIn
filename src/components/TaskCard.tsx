@@ -56,7 +56,6 @@ export default function TaskCard({
   const [showActions, setShowActions] = useState(false);
   const didDrag = useRef(false);
   const mouseDownPos = useRef({ x: 0, y: 0 });
-  const liveDotRef = useRef<HTMLSpanElement>(null);
   const notifiedRef = useRef(false);
   const [customW, setCustomW] = useState<number | null>(null);
   const [customH, setCustomH] = useState<number | null>(null);
@@ -84,26 +83,6 @@ export default function TaskCard({
       getCurrentWindow().setSize(new LogicalSize(w, h));
       invoke("reassert_window_properties");
     });
-  }, []);
-
-  useEffect(() => {
-    const dot = liveDotRef.current;
-    if (!dot) return;
-    let timeout: ReturnType<typeof setTimeout> | null = null;
-    const alert = () => {
-      dot.classList.remove("live");
-      dot.classList.add("alert");
-      timeout = setTimeout(() => {
-        dot.classList.remove("alert");
-        dot.classList.add("live");
-        timeout = null;
-      }, 60000);
-    };
-    const interval = setInterval(alert, 3600000);
-    return () => {
-      clearInterval(interval);
-      if (timeout) clearTimeout(timeout);
-    };
   }, []);
 
   useEffect(() => {
@@ -285,8 +264,6 @@ export default function TaskCard({
         </div>
       ) : isMinimal ? (
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 14px" }}>
-          <span ref={liveDotRef} className="dot live" aria-label="Task heartbeat"
-            style={{ position: "absolute", right: "38px", top: "8px" }} />
           <span style={{
             fontSize: "13px", fontWeight: 500, color: "var(--text-primary-card)",
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
@@ -315,7 +292,6 @@ export default function TaskCard({
                 </span>
               )}
             </span>
-            <span ref={liveDotRef} className="dot live" aria-label="Task heartbeat" />
           </div>
 
           {description && (

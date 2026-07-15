@@ -355,7 +355,7 @@ pub fn open_compact_pill_window(app: &AppHandle) {
     #[cfg(not(target_os = "linux"))]
     let result = build_fn();
 
-    let window = match result {
+    let _window = match result {
         Ok(w) => w,
         Err(e) => {
             eprintln!("Failed to open compact pill window: {e}");
@@ -364,7 +364,8 @@ pub fn open_compact_pill_window(app: &AppHandle) {
     };
 
     #[cfg(any(target_os = "linux", target_os = "windows"))]
-    let _ = window.set_always_on_top(true);
+    let _ = _window.set_always_on_top(true);
+}
 }
 
 pub fn close_compact_pill_window(app: &AppHandle) {

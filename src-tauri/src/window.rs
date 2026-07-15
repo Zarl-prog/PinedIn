@@ -366,7 +366,6 @@ pub fn open_compact_pill_window(app: &AppHandle) {
     #[cfg(any(target_os = "linux", target_os = "windows"))]
     let _ = _window.set_always_on_top(true);
 }
-}
 
 pub fn close_compact_pill_window(app: &AppHandle) {
     if let Some(w) = app.get_webview_window("compact_pill") {

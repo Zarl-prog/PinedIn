@@ -507,7 +507,6 @@ pub fn close_edge_peek_window(app: &AppHandle) {
 /// Move an existing edge_peek window to a new position/size.
 pub fn move_edge_peek_window(app: &AppHandle, x: f64, y: f64, w: f64, h: f64) {
     if let Some(window) = app.get_webview_window("edge_peek") {
-        let scale = window.scale_factor().unwrap_or(1.0);
         let _ = window.set_position(LogicalPosition::new(x, y));
         let _ = window.set_size(LogicalSize::new(w, h));
         #[cfg(any(target_os = "linux", target_os = "windows"))]

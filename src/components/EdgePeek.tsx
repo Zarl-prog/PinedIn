@@ -12,7 +12,6 @@ const VISIBLE_PX = 14;
 const EXPANDED_W = 260;
 const EXPANDED_H = 200;
 const AUTO_CLOSE_MS = 3000;
-const SNAP_THRESHOLD = 80;
 
 type Edge = "left" | "right" | "top" | "bottom";
 
@@ -63,7 +62,6 @@ export default function EdgePeek() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const [edge, setEdge] = useState<Edge>("right");
-  const [isHovered, setIsHovered] = useState(false);
   const [autoHide, setAutoHide] = useState(false);
   const [interaction, setInteraction] = useState<"click" | "doubleclick">("doubleclick");
   const [timerBorderColor, setTimerBorderColor] = useState<string | null>(null);
@@ -76,6 +74,9 @@ export default function EdgePeek() {
   const autoCloseRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const allClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragOffset = useRef({ x: 0, y: 0 });
+  const rafId = useRef<number | null>(null);
+  const targetPos = useRef({ x: 0, y: 0 });
 
   const recalcTimerBorder = useCallback(() => {
     const color = tasks.reduce<string | null>((acc, t) => {
@@ -140,7 +141,6 @@ export default function EdgePeek() {
     return () => clearInterval(id);
   }, [tasks, recalcTimerBorder]);
 
-  // Update window position/size when edge or expanded changes
   useEffect(() => {
     const win = getCurrentWindow();
     const pos = getEdgePosition(edge, screenSize.w, screenSize.h, expanded);
@@ -148,7 +148,6 @@ export default function EdgePeek() {
     win.setSize(new LogicalSize(pos.w, pos.h));
   }, [edge, expanded, screenSize]);
 
-  // All-clear auto-close window
   useEffect(() => {
     if (allClearTimerRef.current) {
       clearTimeout(allClearTimerRef.current);
@@ -166,7 +165,6 @@ export default function EdgePeek() {
     };
   }, [tasks.length]);
 
-  // Auto-close expanded panel on idle
   useEffect(() => {
     if (!expanded) {
       if (autoCloseRef.current) clearTimeout(autoCloseRef.current);
@@ -183,12 +181,10 @@ export default function EdgePeek() {
     };
   }, [expanded]);
 
-  // Auto-hide idle timer
   useEffect(() => {
     if (!autoHide || expanded) return;
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     idleTimerRef.current = setTimeout(() => {
-      // re-assert window position to edge (in case it drifted)
       const win = getCurrentWindow();
       const pos = getEdgePosition(edge, screenSize.w, screenSize.h, false);
       win.setPosition(new LogicalPosition(pos.x, pos.y));
@@ -198,39 +194,22 @@ export default function EdgePeek() {
     };
   }, [autoHide, expanded, edge, screenSize]);
 
-  function handleMouseEnter() {
-    setIsHovered(true);
-    if (!expanded) return;
-    isHoveringRef.current = true;
-    if (autoCloseRef.current) {
-      clearTimeout(autoCloseRef.current);
-      autoCloseRef.current = null;
-    }
-  }
-
-  function handleMouseLeave() {
-    setIsHovered(false);
-    if (!expanded) return;
-    isHoveringRef.current = false;
-    if (autoCloseRef.current) clearTimeout(autoCloseRef.current);
-    autoCloseRef.current = setTimeout(() => {
-      setExpanded(false);
-      autoCloseRef.current = null;
-    }, AUTO_CLOSE_MS);
-  }
-
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
     didDrag.current = false;
     mouseDownPos.current = { x: e.clientX, y: e.clientY };
 
     let dragInitiated = false;
-    let dragPos = { x: e.screenX, y: e.screenY };
+    const win = getCurrentWindow();
 
     const cleanup = () => {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
       setIsDragging(false);
+      if (rafId.current !== null) {
+        cancelAnimationFrame(rafId.current);
+        rafId.current = null;
+      }
     };
 
     const onMove = (me: MouseEvent) => {
@@ -240,19 +219,34 @@ export default function EdgePeek() {
         dragInitiated = true;
         didDrag.current = true;
         setIsDragging(true);
-        dragPos = { x: me.screenX, y: me.screenY };
+        win.outerPosition().then(pos => {
+          const scale = win.scaleFactor().then(s => {
+            dragOffset.current = {
+              x: me.screenX - (pos.x / s),
+              y: me.screenY - (pos.y / s),
+            };
+          });
+        });
       }
       if (dragInitiated) {
-        dragPos = { x: me.screenX, y: me.screenY };
+        targetPos.current = {
+          x: me.screenX - dragOffset.current.x,
+          y: me.screenY - dragOffset.current.y,
+        };
+        if (rafId.current === null) {
+          rafId.current = requestAnimationFrame(() => {
+            rafId.current = null;
+            win.setPosition(new LogicalPosition(targetPos.current.x, targetPos.current.y));
+          });
+        }
       }
     };
 
-    const onUp = (_me: MouseEvent) => {
+    const onUp = () => {
       cleanup();
       if (dragInitiated) {
-        // Determine nearest edge
-        const sx = dragPos.x;
-        const sy = dragPos.y;
+        const sx = targetPos.current.x;
+        const sy = targetPos.current.y;
         const sw = screenSize.w;
         const sh = screenSize.h;
 
@@ -320,13 +314,7 @@ export default function EdgePeek() {
   }
 
   const currentTask = tasks[currentIndex];
-  const completedCount = currentTask?.time_limit_minutes && currentTask?.started_at
-    ? 0
-    : tasks.filter(t => t.completed).length;
-  const totalCount = tasks.length;
-  const progressPct = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
-  // Compute handle position within the window based on edge
   const handlePosStyle: React.CSSProperties =
     edge === "left"
       ? { right: 0, top: "50%", transform: "translate(50%, -50%)" }
@@ -336,7 +324,6 @@ export default function EdgePeek() {
           ? { bottom: 0, left: "50%", transform: "translate(-50%, 50%)" }
           : { top: 0, left: "50%", transform: "translate(-50%, -50%)" };
 
-  // Determine panel slide direction
   const panelVariants = {
     hidden: {
       opacity: 0,
@@ -351,13 +338,13 @@ export default function EdgePeek() {
     },
   };
 
+  const timerStroke = timerBorderColor || "#333";
+
   return (
     <div
       onMouseDown={handleMouseDown}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
       style={{
         width: expanded ? EXPANDED_W : HANDLE_SIZE,
         height: expanded ? EXPANDED_H : HANDLE_SIZE,
@@ -371,20 +358,13 @@ export default function EdgePeek() {
         boxSizing: "border-box",
       }}
     >
-      {/* Handle circle */}
       {!expanded && (
         <motion.div
           animate={{
-            scale: isHovered ? 1.05 : 1,
-            boxShadow: isHovered
-              ? `0 0 20px rgba(168, 85, 247, 0.4), ${timerBorderColor ? `0 0 0 2px ${timerBorderColor}` : "0 0 0 1px rgba(168, 85, 247, 0.3)"}`
-              : timerBorderColor
-                ? `0 0 0 2px ${timerBorderColor}`
-                : "0 0 0 1px rgba(168, 85, 247, 0.2)",
+            scale: isDragging ? 0.95 : 1,
           }}
           transition={{
             scale: { type: "spring", stiffness: 400, damping: 20 },
-            boxShadow: { duration: 0.3 },
           }}
           style={{
             position: "absolute",
@@ -397,6 +377,7 @@ export default function EdgePeek() {
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
+            boxShadow: "0 0 8px rgba(0,0,0,0.5)",
           }}
         >
           <svg
@@ -410,7 +391,7 @@ export default function EdgePeek() {
               cy={HANDLE_SIZE / 2}
               r={HANDLE_SIZE / 2 - 2}
               fill="none"
-              stroke={timerBorderColor || "rgba(168, 85, 247, 0.3)"}
+              stroke={timerStroke}
               strokeWidth="1.5"
             />
           </svg>
@@ -429,7 +410,6 @@ export default function EdgePeek() {
         </motion.div>
       )}
 
-      {/* Expanded panel */}
       <AnimatePresence>
         {expanded && (
           <motion.div
@@ -501,72 +481,40 @@ export default function EdgePeek() {
                 </div>
                 <div style={{ display: "flex", gap: "5px" }}>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handlePrev();
-                    }}
+                    onClick={(e) => { e.stopPropagation(); handlePrev(); }}
                     style={{
-                      width: "24px",
-                      height: "24px",
-                      borderRadius: "5px",
+                      width: "24px", height: "24px", borderRadius: "5px",
                       border: "1px solid var(--pill-border, #1a1a1a)",
-                      background: "transparent",
-                      color: "var(--pill-text-muted, #777)",
-                      fontSize: "12px",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
+                      background: "transparent", color: "var(--pill-text-muted, #777)",
+                      fontSize: "12px", cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center",
                     }}
                   >
                     <CaretLeft size={14} weight="light" />
                   </button>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDone();
-                    }}
+                    onClick={(e) => { e.stopPropagation(); handleDone(); }}
                     style={{
-                      flex: 1,
-                      height: "24px",
-                      borderRadius: "5px",
+                      flex: 1, height: "24px", borderRadius: "5px",
                       border: "1px solid var(--btn-done-border, rgba(34,197,94,0.3))",
                       background: "var(--btn-done-bg, rgba(34,197,94,0.1))",
                       color: "var(--btn-done-text, #22c55e)",
-                      fontSize: "10px",
-                      fontWeight: 600,
-                      cursor: "pointer",
+                      fontSize: "10px", fontWeight: 600, cursor: "pointer",
                       fontFamily: "'Geist Mono', monospace",
                     }}
                   >
-                    <span
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px",
-                        justifyContent: "center",
-                      }}
-                    >
+                    <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}>
                       <Check size={14} weight="light" /> Done
                     </span>
                   </button>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleNext();
-                    }}
+                    onClick={(e) => { e.stopPropagation(); handleNext(); }}
                     style={{
-                      width: "24px",
-                      height: "24px",
-                      borderRadius: "5px",
+                      width: "24px", height: "24px", borderRadius: "5px",
                       border: "1px solid var(--pill-border, #1a1a1a)",
-                      background: "transparent",
-                      color: "var(--pill-text-muted, #777)",
-                      fontSize: "12px",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
+                      background: "transparent", color: "var(--pill-text-muted, #777)",
+                      fontSize: "12px", cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center",
                     }}
                   >
                     <CaretRight size={14} weight="light" />

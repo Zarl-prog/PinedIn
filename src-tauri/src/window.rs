@@ -1,7 +1,7 @@
 use crate::commands::ZEN_MODE;
 use crate::db::Task;
 use std::sync::atomic::Ordering;
-use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, WebviewUrl, WebviewWindowBuilder};
 
 pub const CARD_WIDTH: f64 = 308.0;
 pub const CARD_HEIGHT: f64 = 120.0;
@@ -435,7 +435,6 @@ pub fn expand_edge_peek(app: &AppHandle) {
             let _ = window.set_size(LogicalSize::new(panel_w, panel_h));
             let _ = window.set_position(LogicalPosition::new(x, y));
             let _ = window.set_focus();
-            let _ = app.emit("edge_peek_expanded", ());
         }
     }
 }
@@ -450,7 +449,6 @@ pub fn collapse_edge_peek(app: &AppHandle) {
             let y = (sh / 2.0) - 40.0;
             let _ = window.set_size(LogicalSize::new(300.0, 80.0));
             let _ = window.set_position(LogicalPosition::new(x, y));
-            let _ = app.emit("edge_peek_collapsed", ());
         }
     }
 }

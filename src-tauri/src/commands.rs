@@ -723,6 +723,10 @@ pub fn enable_edge_peek(app: AppHandle, db: State<'_, Arc<DbHandle>>) -> Result<
             let _ = window.close();
         }
     }
+    // Hide main window so only the edge peek handle remains visible
+    if let Some(main) = app.get_webview_window("main") {
+        let _ = main.hide();
+    }
     db.update_setting("display_mode", "edge_peek")?;
     crate::window::open_edge_peek_window(&app);
     Ok(())
@@ -732,6 +736,11 @@ pub fn enable_edge_peek(app: AppHandle, db: State<'_, Arc<DbHandle>>) -> Result<
 pub fn disable_edge_peek(app: AppHandle, db: State<'_, Arc<DbHandle>>) -> Result<(), String> {
     crate::window::close_edge_peek_window(&app);
     db.update_setting("display_mode", "normal")?;
+    // Restore main window
+    if let Some(main) = app.get_webview_window("main") {
+        let _ = main.show();
+        let _ = main.unminimize();
+    }
     // Reopen all active task cards
     if let Ok(tasks) = db.get_all_active_tasks() {
         for task in tasks {
@@ -775,17 +784,27 @@ pub fn set_compact_mode(app: AppHandle, db: State<'_, Arc<DbHandle>>, enabled: b
     COMPACT_MODE.store(enabled, Ordering::SeqCst);
 
     if enabled {
+        // Close open task cards
         let windows = app.webview_windows();
         for (label, window) in &windows {
             if label.starts_with("task_") {
                 let _ = window.close();
             }
         }
+        // Hide main window so only the pill remains visible
+        if let Some(main) = app.get_webview_window("main") {
+            let _ = main.hide();
+        }
         crate::window::open_compact_pill_window(&app);
         let _ = app.emit("compact_mode_enabled", ());
     } else {
         crate::window::close_compact_pill_window(&app);
         crate::window::close_edge_peek_window(&app);
+        // Restore main window
+        if let Some(main) = app.get_webview_window("main") {
+            let _ = main.show();
+            let _ = main.unminimize();
+        }
         let db = db.inner();
         if let Ok(tasks) = db.get_all_active_tasks() {
             for (i, task) in tasks.iter().enumerate() {

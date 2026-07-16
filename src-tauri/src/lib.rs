@@ -199,10 +199,16 @@ pub fn run() {
             match display_mode.as_str() {
                 "edge_peek" => {
                     window::open_edge_peek_window(app.handle());
+                    if let Some(main) = app.get_webview_window("main") {
+                        let _ = main.hide();
+                    }
                 }
                 _ => {
                     if compact_enabled {
                         window::open_compact_pill_window(app.handle());
+                        if let Some(main) = app.get_webview_window("main") {
+                            let _ = main.hide();
+                        }
                     } else {
                         if let Ok(tasks) = db_handle.get_all_active_tasks() {
                             window::open_all_task_cards(app.handle(), &tasks);

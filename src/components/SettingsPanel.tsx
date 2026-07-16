@@ -8,14 +8,10 @@ import {
   disableAutostart,
   getShakeInterval,
   setShakeInterval,
-  getCompactPillType,
-  setCompactPillType,
-  getEdgePeekPosition,
-  setEdgePeekPosition,
-  getEdgePeekAutoHide,
-  setEdgePeekAutoHide,
-  getEdgePeekInteraction,
-  setEdgePeekInteraction,
+  setCompactMode,
+  enableEdgePeek,
+  disableEdgePeek,
+  getDisplayMode,
 } from "@/lib/tauriCommands";
 import { checkAndInstall } from "@/lib/updater";
 import { X, Circle, Hourglass, PencilSimpleLine, Tag, DotsThree } from "@phosphor-icons/react";
@@ -52,10 +48,7 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
   }>({ state: "idle" });
   const [shakeInterval, setShakeIntervalState] = useState(30);
   const [appVersion, setAppVersion] = useState("...");
-  const [compactPillType, setCompactPillTypeState] = useState("pill");
-  const [edgePeekPos, setEdgePeekPosState] = useState("right");
-  const [edgePeekAutoHide, setEdgePeekAutoHideState] = useState(false);
-  const [edgePeekInteraction, setEdgePeekInteractionState] = useState("doubleclick");
+  const [displayMode, setDisplayModeState] = useState("normal");
 
   useEffect(() => {
     getVersion().then(setAppVersion).catch(() => setAppVersion("?"));
@@ -64,10 +57,7 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
   useEffect(() => {
     if (open) {
       getShakeInterval().then(setShakeIntervalState).catch(() => {});
-      getCompactPillType().then(setCompactPillTypeState).catch(() => {});
-      getEdgePeekPosition().then(setEdgePeekPosState).catch(() => {});
-      getEdgePeekAutoHide().then(setEdgePeekAutoHideState).catch(() => {});
-      getEdgePeekInteraction().then(setEdgePeekInteractionState).catch(() => {});
+      getDisplayMode().then(setDisplayModeState).catch(() => {});
     }
   }, [open]);
 
@@ -355,7 +345,7 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                 </div>
               </div>
 
-              {/* Compact pill type */}
+              {/* Display mode */}
               <div>
                 <label
                   style={{
@@ -366,154 +356,53 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                     marginBottom: "8px",
                   }}
                 >
-                  Compact mode style
+                  Display Mode
                 </label>
-                <div style={{ display: "flex", gap: "6px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   <button
-                    onClick={() => {
-                      setCompactPillTypeState("pill");
-                      setCompactPillType("pill").catch(() => {});
+                    onClick={async () => {
+                      setDisplayModeState("normal");
+                      await setCompactMode(false).catch(() => {});
+                      await disableEdgePeek().catch(() => {});
                     }}
-                    className={`pill-toggle${compactPillType === "pill" ? " selected" : ""}`}
-                    style={{ flex: 1, textAlign: "center", padding: "10px 12px", fontSize: "12px" }}
+                    className={`pill-toggle${displayMode === "normal" ? " selected" : ""}`}
+                    style={{
+                      width: "100%", textAlign: "left", padding: "10px 12px",
+                      fontSize: "11px", fontFamily: "'Geist Mono', monospace",
+                    }}
                   >
-                    <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="6" width="18" height="12" rx="6" />
-                      </svg>
-                      Pill
-                    </span>
+                    Normal — individual floating cards
                   </button>
                   <button
-                    onClick={() => {
-                      setCompactPillTypeState("edge_peek");
-                      setCompactPillType("edge_peek").catch(() => {});
+                    onClick={async () => {
+                      setDisplayModeState("compact");
+                      await setCompactMode(true).catch(() => {});
+                      await disableEdgePeek().catch(() => {});
                     }}
-                    className={`pill-toggle${compactPillType === "edge_peek" ? " selected" : ""}`}
-                    style={{ flex: 1, textAlign: "center", padding: "10px 12px", fontSize: "12px" }}
+                    className={`pill-toggle${displayMode === "compact" ? " selected" : ""}`}
+                    style={{
+                      width: "100%", textAlign: "left", padding: "10px 12px",
+                      fontSize: "11px", fontFamily: "'Geist Mono', monospace",
+                    }}
                   >
-                    <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="4" />
-                        <line x1="12" y1="2" x2="12" y2="8" />
-                        <line x1="12" y1="16" x2="12" y2="22" />
-                        <line x1="2" y1="12" x2="8" y2="12" />
-                        <line x1="16" y1="12" x2="22" y2="12" />
-                      </svg>
-                      Edge Peek
-                    </span>
+                    Compact Pill — tiny floating pill
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setDisplayModeState("edge_peek");
+                      await setCompactMode(false).catch(() => {});
+                      await enableEdgePeek().catch(() => {});
+                    }}
+                    className={`pill-toggle${displayMode === "edge_peek" ? " selected" : ""}`}
+                    style={{
+                      width: "100%", textAlign: "left", padding: "10px 12px",
+                      fontSize: "11px", fontFamily: "'Geist Mono', monospace",
+                    }}
+                  >
+                    Edge Peek — handle attached to screen edge
                   </button>
                 </div>
               </div>
-
-              {/* Edge Peek options (only shown when edge_peek is selected) */}
-              {compactPillType === "edge_peek" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                  {/* Edge position */}
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "13px",
-                        fontWeight: 500,
-                        color: "var(--text-secondary)",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      Dock to edge
-                    </label>
-                    <div style={{ display: "flex", gap: "6px" }}>
-                      {["left", "right", "top", "bottom"].map((pos) => (
-                        <button
-                          key={pos}
-                          onClick={() => {
-                            setEdgePeekPosState(pos);
-                            setEdgePeekPosition(pos).catch(() => {});
-                          }}
-                          className={`pill-toggle${edgePeekPos === pos ? " selected" : ""}`}
-                          style={{ flex: 1, textAlign: "center", padding: "8px 8px", fontSize: "11px", textTransform: "capitalize" }}
-                        >
-                          {pos}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Interaction */}
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "13px",
-                        fontWeight: 500,
-                        color: "var(--text-secondary)",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      Expand trigger
-                    </label>
-                    <div style={{ display: "flex", gap: "6px" }}>
-                      {[
-                        { value: "click", label: "Click" },
-                        { value: "doubleclick", label: "Double-click" },
-                      ].map((opt) => (
-                        <button
-                          key={opt.value}
-                          onClick={() => {
-                            setEdgePeekInteractionState(opt.value);
-                            setEdgePeekInteraction(opt.value).catch(() => {});
-                          }}
-                          className={`pill-toggle${edgePeekInteraction === opt.value ? " selected" : ""}`}
-                          style={{ flex: 1, textAlign: "center", padding: "10px 12px", fontSize: "12px" }}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Auto-hide toggle */}
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "13px",
-                        fontWeight: 500,
-                        color: "var(--text-secondary)",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      Auto-hide when idle
-                    </label>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        background: "var(--bg-input)",
-                        border: "1px solid var(--border)",
-                        borderRadius: "8px",
-                        padding: "14px 16px",
-                      }}
-                    >
-                      <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--text-primary)" }}>
-                        {edgePeekAutoHide ? "On" : "Off"}
-                      </span>
-                      <button
-                        onClick={() => {
-                          const next = !edgePeekAutoHide;
-                          setEdgePeekAutoHideState(next);
-                          setEdgePeekAutoHide(next).catch(() => {});
-                        }}
-                        className={`toggle-track${edgePeekAutoHide ? " active" : ""}`}
-                        style={{ flexShrink: 0 }}
-                      >
-                        <span className={`toggle-thumb${edgePeekAutoHide ? " active" : ""}`} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Card shake interval */}
               <div>

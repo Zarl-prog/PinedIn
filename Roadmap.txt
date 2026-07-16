@@ -1,0 +1,43 @@
+v0.4.0 — AI Features
+Add Customize your Pill/task like Gamer,Girly,Minimilistic,etc
+Natural Language Task Entry — type "call dentist tomorrow 3pm" and it parses everything
+AI Priority Suggestions — AI picks your top 3 tasks each morning
+Smart Task Breakdown — AI splits one big task into smaller floating cards
+
+
+v0.5.0 — Power User / Developer
+
+WebSocket Path — listen on ws://localhost:8888, any script pushes JSON and card appears
+MCP Server — PinedIn exposes itself as MCP tool for Claude Desktop and AI agents
+REST API — local HTTP server on localhost:7777 for task management
+
+
+v0.6.0 — Polish & Platform
+
+Mac build support
+Full Linux polish — GNOME tray fix, KDE testing
+Microsoft Store submission
+Toast notifications for Done, Snooze, Quick Add confirmations
+Animated counter on task count
+Focus Mode — highlight one task, dim the rest
+Smart Auto-Snooze — detect fullscreen and hide cards automatically
+
+
+v1.0.0 — Ecosystem & Public Launch
+
+Plugin API — JavaScript plugins, developers build and share on GitHub
+Full cross platform stable — Windows, Mac, Linux
+Code signing certificate for Windows and Mac
+Full test coverage
+Product Hunt launch
+Hacker News launch
+
+
+v2.0.0 — Mobile & Sync
+
+React Native mobile companion app — iOS and Android
+Local WiFi sync between phone and desktop
+Optional cloud sync as paid feature
+Android floating overlay cards — same experience as desktop
+Home screen widget for quick task capture
+Push notifications from desktop to phone when tasks are overdue

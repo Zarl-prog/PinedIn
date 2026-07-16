@@ -85,14 +85,12 @@ pub fn open_task_card(app: &AppHandle, task: &Task, _index: usize) -> Result<(),
     let y = stack_offset_y(app) + CARD_GAP;
 
     let build_fn = || {
-        let mut builder = WebviewWindowBuilder::new(app, &label, WebviewUrl::App("task-card.html".into()))
+        let builder = WebviewWindowBuilder::new(app, &label, WebviewUrl::App("task-card.html".into()))
             .inner_size(CARD_WIDTH, CARD_HEIGHT)
             .resizable(false)
             .decorations(false);
         #[cfg(not(target_os = "macos"))]
-        {
-            builder = builder.transparent(true);
-        }
+        let builder = builder.transparent(true);
         builder
             .shadow(false)
             .always_on_top(true)
@@ -122,7 +120,8 @@ pub fn open_task_card(app: &AppHandle, task: &Task, _index: usize) -> Result<(),
     Ok(())
 }
 
-/// Close a task card window by its task ID.
+// ─── Close Task Card ────────────────────────────────────────────────────
+
 pub fn close_task_card(app: &AppHandle, task_id: i64) {
     let label = format!("task_{}", task_id);
     if let Some(window) = app.get_webview_window(&label) {
@@ -179,6 +178,7 @@ pub fn open_all_task_cards(app: &AppHandle, tasks: &[Task]) {
                 std::thread::sleep(std::time::Duration::from_millis(200 * i as u64));
             }
         }
+        let _ = i; // suppress unused warning on non-Linux
         if let Err(e) = open_task_card(app, task, 0) {
             eprintln!(
                 "Failed to open task card for task {}: {e}",
@@ -203,14 +203,12 @@ pub fn open_task_card_window_at(app: &AppHandle, task: &Task, x: f64, y: f64) {
     }
 
     let build_fn = || {
-        let mut builder = WebviewWindowBuilder::new(app, &label, WebviewUrl::App("task-card.html".into()))
+        let builder = WebviewWindowBuilder::new(app, &label, WebviewUrl::App("task-card.html".into()))
             .inner_size(CARD_WIDTH, CARD_HEIGHT)
             .resizable(false)
             .decorations(false);
         #[cfg(not(target_os = "macos"))]
-        {
-            builder = builder.transparent(true);
-        }
+        let builder = builder.transparent(true);
         builder
             .shadow(false)
             .always_on_top(true)
@@ -255,14 +253,12 @@ pub fn open_quick_add_window(app: &AppHandle) {
     let (x, y) = get_quick_add_position(app);
 
     let build_fn = || {
-        let mut builder = WebviewWindowBuilder::new(app, label, WebviewUrl::App("quick-add.html".into()))
+        let builder = WebviewWindowBuilder::new(app, label, WebviewUrl::App("quick-add.html".into()))
             .inner_size(480.0, 65.0)
             .resizable(false)
             .decorations(false);
         #[cfg(not(target_os = "macos"))]
-        {
-            builder = builder.transparent(true);
-        }
+        let builder = builder.transparent(true);
         builder
             .shadow(false)
             .always_on_top(true)
@@ -333,14 +329,12 @@ pub fn open_compact_pill_window(app: &AppHandle) {
     let (x, y) = get_pill_position(app);
 
     let build_fn = || {
-        let mut builder = WebviewWindowBuilder::new(app, label, WebviewUrl::App("compact-pill.html".into()))
+        let builder = WebviewWindowBuilder::new(app, label, WebviewUrl::App("compact-pill.html".into()))
             .inner_size(140.0, 36.0)
             .resizable(false)
             .decorations(false);
         #[cfg(not(target_os = "macos"))]
-        {
-            builder = builder.transparent(true);
-        }
+        let builder = builder.transparent(true);
         builder
             .shadow(false)
             .always_on_top(true)

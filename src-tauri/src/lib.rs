@@ -198,6 +198,9 @@ pub fn run() {
 
             match display_mode.as_str() {
                 "edge_peek" => {
+                    if let Some(main) = app.get_webview_window("main") {
+                        let _ = main.hide();
+                    }
                     window::open_edge_peek_window(app.handle());
                 }
                 _ => {

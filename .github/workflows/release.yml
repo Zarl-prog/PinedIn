@@ -86,3 +86,19 @@ jobs:
             PinedIn-linux/**/*.AppImage
             PinedIn-linux/**/*.deb
             PinedIn-linux/**/*.rpm
+
+      - name: Upload to PinedIn-Releases
+        env:
+          GH_TOKEN: ${{ secrets.PINEDIN_RELEASES_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          RELEASE_REPO="Zarl-prog/PinedIn-Releases"
+          gh release delete "$TAG" --repo "$RELEASE_REPO" -y 2>/dev/null || true
+          gh release create "$TAG" --repo "$RELEASE_REPO" \
+            --title "$TAG" \
+            --notes "Release $TAG" \
+            PinedIn-aarch64-apple-darwin/*.dmg \
+            PinedIn-x86_64-apple-darwin/*.dmg \
+            PinedIn-linux/**/*.AppImage \
+            PinedIn-linux/**/*.deb \
+            PinedIn-linux/**/*.rpm

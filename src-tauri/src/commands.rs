@@ -54,6 +54,11 @@ pub fn create_task(
         return Ok(task);
     }
 
+    // Check edge peek mode — don't open individual cards
+    if get_display_mode_state(&app) == "edge_peek" {
+        return Ok(task);
+    }
+
     // Spawn window creation so we don't block the invoke response
     let task_clone = task.clone();
     let app_clone = app.clone();
@@ -99,7 +104,7 @@ pub fn quick_add_task(
         if let Ok(task) = db.get_task_by_id(task_id) {
             if get_compact_mode_state(&app) {
                 crate::window::open_compact_pill_window(&app);
-            } else {
+            } else if get_display_mode_state(&app) != "edge_peek" {
                 let _ = window::open_task_card(&app, &task, 0);
             }
         }
@@ -265,6 +270,16 @@ pub fn uncomplete_task(
 /// with no DB overhead and no TOCTOU race.
 pub fn get_compact_mode_state(_app: &AppHandle) -> bool {
     COMPACT_MODE.load(Ordering::SeqCst)
+}
+
+/// Check if the current display mode is edge_peek by reading the DB.
+/// Only call this from non-hot-path contexts (startup, settings changes).
+pub fn get_display_mode_state(app: &AppHandle) -> String {
+    let db = app.state::<Arc<DbHandle>>();
+    db.get_setting("display_mode")
+        .ok()
+        .flatten()
+        .unwrap_or_else(|| "normal".to_string())
 }
 
 /// Advance the due date by the given recurrence interval.
@@ -693,99 +708,56 @@ pub fn delete_workspace(app: AppHandle, workspace_id: i64) -> Result<(), String>
     Ok(())
 }
 
-// ─── Edge Peek Mode Commands ──────────────────────────────────────────────────
+// ─── Edge Peek Commands ───────────────────────────────────────────────────────
 
 #[tauri::command]
-pub fn get_compact_pill_type(db: State<'_, Arc<DbHandle>>) -> Result<String, String> {
-    let map = db.get_settings_map()?;
-    Ok(map
-        .get("compact_pill_type")
-        .cloned()
-        .unwrap_or_else(|| "pill".to_string()))
+pub fn enable_edge_peek(app: AppHandle, db: State<'_, Arc<DbHandle>>) -> Result<(), String> {
+    // Close compact pill if open
+    if let Some(w) = app.get_webview_window("compact_pill") {
+        let _ = w.close();
+    }
+    // Close all task card windows
+    let windows = app.webview_windows();
+    for (label, window) in &windows {
+        if label.starts_with("task_") {
+            let _ = window.close();
+        }
+    }
+    db.update_setting("display_mode", "edge_peek")?;
+    crate::window::open_edge_peek_window(&app);
+    Ok(())
 }
 
 #[tauri::command]
-pub fn set_compact_pill_type(
-    app: AppHandle,
-    db: State<'_, Arc<DbHandle>>,
-    pill_type: String,
-) -> Result<(), String> {
-    db.update_setting("compact_pill_type", &pill_type)?;
-    // If compact mode is enabled, swap the window
-    if COMPACT_MODE.load(Ordering::SeqCst) {
-        crate::window::close_compact_pill_window(&app);
-        crate::window::close_edge_peek_window(&app);
-        match pill_type.as_str() {
-            "edge_peek" => crate::window::open_edge_peek_window(&app),
-            _ => crate::window::open_compact_pill_window(&app),
+pub fn disable_edge_peek(app: AppHandle, db: State<'_, Arc<DbHandle>>) -> Result<(), String> {
+    crate::window::close_edge_peek_window(&app);
+    db.update_setting("display_mode", "normal")?;
+    // Reopen all active task cards
+    if let Ok(tasks) = db.get_all_active_tasks() {
+        for task in tasks {
+            let _ = crate::window::open_task_card(&app, &task, 0);
         }
+        crate::window::restack_task_cards(&app);
     }
     Ok(())
 }
 
 #[tauri::command]
-pub fn get_edge_peek_position(db: State<'_, Arc<DbHandle>>) -> Result<String, String> {
-    let map = db.get_settings_map()?;
-    Ok(map
-        .get("edge_peek_position")
-        .cloned()
-        .unwrap_or_else(|| "right".to_string()))
+pub fn expand_edge_peek(app: AppHandle) -> Result<(), String> {
+    crate::window::expand_edge_peek(&app);
+    Ok(())
 }
 
 #[tauri::command]
-pub fn set_edge_peek_position(
-    db: State<'_, Arc<DbHandle>>,
-    position: String,
-) -> Result<(), String> {
-    db.update_setting("edge_peek_position", &position)
+pub fn collapse_edge_peek(app: AppHandle) -> Result<(), String> {
+    crate::window::collapse_edge_peek(&app);
+    Ok(())
 }
 
 #[tauri::command]
-pub fn get_edge_peek_auto_hide(db: State<'_, Arc<DbHandle>>) -> Result<bool, String> {
-    let map = db.get_settings_map()?;
-    Ok(map
-        .get("edge_peek_auto_hide")
-        .map(|v| v == "true")
-        .unwrap_or(false))
-}
-
-#[tauri::command]
-pub fn set_edge_peek_auto_hide(
-    db: State<'_, Arc<DbHandle>>,
-    enabled: bool,
-) -> Result<(), String> {
-    db.update_setting(
-        "edge_peek_auto_hide",
-        if enabled { "true" } else { "false" },
-    )
-}
-
-#[tauri::command]
-pub fn get_edge_peek_interaction(db: State<'_, Arc<DbHandle>>) -> Result<String, String> {
-    let map = db.get_settings_map()?;
-    Ok(map
-        .get("edge_peek_interaction")
-        .cloned()
-        .unwrap_or_else(|| "doubleclick".to_string()))
-}
-
-#[tauri::command]
-pub fn set_edge_peek_interaction(
-    db: State<'_, Arc<DbHandle>>,
-    interaction: String,
-) -> Result<(), String> {
-    db.update_setting("edge_peek_interaction", &interaction)
-}
-
-#[tauri::command]
-pub fn get_monitor_size(app: AppHandle) -> Result<(f64, f64), String> {
-    if let Some(monitor) = app.primary_monitor().map_err(|e| e.to_string())? {
-        let scale = monitor.scale_factor();
-        let size = monitor.size();
-        Ok((size.width as f64 / scale, size.height as f64 / scale))
-    } else {
-        Ok((1920.0, 1080.0))
-    }
+pub fn get_display_mode(db: State<'_, Arc<DbHandle>>) -> Result<String, String> {
+    let mode = db.get_setting("display_mode")?.unwrap_or_else(|| "normal".to_string());
+    Ok(mode)
 }
 
 // ─── Compact Mode ──────────────────────────────────────────────────────────────
@@ -809,16 +781,7 @@ pub fn set_compact_mode(app: AppHandle, db: State<'_, Arc<DbHandle>>, enabled: b
                 let _ = window.close();
             }
         }
-        // Check which pill type to open
-        let pill_type = db
-            .get_setting("compact_pill_type")
-            .ok()
-            .flatten()
-            .unwrap_or_else(|| "pill".to_string());
-        match pill_type.as_str() {
-            "edge_peek" => crate::window::open_edge_peek_window(&app),
-            _ => crate::window::open_compact_pill_window(&app),
-        }
+        crate::window::open_compact_pill_window(&app);
         let _ = app.emit("compact_mode_enabled", ());
     } else {
         crate::window::close_compact_pill_window(&app);

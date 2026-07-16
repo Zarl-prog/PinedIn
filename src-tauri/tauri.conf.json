@@ -79,7 +79,7 @@
     "updater": {
       "active": true,
       "dialog": false,
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEZGRTA0NUFCQjBCMDJFRjQKUldUMExyQ3dxMFhnLzJ2VDcrT0d3TWtIYUdRb0tYcDRMMmFoN3hCTmlnWXV6T05mdXp0UXlOa0wK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEIwNTQwMjY1MjFGNjQwNUQKUldSZFFQWWhaUUpVc0N6QW43eTA1ZjcvZm53emE0V0w5TEU3RTY4eTh2ZXd5alA4VkhTUWR4SnEK",
       "endpoints": [
         "https://github.com/Zarl-prog/PinedIn-Releases/releases/latest/download/latest.json"
       ],

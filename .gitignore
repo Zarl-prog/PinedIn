@@ -40,3 +40,6 @@ yarn-error.log*
 src-tauri/keys/
 .tauri-keys/
 priv.key
+.signing-key
+.signing-key.pub
+.env.keys

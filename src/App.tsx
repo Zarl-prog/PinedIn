@@ -14,7 +14,7 @@ import WorkspacesView from "@/components/WorkspacesView";
 import UndoToast from "@/components/UndoToast";
 import { useReminders } from "@/hooks/useReminders";
 import { useReminderStore } from "@/store/reminderStore";
-import { setZenMode, snapAllCardsToGrid, getCompactMode, setCompactMode, getShakeEnabled, setShakeEnabled } from "@/lib/tauriCommands";
+import { setZenMode, snapAllCardsToGrid, getCompactMode, setCompactMode, getShakeEnabled, setShakeEnabled, getCompactPillType } from "@/lib/tauriCommands";
 import { checkForUpdates, checkAndInstall } from "@/lib/updater";
 import ShinyText from "@/components/ui/ShinyText";
 import type { Workspace } from "@/lib/tauriCommands";
@@ -192,9 +192,11 @@ export default function App() {
   }
 
   const [compactMode, setCompactModeLocal] = useState(false);
+  const [compactPillType, setCompactPillTypeLocal] = useState("pill");
 
   useEffect(() => {
     getCompactMode().then(setCompactModeLocal).catch(() => {});
+    getCompactPillType().then(setCompactPillTypeLocal).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -740,7 +742,7 @@ export default function App() {
               borderBottom: "2px solid var(--tab-active-bg)",
             } : undefined}
           >
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><DotOutline size={15} weight="light" /> Compact</span>
+            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><DotOutline size={15} weight="light" /> Compact{compactMode && compactPillType === "edge_peek" ? " (Peek)" : ""}</span>
           </button>
           <button
             onClick={toggleZenMode}

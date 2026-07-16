@@ -144,7 +144,11 @@ impl DbHandle {
                 ('theme', 'dark'),
                 ('shake_interval', '30'),
                 ('shake_enabled', 'true'),
-                ('compact_mode', 'false');
+                ('compact_mode', 'false'),
+                ('compact_pill_type', 'pill'),
+                ('edge_peek_position', 'right'),
+                ('edge_peek_auto_hide', 'false'),
+                ('edge_peek_interaction', 'doubleclick');
             CREATE TABLE IF NOT EXISTS workspaces (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,

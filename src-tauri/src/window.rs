@@ -368,6 +368,71 @@ pub fn close_compact_pill_window(app: &AppHandle) {
 }
 
 // ─── Edge Peek Window ────────────────────────────────────────────────────────
+//
+// Geometry rules (must stay fully on-screen — hanging off the edge lets WMs
+// clamp/reposition the window unpredictably, which looks like "teleporting"):
+//   • Right edge always flush with the screen right edge
+//   • Vertical center always at screen mid-height
+//   • Collapsed: 80×80 pill window
+//   • Expanded: 320×80% panel
+
+const EDGE_PEEK_COLLAPSED_W: f64 = 80.0;
+const EDGE_PEEK_COLLAPSED_H: f64 = 80.0;
+const EDGE_PEEK_EXPANDED_W: f64 = 320.0;
+
+/// Returns (x, y, w, h) in logical pixels, fully on-screen, right-edge anchored.
+fn edge_peek_geometry(sw: f64, sh: f64, expanded: bool) -> (f64, f64, f64, f64) {
+    if expanded {
+        let w = EDGE_PEEK_EXPANDED_W;
+        let h = (sh * 0.8).clamp(200.0, sh.max(200.0));
+        let x = (sw - w).max(0.0);
+        let y = ((sh - h) / 2.0).max(0.0);
+        (x, y, w, h)
+    } else {
+        let w = EDGE_PEEK_COLLAPSED_W;
+        let h = EDGE_PEEK_COLLAPSED_H;
+        let x = (sw - w).max(0.0);
+        let y = ((sh - h) / 2.0).max(0.0);
+        (x, y, w, h)
+    }
+}
+
+fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
+    let Some(monitor) = window
+        .current_monitor()
+        .ok()
+        .flatten()
+        .or_else(|| window.primary_monitor().ok().flatten())
+    else {
+        return;
+    };
+    let scale = monitor.scale_factor();
+    let sw = monitor.size().width as f64 / scale;
+    let sh = monitor.size().height as f64 / scale;
+    let (x, y, w, h) = edge_peek_geometry(sw, sh, expanded);
+
+    // Order matters for right-edge anchoring:
+    //  - Expanding (wider/taller): move first, then grow toward the edge
+    //  - Collapsing (narrower/shorter): shrink first, then slide to the edge
+    // Doing the reverse briefly hangs the window off-screen, and some WMs
+    // clamp it — which looks like a random teleport.
+    let current_w = window
+        .inner_size()
+        .ok()
+        .map(|s| s.width as f64 / scale)
+        .unwrap_or(w);
+
+    if w >= current_w {
+        let _ = window.set_position(LogicalPosition::new(x, y));
+        let _ = window.set_size(LogicalSize::new(w, h));
+    } else {
+        let _ = window.set_size(LogicalSize::new(w, h));
+        let _ = window.set_position(LogicalPosition::new(x, y));
+    }
+
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
+    let _ = window.set_always_on_top(true);
+}
 
 pub fn open_edge_peek_window(app: &AppHandle) {
     let label = "edge_peek";
@@ -379,17 +444,13 @@ pub fn open_edge_peek_window(app: &AppHandle) {
         let scale = monitor.scale_factor();
         let sw = monitor.size().width as f64 / scale;
         let sh = monitor.size().height as f64 / scale;
-
-        let window_width = 300.0;
-        let visible = 70.0;
-        let x = sw - visible;
-        let y = (sh / 2.0) - 40.0;
+        let (x, y, w, h) = edge_peek_geometry(sw, sh, false);
 
         let build = || {
             let mut builder = WebviewWindowBuilder::new(
                 app, label, WebviewUrl::App("edge-peek.html".into()),
             )
-            .inner_size(window_width, 80.0)
+            .inner_size(w, h)
             .resizable(false)
             .decorations(false)
             .always_on_top(true)
@@ -410,8 +471,15 @@ pub fn open_edge_peek_window(app: &AppHandle) {
         #[cfg(not(target_os = "linux"))]
         let result = build();
 
-        if let Err(e) = result {
-            eprintln!("Failed to open edge peek window: {e}");
+        match result {
+            Ok(window) => {
+                // Re-apply geometry after create — some WMs ignore the
+                // initial position for transparent/always-on-top windows.
+                apply_edge_peek_geometry(&window, false);
+            }
+            Err(e) => {
+                eprintln!("Failed to open edge peek window: {e}");
+            }
         }
     }
 }
@@ -424,32 +492,14 @@ pub fn close_edge_peek_window(app: &AppHandle) {
 
 pub fn expand_edge_peek(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("edge_peek") {
-        if let Some(monitor) = app.primary_monitor().ok().flatten() {
-            let scale = monitor.scale_factor();
-            let sw = monitor.size().width as f64 / scale;
-            let sh = monitor.size().height as f64 / scale;
-            let panel_w = 320.0;
-            let panel_h = sh * 0.8;
-            let x = sw - panel_w;
-            let y = (sh - panel_h) / 2.0;
-            let _ = window.set_size(LogicalSize::new(panel_w, panel_h));
-            let _ = window.set_position(LogicalPosition::new(x, y));
-            let _ = window.set_focus();
-        }
+        apply_edge_peek_geometry(&window, true);
+        let _ = window.set_focus();
     }
 }
 
 pub fn collapse_edge_peek(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("edge_peek") {
-        if let Some(monitor) = app.primary_monitor().ok().flatten() {
-            let scale = monitor.scale_factor();
-            let sw = monitor.size().width as f64 / scale;
-            let sh = monitor.size().height as f64 / scale;
-            let x = sw - 70.0;
-            let y = (sh / 2.0) - 40.0;
-            let _ = window.set_size(LogicalSize::new(300.0, 80.0));
-            let _ = window.set_position(LogicalPosition::new(x, y));
-        }
+        apply_edge_peek_geometry(&window, false);
     }
 }
 

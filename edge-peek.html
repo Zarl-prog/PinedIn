@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: auto !important;
+        height: auto !important;
+        background: transparent !important;
+        overflow: hidden !important;
+        font-family: 'Geist Mono', monospace;
+      }
+      #root {
+        width: auto !important;
+        height: auto !important;
+        background: transparent !important;
+        overflow: hidden !important;
+      }
+
+      :root {
+        --pill-bg: #060608;
+        --pill-border: #1a1a1a;
+        --pill-text: #ffffff;
+        --pill-text-muted: #777777;
+        --card-bg: #ffffff;
+        --card-border: #e0e0e0;
+        --card-text-primary: #1a1a1a;
+        --card-text-muted: #999999;
+        --divider: #e0e0e0;
+        --btn-done-bg: transparent;
+        --btn-done-text: #666666;
+        --btn-done-border: #d0d0d0;
+      }
+
+      .dark {
+        --pill-bg: #060608;
+        --pill-border: #1a1a1a;
+        --pill-text: #ffffff;
+        --pill-text-muted: #777777;
+        --card-bg: #080808;
+        --card-border: #1a1a1a;
+        --card-text-primary: #ffffff;
+        --card-text-muted: #777777;
+        --divider: #151515;
+        --btn-done-bg: transparent;
+        --btn-done-text: #aaaaaa;
+        --btn-done-border: #222222;
+      }
+
+      [data-theme="parchment"] {
+        --pill-bg: #3d2e22;
+        --pill-border: #5a4633;
+        --pill-text: #ede0d0;
+        --pill-text-muted: #8e7a60;
+        --card-bg: #231c16;
+        --card-border: #3d2e22;
+        --card-text-primary: #ede0d0;
+        --card-text-muted: #8e7a60;
+        --divider: #3d2e22;
+        --btn-done-bg: rgba(76,175,80,0.12);
+        --btn-done-text: #81c784;
+        --btn-done-border: rgba(76,175,80,0.3);
+      }
+    </style>
+  </head>
+  <body style="background: transparent">
+    <div id="root" style="background: transparent"></div>
+    <script type="module" src="/src/edge-peek-main.tsx"></script>
+  </body>
+</html>

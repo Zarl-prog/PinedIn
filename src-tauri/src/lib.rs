@@ -180,7 +180,13 @@ pub fn run() {
                 }
             }
 
-            // Check if compact mode was enabled before restart
+            // Check display mode and compact mode
+            let display_mode = db_handle
+                .get_setting("display_mode")
+                .ok()
+                .flatten()
+                .unwrap_or_else(|| "normal".to_string());
+
             let compact_enabled = db_handle
                 .get_setting("compact_mode")
                 .ok()
@@ -188,24 +194,20 @@ pub fn run() {
                 .map(|v| v == "true")
                 .unwrap_or(false);
 
-            // Sync the AtomicBool so spawned threads have the correct value immediately
             commands::COMPACT_MODE.store(compact_enabled, std::sync::atomic::Ordering::SeqCst);
 
-            if compact_enabled {
-                // Check which compact pill type to open
-                let pill_type = db_handle
-                    .get_setting("compact_pill_type")
-                    .ok()
-                    .flatten()
-                    .unwrap_or_else(|| "pill".to_string());
-                match pill_type.as_str() {
-                    "edge_peek" => window::open_edge_peek_window(app.handle()),
-                    _ => window::open_compact_pill_window(app.handle()),
+            match display_mode.as_str() {
+                "edge_peek" => {
+                    window::open_edge_peek_window(app.handle());
                 }
-            } else {
-                // Open all active task cards (global + workspace tasks, no limit)
-                if let Ok(tasks) = db_handle.get_all_active_tasks() {
-                    window::open_all_task_cards(app.handle(), &tasks);
+                _ => {
+                    if compact_enabled {
+                        window::open_compact_pill_window(app.handle());
+                    } else {
+                        if let Ok(tasks) = db_handle.get_all_active_tasks() {
+                            window::open_all_task_cards(app.handle(), &tasks);
+                        }
+                    }
                 }
             }
 
@@ -328,15 +330,11 @@ pub fn run() {
             commands::focus_prev_card,
             commands::reassert_window_properties,
             commands::complete_onboarding,
-            commands::get_compact_pill_type,
-            commands::set_compact_pill_type,
-            commands::get_edge_peek_position,
-            commands::set_edge_peek_position,
-            commands::get_edge_peek_auto_hide,
-            commands::set_edge_peek_auto_hide,
-            commands::get_edge_peek_interaction,
-            commands::set_edge_peek_interaction,
-            commands::get_monitor_size,
+            commands::enable_edge_peek,
+            commands::disable_edge_peek,
+            commands::expand_edge_peek,
+            commands::collapse_edge_peek,
+            commands::get_display_mode,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

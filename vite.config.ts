@@ -13,7 +13,8 @@ export default defineConfig(async () => ({
         quickAdd: "quick-add.html",
         taskCard: "task-card.html",
         dailyDigest: "daily-digest.html",
-        compactPill: "compact-pill.html"
+        compactPill: "compact-pill.html",
+        edgePeek: "edge-peek.html"
       }
     }
   },

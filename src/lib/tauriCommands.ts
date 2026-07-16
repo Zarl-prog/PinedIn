@@ -167,6 +167,42 @@ export async function setCompactMode(enabled: boolean): Promise<void> {
   return invoke("set_compact_mode", { enabled });
 }
 
+export async function getCompactPillType(): Promise<string> {
+  return invoke("get_compact_pill_type");
+}
+
+export async function setCompactPillType(pillType: string): Promise<void> {
+  return invoke("set_compact_pill_type", { pillType });
+}
+
+export async function getEdgePeekPosition(): Promise<string> {
+  return invoke("get_edge_peek_position");
+}
+
+export async function setEdgePeekPosition(position: string): Promise<void> {
+  return invoke("set_edge_peek_position", { position });
+}
+
+export async function getEdgePeekAutoHide(): Promise<boolean> {
+  return invoke("get_edge_peek_auto_hide");
+}
+
+export async function setEdgePeekAutoHide(enabled: boolean): Promise<void> {
+  return invoke("set_edge_peek_auto_hide", { enabled });
+}
+
+export async function getEdgePeekInteraction(): Promise<string> {
+  return invoke("get_edge_peek_interaction");
+}
+
+export async function setEdgePeekInteraction(interaction: string): Promise<void> {
+  return invoke("set_edge_peek_interaction", { interaction });
+}
+
+export async function getMonitorSize(): Promise<[number, number]> {
+  return invoke("get_monitor_size");
+}
+
 // ─── Zen Mode ─────────────────────────────────────────────────────────────────
 export async function setZenMode(hidden: boolean): Promise<void> {
   return invoke("set_zen_mode", { hidden });

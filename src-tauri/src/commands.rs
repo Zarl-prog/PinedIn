@@ -741,12 +741,18 @@ pub fn disable_edge_peek(app: AppHandle, db: State<'_, Arc<DbHandle>>) -> Result
         let _ = main.show();
         let _ = main.unminimize();
     }
-    // Reopen all active task cards
-    if let Ok(tasks) = db.get_all_active_tasks() {
-        for task in tasks {
-            let _ = crate::window::open_task_card(&app, &task, 0);
+    // Respect compact_mode: if enabled, open compact pill; else open individual cards
+    let compact_enabled = get_compact_mode_state(&app);
+    if compact_enabled {
+        crate::window::open_compact_pill_window(&app);
+    } else {
+        // Reopen all active task cards with proper indices
+        if let Ok(tasks) = db.get_all_active_tasks() {
+            for (i, task) in tasks.iter().enumerate() {
+                let _ = crate::window::open_task_card(&app, task, i);
+            }
+            crate::window::restack_task_cards(&app);
         }
-        crate::window::restack_task_cards(&app);
     }
     Ok(())
 }

@@ -9,6 +9,8 @@ use tauri_plugin_autostart::ManagerExt;
 
 pub static ZEN_MODE: AtomicBool = AtomicBool::new(false);
 pub static COMPACT_MODE: AtomicBool = AtomicBool::new(false);
+pub static EDGE_PEEK_ENABLED: AtomicBool = AtomicBool::new(false);
+pub static EDGE_PEEK_EXPANDED: AtomicBool = AtomicBool::new(false);
 
 static PENDING_SNOOZES: OnceLock<Mutex<HashSet<i64>>> = OnceLock::new();
 pub fn pending_snoozes() -> &'static Mutex<HashSet<i64>> {
@@ -18,6 +20,36 @@ pub fn pending_snoozes() -> &'static Mutex<HashSet<i64>> {
 pub fn emit_tasks_updated(app: &tauri::AppHandle, db: &DbHandle) {
     if let Ok(tasks) = db.get_all_tasks() {
         let _ = app.emit("tasks-updated", serde_json::json!({ "tasks": tasks }));
+    }
+    // Check edge_peek visibility based on incomplete tasks
+    check_edge_peek_visibility(app, db);
+}
+
+fn check_edge_peek_visibility(app: &AppHandle, db: &DbHandle) {
+    if !EDGE_PEEK_ENABLED.load(Ordering::SeqCst) {
+        return;
+    }
+    if let Ok(tasks) = db.get_incomplete_tasks() {
+        if tasks.is_empty() {
+            // No incomplete tasks - schedule auto-hide
+            let app_clone = app.clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_secs(3));
+                // Double-check tasks are still empty
+                if let Some(db_state) = app_clone.try_state::<Arc<DbHandle>>() {
+                    if let Ok(tasks) = db_state.get_incomplete_tasks() {
+                        if tasks.is_empty() && EDGE_PEEK_ENABLED.load(Ordering::SeqCst) {
+                            let _ = app_clone.emit("edge_peek_auto_hide", ());
+                        }
+                    }
+                }
+            });
+        } else {
+            // Has incomplete tasks - ensure edge_peek is open
+            if app.get_webview_window("edge_peek").is_none() {
+                crate::window::open_edge_peek_window(app, false);
+            }
+        }
     }
 }
 
@@ -54,8 +86,8 @@ pub fn create_task(
         return Ok(task);
     }
 
-    // Check edge peek mode — don't open individual cards
-    if get_display_mode_state(&app) == "edge_peek" {
+    // Check edge peek mode — don't open individual cards if edge peek is enabled
+    if EDGE_PEEK_ENABLED.load(Ordering::SeqCst) {
         return Ok(task);
     }
 
@@ -104,7 +136,7 @@ pub fn quick_add_task(
         if let Ok(task) = db.get_task_by_id(task_id) {
             if get_compact_mode_state(&app) {
                 crate::window::open_compact_pill_window(&app);
-            } else if get_display_mode_state(&app) != "edge_peek" {
+            } else if !EDGE_PEEK_ENABLED.load(Ordering::SeqCst) {
                 let _ = window::open_task_card(&app, &task, 0);
             }
         }
@@ -711,71 +743,92 @@ pub fn delete_workspace(app: AppHandle, workspace_id: i64) -> Result<(), String>
 // ─── Edge Peek Commands ───────────────────────────────────────────────────────
 
 #[tauri::command]
-pub fn enable_edge_peek(app: AppHandle, db: State<'_, Arc<DbHandle>>) -> Result<(), String> {
-    // Close compact pill if open
-    if let Some(w) = app.get_webview_window("compact_pill") {
-        let _ = w.close();
-    }
-    // Close all task card windows
-    let windows = app.webview_windows();
-    for (label, window) in &windows {
-        if label.starts_with("task_") {
-            let _ = window.close();
+pub fn get_edge_peek_enabled(db: State<'_, Arc<DbHandle>>) -> Result<bool, String> {
+    let map = db.get_settings_map()?;
+    let value = map.get("edge_peek_enabled").cloned().unwrap_or_else(|| "false".to_string());
+    Ok(value == "true")
+}
+
+#[tauri::command]
+pub fn set_edge_peek_enabled(app: AppHandle, db: State<'_, Arc<DbHandle>>, enabled: bool) -> Result<(), String> {
+    db.update_setting("edge_peek_enabled", if enabled { "true" } else { "false" })?;
+    EDGE_PEEK_ENABLED.store(enabled, Ordering::SeqCst);
+
+    if enabled {
+        // Check if there are incomplete tasks before opening
+        if let Ok(tasks) = db.get_incomplete_tasks() {
+            if !tasks.is_empty() {
+                crate::window::open_edge_peek_window(&app, false);
+            }
         }
+    } else {
+        crate::window::close_edge_peek_window(&app);
     }
-    // Hide main window so only the edge peek handle remains visible
-    if let Some(main) = app.get_webview_window("main") {
-        let _ = main.hide();
+    Ok(())
+}
+
+// Internal version that takes Arc directly (for shortcuts)
+pub fn set_edge_peek_enabled_internal(app: AppHandle, db: Arc<DbHandle>, enabled: bool) -> Result<(), String> {
+    db.update_setting("edge_peek_enabled", if enabled { "true" } else { "false" })?;
+    EDGE_PEEK_ENABLED.store(enabled, Ordering::SeqCst);
+
+    if enabled {
+        if let Ok(tasks) = db.get_incomplete_tasks() {
+            if !tasks.is_empty() {
+                crate::window::open_edge_peek_window(&app, false);
+            }
+        }
+    } else {
+        crate::window::close_edge_peek_window(&app);
     }
-    // Clear compact_mode since edge_peek and compact_mode are mutually exclusive
-    db.update_setting("compact_mode", "false")?;
-    COMPACT_MODE.store(false, Ordering::SeqCst);
-    db.update_setting("display_mode", "edge_peek")?;
-    crate::window::open_edge_peek_window(&app);
     Ok(())
 }
 
 #[tauri::command]
-pub fn disable_edge_peek(app: AppHandle, db: State<'_, Arc<DbHandle>>) -> Result<(), String> {
-    crate::window::close_edge_peek_window(&app);
-    db.update_setting("display_mode", "normal")?;
-    // Restore main window
-    if let Some(main) = app.get_webview_window("main") {
-        let _ = main.show();
-        let _ = main.unminimize();
+pub fn toggle_edge_peek(app: AppHandle, db: State<'_, Arc<DbHandle>>) -> Result<(), String> {
+    let current = get_edge_peek_enabled(db.clone())?;
+    set_edge_peek_enabled(app, db, !current)
+}
+
+// Toggle edge_peek from global shortcut (only needs AppHandle)
+pub fn toggle_edge_peek_from_shortcut(app: &AppHandle) {
+    if let Some(db) = app.try_state::<Arc<DbHandle>>() {
+        let map = match db.get_settings_map() {
+            Ok(m) => m,
+            Err(_) => return,
+        };
+        let current = map.get("edge_peek_enabled").map(|v| v == "true").unwrap_or(false);
+        let _ = set_edge_peek_enabled_internal(app.clone(), db.inner().clone(), !current);
     }
-    // Respect compact_mode: if enabled, open compact pill; else open individual cards
-    let compact_enabled = get_compact_mode_state(&app);
-    if compact_enabled {
-        crate::window::open_compact_pill_window(&app);
-    } else {
-        // Reopen all active task cards with proper indices
-        if let Ok(tasks) = db.get_all_active_tasks() {
-            for (i, task) in tasks.iter().enumerate() {
-                let _ = crate::window::open_task_card(&app, task, i);
-            }
-            crate::window::restack_task_cards(&app);
-        }
-    }
-    Ok(())
 }
 
 #[tauri::command]
 pub fn expand_edge_peek(app: AppHandle) -> Result<(), String> {
+    EDGE_PEEK_EXPANDED.store(true, Ordering::SeqCst);
     crate::window::expand_edge_peek(&app);
+    // Persist expanded state
+    if let Some(db) = app.try_state::<Arc<DbHandle>>() {
+        let _ = db.update_setting("edge_peek_expanded", "true");
+    }
     Ok(())
 }
 
 #[tauri::command]
 pub fn collapse_edge_peek(app: AppHandle) -> Result<(), String> {
+    EDGE_PEEK_EXPANDED.store(false, Ordering::SeqCst);
     crate::window::collapse_edge_peek(&app);
+    // Persist collapsed state
+    if let Some(db) = app.try_state::<Arc<DbHandle>>() {
+        let _ = db.update_setting("edge_peek_expanded", "false");
+    }
     Ok(())
 }
 
 #[tauri::command]
-pub fn get_display_mode(db: State<'_, Arc<DbHandle>>) -> Result<String, String> {
-    let mode = db.get_setting("display_mode")?.unwrap_or_else(|| "normal".to_string());
-    Ok(mode)
+pub fn get_edge_peek_expanded(db: State<'_, Arc<DbHandle>>) -> Result<bool, String> {
+    let map = db.get_settings_map()?;
+    let value = map.get("edge_peek_expanded").cloned().unwrap_or_else(|| "false".to_string());
+    Ok(value == "true")
 }
 
 // ─── Compact Mode ──────────────────────────────────────────────────────────────

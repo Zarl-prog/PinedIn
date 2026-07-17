@@ -180,12 +180,13 @@ pub fn run() {
                 }
             }
 
-            // Check display mode and compact mode
-            let display_mode = db_handle
-                .get_setting("display_mode")
+            // Check edge peek enabled and compact mode
+            let edge_peek_enabled = db_handle
+                .get_setting("edge_peek_enabled")
                 .ok()
                 .flatten()
-                .unwrap_or_else(|| "normal".to_string());
+                .map(|v| v == "true")
+                .unwrap_or(false);
 
             let compact_enabled = db_handle
                 .get_setting("compact_mode")
@@ -195,22 +196,30 @@ pub fn run() {
                 .unwrap_or(false);
 
             commands::COMPACT_MODE.store(compact_enabled, std::sync::atomic::Ordering::SeqCst);
+            commands::EDGE_PEEK_ENABLED.store(edge_peek_enabled, std::sync::atomic::Ordering::SeqCst);
 
-            match display_mode.as_str() {
-                "edge_peek" => {
-                    if let Some(main) = app.get_webview_window("main") {
-                        let _ = main.hide();
+            // Only open edge peek if enabled AND there are incomplete tasks
+            if edge_peek_enabled {
+                if let Ok(tasks) = db_handle.get_incomplete_tasks() {
+                    if !tasks.is_empty() {
+                        // Check persisted expanded state
+                        let expanded = db_handle
+                            .get_setting("edge_peek_expanded")
+                            .ok()
+                            .flatten()
+                            .map(|v| v == "true")
+                            .unwrap_or(false);
+                        window::open_edge_peek_window(app.handle(), expanded);
                     }
-                    window::open_edge_peek_window(app.handle());
                 }
-                _ => {
-                    if compact_enabled {
-                        window::open_compact_pill_window(app.handle());
-                    } else {
-                        if let Ok(tasks) = db_handle.get_all_active_tasks() {
-                            window::open_all_task_cards(app.handle(), &tasks);
-                        }
-                    }
+            }
+
+            if compact_enabled {
+                window::open_compact_pill_window(app.handle());
+            } else if !edge_peek_enabled {
+                // Only open task cards if neither compact nor edge peek mode
+                if let Ok(tasks) = db_handle.get_all_active_tasks() {
+                    window::open_all_task_cards(app.handle(), &tasks);
                 }
             }
 
@@ -237,6 +246,20 @@ pub fn run() {
                 },
             ) {
                 eprintln!("[startup] Failed to register global shortcut: {e}");
+            }
+
+            // Register global hotkey: Ctrl+Shift+E — toggles edge peek
+            #[cfg(target_os = "macos")]
+            let edge_peek_modifiers = Modifiers::SUPER | Modifiers::SHIFT;
+            #[cfg(not(target_os = "macos"))]
+            let edge_peek_modifiers = Modifiers::CONTROL | Modifiers::SHIFT;
+            if let Err(e) = app.global_shortcut().on_shortcut(
+                Shortcut::new(Some(edge_peek_modifiers), Code::KeyE),
+                |app, _shortcut, _event| {
+                    commands::toggle_edge_peek_from_shortcut(app);
+                },
+            ) {
+                eprintln!("[startup] Failed to register edge peek shortcut: {e}");
             }
 
             // Spawn a background update check on startup - silent unless one is found
@@ -333,11 +356,12 @@ pub fn run() {
             commands::focus_prev_card,
             commands::reassert_window_properties,
             commands::complete_onboarding,
-            commands::enable_edge_peek,
-            commands::disable_edge_peek,
+            commands::get_edge_peek_enabled,
+            commands::set_edge_peek_enabled,
+            commands::toggle_edge_peek,
             commands::expand_edge_peek,
             commands::collapse_edge_peek,
-            commands::get_display_mode,
+            commands::get_edge_peek_expanded,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

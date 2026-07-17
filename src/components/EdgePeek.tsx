@@ -18,6 +18,11 @@ export default function EdgePeek() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const isAnimating = useRef(false);
 
+  // Load persisted expanded state on mount
+  useEffect(() => {
+    invoke<boolean>("get_edge_peek_expanded").then(setExpanded).catch(() => {});
+  }, []);
+
   async function refresh() {
     try {
       const all = await invoke<Task[]>("get_incomplete_tasks");
@@ -29,9 +34,15 @@ export default function EdgePeek() {
 
   useEffect(() => {
     refresh();
-    const unlisten = listen("tasks-updated", refresh);
+    const unlistenTasks = listen("tasks-updated", refresh);
+    const unlistenAutoHide = listen("edge_peek_auto_hide", () => {
+      if (expanded) {
+        handleClick(); // collapse
+      }
+    });
     return () => {
-      unlisten.then((f) => f());
+      unlistenTasks.then((f) => f());
+      unlistenAutoHide.then((f) => f());
     };
   }, []);
 

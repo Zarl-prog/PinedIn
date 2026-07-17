@@ -361,9 +361,14 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   <button
                     onClick={async () => {
+                      const prev = displayMode;
                       setDisplayModeState("normal");
-                      await setCompactMode(false).catch(() => {});
-                      await disableEdgePeek().catch(() => {});
+                      try {
+                        await setCompactMode(false);
+                        await disableEdgePeek();
+                      } catch (e) {
+                        setDisplayModeState(prev);
+                      }
                     }}
                     className={`pill-toggle${displayMode === "normal" ? " selected" : ""}`}
                     style={{
@@ -375,9 +380,14 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                   </button>
                   <button
                     onClick={async () => {
+                      const prev = displayMode;
                       setDisplayModeState("compact");
-                      await setCompactMode(true).catch(() => {});
-                      await disableEdgePeek().catch(() => {});
+                      try {
+                        await setCompactMode(true);
+                        await disableEdgePeek();
+                      } catch (e) {
+                        setDisplayModeState(prev);
+                      }
                     }}
                     className={`pill-toggle${displayMode === "compact" ? " selected" : ""}`}
                     style={{
@@ -389,9 +399,14 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                   </button>
                   <button
                     onClick={async () => {
+                      const prev = displayMode;
                       setDisplayModeState("edge_peek");
-                      await setCompactMode(false).catch(() => {});
-                      await enableEdgePeek().catch(() => {});
+                      try {
+                        await setCompactMode(false);
+                        await enableEdgePeek();
+                      } catch (e) {
+                        setDisplayModeState(prev);
+                      }
                     }}
                     className={`pill-toggle${displayMode === "edge_peek" ? " selected" : ""}`}
                     style={{

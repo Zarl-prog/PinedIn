@@ -434,7 +434,7 @@ fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
     let _ = window.set_always_on_top(true);
 }
 
-pub fn open_edge_peek_window(app: &AppHandle) {
+pub fn open_edge_peek_window(app: &AppHandle, expanded: bool) {
     let label = "edge_peek";
     if app.get_webview_window(label).is_some() {
         return;
@@ -444,7 +444,7 @@ pub fn open_edge_peek_window(app: &AppHandle) {
         let scale = monitor.scale_factor();
         let sw = monitor.size().width as f64 / scale;
         let sh = monitor.size().height as f64 / scale;
-        let (x, y, w, h) = edge_peek_geometry(sw, sh, false);
+        let (x, y, w, h) = edge_peek_geometry(sw, sh, expanded);
 
         let build = || {
             let mut builder = WebviewWindowBuilder::new(
@@ -460,7 +460,7 @@ pub fn open_edge_peek_window(app: &AppHandle) {
 
             #[cfg(not(target_os = "macos"))]
             {
-                builder = builder.transparent(true);
+                builder = builder.background_color(tauri::utils::config::Color(20, 20, 20, 255));
             }
 
             builder.build()
@@ -473,9 +473,7 @@ pub fn open_edge_peek_window(app: &AppHandle) {
 
         match result {
             Ok(window) => {
-                // Re-apply geometry after create — some WMs ignore the
-                // initial position for transparent/always-on-top windows.
-                apply_edge_peek_geometry(&window, false);
+                apply_edge_peek_geometry(&window, expanded);
             }
             Err(e) => {
                 eprintln!("Failed to open edge peek window: {e}");

@@ -301,4 +301,17 @@ export async function completeOnboarding(): Promise<void> {
   return invoke("complete_onboarding");
 }
 
+// ─── Edge Peek ──────────────────────────────────────────────────────────────
+export async function getEdgePeekEnabled(): Promise<boolean> {
+  return invoke("get_edge_peek_enabled");
+}
+
+export async function setEdgePeekEnabled(enabled: boolean): Promise<void> {
+  return invoke("set_edge_peek_enabled", { enabled });
+}
+
+export async function toggleEdgePeek(): Promise<void> {
+  return invoke("toggle_edge_peek");
+}
+
 

@@ -9,9 +9,9 @@ import {
   getShakeInterval,
   setShakeInterval,
   setCompactMode,
-  enableEdgePeek,
-  disableEdgePeek,
-  getDisplayMode,
+  getEdgePeekEnabled,
+  setEdgePeekEnabled,
+  toggleEdgePeek,
 } from "@/lib/tauriCommands";
 import { checkAndInstall } from "@/lib/updater";
 import { X, Circle, Hourglass, PencilSimpleLine, Tag, DotsThree } from "@phosphor-icons/react";
@@ -48,7 +48,7 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
   }>({ state: "idle" });
   const [shakeInterval, setShakeIntervalState] = useState(30);
   const [appVersion, setAppVersion] = useState("...");
-  const [displayMode, setDisplayModeState] = useState("normal");
+  const [edgePeekEnabled, setEdgePeekEnabledState] = useState(false);
 
   useEffect(() => {
     getVersion().then(setAppVersion).catch(() => setAppVersion("?"));
@@ -57,7 +57,7 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
   useEffect(() => {
     if (open) {
       getShakeInterval().then(setShakeIntervalState).catch(() => {});
-      getDisplayMode().then(setDisplayModeState).catch(() => {});
+      getEdgePeekEnabled().then(setEdgePeekEnabledState).catch(() => {});
     }
   }, [open]);
 
@@ -356,67 +356,26 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                     marginBottom: "8px",
                   }}
                 >
-                  Display Mode
+                  Edge Peek
                 </label>
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <button
-                    onClick={async () => {
-                      const prev = displayMode;
-                      setDisplayModeState("normal");
-                      try {
-                        await setCompactMode(false);
-                        await disableEdgePeek();
-                      } catch (e) {
-                        setDisplayModeState(prev);
-                      }
-                    }}
-                    className={`pill-toggle${displayMode === "normal" ? " selected" : ""}`}
-                    style={{
-                      width: "100%", textAlign: "left", padding: "10px 12px",
-                      fontSize: "11px", fontFamily: "'Geist Mono', monospace",
-                    }}
-                  >
-                    Normal — individual floating cards
-                  </button>
-                  <button
-                    onClick={async () => {
-                      const prev = displayMode;
-                      setDisplayModeState("compact");
-                      try {
-                        await setCompactMode(true);
-                        await disableEdgePeek();
-                      } catch (e) {
-                        setDisplayModeState(prev);
-                      }
-                    }}
-                    className={`pill-toggle${displayMode === "compact" ? " selected" : ""}`}
-                    style={{
-                      width: "100%", textAlign: "left", padding: "10px 12px",
-                      fontSize: "11px", fontFamily: "'Geist Mono', monospace",
-                    }}
-                  >
-                    Compact Pill — tiny floating pill
-                  </button>
-                  <button
-                    onClick={async () => {
-                      const prev = displayMode;
-                      setDisplayModeState("edge_peek");
-                      try {
-                        await setCompactMode(false);
-                        await enableEdgePeek();
-                      } catch (e) {
-                        setDisplayModeState(prev);
-                      }
-                    }}
-                    className={`pill-toggle${displayMode === "edge_peek" ? " selected" : ""}`}
-                    style={{
-                      width: "100%", textAlign: "left", padding: "10px 12px",
-                      fontSize: "11px", fontFamily: "'Geist Mono', monospace",
-                    }}
-                  >
-                    Edge Peek — handle attached to screen edge
-                  </button>
-                </div>
+                <button
+                  onClick={async () => {
+                    const prev = edgePeekEnabled;
+                    setEdgePeekEnabledState(!edgePeekEnabled);
+                    try {
+                      await setEdgePeekEnabled(!edgePeekEnabled);
+                    } catch (e) {
+                      setEdgePeekEnabledState(prev);
+                    }
+                  }}
+                  className={`pill-toggle${edgePeekEnabled ? " selected" : ""}`}
+                  style={{
+                    width: "100%", textAlign: "left", padding: "10px 12px",
+                    fontSize: "11px", fontFamily: "'Geist Mono', monospace",
+                  }}
+                >
+                  {edgePeekEnabled ? "Enabled — shows on right edge when tasks exist" : "Disabled"}
+                </button>
               </div>
 
               {/* Card shake interval */}

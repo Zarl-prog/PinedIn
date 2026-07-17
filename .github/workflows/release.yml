@@ -4,14 +4,12 @@ on:
   push:
     tags: "v*"
 
+permissions:
+  contents: write
+
 jobs:
-  build-macos:
-    strategy:
-      matrix:
-        target:
-          - aarch64-apple-darwin
-          - x86_64-apple-darwin
-    runs-on: macos-latest
+  build-windows:
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -21,22 +19,17 @@ jobs:
           cache: npm
 
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          target: ${{ matrix.target }}
 
       - run: npm ci
 
       - run: npm run build
 
-      - run: npx tauri build --target ${{ matrix.target }}
+      - uses: tauri-apps/tauri-action@v0
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-
-      - uses: actions/upload-artifact@v4
         with:
-          name: PinedIn-${{ matrix.target }}
-          path: src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
+          args: --target x86_64-pc-windows-msvc
 
   build-linux:
     runs-on: ubuntu-latest
@@ -60,45 +53,73 @@ jobs:
 
       - run: npm run build
 
-      - run: npx tauri build
+      - uses: tauri-apps/tauri-action@v0
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
-      - uses: actions/upload-artifact@v4
+  build-macos:
+    strategy:
+      matrix:
+        target:
+          - aarch64-apple-darwin
+          - x86_64-apple-darwin
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
-          name: PinedIn-linux
-          path: src-tauri/target/release/bundle/*/
+          node-version: 20
+          cache: npm
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: ${{ matrix.target }}
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          args: --target ${{ matrix.target }}
 
   create-release:
-    needs: [build-macos, build-linux]
+    needs: [build-windows, build-linux, build-macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/download-artifact@v4
 
-      - uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            PinedIn-aarch64-apple-darwin/*.dmg
-            PinedIn-x86_64-apple-darwin/*.dmg
-            PinedIn-linux/**/*.AppImage
-            PinedIn-linux/**/*.deb
-            PinedIn-linux/**/*.rpm
-
-      - name: Upload to PinedIn-Releases
+      - name: Create release on PinedIn-Releases
         env:
           GH_TOKEN: ${{ secrets.PINEDIN_RELEASES_TOKEN }}
         run: |
-          TAG="${GITHUB_REF_NAME}"
+          TAG="${{ github.ref_name }}"
           RELEASE_REPO="Zarl-prog/PinedIn-Releases"
+
+          # Delete existing release if present (idempotent)
           gh release delete "$TAG" --repo "$RELEASE_REPO" -y 2>/dev/null || true
+
+          # Collect all artifacts
+          FILES=()
+          while IFS= read -r -d '' file; do
+            FILES+=("$file")
+          done < <(find . -type f \( -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" -o -name "*.exe" -o -name "*.msi" \) -print0)
+
+          # Create single release with all platform artifacts
           gh release create "$TAG" --repo "$RELEASE_REPO" \
             --title "$TAG" \
             --notes "Release $TAG" \
-            PinedIn-aarch64-apple-darwin/*.dmg \
-            PinedIn-x86_64-apple-darwin/*.dmg \
-            PinedIn-linux/**/*.AppImage \
-            PinedIn-linux/**/*.deb \
-            PinedIn-linux/**/*.rpm
+            "${FILES[@]}"

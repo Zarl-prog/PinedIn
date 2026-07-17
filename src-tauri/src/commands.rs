@@ -727,6 +727,9 @@ pub fn enable_edge_peek(app: AppHandle, db: State<'_, Arc<DbHandle>>) -> Result<
     if let Some(main) = app.get_webview_window("main") {
         let _ = main.hide();
     }
+    // Clear compact_mode since edge_peek and compact_mode are mutually exclusive
+    db.update_setting("compact_mode", "false")?;
+    COMPACT_MODE.store(false, Ordering::SeqCst);
     db.update_setting("display_mode", "edge_peek")?;
     crate::window::open_edge_peek_window(&app);
     Ok(())

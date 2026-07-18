@@ -2,20 +2,27 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { CheckCircle, ArrowRight } from "@phosphor-icons/react";
+import { CaretRight, CheckCircle } from "@phosphor-icons/react";
 import type { Task } from "../lib/tauriCommands";
+import type { CSSProperties } from "react";
 
 /**
- * Edge peek UI.
+ * Edge Peek — right-edge task display.
  *
- * Window geometry is owned entirely by the Rust side (right-edge anchored,
- * fully on-screen). This component only toggles content after the window
- * has been resized — never animates layout against a changing outer window,
- * which used to look like random teleporting.
+ * Collapsed: 80×68px pill, vertically centered, right-edge flush.
+ *   Content: chevron (16px) + count (17px) + "TASKS" (10px).
+ *   Border-radius: 34px 0 0 34px. Colors: #0A0A0A bg, #1A1A1A border.
+ *   Hover: border #333333, chevron nudges +4px right.
+ *
+ * Expanded: 320px wide panel, same vertical center, grows leftward.
+ *
+ * Window geometry (position/size) is owned by Rust. This component only
+ * toggles internal content after the native resize completes.
  */
 export default function EdgePeek() {
   const [expanded, setExpanded] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [hovered, setHovered] = useState(false);
   const isAnimating = useRef(false);
 
   // Load persisted expanded state on mount
@@ -36,9 +43,7 @@ export default function EdgePeek() {
     refresh();
     const unlistenTasks = listen("tasks-updated", refresh);
     const unlistenAutoHide = listen("edge_peek_auto_hide", () => {
-      if (expanded) {
-        handleClick(); // collapse
-      }
+      if (expanded) handleClick();
     });
     return () => {
       unlistenTasks.then((f) => f());
@@ -52,17 +57,13 @@ export default function EdgePeek() {
 
     try {
       if (expanded) {
-        // Collapse UI first (fits the still-large window: pill hugs the right
-        // edge), then shrink the native window so the pill stays put.
+        // Collapse UI first, then shrink native window
         setExpanded(false);
-        // Wait one paint so the pill is rendered before we resize.
         await new Promise((r) => requestAnimationFrame(() => r(null)));
         await new Promise((r) => setTimeout(r, 40));
         await invoke("collapse_edge_peek");
       } else {
-        // Grow the native window first (right edge stays flush), then show
-        // the panel. No CSS slide of the whole panel — that fought the OS
-        // resize and read as a teleport.
+        // Grow native window first, then show panel
         await invoke("expand_edge_peek");
         await new Promise((r) => requestAnimationFrame(() => r(null)));
         setExpanded(true);
@@ -80,18 +81,77 @@ export default function EdgePeek() {
     refresh();
   }
 
+  // ─── Styles ─────────────────────────────────────────────────────────────
+  const containerStyle: CSSProperties = {
+    width: "100%",
+    height: "100%",
+    background: "transparent",
+    display: "flex",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    overflow: "hidden",
+  };
+
+  const pillStyle = (isHovered: boolean): CSSProperties => ({
+    width: "80px",
+    height: "68px",
+    borderRadius: "34px 0 0 34px",
+    background: "#0A0A0A",
+    border: `1px solid ${isHovered ? "#333333" : "#1A1A1A"}`,
+    borderRight: "none",
+    cursor: "pointer",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    paddingLeft: "14px",
+    gap: "8px",
+    boxShadow: "none",
+    userSelect: "none",
+    transition: "border-color 0.15s ease",
+  });
+
+  const chevronStyle = (isHovered: boolean): CSSProperties => ({
+    width: "16px",
+    height: "16px",
+    color: "#FFFFFF",
+    flexShrink: 0,
+    transform: isHovered ? "translateX(4px)" : "translateX(0)",
+    transition: "transform 0.15s ease",
+  });
+
+  const countStyle: CSSProperties = {
+    fontSize: "17px",
+    fontWeight: 500,
+    color: "#FFFFFF",
+    fontFamily: "'Geist Mono', monospace",
+    lineHeight: 1,
+    letterSpacing: "-0.02em",
+  };
+
+  const labelStyle: CSSProperties = {
+    fontSize: "10px",
+    color: "#666666",
+    fontFamily: "'Geist Mono', monospace",
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    lineHeight: 1,
+  };
+
+  const panelStyle: CSSProperties = {
+    width: "320px",
+    height: "100%",
+    background: "#0A0A0A",
+    border: "1px solid #1A1A1A",
+    borderRadius: "16px 0 0 16px",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    fontFamily: "'Geist Mono', monospace",
+  };
+
   return (
-    <div
-      style={{
-        width: "100%",
-        height: "100%",
-        background: "transparent",
-        display: "flex",
-        justifyContent: "flex-end",
-        alignItems: "center",
-        overflow: "hidden",
-      }}
-    >
+    <div style={containerStyle}>
       <AnimatePresence mode="wait" initial={false}>
         {expanded ? (
           <motion.div
@@ -100,17 +160,7 @@ export default function EdgePeek() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            style={{
-              width: "100%",
-              height: "100%",
-              background: "#000000",
-              border: "1px solid #1a1a1a",
-              borderRadius: "16px 0 0 16px",
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-              fontFamily: "'Geist Mono', monospace",
-            }}
+            style={panelStyle}
           >
             <div
               style={{
@@ -120,14 +170,14 @@ export default function EdgePeek() {
                 alignItems: "center",
                 justifyContent: "space-between",
                 flexShrink: 0,
-                background: "#000",
+                background: "#0A0A0A",
               }}
             >
               <span
                 style={{
                   fontSize: "12px",
                   fontWeight: 600,
-                  color: "#ffffff",
+                  color: "#FFFFFF",
                   fontFamily: "'Geist Mono', monospace",
                   letterSpacing: "0.05em",
                   textTransform: "uppercase",
@@ -139,27 +189,27 @@ export default function EdgePeek() {
                 onClick={handleClick}
                 style={{
                   background: "transparent",
-                  border: "1px solid #1a1a1a",
+                  border: "1px solid #1A1A1A",
                   borderRadius: "6px",
                   width: "28px",
                   height: "28px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "#444",
+                  color: "#666666",
                   cursor: "pointer",
                   transition: "border-color 0.12s, color 0.12s",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "#333";
-                  e.currentTarget.style.color = "#fff";
+                  e.currentTarget.style.borderColor = "#333333";
+                  e.currentTarget.style.color = "#FFFFFF";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "#1a1a1a";
-                  e.currentTarget.style.color = "#444";
+                  e.currentTarget.style.borderColor = "#1A1A1A";
+                  e.currentTarget.style.color = "#666666";
                 }}
               >
-                <ArrowRight size={13} weight="light" />
+                <CaretRight size={13} weight="light" />
               </button>
             </div>
 
@@ -180,7 +230,7 @@ export default function EdgePeek() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: "#333",
+                    color: "#333333",
                     fontSize: "12px",
                   }}
                 >
@@ -191,8 +241,8 @@ export default function EdgePeek() {
                   <div
                     key={task.id}
                     style={{
-                      background: "#0a0a0a",
-                      border: "1px solid #1a1a1a",
+                      background: "#0A0A0A",
+                      border: "1px solid #1A1A1A",
                       borderRadius: "10px",
                       padding: "12px 14px",
                       display: "flex",
@@ -201,17 +251,17 @@ export default function EdgePeek() {
                       cursor: "default",
                     }}
                     onMouseEnter={(e) =>
-                      (e.currentTarget.style.borderColor = "#2a2a2a")
+                      (e.currentTarget.style.borderColor = "#2A2A2A")
                     }
                     onMouseLeave={(e) =>
-                      (e.currentTarget.style.borderColor = "#1a1a1a")
+                      (e.currentTarget.style.borderColor = "#1A1A1A")
                     }
                   >
                     <div
                       style={{
                         fontSize: "12px",
                         fontWeight: 600,
-                        color: "#ffffff",
+                        color: "#FFFFFF",
                         lineHeight: 1.3,
                       }}
                     >
@@ -247,9 +297,9 @@ export default function EdgePeek() {
                         marginTop: "4px",
                         padding: "6px",
                         borderRadius: "7px",
-                        border: "1px solid #2a2a2a",
+                        border: "1px solid #2A2A2A",
                         background: "transparent",
-                        color: "#aaaaaa",
+                        color: "#AAAAAA",
                         fontSize: "11px",
                         fontWeight: 600,
                         cursor: "pointer",
@@ -261,12 +311,12 @@ export default function EdgePeek() {
                         transition: "border-color 0.12s, color 0.12s",
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = "#444";
-                        e.currentTarget.style.color = "#ffffff";
+                        e.currentTarget.style.borderColor = "#444444";
+                        e.currentTarget.style.color = "#FFFFFF";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = "#2a2a2a";
-                        e.currentTarget.style.color = "#aaaaaa";
+                        e.currentTarget.style.borderColor = "#2A2A2A";
+                        e.currentTarget.style.color = "#AAAAAA";
                       }}
                     >
                       <CheckCircle size={13} weight="light" /> Mark Done
@@ -278,51 +328,21 @@ export default function EdgePeek() {
           </motion.div>
         ) : (
           <motion.div
-            key="handle"
+            key="pill"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.12 }}
             onClick={handleClick}
-            style={{
-              width: "80px",
-              height: "80px",
-              borderRadius: "50%",
-              background: "#0a0a0a",
-              border: "2px solid #2a2a2a",
-              cursor: "pointer",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "2px",
-              boxShadow: "none",
-              userSelect: "none",
-              flexShrink: 0,
-            }}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            style={pillStyle(hovered)}
           >
-            <span
-              style={{
-                fontSize: "20px",
-                fontWeight: 700,
-                color: "#ffffff",
-                fontFamily: "'Geist Mono', monospace",
-                lineHeight: 1,
-              }}
-            >
-              {tasks.length}
-            </span>
-            <span
-              style={{
-                fontSize: "8px",
-                color: "rgba(255,255,255,0.3)",
-                fontFamily: "'Geist Mono', monospace",
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-              }}
-            >
-              {tasks.length === 1 ? "task" : "tasks"}
-            </span>
+            <CaretRight size={16} weight="light" style={chevronStyle(hovered)} />
+            <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
+              <span style={countStyle}>{tasks.length}</span>
+              <span style={labelStyle}>TASKS</span>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

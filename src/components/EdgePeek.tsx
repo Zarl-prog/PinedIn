@@ -11,19 +11,20 @@ import type { CSSProperties } from "react";
  *
  * Collapsed: 80×68px pill, vertically centered, right-edge flush.
  *   Content: chevron (16px) + count (17px) + "TASKS" (10px).
- *   Border-radius: 34px 0 0 34px. Colors: #0A0A0A bg, #1A1A1A border.
+ *   Border-radius: 34px 0 0 34px. Colors: #0A0A0A bg, #1A1A1A border, #FFFFFF text, #666666 label.
  *   Hover: border #333333, chevron nudges +4px right.
  *
  * Expanded: 320px wide panel, same vertical center, grows leftward.
  *
- * Window geometry (position/size) is owned by Rust. This component only
- * toggles internal content after the native resize completes.
+ * Window geometry (position/size) is owned by Rust. This component synchronizes
+ * with native resize via Tauri events to avoid visual glitches.
  */
 export default function EdgePeek() {
   const [expanded, setExpanded] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [hovered, setHovered] = useState(false);
   const isAnimating = useRef(false);
+  const resizeListener = useRef<() => void>();
 
   // Load persisted expanded state on mount
   useEffect(() => {
@@ -43,7 +44,7 @@ export default function EdgePeek() {
     refresh();
     const unlistenTasks = listen("tasks-updated", refresh);
     const unlistenAutoHide = listen("edge_peek_auto_hide", () => {
-      if (expanded) handleClick();
+      if (expanded) handleClick(); // collapse
     });
     return () => {
       unlistenTasks.then((f) => f());
@@ -57,15 +58,14 @@ export default function EdgePeek() {
 
     try {
       if (expanded) {
-        // Collapse UI first, then shrink native window
-        setExpanded(false);
-        await new Promise((r) => requestAnimationFrame(() => r(null)));
-        await new Promise((r) => setTimeout(r, 40));
+        // Collapse: trigger native resize, wait for completion event, then update React state
         await invoke("collapse_edge_peek");
+        await waitForResizeComplete(false);
+        setExpanded(false);
       } else {
-        // Grow native window first, then show panel
+        // Expand: trigger native resize, wait for completion event, then update React state
         await invoke("expand_edge_peek");
-        await new Promise((r) => requestAnimationFrame(() => r(null)));
+        await waitForResizeComplete(true);
         setExpanded(true);
       }
     } catch (e) {
@@ -73,6 +73,28 @@ export default function EdgePeek() {
     } finally {
       isAnimating.current = false;
     }
+  }
+
+  function waitForResizeComplete(targetExpanded: boolean): Promise<void> {
+    return new Promise((resolve) => {
+      // Clean up any existing listener
+      if (resizeListener.current) {
+        resizeListener.current();
+        resizeListener.current = undefined;
+      }
+
+      listen("edge-peek-resize-complete", (event) => {
+        if (event.payload === targetExpanded) {
+          if (resizeListener.current) {
+            resizeListener.current();
+            resizeListener.current = undefined;
+          }
+          resolve();
+        }
+      }).then((unlisten) => {
+        resizeListener.current = unlisten;
+      });
+    });
   }
 
   async function handleDone(id: number | undefined | null) {
@@ -85,19 +107,19 @@ export default function EdgePeek() {
   const containerStyle: CSSProperties = {
     width: "100%",
     height: "100%",
-    background: "transparent",
+    background: "#0A0A0A",
     display: "flex",
     justifyContent: "flex-end",
     alignItems: "center",
     overflow: "hidden",
   };
 
-  const pillStyle = (isHovered: boolean): CSSProperties => ({
+  const pillStyle: CSSProperties = {
     width: "80px",
     height: "68px",
     borderRadius: "34px 0 0 34px",
     background: "#0A0A0A",
-    border: `1px solid ${isHovered ? "#333333" : "#1A1A1A"}`,
+    border: `1px solid ${hovered ? "#333333" : "#1A1A1A"}`,
     borderRight: "none",
     cursor: "pointer",
     display: "flex",
@@ -109,7 +131,7 @@ export default function EdgePeek() {
     boxShadow: "none",
     userSelect: "none",
     transition: "border-color 0.15s ease",
-  });
+  };
 
   const chevronStyle = (isHovered: boolean): CSSProperties => ({
     width: "16px",
@@ -336,7 +358,7 @@ export default function EdgePeek() {
             onClick={handleClick}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
-            style={pillStyle(hovered)}
+            style={pillStyle}
           >
             <CaretRight size={16} weight="light" style={chevronStyle(hovered)} />
             <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>

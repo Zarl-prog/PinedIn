@@ -1,7 +1,11 @@
 use crate::commands::ZEN_MODE;
 use crate::db::Task;
 use std::sync::atomic::Ordering;
-use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, WebviewUrl, WebviewWindowBuilder};
+use std::sync::OnceLock;
+use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, Position, Size, WebviewUrl, WebviewWindowBuilder};
+
+#[cfg(target_os = "windows")]
+use windows::Win32::UI::WindowsAndMessaging::{SetWindowPos, HWND, SWP_NOZORDER, SWP_NOACTIVATE, SWP_NOOWNERZORDER};
 
 pub const CARD_WIDTH: f64 = 308.0;
 pub const CARD_HEIGHT: f64 = 120.0;
@@ -28,6 +32,19 @@ where
         }
     }
     Err(last_error.unwrap())
+}
+
+/// Atomic anchor center Y for consistent positioning
+static ANCHOR_CENTER_Y: OnceLock<std::sync::atomic::AtomicU64> = OnceLock::new();
+
+fn get_anchor_center_y() -> f64 {
+    let atomic = ANCHOR_CENTER_Y.get_or_init(|| std::sync::atomic::AtomicU64::new(0));
+    f64::from_bits(atomic.load(Ordering::Relaxed))
+}
+
+fn set_anchor_center_y(y: f64) {
+    let atomic = ANCHOR_CENTER_Y.get_or_init(|| std::sync::atomic::AtomicU64::new(0));
+    atomic.store(y.to_bits(), Ordering::Relaxed);
 }
 
 fn monitor_size(app: &AppHandle) -> (f64, f64) {
@@ -380,19 +397,27 @@ const EDGE_PEEK_TAB_W: f64 = 80.0;
 const EDGE_PEEK_TAB_H: f64 = 68.0;
 const EDGE_PEEK_EXPANDED_W: f64 = 320.0;
 
-/// Returns (x, y, w, h) in logical pixels, right-edge anchored, vertically centered.
+/// Returns (x, y, w, h) in logical pixels, right-edge anchored.
+/// Uses fixed anchor center Y (computed once at window creation) to eliminate
+/// rounding drift between expanded/collapsed states.
 fn edge_peek_geometry(sw: f64, sh: f64, expanded: bool) -> (f64, f64, f64, f64) {
+    let anchor_y = get_anchor_center_y();
+    if anchor_y == 0.0 {
+        // First call - initialize anchor
+        set_anchor_center_y(sh / 2.0);
+    }
+
     if expanded {
         let w = EDGE_PEEK_EXPANDED_W;
         let h = (sh * 0.8).clamp(200.0, sh.max(200.0));
         let x = (sw - w).max(0.0);
-        let y = ((sh - h) / 2.0).max(0.0);
+        let y = (anchor_y - h / 2.0).max(0.0);
         (x, y, w, h)
     } else {
         let w = EDGE_PEEK_TAB_W;
         let h = EDGE_PEEK_TAB_H;
         let x = (sw - w).max(0.0);
-        let y = ((sh - h) / 2.0).max(0.0);
+        let y = (anchor_y - h / 2.0).max(0.0);
         (x, y, w, h)
     }
 }
@@ -411,11 +436,79 @@ fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
     let sh = monitor.size().height as f64 / scale;
     let (x, y, w, h) = edge_peek_geometry(sw, sh, expanded);
 
-    // Order matters for right-edge anchoring:
-    //  - Expanding (wider/taller): move first, then grow toward the edge
-    //  - Collapsing (narrower/shorter): shrink first, then slide to the edge
-    // Doing the reverse briefly hangs the window off-screen, and some WMs
-    // clamp it — which looks like a random teleport.
+    // Atomic resize+move: single platform call to avoid intermediate stale frames
+    #[cfg(target_os = "windows")]
+    {
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::UI::WindowsAndMessaging::{SetWindowPos, SWP_NOZORDER, SWP_NOACTIVATE, SWP_NOOWNERZORDER};
+        
+        if let Ok(hwnd) = window.hwnd() {
+            let hwnd = HWND(hwnd as *mut std::ffi::c_void);
+            let x_px = (x * scale) as i32;
+            let y_px = (y * scale) as i32;
+            let w_px = (w * scale) as i32;
+            let h_px = (h * scale) as i32;
+            unsafe {
+                SetWindowPos(
+                    hwnd,
+                    None,
+                    x_px,
+                    y_px,
+                    w_px,
+                    h_px,
+                    SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER,
+                );
+            }
+            // Force repaint after collapse to clear any stale compositor frames
+            if !expanded {
+                use windows::Win32::UI::WindowsAndMessaging::{InvalidateRect, RedrawWindow, RDW_ERASE, RDW_INVALIDATE, RDW_UPDATENOW, RDW_FRAME};
+                InvalidateRect(hwnd, None, true);
+                RedrawWindow(hwnd, None, None, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW | RDW_FRAME);
+            }
+            return;
+        }
+    }
+
+#[cfg(target_os = "linux")]
+        {
+            // Linux-specific: try to use GTK for atomic move_resize if available
+            // Note: This requires Tauri's gtk feature to be enabled
+            #[cfg(feature = "gtk")]
+            {
+                use gtk::prelude::*;
+                use gdk::prelude::*;
+                use gtk::auto::widget::WidgetExt;
+                
+                if let Ok(gtk_window) = window.gtk_window() {
+                    if let Some(gdk_window) = gtk_window.window() {
+                        let x_px = (x * scale) as i32;
+                        let y_px = (y * scale) as i32;
+                        let w_px = (w * scale) as i32;
+                        let h_px = (h * scale) as i32;
+                        gdk_window.move_resize(x_px, y_px, w_px, h_px);
+                        
+                        // Force repaint after collapse
+                        if !expanded {
+                            let allocation = gtk::Allocation::new(x_px, y_px, w_px, h_px);
+                            WidgetExt::queue_draw(&gtk_window);
+                            gdk_window.invalidate_rect(&allocation.to_gdk_rectangle(), true);
+                            gdk_window.flush();
+                        }
+                        return;
+                    }
+                }
+            }
+            
+            // Fallback for Linux without GTK feature
+            let _ = window.set_position(Position::Logical(LogicalPosition::new(x, y)));
+            let _ = window.set_size(Size::Logical(LogicalSize::new(w, h)));
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            // Windows and other platforms
+            let _ = window.set_position(Position::Logical(LogicalPosition::new(x, y)));
+            let _ = window.set_size(Size::Logical(LogicalSize::new(w, h)));
+        }
     let current_w = window
         .inner_size()
         .ok()
@@ -423,11 +516,19 @@ fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
         .unwrap_or(w);
 
     if w >= current_w {
-        let _ = window.set_position(LogicalPosition::new(x, y));
-        let _ = window.set_size(LogicalSize::new(w, h));
+        let _ = window.set_position(Position::Logical(LogicalPosition::new(x, y)));
+        let _ = window.set_size(Size::Logical(LogicalSize::new(w, h)));
     } else {
-        let _ = window.set_size(LogicalSize::new(w, h));
-        let _ = window.set_position(LogicalPosition::new(x, y));
+        let _ = window.set_size(Size::Logical(LogicalSize::new(w, h)));
+        let _ = window.set_position(Position::Logical(LogicalPosition::new(x, y)));
+    }
+
+    // Fallback repaint for non-Windows/Linux
+    if !expanded {
+        // Trigger a repaint by briefly toggling visibility
+        let _ = window.hide();
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        let _ = window.show();
     }
 
     #[cfg(any(target_os = "linux", target_os = "windows"))]

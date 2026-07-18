@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -24,7 +24,7 @@ export default function EdgePeek() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [hovered, setHovered] = useState(false);
   const isAnimating = useRef(false);
-  const resizeListener = useRef<() => void>();
+  const exitCompleteResolver = useRef<(() => void) | null>(null);
 
   // Load persisted expanded state on mount
   useEffect(() => {
@@ -58,12 +58,17 @@ export default function EdgePeek() {
 
     try {
       if (expanded) {
-        // Collapse: trigger native resize, wait for completion event, then update React state
-        await invoke("collapse_edge_peek");
-        await waitForResizeComplete(false);
+        // COLLAPSE: animate first (exit), THEN native resize
+        // 1. Signal intent to collapse - this triggers AnimatePresence exit animation
         setExpanded(false);
+        // 2. Wait for exit animation to complete (AnimatePresence onExitComplete)
+        await new Promise<void>((resolve) => {
+          exitCompleteResolver.current = resolve;
+        });
+        // 3. Now native window can safely shrink - content already faded out
+        await invoke("collapse_edge_peek");
       } else {
-        // Expand: trigger native resize, wait for completion event, then update React state
+        // EXPAND: native resize first (window must be big enough before content grows), then animate
         await invoke("expand_edge_peek");
         await waitForResizeComplete(true);
         setExpanded(true);
@@ -77,7 +82,6 @@ export default function EdgePeek() {
 
   function waitForResizeComplete(targetExpanded: boolean): Promise<void> {
     return new Promise((resolve) => {
-      // Clean up any existing listener
       if (resizeListener.current) {
         resizeListener.current();
         resizeListener.current = undefined;
@@ -97,11 +101,21 @@ export default function EdgePeek() {
     });
   }
 
+  const resizeListener = useRef<() => void>();
+
   async function handleDone(id: number | undefined | null) {
     if (!id) return;
     await invoke("complete_task", { id });
     refresh();
   }
+
+  // Called by AnimatePresence when exit animation completes
+  const onExitComplete = useCallback(() => {
+    if (exitCompleteResolver.current) {
+      exitCompleteResolver.current();
+      exitCompleteResolver.current = null;
+    }
+  }, []);
 
   // ─── Styles ─────────────────────────────────────────────────────────────
   const containerStyle: CSSProperties = {
@@ -174,7 +188,7 @@ export default function EdgePeek() {
 
   return (
     <div style={containerStyle}>
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence mode="wait" initial={false} onExitComplete={onExitComplete}>
         {expanded ? (
           <motion.div
             key="panel"

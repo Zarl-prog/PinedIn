@@ -369,32 +369,31 @@ pub fn close_compact_pill_window(app: &AppHandle) {
 
 // ─── Edge Peek Window ────────────────────────────────────────────────────────
 //
-// Geometry rules (must stay fully on-screen — hanging off the edge lets WMs
-// clamp/reposition the window unpredictably, which looks like "teleporting"):
+// Geometry rules:
 //   • Right edge always flush with the screen right edge
-//   • Vertical center always at screen mid-height
+//   • Top edge fixed at TOP_OFFSET from screen top (not centered)
 //   • Collapsed: 80×80 pill window
-//   • Expanded: 320×80% panel
+//   • Expanded: 320×80% panel (grows downward from fixed top)
+//   • Never moves horizontally or vertically during expand/collapse
 
 const EDGE_PEEK_COLLAPSED_W: f64 = 80.0;
 const EDGE_PEEK_COLLAPSED_H: f64 = 80.0;
 const EDGE_PEEK_EXPANDED_W: f64 = 320.0;
+const EDGE_PEEK_TOP_OFFSET: f64 = 80.0; // Distance from screen top
 
-/// Returns (x, y, w, h) in logical pixels, fully on-screen, right-edge anchored.
+/// Returns (x, y, w, h) in logical pixels, right-edge anchored, fixed top position.
 fn edge_peek_geometry(sw: f64, sh: f64, expanded: bool) -> (f64, f64, f64, f64) {
-    if expanded {
-        let w = EDGE_PEEK_EXPANDED_W;
-        let h = (sh * 0.8).clamp(200.0, sh.max(200.0));
-        let x = (sw - w).max(0.0);
-        let y = ((sh - h) / 2.0).max(0.0);
-        (x, y, w, h)
+    let x = (sw - if expanded { EDGE_PEEK_EXPANDED_W } else { EDGE_PEEK_COLLAPSED_W }).max(0.0);
+    let y = EDGE_PEEK_TOP_OFFSET;
+    let w = if expanded { EDGE_PEEK_EXPANDED_W } else { EDGE_PEEK_COLLAPSED_W };
+    let h = if expanded {
+        (sh - y - 40.0).clamp(200.0, sh - y - 40.0) // Leave 40px bottom margin
     } else {
-        let w = EDGE_PEEK_COLLAPSED_W;
-        let h = EDGE_PEEK_COLLAPSED_H;
-        let x = (sw - w).max(0.0);
-        let y = ((sh - h) / 2.0).max(0.0);
-        (x, y, w, h)
-    }
+        EDGE_PEEK_COLLAPSED_H
+    };
+    // Ensure window fits on screen
+    let y = y.min(sh - h);
+    (x, y, w, h)
 }
 
 fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {

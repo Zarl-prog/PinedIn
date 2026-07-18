@@ -755,6 +755,11 @@ pub fn set_edge_peek_enabled(app: AppHandle, db: State<'_, Arc<DbHandle>>, enabl
     EDGE_PEEK_ENABLED.store(enabled, Ordering::SeqCst);
 
     if enabled {
+        // Disable compact_mode when edge_peek is enabled (mutually exclusive)
+        db.update_setting("compact_mode", "false")?;
+        COMPACT_MODE.store(false, Ordering::SeqCst);
+        crate::window::close_compact_pill_window(&app);
+
         // Check if there are incomplete tasks before opening
         if let Ok(tasks) = db.get_incomplete_tasks() {
             if !tasks.is_empty() {
@@ -846,6 +851,11 @@ pub fn set_compact_mode(app: AppHandle, db: State<'_, Arc<DbHandle>>, enabled: b
     COMPACT_MODE.store(enabled, Ordering::SeqCst);
 
     if enabled {
+        // Disable edge_peek when compact_mode is enabled (mutually exclusive)
+        db.update_setting("edge_peek_enabled", "false")?;
+        EDGE_PEEK_ENABLED.store(false, Ordering::SeqCst);
+        crate::window::close_edge_peek_window(&app);
+
         // Close open task cards
         let windows = app.webview_windows();
         for (label, window) in &windows {
@@ -861,7 +871,6 @@ pub fn set_compact_mode(app: AppHandle, db: State<'_, Arc<DbHandle>>, enabled: b
         let _ = app.emit("compact_mode_enabled", ());
     } else {
         crate::window::close_compact_pill_window(&app);
-        crate::window::close_edge_peek_window(&app);
         // Restore main window
         if let Some(main) = app.get_webview_window("main") {
             let _ = main.show();

@@ -1,7 +1,7 @@
 use crate::commands::ZEN_MODE;
 use crate::db::Task;
 use std::sync::atomic::Ordering;
-use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, WebviewUrl, WebviewWindowBuilder};
 
 pub const CARD_WIDTH: f64 = 308.0;
 pub const CARD_HEIGHT: f64 = 120.0;
@@ -458,10 +458,11 @@ pub fn open_edge_peek_window(app: &AppHandle, expanded: bool) {
             .focused(false)
             .position(x, y);
 
-            // Transparent background for rounded corners to work
+            // Use solid background color instead of transparency for reliability
+            // Transparent windows on Linux (WebKitGTK) have issues with rounded corners and resize artifacts
             #[cfg(not(target_os = "macos"))]
             {
-                builder = builder.transparent(true);
+                builder = builder.background_color(tauri::utils::config::Color(10, 10, 10, 255));
             }
 
             builder.build()
@@ -493,12 +494,16 @@ pub fn expand_edge_peek(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("edge_peek") {
         apply_edge_peek_geometry(&window, true);
         let _ = window.set_focus();
+        // Emit event after resize is complete
+        let _ = window.emit("edge-peek-resize-complete", true);
     }
 }
 
 pub fn collapse_edge_peek(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("edge_peek") {
         apply_edge_peek_geometry(&window, false);
+        // Emit event after resize is complete
+        let _ = window.emit("edge-peek-resize-complete", false);
     }
 }
 

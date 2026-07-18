@@ -9,9 +9,6 @@ import {
   getShakeInterval,
   setShakeInterval,
   setCompactMode,
-  getEdgePeekEnabled,
-  setEdgePeekEnabled,
-  toggleEdgePeek,
 } from "@/lib/tauriCommands";
 import { checkAndInstall } from "@/lib/updater";
 import { X, Circle, Hourglass, PencilSimpleLine, Tag, DotsThree } from "@phosphor-icons/react";
@@ -48,7 +45,6 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
   }>({ state: "idle" });
   const [shakeInterval, setShakeIntervalState] = useState(30);
   const [appVersion, setAppVersion] = useState("...");
-  const [edgePeekEnabled, setEdgePeekEnabledState] = useState(false);
 
   useEffect(() => {
     getVersion().then(setAppVersion).catch(() => setAppVersion("?"));
@@ -57,7 +53,6 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
   useEffect(() => {
     if (open) {
       getShakeInterval().then(setShakeIntervalState).catch(() => {});
-      getEdgePeekEnabled().then(setEdgePeekEnabledState).catch(() => {});
     }
   }, [open]);
 
@@ -343,39 +338,6 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                     </button>
                   ))}
                 </div>
-              </div>
-
-              {/* Display mode */}
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    color: "var(--text-secondary)",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Edge Peek
-                </label>
-                <button
-                  onClick={async () => {
-                    const prev = edgePeekEnabled;
-                    setEdgePeekEnabledState(!edgePeekEnabled);
-                    try {
-                      await setEdgePeekEnabled(!edgePeekEnabled);
-                    } catch (e) {
-                      setEdgePeekEnabledState(prev);
-                    }
-                  }}
-                  className={`pill-toggle${edgePeekEnabled ? " selected" : ""}`}
-                  style={{
-                    width: "100%", textAlign: "left", padding: "10px 12px",
-                    fontSize: "11px", fontFamily: "'Geist Mono', monospace",
-                  }}
-                >
-                  {edgePeekEnabled ? "Enabled — shows on right edge when tasks exist" : "Disabled"}
-                </button>
               </div>
 
               {/* Card shake interval */}

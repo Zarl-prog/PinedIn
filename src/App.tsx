@@ -14,7 +14,7 @@ import WorkspacesView from "@/components/WorkspacesView";
 import UndoToast from "@/components/UndoToast";
 import { useReminders } from "@/hooks/useReminders";
 import { useReminderStore } from "@/store/reminderStore";
-import { setZenMode, snapAllCardsToGrid, getCompactMode, setCompactMode, getShakeEnabled, setShakeEnabled } from "@/lib/tauriCommands";
+import { setZenMode, snapAllCardsToGrid, getCompactMode, setCompactMode, getShakeEnabled, setShakeEnabled, getEdgePeekEnabled, setEdgePeekEnabled } from "@/lib/tauriCommands";
 import { checkForUpdates, checkAndInstall } from "@/lib/updater";
 import ShinyText from "@/components/ui/ShinyText";
 import type { Workspace } from "@/lib/tauriCommands";
@@ -239,10 +239,32 @@ export default function App() {
     getShakeEnabled().then(setShakeEnabledLocal).catch(() => {});
   }, []);
 
+  const [edgePeekEnabled, setEdgePeekEnabledLocal] = useState(false);
+
+  useEffect(() => {
+    getEdgePeekEnabled().then(setEdgePeekEnabledLocal).catch(() => {});
+    const p1 = listen("compact_mode_enabled", () => setEdgePeekEnabledLocal(false));
+    const p2 = listen("edge_peek_auto_hide", () => setEdgePeekEnabledLocal(false));
+    return () => {
+      p1.then((f) => f(), () => {});
+      p2.then((f) => f(), () => {});
+    };
+  }, []);
+
   const toggleShake = async () => {
     const next = !shakeEnabled;
     setShakeEnabledLocal(next);
     await setShakeEnabled(next).catch(() => {});
+  };
+
+  const toggleEdgePeek = async () => {
+    const next = !edgePeekEnabled;
+    setEdgePeekEnabledLocal(next);
+    try {
+      await setEdgePeekEnabled(next);
+    } catch {
+      setEdgePeekEnabledLocal(!next);
+    }
   };
 
   const [showWaylandWarning, setShowWaylandWarning] = useState(false);
@@ -774,6 +796,15 @@ export default function App() {
             } : undefined}
           >
             <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Diamond size={15} weight="light" /> Digest</span>
+          </button>
+          <button
+            onClick={toggleEdgePeek}
+            className="feature-btn"
+            style={edgePeekEnabled ? {
+              borderBottom: "2px solid var(--tab-active-bg)",
+            } : undefined}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Diamond size={15} weight="light" /> Edge Peek</span>
           </button>
         </div>
 

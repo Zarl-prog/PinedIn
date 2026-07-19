@@ -1,17 +1,16 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
 import {
   ArrowRight,
-  X,
   CheckCircle,
-  Plus,
-  List,
   Command,
   GearSix,
+  List,
+  Plus,
   Sparkle,
 } from "@phosphor-icons/react";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Step {
   id: string;
@@ -90,7 +89,7 @@ export default function Onboarding() {
   const [stepIndex, setStepIndex] = useState(0);
   const [highlightRect, setHighlightRect] = useState<DOMRect | null>(null);
   const [tooltipReady, setTooltipReady] = useState(false);
-  const [clickedAddTask, setClickedAddTask] = useState(false);
+  const [, setClickedAddTask] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const spotlightRef = useRef<HTMLDivElement>(null);
 

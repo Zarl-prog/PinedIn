@@ -1,18 +1,17 @@
 import { create } from "zustand";
-import type { Task, AppSettings } from "@/lib/tauriCommands";
+import type { AppSettings, Task } from "@/lib/tauriCommands";
 import {
-  getAllTasks,
-  createTask,
-  updateTask,
-  deleteTask,
-  completeTask as completeTaskCmd,
-  uncompleteTask as uncompleteTaskCmd,
-  getSettings,
-  updateSetting,
   addPrescheduledTask as addPrescheduledTaskCmd,
-  getPrescheduledTasks as getPrescheduledTasksCmd,
-  getWorkspaceTasks,
+  completeTask as completeTaskCmd,
+  createTask,
+  deleteTask,
+  getAllTasks,
   getAllWorkspaceTasks,
+  getPrescheduledTasks as getPrescheduledTasksCmd,
+  getSettings,
+  uncompleteTask as uncompleteTaskCmd,
+  updateSetting,
+  updateTask,
 } from "@/lib/tauriCommands";
 import { applyTheme, listenSystemTheme, stopSystemTheme } from "@/lib/theme";
 import { sortTasks } from "@/lib/utils";

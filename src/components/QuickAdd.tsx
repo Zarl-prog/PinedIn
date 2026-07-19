@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { Lightning } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
-import { Plus, Lightning } from "@phosphor-icons/react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { useEffect, useRef, useState } from "react";
 
 export default function QuickAdd() {
   const [value, setValue] = useState("");

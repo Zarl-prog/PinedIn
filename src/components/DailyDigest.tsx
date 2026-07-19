@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import Skeleton from "./ui/Skeleton";
 
 interface DigestData {

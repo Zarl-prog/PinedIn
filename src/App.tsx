@@ -1,70 +1,47 @@
-import { useState, useEffect, Component, type ReactNode } from "react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
-import TaskList from "@/components/TaskList";
-import AddTaskModal from "@/components/AddTaskModal";
-import SettingsPanel from "@/components/SettingsPanel";
-import McpPanel from "@/components/McpPanel";
-import CustomizeCardModal from "@/components/CustomizeCardModal";
-import Onboarding from "@/components/Onboarding";
-import PreScheduleModal from "@/components/PreScheduleModal";
-import UpdateBanner from "@/components/UpdateBanner";
-import WorkspacesView from "@/components/WorkspacesView";
-import UndoToast from "@/components/UndoToast";
-import { useReminders } from "@/hooks/useReminders";
-import { useReminderStore } from "@/store/reminderStore";
 import {
-  setZenMode,
-  snapAllCardsToGrid,
-  getCompactMode,
-  setCompactMode,
-  getShakeEnabled,
-  setShakeEnabled,
-  getEdgePeekEnabled,
-  setEdgePeekEnabled,
-} from "@/lib/tauriCommands";
-import { checkForUpdates, checkAndInstall } from "@/lib/updater";
-import ShinyText from "@/components/ui/ShinyText";
-import type { Workspace } from "@/lib/tauriCommands";
-import {
-  Warning,
-  Info,
   ArrowRight,
   Circle,
-  Play,
-  Pause,
-  DotOutline,
-  Lightning,
   Diamond,
+  DotOutline,
   GridFour,
+  Info,
+  Lightning,
+  Pause,
+  Play,
+  Warning,
 } from "@phosphor-icons/react";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { useEffect, useState } from "react";
+import AddTaskModal from "@/components/AddTaskModal";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import CustomizeCardModal from "@/components/CustomizeCardModal";
+import McpPanel from "@/components/McpPanel";
+import Onboarding from "@/components/Onboarding";
+import PreScheduleModal from "@/components/PreScheduleModal";
+import SettingsPanel from "@/components/SettingsPanel";
+import TaskList from "@/components/TaskList";
+import UndoToast from "@/components/UndoToast";
+import UpdateBanner from "@/components/UpdateBanner";
+import ShinyText from "@/components/ui/ShinyText";
+import WorkspacesView from "@/components/WorkspacesView";
+import { useReminders } from "@/hooks/useReminders";
+import type { Workspace } from "@/lib/tauriCommands";
+import {
+  getCompactMode,
+  getEdgePeekEnabled,
+  getShakeEnabled,
+  setCompactMode,
+  setEdgePeekEnabled,
+  setShakeEnabled,
+  setZenMode,
+  snapAllCardsToGrid,
+} from "@/lib/tauriCommands";
+import { checkAndInstall, checkForUpdates } from "@/lib/updater";
+import { useReminderStore } from "@/store/reminderStore";
 
 type AppTab = "tasks" | "workspaces";
-
-class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
-  private timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-  constructor(props: { children: ReactNode }) {
-    super(props);
-    this.state = { hasError: false };
-  }
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-  componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error("ErrorBoundary caught:", error, info.componentStack);
-    // Auto-recover after a short delay so the user never sees a broken state
-    this.timeoutId = setTimeout(() => this.setState({ hasError: false }), 50);
-  }
-  componentWillUnmount() {
-    if (this.timeoutId) clearTimeout(this.timeoutId);
-  }
-  render() {
-    if (this.state.hasError) return null;
-    return this.props.children;
-  }
-}
 
 export default function App() {
   useReminders();
@@ -289,14 +266,11 @@ export default function App() {
     getEdgePeekEnabled()
       .then(setEdgePeekEnabledLocal)
       .catch(() => {});
+    // Compact mode and edge peek are mutually exclusive — when compact mode
+    // turns on, reflect that edge peek is now off in the footer toggle.
     const p1 = listen("compact_mode_enabled", () => setEdgePeekEnabledLocal(false));
-    const p2 = listen("edge_peek_auto_hide", () => setEdgePeekEnabledLocal(false));
     return () => {
       p1.then(
-        (f) => f(),
-        () => {},
-      );
-      p2.then(
         (f) => f(),
         () => {},
       );
@@ -655,6 +629,7 @@ export default function App() {
               href="https://extensions.gnome.org/extension/8324/always-on-top"
               target="_blank"
               style={{ color: "var(--text-primary)" }}
+              rel="noopener"
             >
               Always on Top
             </a>{" "}
@@ -706,6 +681,7 @@ export default function App() {
             href="https://extensions.gnome.org/extension/615/appindicator-support"
             target="_blank"
             style={{ color: "var(--text-primary)", fontSize: "10px" }}
+            rel="noopener"
           >
             <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
               Install AppIndicator Extension <ArrowRight size={14} weight="bold" />

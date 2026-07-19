@@ -7,15 +7,36 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  verify-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure tag matches tauri.conf.json version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          CONF=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          echo "Tag version:  $TAG"
+          echo "Conf version: $CONF"
+          if [ "$TAG" != "$CONF" ]; then
+            echo "::error::Tag v$TAG does not match tauri.conf.json version $CONF. Bump the version and re-tag."
+            exit 1
+          fi
+
   build-windows:
+    needs: verify-version
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -32,13 +53,14 @@ jobs:
           args: --target x86_64-pc-windows-msvc
 
   build-linux:
+    needs: verify-version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install Linux deps
@@ -59,7 +81,9 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
   build-macos:
+    needs: verify-version
     strategy:
+      fail-fast: false
       matrix:
         target:
           - aarch64-apple-darwin
@@ -70,7 +94,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - uses: actions-rust-lang/setup-rust-toolchain@v1

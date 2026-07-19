@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { PencilSimpleLine, X } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { emit } from "@tauri-apps/api/event";
+import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useReminderStore } from "@/store/reminderStore";
-import { X, PencilSimpleLine } from "@phosphor-icons/react";
 
 const DEFAULT_W = 122;
 const DEFAULT_H = 110;

@@ -31,7 +31,9 @@ fn check_edge_peek_visibility(app: &AppHandle, db: &DbHandle) {
     }
     if let Ok(tasks) = db.get_incomplete_tasks() {
         if tasks.is_empty() {
-            // No incomplete tasks - schedule auto-hide
+            // No incomplete tasks - schedule auto-hide. After a short grace
+            // period, if still empty, close the window entirely and reset the
+            // expanded state so it reopens as a collapsed pill next time.
             let app_clone = app.clone();
             std::thread::spawn(move || {
                 std::thread::sleep(std::time::Duration::from_secs(3));
@@ -39,13 +41,15 @@ fn check_edge_peek_visibility(app: &AppHandle, db: &DbHandle) {
                 if let Some(db_state) = app_clone.try_state::<Arc<DbHandle>>() {
                     if let Ok(tasks) = db_state.get_incomplete_tasks() {
                         if tasks.is_empty() && EDGE_PEEK_ENABLED.load(Ordering::SeqCst) {
-                            let _ = app_clone.emit("edge_peek_auto_hide", ());
+                            EDGE_PEEK_EXPANDED.store(false, Ordering::SeqCst);
+                            let _ = db_state.update_setting("edge_peek_expanded", "false");
+                            crate::window::close_edge_peek_window(&app_clone);
                         }
                     }
                 }
             });
         } else {
-            // Has incomplete tasks - ensure edge_peek is open
+            // Has incomplete tasks - ensure edge_peek is open (collapsed pill)
             if app.get_webview_window("edge_peek").is_none() {
                 crate::window::open_edge_peek_window(app, false);
             }

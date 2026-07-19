@@ -31,6 +31,22 @@ where
     Err(last_error.unwrap())
 }
 
+/// Monotonic generation counter for edge-peek geometry changes. Each
+/// expand/collapse bumps it; the Linux delayed re-assert only applies if its
+/// generation is still current, so a stale thread can't yank a resized window
+/// to an old position (which caused drift/ghosting on rapid toggling).
+static EDGE_PEEK_GEN: OnceLock<std::sync::atomic::AtomicU64> = OnceLock::new();
+
+fn bump_edge_peek_gen() -> u64 {
+    let atomic = EDGE_PEEK_GEN.get_or_init(|| std::sync::atomic::AtomicU64::new(0));
+    atomic.fetch_add(1, Ordering::SeqCst) + 1
+}
+
+fn current_edge_peek_gen() -> u64 {
+    let atomic = EDGE_PEEK_GEN.get_or_init(|| std::sync::atomic::AtomicU64::new(0));
+    atomic.load(Ordering::SeqCst)
+}
+
 /// Atomic anchor center Y for consistent positioning
 static ANCHOR_CENTER_Y: OnceLock<std::sync::atomic::AtomicU64> = OnceLock::new();
 
@@ -385,38 +401,37 @@ pub fn close_compact_pill_window(app: &AppHandle) {
 //
 // Geometry rules:
 //   • Right edge always flush with the screen right edge
-//   • Vertically centered on screen (fixed Y = (screen_h - tab_h) / 2)
+//   • Default Y: 100px from top (pill top at ~100px from screen top)
 //   • Collapsed tab: 80×68 pill, border-radius 34px 0 0 34px (flat right edge)
-//   • Expanded panel: 320×80% screen, grows leftward from same top Y
-//   • Never moves vertically during expand/collapse
+//   • Expanded strip: 340×68, grows leftward from same anchor Y
+//   • Height and Y stay fixed — no vertical movement during expand/collapse
 
 const EDGE_PEEK_TAB_W: f64 = 80.0;
 const EDGE_PEEK_TAB_H: f64 = 68.0;
-const EDGE_PEEK_EXPANDED_W: f64 = 320.0;
+const EDGE_PEEK_EXPANDED_W: f64 = 340.0;
+const EDGE_PEEK_EXPANDED_H: f64 = 68.0;
+
+/// Default Y offset from top of screen to the top edge of the pill.
+const EDGE_PEEK_TOP_OFFSET: f64 = 100.0;
 
 /// Returns (x, y, w, h) in logical pixels, right-edge anchored.
-/// Uses fixed anchor center Y (computed once at window creation) to eliminate
-/// rounding drift between expanded/collapsed states.
-fn edge_peek_geometry(sw: f64, sh: f64, expanded: bool) -> (f64, f64, f64, f64) {
+/// Height stays fixed at 68px in both states — expanding only widens leftward.
+/// Y is always EDGE_PEEK_TOP_OFFSET from the top (stored as anchor for consistency).
+fn edge_peek_geometry(sw: f64, _sh: f64, expanded: bool) -> (f64, f64, f64, f64) {
     let anchor_y = get_anchor_center_y();
     if anchor_y == 0.0 {
-        // First call - initialize anchor
-        set_anchor_center_y(sh / 2.0);
+        // Anchor is the TOP of the pill, not center
+        set_anchor_center_y(EDGE_PEEK_TOP_OFFSET);
     }
 
-    if expanded {
-        let w = EDGE_PEEK_EXPANDED_W;
-        let h = (sh * 0.8).clamp(200.0, sh.max(200.0));
-        let x = (sw - w).max(0.0);
-        let y = (anchor_y - h / 2.0).max(0.0);
-        (x, y, w, h)
+    let (w, h) = if expanded {
+        (EDGE_PEEK_EXPANDED_W, EDGE_PEEK_EXPANDED_H)
     } else {
-        let w = EDGE_PEEK_TAB_W;
-        let h = EDGE_PEEK_TAB_H;
-        let x = (sw - w).max(0.0);
-        let y = (anchor_y - h / 2.0).max(0.0);
-        (x, y, w, h)
-    }
+        (EDGE_PEEK_TAB_W, EDGE_PEEK_TAB_H)
+    };
+    let x = (sw - w).max(0.0);
+    let y = get_anchor_center_y();
+    (x, y, w, h)
 }
 
 fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
@@ -456,8 +471,29 @@ fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
     }
 
     // Cross-platform fallback (Linux, macOS):
-    let _ = window.set_position(Position::Logical(LogicalPosition::new(x, y)));
+    // Linux WMs may reposition the window after a resize (gravity-based anchoring).
+    // We set size+position, then re-assert after a brief yield to override drift.
+    let gen = bump_edge_peek_gen();
     let _ = window.set_size(Size::Logical(LogicalSize::new(w, h)));
+    let _ = window.set_position(Position::Logical(LogicalPosition::new(x, y)));
+
+    #[cfg(target_os = "linux")]
+    {
+        let win = window.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(30));
+            // Only re-assert if no newer expand/collapse happened meanwhile —
+            // otherwise a stale thread would drag the resized window to an old
+            // position, causing it to drift off the edge or leave a ghost.
+            if current_edge_peek_gen() != gen {
+                return;
+            }
+            let _ = win.set_size(Size::Logical(LogicalSize::new(w, h)));
+            let _ = win.set_position(Position::Logical(LogicalPosition::new(x, y)));
+        });
+    }
+    #[cfg(not(target_os = "linux"))]
+    let _ = gen;
 }
 
 pub fn open_edge_peek_window(app: &AppHandle, expanded: bool) {
@@ -470,24 +506,24 @@ pub fn open_edge_peek_window(app: &AppHandle, expanded: bool) {
         let (x, y, w, h) = edge_peek_geometry(sw, sh, expanded);
 
         let build = || {
-            let mut builder = WebviewWindowBuilder::new(
+            let builder = WebviewWindowBuilder::new(
                 app, label, WebviewUrl::App("edge-peek.html".into()),
             )
             .inner_size(w, h)
             .resizable(false)
-            .decorations(false)
-            .always_on_top(true)
-            .skip_taskbar(true)
-            .shadow(false)
-            .focused(false)
-            .position(x, y);
-
+            .decorations(false);
+            // Transparent so only the rounded pill/strip is visible — the
+            // rest of the window (outside the rounded corners) shows through
+            // instead of rendering as a black rectangle.
             #[cfg(not(target_os = "macos"))]
-            {
-                builder = builder.background_color(tauri::utils::config::Color(10, 10, 10, 255));
-            }
-
-            builder.build()
+            let builder = builder.transparent(true);
+            builder
+                .shadow(false)
+                .always_on_top(true)
+                .skip_taskbar(true)
+                .focused(false)
+                .position(x, y)
+                .build()
         };
 
         #[cfg(target_os = "linux")]
@@ -514,8 +550,9 @@ pub fn close_edge_peek_window(app: &AppHandle) {
 
 pub fn expand_edge_peek(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("edge_peek") {
+        // Edge peek is a supplementary overlay — never steal focus from the
+        // window the user is actually working in. Just resize/reposition.
         apply_edge_peek_geometry(&window, true);
-        let _ = window.set_focus();
     }
 }
 

@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef, useCallback, useId } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useReminderStore } from "@/store/reminderStore";
+import { Minus, PencilSimpleLine, Plus, X } from "@phosphor-icons/react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { Task } from "@/lib/tauriCommands";
-import { X, Minus, Plus, PencilSimpleLine } from "@phosphor-icons/react";
+import { useReminderStore } from "@/store/reminderStore";
 
 interface AddTaskModalProps {
   open: boolean;

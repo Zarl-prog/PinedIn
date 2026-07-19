@@ -1,20 +1,20 @@
-import { useState, useMemo, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
-import { useReminderStore } from "@/store/reminderStore";
 import {
-  Check,
   Alarm,
-  ClockCountdown,
   ArrowsClockwise,
   CaretRight,
+  Check,
+  ClockCountdown,
   DotsThree,
   PencilSimple,
   Trash,
   X,
 } from "@phosphor-icons/react";
-import { type Task, closeTaskCard } from "@/lib/tauriCommands";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { closeTaskCard, type Task } from "@/lib/tauriCommands";
+import { useReminderStore } from "@/store/reminderStore";
 import Skeleton from "./ui/Skeleton";
 
 interface TaskListProps {

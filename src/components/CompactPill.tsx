@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { CaretLeft, CaretRight, Check } from "@phosphor-icons/react";
+import { invoke } from "@tauri-apps/api/core";
 import { LogicalSize } from "@tauri-apps/api/dpi";
 import { listen } from "@tauri-apps/api/event";
-import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Task } from "../lib/tauriCommands";
-import { Check, CaretLeft, CaretRight } from "@phosphor-icons/react";
 
 const COLLAPSED_W = 100;
 const COLLAPSED_H = 36;

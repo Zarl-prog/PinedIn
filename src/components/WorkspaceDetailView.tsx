@@ -1,25 +1,25 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { motion } from "framer-motion";
+import {
+  Alarm,
+  ArrowLeft,
+  ArrowsClockwise,
+  Circle,
+  Diamond,
+  PencilSimpleLine,
+  Play,
+  X,
+} from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import { useReminderStore } from "@/store/reminderStore";
-import {
-  completeTask as completeTaskCmd,
-  uncompleteTask as uncompleteTaskCmd,
-  deleteTask,
-} from "@/lib/tauriCommands";
+import { motion } from "framer-motion";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Task } from "@/lib/tauriCommands";
 import {
-  ArrowLeft,
-  Circle,
-  Play,
-  Diamond,
-  ArrowsClockwise,
-  Alarm,
-  X,
-  PencilSimpleLine,
-} from "@phosphor-icons/react";
+  completeTask as completeTaskCmd,
+  deleteTask,
+  uncompleteTask as uncompleteTaskCmd,
+} from "@/lib/tauriCommands";
 import { formatCardDate, sortTasks } from "@/lib/utils";
+import { useReminderStore } from "@/store/reminderStore";
 
 interface WorkspaceDetailViewProps {
   workspaceId: number;

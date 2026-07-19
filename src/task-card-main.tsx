@@ -1,12 +1,12 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
-import TaskCard from "./components/TaskCard";
-import ErrorBoundary from "./components/ErrorBoundary";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { applyTheme, listenSystemTheme, stopSystemTheme } from "@/lib/theme";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import React from "react";
+import ReactDOM from "react-dom/client";
 import type { Task } from "@/lib/tauriCommands";
+import { applyTheme, listenSystemTheme, stopSystemTheme } from "@/lib/theme";
+import ErrorBoundary from "./components/ErrorBoundary";
+import TaskCard from "./components/TaskCard";
 import "./task-card.css";
 
 async function main() {

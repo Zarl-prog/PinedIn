@@ -1,10 +1,10 @@
-import { useState, useRef, useCallback, useMemo, useEffect } from "react";
-import { motion } from "framer-motion";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { LogicalSize } from "@tauri-apps/api/dpi";
+import { ArrowsClockwise, CaretDown, Check, ClockCountdown } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
+import { LogicalSize } from "@tauri-apps/api/dpi";
 import { listen } from "@tauri-apps/api/event";
-import { Check, ClockCountdown, ArrowsClockwise, CaretDown } from "@phosphor-icons/react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { motion } from "framer-motion";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatCardDate } from "@/lib/utils";
 
 const SQUARE_SIZE = 80;

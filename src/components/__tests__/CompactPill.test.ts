@@ -17,7 +17,6 @@
 //   2. Restart the app with compact mode enabled
 //   3. The pill window opens but shows blank content
 
-
 // ─── Scenario 2: handleDone() fails silently ───────────────────────────
 // If invoke("complete_task") throws (task deleted between render and click),
 // the promise rejection is unhandled. refresh() is never called.
@@ -32,7 +31,6 @@
 //   3. In the pill, click Done
 //   4. The pill doesn't update (task still appears in list)
 
-
 // ─── Scenario 3: Optimistic toggle never reverted on error ─────────────
 // If setCompactMode fails (DB write error), the toggle in SettingsPanel
 // stays visually flipped despite the backend never executing the change.
@@ -45,7 +43,6 @@
 //   2. Open Settings, toggle Compact Mode
 //   3. Toggle shows "On" but no pill appears, task cards remain
 
-
 // ─── Scenario 4: Rapid Done clicks ─────────────────────────────────────
 // Double-clicking Done fires complete_task twice for the same task.
 // The first call completes it, the second tries to complete an already-
@@ -54,14 +51,12 @@
 //           re-fetches current data. Brief extra re-render.
 // Impact: None — idempotent operation. Low severity.
 
-
 // ─── Scenario 5: Empty task list after initial render ──────────────────
 // If tasks are completed externally while the pill is open,
 // tasks.length becomes 0.
 // Expected: Pill shows "✓ All clear", expanded content is hidden.
 // handlePrev/handleNext are guarded by tasks.length > 0 check.
 // Impact: None — all code paths are guarded.
-
 
 // ─── Scenario 6: currentIndex out of bounds after refresh ──────────────
 // refresh() calls setCurrentIndex(0) unconditionally.

@@ -5,5 +5,5 @@ import QuickAdd from "./components/QuickAdd";
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <QuickAdd />
-  </React.StrictMode>
+  </React.StrictMode>,
 );

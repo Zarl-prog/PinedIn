@@ -8,10 +8,15 @@ export default function UpdateBanner() {
   const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
-    const p = listen<string>("update_available", e => {
+    const p = listen<string>("update_available", (e) => {
       setVersion(e.payload);
     });
-    return () => { p.then(f => f(), () => {}); };
+    return () => {
+      p.then(
+        (f) => f(),
+        () => {},
+      );
+    };
   }, []);
 
   async function handleUpdate() {
@@ -40,7 +45,7 @@ export default function UpdateBanner() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: "12px"
+            marginBottom: "12px",
           }}
         >
           <div>

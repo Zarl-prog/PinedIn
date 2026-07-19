@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&display=swap");
 
 :root {
   --bg-app: #ffffff;
@@ -10,7 +10,7 @@
   --bg-input: #ffffff;
   --bg-hover: #e8e8e8;
   --bg-badge: #e8e8e8;
-  --bg-overlay: rgba(0,0,0,0.3);
+  --bg-overlay: rgba(0, 0, 0, 0.3);
   --bg-toggle: #d0d0d0;
   --bg-modal: #ffffff;
   --bg-update: #f5f5f5;
@@ -40,8 +40,8 @@
   --shiny-color-secondary: #555555;
 
   --shadow-card: none;
-  --shadow-hover: 0 0 16px rgba(0,0,0,0.06);
-  --shadow-menu: 0 8px 24px rgba(0,0,0,0.12);
+  --shadow-hover: 0 0 16px rgba(0, 0, 0, 0.06);
+  --shadow-menu: 0 8px 24px rgba(0, 0, 0, 0.12);
 
   --scrollbar-track: #f0f0f0;
   --scrollbar-thumb: #cccccc;
@@ -69,7 +69,7 @@
   --skeleton-to: #d0d0d0;
 
   --app-border: rgba(0, 0, 0, 0.18);
-  --accent-line: linear-gradient(90deg, transparent, rgba(0,0,0,0.3), transparent);
+  --accent-line: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.3), transparent);
 
   --btn-primary-bg: #1a1a1a;
   --btn-primary-text: #ffffff;
@@ -99,7 +99,7 @@
   --btn-snooze-text: var(--text-secondary);
   --left-accent: var(--text-primary);
   --card-shadow: none;
-  --shake-glow: rgba(255,255,255,0.4);
+  --shake-glow: rgba(255, 255, 255, 0.4);
 
   --pill-bg: #060608;
   --pill-border: #2e2e2e;
@@ -118,7 +118,7 @@
   --bg-input: #0a0a0a;
   --bg-hover: #141414;
   --bg-badge: #111111;
-  --bg-overlay: rgba(0,0,0,0.6);
+  --bg-overlay: rgba(0, 0, 0, 0.6);
   --bg-toggle: #222222;
   --bg-modal: #0a0a0a;
   --bg-update: #0a0a0a;
@@ -147,8 +147,8 @@
   --shiny-color-secondary: #888888;
 
   --shadow-card: none;
-  --shadow-hover: 0 0 20px rgba(255,255,255,0.04);
-  --shadow-menu: 0 8px 24px rgba(0,0,0,0.5);
+  --shadow-hover: 0 0 20px rgba(255, 255, 255, 0.04);
+  --shadow-menu: 0 8px 24px rgba(0, 0, 0, 0.5);
 
   --scrollbar-track: #000000;
   --scrollbar-thumb: #1a1a1a;
@@ -176,7 +176,7 @@
   --skeleton-to: #2a2a2a;
 
   --app-border: rgba(255, 255, 255, 0.18);
-  --accent-line: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  --accent-line: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
 
   --btn-primary-bg: #ffffff;
   --btn-primary-text: #000000;
@@ -206,7 +206,7 @@
   --btn-snooze-text: var(--text-secondary);
   --left-accent: var(--text-primary);
   --card-shadow: none;
-  --shake-glow: rgba(255,255,255,0.4);
+  --shake-glow: rgba(255, 255, 255, 0.4);
 
   --pill-bg: #060608;
   --pill-border: #1a1a1a;
@@ -309,15 +309,15 @@
   --shiny-primary: #ede0d0;
   --shiny-secondary: #c4a882;
 
-  --btn-done-bg: rgba(76,175,80,0.12);
+  --btn-done-bg: rgba(76, 175, 80, 0.12);
   --btn-done-text: #81c784;
-  --btn-done-border: rgba(76,175,80,0.3);
-  --btn-snooze-bg: rgba(255,183,77,0.12);
+  --btn-done-border: rgba(76, 175, 80, 0.3);
+  --btn-snooze-bg: rgba(255, 183, 77, 0.12);
   --btn-snooze-text: #ffb74d;
 
   --left-accent: #c4a882;
   --card-shadow: none;
-  --shake-glow: rgba(196,168,130,0.3);
+  --shake-glow: rgba(196, 168, 130, 0.3);
 
   --pill-bg: #3d2e22;
   --pill-border: #5a4633;
@@ -332,7 +332,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   width: 100%;
   height: 100%;
 }
@@ -350,7 +351,7 @@ html {
   background-image: radial-gradient(circle, var(--bg-dot) 1px, transparent 1px);
   background-size: 24px 24px;
   color: var(--text-primary);
-  font-family: 'Geist Mono', monospace;
+  font-family: "Geist Mono", monospace;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   border: 1px solid var(--app-border, rgba(255, 255, 255, 0.15));
@@ -418,7 +419,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 14px 16px;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
   cursor: grab;
   user-select: none;
   width: 100%;
@@ -462,7 +465,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
   border-radius: 8px;
   padding: 8px 14px;
-  font-family: 'Geist Mono', monospace;
+  font-family: "Geist Mono", monospace;
 }
 
 .v-action:hover {
@@ -522,7 +525,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border-radius: 999px;
   background: var(--text-inverse);
   transition: transform 0.2s ease;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .toggle-thumb.active {
@@ -568,7 +571,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border-radius: 8px;
   padding: 11px 14px;
   font-size: 14px;
-  font-family: 'Geist Mono', monospace;
+  font-family: "Geist Mono", monospace;
   outline: none;
   transition: border-color 0.15s ease;
 }
@@ -602,7 +605,7 @@ input[type="number"] {
   color: var(--text-muted);
   cursor: pointer;
   transition: all 0.15s ease;
-  font-family: 'Geist Mono', monospace;
+  font-family: "Geist Mono", monospace;
 }
 
 .pill-toggle:hover {
@@ -617,11 +620,19 @@ input[type="number"] {
 }
 
 @keyframes shine {
-  to { background-position: 200% center; }
+  to {
+    background-position: 200% center;
+  }
 }
 
 .shiny-btn {
-  background: linear-gradient(90deg, var(--text-primary) 0%, var(--text-secondary) 40%, var(--text-primary) 60%, var(--text-secondary) 100%) !important;
+  background: linear-gradient(
+    90deg,
+    var(--text-primary) 0%,
+    var(--text-secondary) 40%,
+    var(--text-primary) 60%,
+    var(--text-secondary) 100%
+  ) !important;
   background-size: 200% auto !important;
   animation: shine 2s linear infinite;
   -webkit-background-clip: unset;
@@ -633,12 +644,10 @@ input[type="number"] {
   opacity: 0.85 !important;
 }
 
-
-
 /* ─── Feature Button Styles (.feature-btn) ──────────────────────────── */
 
 .feature-btn {
-  font-family: 'Geist Mono', monospace;
+  font-family: "Geist Mono", monospace;
   font-size: 11px;
   color: var(--text-secondary);
   background: transparent;
@@ -705,8 +714,7 @@ input[type="number"] {
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background-image:
-    radial-gradient(circle, var(--grid-line) 1px, transparent 1px);
+  background-image: radial-gradient(circle, var(--grid-line) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 

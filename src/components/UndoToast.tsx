@@ -69,9 +69,7 @@ export default function UndoToast() {
           }}
         >
           <span style={{ color: "var(--text-primary)" }}>
-            {undoEntry.action === "delete"
-              ? "Task deleted"
-              : "Task completed"}
+            {undoEntry.action === "delete" ? "Task deleted" : "Task completed"}
           </span>
           <button
             onClick={handleUndo}

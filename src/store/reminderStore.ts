@@ -14,6 +14,8 @@ import {
   getWorkspaceTasks,
   getAllWorkspaceTasks,
 } from "@/lib/tauriCommands";
+import { applyTheme, listenSystemTheme, stopSystemTheme } from "@/lib/theme";
+import { sortTasks } from "@/lib/utils";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -201,7 +203,9 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
       // resolve startedAt using the get() function from zustand's store context
       const existingTask =
         get().tasks.find((t) => t.id === id) ||
-        Object.values(get().workspaceTasks).flat().find((t) => t.id === id);
+        Object.values(get().workspaceTasks)
+          .flat()
+          .find((t) => t.id === id);
 
       let resolvedStartedAt: string | null = startedAt;
       if (resolvedStartedAt === null) {
@@ -238,8 +242,11 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
           t.id === id ? { ...t, ...updatedFields } : t,
         );
         // Check if task was workspace-scoped
-        const target = state.tasks.find((t) => t.id === id) ||
-          Object.values(state.workspaceTasks).flat().find((t) => t.id === id);
+        const target =
+          state.tasks.find((t) => t.id === id) ||
+          Object.values(state.workspaceTasks)
+            .flat()
+            .find((t) => t.id === id);
         if (target?.workspace_id) {
           const wid = target.workspace_id;
           const wsTasks = state.workspaceTasks[wid] || [];
@@ -247,7 +254,9 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
             tasks: globalUpdated,
             workspaceTasks: {
               ...state.workspaceTasks,
-              [wid]: wsTasks.map((t) => t.id === id ? { ...t, ...updatedFields } : t).sort(sortTasks),
+              [wid]: wsTasks
+                .map((t) => (t.id === id ? { ...t, ...updatedFields } : t))
+                .sort(sortTasks),
             },
           };
         }
@@ -259,39 +268,45 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
     }
   },
 
-removeTask: async (id) => {
-     const target = get().tasks.find((t) => t.id === id) ||
-       Object.values(get().workspaceTasks).flat().find((t) => t.id === id);
-     try {
-       await deleteTask(id);
-       if (target) {
-         get().pushUndo({ action: "delete", task: target });
-       }
-       set((state) => {
-         if (target?.workspace_id) {
-           const wid = target.workspace_id;
-           const wsTasks = state.workspaceTasks[wid] || [];
-           return {
-             tasks: state.tasks.filter((t) => t.id !== id),
-             workspaceTasks: {
-               ...state.workspaceTasks,
-               [wid]: wsTasks.filter((t) => t.id !== id),
-             },
-           };
-         }
-         return { tasks: state.tasks.filter((t) => t.id !== id) };
-       });
-     } catch (error) {
-       console.error("Failed to delete task:", error);
-       throw error;
-     }
-   },
+  removeTask: async (id) => {
+    const target =
+      get().tasks.find((t) => t.id === id) ||
+      Object.values(get().workspaceTasks)
+        .flat()
+        .find((t) => t.id === id);
+    try {
+      await deleteTask(id);
+      if (target) {
+        get().pushUndo({ action: "delete", task: target });
+      }
+      set((state) => {
+        if (target?.workspace_id) {
+          const wid = target.workspace_id;
+          const wsTasks = state.workspaceTasks[wid] || [];
+          return {
+            tasks: state.tasks.filter((t) => t.id !== id),
+            workspaceTasks: {
+              ...state.workspaceTasks,
+              [wid]: wsTasks.filter((t) => t.id !== id),
+            },
+          };
+        }
+        return { tasks: state.tasks.filter((t) => t.id !== id) };
+      });
+    } catch (error) {
+      console.error("Failed to delete task:", error);
+      throw error;
+    }
+  },
 
-completeTask: async (id) => {
+  completeTask: async (id) => {
     let workspaceId: number | null = null;
     try {
-      const target = get().tasks.find((t) => t.id === id) ||
-        Object.values(get().workspaceTasks).flat().find((t) => t.id === id);
+      const target =
+        get().tasks.find((t) => t.id === id) ||
+        Object.values(get().workspaceTasks)
+          .flat()
+          .find((t) => t.id === id);
       await completeTaskCmd(id);
       if (target) {
         get().pushUndo({ action: "complete", task: target });
@@ -303,19 +318,15 @@ completeTask: async (id) => {
           const wid = workspaceId;
           const wsTasks = state.workspaceTasks[wid] || [];
           return {
-            tasks: state.tasks.map((t) =>
-              t.id === id ? { ...t, completed: true } : t,
-            ),
+            tasks: state.tasks.map((t) => (t.id === id ? { ...t, completed: true } : t)),
             workspaceTasks: {
               ...state.workspaceTasks,
-              [wid]: wsTasks.map((t) => t.id === id ? { ...t, completed: true } : t),
+              [wid]: wsTasks.map((t) => (t.id === id ? { ...t, completed: true } : t)),
             },
           };
         }
         return {
-          tasks: state.tasks.map((t) =>
-            t.id === id ? { ...t, completed: true } : t,
-          ),
+          tasks: state.tasks.map((t) => (t.id === id ? { ...t, completed: true } : t)),
         };
       });
     } catch (error) {
@@ -327,8 +338,11 @@ completeTask: async (id) => {
   uncompleteTask: async (id) => {
     let workspaceId: number | null = null;
     try {
-      const target = get().tasks.find((t) => t.id === id) ||
-        Object.values(get().workspaceTasks).flat().find((t) => t.id === id);
+      const target =
+        get().tasks.find((t) => t.id === id) ||
+        Object.values(get().workspaceTasks)
+          .flat()
+          .find((t) => t.id === id);
       workspaceId = target?.workspace_id ?? null;
       await uncompleteTaskCmd(id);
       set((state) => {
@@ -336,19 +350,15 @@ completeTask: async (id) => {
           const wid = workspaceId;
           const wsTasks = state.workspaceTasks[wid] || [];
           return {
-            tasks: state.tasks.map((t) =>
-              t.id === id ? { ...t, completed: false } : t,
-            ),
+            tasks: state.tasks.map((t) => (t.id === id ? { ...t, completed: false } : t)),
             workspaceTasks: {
               ...state.workspaceTasks,
-              [wid]: wsTasks.map((t) => t.id === id ? { ...t, completed: false } : t),
+              [wid]: wsTasks.map((t) => (t.id === id ? { ...t, completed: false } : t)),
             },
           };
         }
         return {
-          tasks: state.tasks.map((t) =>
-            t.id === id ? { ...t, completed: false } : t,
-          ),
+          tasks: state.tasks.map((t) => (t.id === id ? { ...t, completed: false } : t)),
         };
       });
     } catch (error) {
@@ -429,9 +439,7 @@ completeTask: async (id) => {
       await updateSetting(key, value);
       const { settings } = get();
       const updated: AppSettings =
-        key === "theme"
-          ? { ...settings, theme: value as AppSettings["theme"] }
-          : settings;
+        key === "theme" ? { ...settings, theme: value as AppSettings["theme"] } : settings;
       set({ settings: updated });
       if (key === "theme") {
         stopSystemTheme();
@@ -450,7 +458,8 @@ completeTask: async (id) => {
 
   // ─── UI ────────────────────────────────────────────────────────────────
 
-  setAddTaskOpen: (open: boolean) => set({ isAddTaskOpen: open, editingTask: open ? get().editingTask : null }),
+  setAddTaskOpen: (open: boolean) =>
+    set({ isAddTaskOpen: open, editingTask: open ? get().editingTask : null }),
   setSettingsOpen: (open: boolean) => set({ isSettingsOpen: open }),
   setMcpOpen: (open: boolean) => set({ isMcpOpen: open }),
   setPreScheduleOpen: (open: boolean) => set({ isPreScheduleOpen: open }),
@@ -461,55 +470,3 @@ completeTask: async (id) => {
   pushUndo: (entry) => set({ undoEntry: entry }),
   clearUndo: () => set({ undoEntry: null }),
 }));
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function sortTasks(a: Task, b: Task): number {
-  return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-}
-
-function applyTheme(theme: string): void {
-  const root = document.documentElement;
-  root.removeAttribute("data-theme");
-  if (theme === "dark") {
-    root.classList.add("dark");
-  } else if (theme === "light") {
-    root.classList.remove("dark");
-  } else if (theme === "parchment") {
-    root.classList.remove("dark");
-    root.setAttribute("data-theme", "parchment");
-  } else {
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)",
-    ).matches;
-    if (prefersDark) {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-  }
-}
-
-let mediaListener: (() => void) | null = null;
-
-function listenSystemTheme(): void {
-  if (mediaListener) mediaListener();
-  const mq = window.matchMedia("(prefers-color-scheme: dark)");
-  const handler = (e: MediaQueryListEvent) => {
-    const root = document.documentElement;
-    if (e.matches) {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-  };
-  mq.addEventListener("change", handler);
-  mediaListener = () => mq.removeEventListener("change", handler);
-}
-
-function stopSystemTheme(): void {
-  if (mediaListener) {
-    mediaListener();
-    mediaListener = null;
-  }
-}

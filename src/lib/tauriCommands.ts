@@ -23,10 +23,7 @@ export interface AppSettings {
 }
 
 // ─── Quick Add ────────────────────────────────────────────────────────────────
-export async function quickAddTask(
-  title: string,
-  dueDate: string,
-): Promise<void> {
+export async function quickAddTask(title: string, dueDate: string): Promise<void> {
   return invoke("quick_add_task", { title, dueDate });
 }
 
@@ -112,10 +109,7 @@ export async function getSettingsMap(): Promise<SettingsMap> {
   return invoke<SettingsMap>("get_settings_map");
 }
 
-export async function updateSetting(
-  key: string,
-  value: string,
-): Promise<void> {
+export async function updateSetting(key: string, value: string): Promise<void> {
   return invoke("update_setting", { key, value });
 }
 
@@ -129,10 +123,7 @@ export async function snoozeTask(id: number): Promise<void> {
   return invoke("snooze_task", { id });
 }
 
-export async function fireTimeLimitNotification(
-  taskId: number,
-  taskTitle: string,
-): Promise<void> {
+export async function fireTimeLimitNotification(taskId: number, taskTitle: string): Promise<void> {
   return invoke("fire_time_limit_notification", { taskId, taskTitle });
 }
 
@@ -313,5 +304,3 @@ export async function setEdgePeekEnabled(enabled: boolean): Promise<void> {
 export async function toggleEdgePeek(): Promise<void> {
   return invoke("toggle_edge_peek");
 }
-
-

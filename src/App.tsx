@@ -14,18 +14,35 @@ import WorkspacesView from "@/components/WorkspacesView";
 import UndoToast from "@/components/UndoToast";
 import { useReminders } from "@/hooks/useReminders";
 import { useReminderStore } from "@/store/reminderStore";
-import { setZenMode, snapAllCardsToGrid, getCompactMode, setCompactMode, getShakeEnabled, setShakeEnabled, getEdgePeekEnabled, setEdgePeekEnabled } from "@/lib/tauriCommands";
+import {
+  setZenMode,
+  snapAllCardsToGrid,
+  getCompactMode,
+  setCompactMode,
+  getShakeEnabled,
+  setShakeEnabled,
+  getEdgePeekEnabled,
+  setEdgePeekEnabled,
+} from "@/lib/tauriCommands";
 import { checkForUpdates, checkAndInstall } from "@/lib/updater";
 import ShinyText from "@/components/ui/ShinyText";
 import type { Workspace } from "@/lib/tauriCommands";
-import { Warning, Info, ArrowRight, Circle, Play, Pause, DotOutline, Lightning, Diamond, GridFour } from "@phosphor-icons/react";
+import {
+  Warning,
+  Info,
+  ArrowRight,
+  Circle,
+  Play,
+  Pause,
+  DotOutline,
+  Lightning,
+  Diamond,
+  GridFour,
+} from "@phosphor-icons/react";
 
 type AppTab = "tasks" | "workspaces";
 
-class ErrorBoundary extends Component<
-  { children: ReactNode },
-  { hasError: boolean }
-> {
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   private timeoutId: ReturnType<typeof setTimeout> | null = null;
 
   constructor(props: { children: ReactNode }) {
@@ -71,7 +88,10 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState<AppTab>("tasks");
 
-  const [workspaceContext, setWorkspaceContext] = useState<{ workspaceId: number; workspaceName: string } | null>(null);
+  const [workspaceContext, setWorkspaceContext] = useState<{
+    workspaceId: number;
+    workspaceName: string;
+  } | null>(null);
 
   const [activeWorkspaceName, setActiveWorkspaceName] = useState<string | null>(null);
 
@@ -97,8 +117,14 @@ export default function App() {
       setActiveWorkspaceName(null);
     });
     return () => {
-      p1.then((f) => f(), () => {});
-      p2.then((f) => f(), () => {});
+      p1.then(
+        (f) => f(),
+        () => {},
+      );
+      p2.then(
+        (f) => f(),
+        () => {},
+      );
     };
   }, []);
 
@@ -125,7 +151,10 @@ export default function App() {
       }
     });
     return () => {
-      p.then((f) => f(), () => {});
+      p.then(
+        (f) => f(),
+        () => {},
+      );
     };
   }, []); // all refs are stable
 
@@ -134,7 +163,10 @@ export default function App() {
       fetchTasks();
     });
     return () => {
-      p.then((f) => f(), () => {});
+      p.then(
+        (f) => f(),
+        () => {},
+      );
     };
   }, []); // fetchTasks is stable via getState()
 
@@ -194,15 +226,23 @@ export default function App() {
   const [compactMode, setCompactModeLocal] = useState(false);
 
   useEffect(() => {
-    getCompactMode().then(setCompactModeLocal).catch(() => {});
+    getCompactMode()
+      .then(setCompactModeLocal)
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
     const p1 = listen("compact_mode_enabled", () => setCompactModeLocal(true));
     const p2 = listen("compact_mode_disabled", () => setCompactModeLocal(false));
     return () => {
-      p1.then((f) => f(), () => {});
-      p2.then((f) => f(), () => {});
+      p1.then(
+        (f) => f(),
+        () => {},
+      );
+      p2.then(
+        (f) => f(),
+        () => {},
+      );
     };
   }, []);
 
@@ -220,7 +260,9 @@ export default function App() {
   const [digestEnabled, setDigestEnabledLocal] = useState(false);
 
   useEffect(() => {
-    invoke<boolean>("get_daily_digest_enabled").then(setDigestEnabledLocal).catch(() => {});
+    invoke<boolean>("get_daily_digest_enabled")
+      .then(setDigestEnabledLocal)
+      .catch(() => {});
   }, []);
 
   const toggleDigest = async () => {
@@ -236,18 +278,28 @@ export default function App() {
   const [shakeEnabled, setShakeEnabledLocal] = useState(false);
 
   useEffect(() => {
-    getShakeEnabled().then(setShakeEnabledLocal).catch(() => {});
+    getShakeEnabled()
+      .then(setShakeEnabledLocal)
+      .catch(() => {});
   }, []);
 
   const [edgePeekEnabled, setEdgePeekEnabledLocal] = useState(false);
 
   useEffect(() => {
-    getEdgePeekEnabled().then(setEdgePeekEnabledLocal).catch(() => {});
+    getEdgePeekEnabled()
+      .then(setEdgePeekEnabledLocal)
+      .catch(() => {});
     const p1 = listen("compact_mode_enabled", () => setEdgePeekEnabledLocal(false));
     const p2 = listen("edge_peek_auto_hide", () => setEdgePeekEnabledLocal(false));
     return () => {
-      p1.then((f) => f(), () => {});
-      p2.then((f) => f(), () => {});
+      p1.then(
+        (f) => f(),
+        () => {},
+      );
+      p2.then(
+        (f) => f(),
+        () => {},
+      );
     };
   }, []);
 
@@ -274,14 +326,24 @@ export default function App() {
     const p = listen("show_wayland_warning", () => {
       setShowWaylandWarning(true);
     });
-    return () => { p.then(f => f(), () => {}); };
+    return () => {
+      p.then(
+        (f) => f(),
+        () => {},
+      );
+    };
   }, []);
 
   useEffect(() => {
     const p = listen("show_gnome_tray_warning", () => {
       setShowGnomeTrayWarning(true);
     });
-    return () => { p.then(f => f(), () => {}); };
+    return () => {
+      p.then(
+        (f) => f(),
+        () => {},
+      );
+    };
   }, []);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -316,17 +378,19 @@ export default function App() {
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
-        boxSizing: "border-box"
+        boxSizing: "border-box",
       }}
     >
       <Onboarding />
       {/* Top accent border — makes window edge very visible */}
-      <div style={{
-        height: "1px",
-        width: "100%",
-        background: "var(--accent-line)",
-        flexShrink: 0
-      }} />
+      <div
+        style={{
+          height: "1px",
+          width: "100%",
+          background: "var(--accent-line)",
+          flexShrink: 0,
+        }}
+      />
       {/* ─── Titlebar ─────────────────────────────────────────── */}
       <div
         data-tauri-drag-region
@@ -352,12 +416,26 @@ export default function App() {
               flexShrink: 0,
             }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-inverse)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-14 0Z"/>
-              <circle cx="12" cy="9" r="2.5" fill="var(--text-inverse)" stroke="none"/>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--text-inverse)"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-14 0Z" />
+              <circle cx="12" cy="9" r="2.5" fill="var(--text-inverse)" stroke="none" />
             </svg>
           </div>
-          <ShinyText text="PinedIn" speed={4} className="font-semibold" style={{ fontSize: "14px" }} />
+          <ShinyText
+            text="PinedIn"
+            speed={4}
+            className="font-semibold"
+            style={{ fontSize: "14px" }}
+          />
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -374,7 +452,16 @@ export default function App() {
               color: "#22c55e",
             }}
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M12 2L2 7l10 5 10-5-10-5z" />
               <path d="M2 17l10 5 10-5" />
               <path d="M2 12l10 5 10-5" />
@@ -393,7 +480,16 @@ export default function App() {
                 justifyContent: "center",
               }}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <circle cx="12" cy="12" r="3" />
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
               </svg>
@@ -413,7 +509,11 @@ export default function App() {
             )}
           </div>
           <button
-            onClick={() => getCurrentWindow().minimize().catch(() => {})}
+            onClick={() =>
+              getCurrentWindow()
+                .minimize()
+                .catch(() => {})
+            }
             style={{
               width: "24px",
               height: "24px",
@@ -429,11 +529,25 @@ export default function App() {
               transition: "background 0.12s ease, color 0.12s ease",
             }}
             title="Minimize"
-            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-hover)"; e.currentTarget.style.color = "var(--text-primary)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}
-          ><svg width="10" height="1" viewBox="0 0 10 1" fill="none"><rect width="10" height="1" fill="currentColor"/></svg></button>
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--bg-hover)";
+              e.currentTarget.style.color = "var(--text-primary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "var(--text-secondary)";
+            }}
+          >
+            <svg width="10" height="1" viewBox="0 0 10 1" fill="none">
+              <rect width="10" height="1" fill="currentColor" />
+            </svg>
+          </button>
           <button
-            onClick={() => getCurrentWindow().toggleMaximize().catch(() => {})}
+            onClick={() =>
+              getCurrentWindow()
+                .toggleMaximize()
+                .catch(() => {})
+            }
             style={{
               width: "24px",
               height: "24px",
@@ -449,11 +563,25 @@ export default function App() {
               transition: "background 0.12s ease, color 0.12s ease",
             }}
             title="Maximize"
-            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-hover)"; e.currentTarget.style.color = "var(--text-primary)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}
-          ><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="0.5" y="0.5" width="9" height="9" stroke="currentColor" fill="none"/></svg></button>
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--bg-hover)";
+              e.currentTarget.style.color = "var(--text-primary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "var(--text-secondary)";
+            }}
+          >
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <rect x="0.5" y="0.5" width="9" height="9" stroke="currentColor" fill="none" />
+            </svg>
+          </button>
           <button
-            onClick={() => getCurrentWindow().close().catch(() => {})}
+            onClick={() =>
+              getCurrentWindow()
+                .close()
+                .catch(() => {})
+            }
             style={{
               width: "24px",
               height: "24px",
@@ -471,41 +599,80 @@ export default function App() {
               transition: "background 0.12s ease, color 0.12s ease",
             }}
             title="Close"
-            onMouseEnter={(e) => { e.currentTarget.style.background = "#ef4444"; e.currentTarget.style.color = "#ffffff"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}
-          ><svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1 1L8 8M8 1L1 8" stroke="currentColor" strokeWidth="1.2"/></svg></button>
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#ef4444";
+              e.currentTarget.style.color = "#ffffff";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "var(--text-secondary)";
+            }}
+          >
+            <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+              <path d="M1 1L8 8M8 1L1 8" stroke="currentColor" strokeWidth="1.2" />
+            </svg>
+          </button>
         </div>
       </div>
 
       {/* ─── Wayland Warning ──────────────────────────────────── */}
       {showWaylandWarning && (
-        <div style={{
-          background: "var(--bg-card)",
-          border: "1px solid var(--border)",
-          borderRadius: "8px",
-          padding: "12px 16px",
-          margin: "8px 14px",
-          fontSize: "11px",
-          fontFamily: "'Geist Mono', monospace",
-          color: "var(--text-primary)",
-          display: "flex",
-          flexDirection: "column",
-          gap: "8px"
-        }}>
-          <span style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}><Warning size={15} weight="light" /> Wayland detected</span>
-          <span style={{ color: "var(--text-secondary)" }}>
-            Always-on-top floating cards require the X11 backend on GNOME.
-            Run PinedIn with:
+        <div
+          style={{
+            background: "var(--bg-card)",
+            border: "1px solid var(--border)",
+            borderRadius: "8px",
+            padding: "12px 16px",
+            margin: "8px 14px",
+            fontSize: "11px",
+            fontFamily: "'Geist Mono', monospace",
+            color: "var(--text-primary)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+          }}
+        >
+          <span style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
+            <Warning size={15} weight="light" /> Wayland detected
           </span>
-          <code style={{ background: "var(--bg-hover)", padding: "6px 10px", borderRadius: "4px", color: "var(--text-primary)", fontSize: "10px" }}>
+          <span style={{ color: "var(--text-secondary)" }}>
+            Always-on-top floating cards require the X11 backend on GNOME. Run PinedIn with:
+          </span>
+          <code
+            style={{
+              background: "var(--bg-hover)",
+              padding: "6px 10px",
+              borderRadius: "4px",
+              color: "var(--text-primary)",
+              fontSize: "10px",
+            }}
+          >
             GDK_BACKEND=x11 pinedin
           </code>
           <span style={{ color: "var(--text-muted)", fontSize: "10px" }}>
-            Or install the <a href="https://extensions.gnome.org/extension/8324/always-on-top" target="_blank" style={{ color: "var(--text-primary)" }}>Always on Top</a> GNOME extension and pin PinedIn windows manually.
+            Or install the{" "}
+            <a
+              href="https://extensions.gnome.org/extension/8324/always-on-top"
+              target="_blank"
+              style={{ color: "var(--text-primary)" }}
+            >
+              Always on Top
+            </a>{" "}
+            GNOME extension and pin PinedIn windows manually.
           </span>
           <button
             onClick={() => setShowWaylandWarning(false)}
-            style={{ alignSelf: "flex-end", background: "transparent", border: "1px solid var(--border)", color: "var(--text-muted)", borderRadius: "4px", padding: "4px 10px", fontSize: "10px", cursor: "pointer", fontFamily: "'Geist Mono', monospace" }}
+            style={{
+              alignSelf: "flex-end",
+              background: "transparent",
+              border: "1px solid var(--border)",
+              color: "var(--text-muted)",
+              borderRadius: "4px",
+              padding: "4px 10px",
+              fontSize: "10px",
+              cursor: "pointer",
+              fontFamily: "'Geist Mono', monospace",
+            }}
           >
             Got it
           </button>
@@ -514,20 +681,24 @@ export default function App() {
 
       {/* ─── GNOME Tray Warning ────────────────────────────────── */}
       {showGnomeTrayWarning && (
-        <div style={{
-          background: "var(--bg-card)",
-          border: "1px solid var(--border)",
-          borderRadius: "8px",
-          padding: "12px 16px",
-          margin: "8px 14px",
-          fontSize: "11px",
-          fontFamily: "'Geist Mono', monospace",
-          color: "var(--text-primary)",
-          display: "flex",
-          flexDirection: "column",
-          gap: "8px"
-        }}>
-          <span style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}><Info size={15} weight="light" /> GNOME detected</span>
+        <div
+          style={{
+            background: "var(--bg-card)",
+            border: "1px solid var(--border)",
+            borderRadius: "8px",
+            padding: "12px 16px",
+            margin: "8px 14px",
+            fontSize: "11px",
+            fontFamily: "'Geist Mono', monospace",
+            color: "var(--text-primary)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+          }}
+        >
+          <span style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
+            <Info size={15} weight="light" /> GNOME detected
+          </span>
           <span style={{ color: "var(--text-secondary)" }}>
             The system tray icon requires the AppIndicator extension on GNOME.
           </span>
@@ -536,11 +707,23 @@ export default function App() {
             target="_blank"
             style={{ color: "var(--text-primary)", fontSize: "10px" }}
           >
-            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>Install AppIndicator Extension <ArrowRight size={14} weight="bold" /></span>
+            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+              Install AppIndicator Extension <ArrowRight size={14} weight="bold" />
+            </span>
           </a>
           <button
             onClick={() => setShowGnomeTrayWarning(false)}
-            style={{ alignSelf: "flex-end", background: "transparent", border: "1px solid var(--border)", color: "var(--text-muted)", borderRadius: "4px", padding: "4px 10px", fontSize: "10px", cursor: "pointer", fontFamily: "'Geist Mono', monospace" }}
+            style={{
+              alignSelf: "flex-end",
+              background: "transparent",
+              border: "1px solid var(--border)",
+              color: "var(--text-muted)",
+              borderRadius: "4px",
+              padding: "4px 10px",
+              fontSize: "10px",
+              cursor: "pointer",
+              fontFamily: "'Geist Mono', monospace",
+            }}
           >
             Got it
           </button>
@@ -606,8 +789,16 @@ export default function App() {
             flexShrink: 0,
           }}
         >
-          <span style={{ color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "6px" }}>
-            <Circle size={12} weight="fill" /> Workspace active: <strong>{activeWorkspaceName}</strong>
+          <span
+            style={{
+              color: "var(--text-primary)",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            <Circle size={12} weight="fill" /> Workspace active:{" "}
+            <strong>{activeWorkspaceName}</strong>
           </span>
           <button
             onClick={() => invoke("deactivate_workspace")}
@@ -646,16 +837,26 @@ export default function App() {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "15px", fontWeight: 600, fontFamily: "'Geist Mono', monospace", letterSpacing: "-0.3px", color: "var(--text-primary)" }}>
+                <span
+                  style={{
+                    fontSize: "15px",
+                    fontWeight: 600,
+                    fontFamily: "'Geist Mono', monospace",
+                    letterSpacing: "-0.3px",
+                    color: "var(--text-primary)",
+                  }}
+                >
                   Tasks
                 </span>
-                <ShinyText text={`${incompleteCount} tasks remaining`} speed={6} className="" style={{ fontSize: "11px" }} />
+                <ShinyText
+                  text={`${incompleteCount} tasks remaining`}
+                  speed={6}
+                  className=""
+                  style={{ fontSize: "11px" }}
+                />
               </div>
               <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                <button
-                  onClick={() => setPreScheduleOpen(true)}
-                  className="feature-btn"
-                >
+                <button onClick={() => setPreScheduleOpen(true)} className="feature-btn">
                   + Pre-Schedule
                 </button>
                 <button
@@ -707,7 +908,7 @@ export default function App() {
           </>
         )}
 
-        {activeTab === "workspaces" && 
+        {activeTab === "workspaces" && (
           <div
             style={{
               flex: 1,
@@ -729,84 +930,143 @@ export default function App() {
               />
             </ErrorBoundary>
           </div>
-        }
+        )}
       </div>
 
       {/* ─── Bottom Bar ──────────────────────────────────────── */}
       <div
-          style={{
-            height: "44px",
-            minHeight: "44px",
-            background: "var(--bg-app)",
-            borderTop: "1px solid var(--divider)",
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-            padding: "0 16px",
-            zIndex: 50,
-          }}
+        style={{
+          height: "44px",
+          minHeight: "44px",
+          background: "var(--bg-app)",
+          borderTop: "1px solid var(--divider)",
+          display: "flex",
+          alignItems: "center",
+          gap: "4px",
+          padding: "0 16px",
+          zIndex: 50,
+        }}
+      >
+        <button
+          onClick={togglePaused}
+          className="feature-btn"
+          style={
+            isPaused
+              ? {
+                  borderBottom: "2px solid var(--tab-active-bg)",
+                }
+              : undefined
+          }
         >
-          <button
-            onClick={togglePaused}
-            className="feature-btn"
-            style={isPaused ? {
-              borderBottom: "2px solid var(--tab-active-bg)",
-            } : undefined}
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>{isPaused ? <><Play size={15} weight="light" /> Resume</> : <><Pause size={15} weight="light" /> Pause</>}</span>
-          </button>
-          <button
-            onClick={toggleCompactMode}
-            className="feature-btn"
-            style={compactMode ? {
-              borderBottom: "2px solid var(--tab-active-bg)",
-            } : undefined}
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><DotOutline size={15} weight="light" /> Compact</span>
-          </button>
-          <button
-            onClick={toggleZenMode}
-            className="feature-btn"
-            style={zenMode ? {
-              borderBottom: "2px solid var(--tab-active-bg)",
-            } : undefined}
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>{zenMode ? <><Circle size={15} weight="light" /> Zen On</> : <><Circle size={15} weight="light" /> Zen</>}</span>
-          </button>
-          <button
-            onClick={() => snapAllCardsToGrid()}
-            className="feature-btn"
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><GridFour size={15} weight="light" /> Align</span>
-          </button>
-          <button
-            onClick={toggleShake}
-            className="feature-btn"
-            style={shakeEnabled ? {
-              borderBottom: "2px solid var(--tab-active-bg)",
-            } : undefined}
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>{shakeEnabled ? <><Lightning size={15} weight="light" /> Shake On</> : <><Lightning size={15} weight="light" /> Shake</>}</span>
-          </button>
-          <button
-            onClick={toggleDigest}
-            className="feature-btn"
-            style={digestEnabled ? {
-              borderBottom: "2px solid var(--tab-active-bg)",
-            } : undefined}
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Diamond size={15} weight="light" /> Digest</span>
-          </button>
-          <button
-            onClick={toggleEdgePeek}
-            className="feature-btn"
-            style={edgePeekEnabled ? {
-              borderBottom: "2px solid var(--tab-active-bg)",
-            } : undefined}
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Diamond size={15} weight="light" /> Edge Peek</span>
-          </button>
-        </div>
+          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            {isPaused ? (
+              <>
+                <Play size={15} weight="light" /> Resume
+              </>
+            ) : (
+              <>
+                <Pause size={15} weight="light" /> Pause
+              </>
+            )}
+          </span>
+        </button>
+        <button
+          onClick={toggleCompactMode}
+          className="feature-btn"
+          style={
+            compactMode
+              ? {
+                  borderBottom: "2px solid var(--tab-active-bg)",
+                }
+              : undefined
+          }
+        >
+          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <DotOutline size={15} weight="light" /> Compact
+          </span>
+        </button>
+        <button
+          onClick={toggleZenMode}
+          className="feature-btn"
+          style={
+            zenMode
+              ? {
+                  borderBottom: "2px solid var(--tab-active-bg)",
+                }
+              : undefined
+          }
+        >
+          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            {zenMode ? (
+              <>
+                <Circle size={15} weight="light" /> Zen On
+              </>
+            ) : (
+              <>
+                <Circle size={15} weight="light" /> Zen
+              </>
+            )}
+          </span>
+        </button>
+        <button onClick={() => snapAllCardsToGrid()} className="feature-btn">
+          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <GridFour size={15} weight="light" /> Align
+          </span>
+        </button>
+        <button
+          onClick={toggleShake}
+          className="feature-btn"
+          style={
+            shakeEnabled
+              ? {
+                  borderBottom: "2px solid var(--tab-active-bg)",
+                }
+              : undefined
+          }
+        >
+          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            {shakeEnabled ? (
+              <>
+                <Lightning size={15} weight="light" /> Shake On
+              </>
+            ) : (
+              <>
+                <Lightning size={15} weight="light" /> Shake
+              </>
+            )}
+          </span>
+        </button>
+        <button
+          onClick={toggleDigest}
+          className="feature-btn"
+          style={
+            digestEnabled
+              ? {
+                  borderBottom: "2px solid var(--tab-active-bg)",
+                }
+              : undefined
+          }
+        >
+          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <Diamond size={15} weight="light" /> Digest
+          </span>
+        </button>
+        <button
+          onClick={toggleEdgePeek}
+          className="feature-btn"
+          style={
+            edgePeekEnabled
+              ? {
+                  borderBottom: "2px solid var(--tab-active-bg)",
+                }
+              : undefined
+          }
+        >
+          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <Diamond size={15} weight="light" /> Edge Peek
+          </span>
+        </button>
+      </div>
 
       {/* Modals */}
       <AddTaskModal
@@ -831,10 +1091,7 @@ export default function App() {
         updateAvailable={updateAvailable}
       />
 
-      <McpPanel
-        open={isMcpOpen}
-        onClose={() => setMcpOpen(false)}
-      />
+      <McpPanel open={isMcpOpen} onClose={() => setMcpOpen(false)} />
 
       <CustomizeCardModal />
 
@@ -870,7 +1127,14 @@ export default function App() {
               padding: "24px",
             }}
           >
-            <div style={{ fontSize: "17px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "12px" }}>
+            <div
+              style={{
+                fontSize: "17px",
+                fontWeight: 600,
+                color: "var(--text-primary)",
+                marginBottom: "12px",
+              }}
+            >
               New Version Available
             </div>
             <p style={{ fontSize: "14px", color: "var(--text-secondary)", marginBottom: "8px" }}>
@@ -888,9 +1152,9 @@ export default function App() {
                 Dismiss
               </button>
               <button
-onClick={async () => {
-                   await checkAndInstall();
-                 }}
+                onClick={async () => {
+                  await checkAndInstall();
+                }}
                 style={{
                   flex: 1,
                   padding: "8px 0",

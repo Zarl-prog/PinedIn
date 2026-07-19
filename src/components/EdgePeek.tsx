@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { CaretRight, CheckCircle } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { CaretRight, CheckCircle } from "@phosphor-icons/react";
-import type { Task } from "../lib/tauriCommands";
+import { AnimatePresence, motion } from "framer-motion";
 import type { CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { Task } from "../lib/tauriCommands";
 
 /**
  * Edge Peek — right-edge task display.
@@ -25,6 +25,10 @@ export default function EdgePeek() {
   const [hovered, setHovered] = useState(false);
   const isAnimating = useRef(false);
   const exitCompleteResolver = useRef<(() => void) | null>(null);
+  const expandedRef = useRef(expanded);
+  useEffect(() => {
+    expandedRef.current = expanded;
+  }, [expanded]);
 
   // Load persisted expanded state on mount
   useEffect(() => {
@@ -46,7 +50,7 @@ export default function EdgePeek() {
     refresh();
     const unlistenTasks = listen("tasks-updated", refresh);
     const unlistenAutoHide = listen("edge_peek_auto_hide", () => {
-      if (expanded) handleClick(); // collapse
+      if (expandedRef.current) handleClick();
     });
     return () => {
       unlistenTasks.then((f) => f());

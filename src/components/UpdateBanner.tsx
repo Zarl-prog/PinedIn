@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
-import { motion, AnimatePresence } from "framer-motion";
+import { listen } from "@tauri-apps/api/event";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
 export default function UpdateBanner() {
   const [version, setVersion] = useState<string | null>(null);

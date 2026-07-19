@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, Plug, CaretDown, CaretUp, ArrowDown } from "@phosphor-icons/react";
+import { ArrowDown, CaretDown, CaretUp, Plug, X } from "@phosphor-icons/react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 
 const MCP_PROMPT = `I have a local PinedIn task manager running on my machine. It exposes an MCP-compatible HTTP API.
 

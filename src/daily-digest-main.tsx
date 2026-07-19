@@ -1,10 +1,10 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
-import DailyDigest from "./components/DailyDigest";
-import ErrorBoundary from "./components/ErrorBoundary";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import React from "react";
+import ReactDOM from "react-dom/client";
 import { applyTheme, listenSystemTheme, stopSystemTheme } from "@/lib/theme";
+import DailyDigest from "./components/DailyDigest";
+import ErrorBoundary from "./components/ErrorBoundary";
 import "./index.css";
 
 (async () => {

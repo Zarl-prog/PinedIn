@@ -1,18 +1,17 @@
+import { Circle, Hourglass, PencilSimpleLine, Tag, X } from "@phosphor-icons/react";
+import { getVersion } from "@tauri-apps/api/app";
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useSettings } from "@/hooks/useSettings";
-import { useReminderStore } from "@/store/reminderStore";
 import {
-  isAutostartEnabled,
-  enableAutostart,
   disableAutostart,
+  enableAutostart,
   getShakeInterval,
+  isAutostartEnabled,
   setShakeInterval,
-  setCompactMode,
 } from "@/lib/tauriCommands";
 import { checkAndInstall } from "@/lib/updater";
-import { X, Circle, Hourglass, PencilSimpleLine, Tag, DotsThree } from "@phosphor-icons/react";
-import { getVersion } from "@tauri-apps/api/app";
+import { useReminderStore } from "@/store/reminderStore";
 
 const SHAKE_OPTIONS: { value: number; label: string }[] = [
   { value: 10, label: "10s" },
@@ -47,12 +46,16 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
   const [appVersion, setAppVersion] = useState("...");
 
   useEffect(() => {
-    getVersion().then(setAppVersion).catch(() => setAppVersion("?"));
+    getVersion()
+      .then(setAppVersion)
+      .catch(() => setAppVersion("?"));
   }, []);
 
   useEffect(() => {
     if (open) {
-      getShakeInterval().then(setShakeIntervalState).catch(() => {});
+      getShakeInterval()
+        .then(setShakeIntervalState)
+        .catch(() => {});
     }
   }, [open]);
 
@@ -251,9 +254,9 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                     <span
                       style={{
                         display: "block",
-                      fontSize: "13px",
-                      color: "var(--text-muted)",
-                      marginTop: "2px",
+                        fontSize: "13px",
+                        color: "var(--text-muted)",
+                        marginTop: "2px",
                       }}
                     >
                       Automatically start PinedIn when you log in
@@ -265,9 +268,7 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                     className={`toggle-track${autostartOn ? " active" : ""}`}
                     style={{ flexShrink: 0 }}
                   >
-                    <span
-                      className={`toggle-thumb${autostartOn ? " active" : ""}`}
-                    />
+                    <span className={`toggle-thumb${autostartOn ? " active" : ""}`} />
                   </button>
                 </div>
               </div>
@@ -302,7 +303,16 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                       }}
                     >
                       {option.value === "light" && (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
                           <circle cx="12" cy="12" r="5" />
                           <line x1="12" y1="1" x2="12" y2="3" />
                           <line x1="12" y1="21" x2="12" y2="23" />
@@ -315,19 +325,46 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                         </svg>
                       )}
                       {option.value === "dark" && (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
                           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                         </svg>
                       )}
                       {option.value === "system" && (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
                           <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
                           <line x1="8" y1="21" x2="16" y2="21" />
                           <line x1="12" y1="17" x2="12" y2="21" />
                         </svg>
                       )}
                       {option.value === "parchment" && (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
                           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                           <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                           <line x1="8" y1="7" x2="16" y2="7" />
@@ -393,7 +430,10 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                   Customize your tasks
                 </label>
                 <button
-                  onClick={() => { useReminderStore.getState().setCustomizeOpen(true); onClose(); }}
+                  onClick={() => {
+                    useReminderStore.getState().setCustomizeOpen(true);
+                    onClose();
+                  }}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -410,10 +450,16 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                     textAlign: "left",
                     transition: "border-color 0.15s",
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--border-hover, var(--text-muted))"}
-                  onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.borderColor = "var(--border-hover, var(--text-muted))")
+                  }
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
                 >
-                  <PencilSimpleLine size={20} weight="light" style={{ flexShrink: 0, opacity: 0.7 }} />
+                  <PencilSimpleLine
+                    size={20}
+                    weight="light"
+                    style={{ flexShrink: 0, opacity: 0.7 }}
+                  />
                   <span>Resize your task cards by dragging their edges</span>
                   <span style={{ marginLeft: "auto", fontSize: "12px", opacity: 0.5 }}>→</span>
                 </button>
@@ -430,7 +476,22 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                     marginBottom: "8px",
                   }}
                 >
-                  Updates {updateAvailable && <span style={{ color: "#ef4444", marginLeft: "6px", fontSize: "12px", display: "inline-flex", alignItems: "center", gap: "4px" }}><Circle size={10} weight="fill" />Update v{updateAvailable} ready</span>}
+                  Updates{" "}
+                  {updateAvailable && (
+                    <span
+                      style={{
+                        color: "#ef4444",
+                        marginLeft: "6px",
+                        fontSize: "12px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                      }}
+                    >
+                      <Circle size={10} weight="fill" />
+                      Update v{updateAvailable} ready
+                    </span>
+                  )}
                 </label>
                 <div
                   style={{
@@ -483,19 +544,36 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                     className="v-action"
                     style={{ flexShrink: 0, fontSize: "12px", padding: "6px 12px" }}
                   >
-                    {updateStatus.state === "checking"
-                      ? <Hourglass size={14} weight="light" />
-                      : updateStatus.state === "available"
-                        ? "Install"
-                        : "Check"}
+                    {updateStatus.state === "checking" ? (
+                      <Hourglass size={14} weight="light" />
+                    ) : updateStatus.state === "available" ? (
+                      "Install"
+                    ) : (
+                      "Check"
+                    )}
                   </button>
                 </div>
               </div>
 
               {/* Version */}
-              <div style={{ marginTop: "4px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "12px" }}>
+              <div
+                style={{
+                  marginTop: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  padding: "12px",
+                }}
+              >
                 <Tag size={13} weight="light" color="var(--text-secondary)" />
-                <span style={{ fontSize: "13px", color: "var(--text-secondary)", fontFamily: "'Geist Mono', monospace" }}>
+                <span
+                  style={{
+                    fontSize: "13px",
+                    color: "var(--text-secondary)",
+                    fontFamily: "'Geist Mono', monospace",
+                  }}
+                >
                   v{appVersion}
                 </span>
               </div>

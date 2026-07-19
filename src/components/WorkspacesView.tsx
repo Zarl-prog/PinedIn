@@ -1,13 +1,36 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { getWorkspaces, saveWorkspace, loadWorkspace, deleteWorkspace, Workspace } from "../lib/tauriCommands";
-import { useReminderStore } from "@/store/reminderStore";
-import WorkspaceDetailView from "./WorkspaceDetailView";
+import {
+  CircleHalf,
+  Diamond,
+  DotOutline,
+  DotsThree,
+  Hexagon,
+  Square,
+  Star,
+  Triangle,
+} from "@phosphor-icons/react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import {
+  deleteWorkspace,
+  getWorkspaces,
+  loadWorkspace,
+  saveWorkspace,
+  type Workspace,
+} from "../lib/tauriCommands";
 import Skeleton from "./ui/Skeleton";
-import { Hexagon, Diamond, Square, DotOutline, Triangle, CircleHalf, Star, DotsThree } from "@phosphor-icons/react";
+import WorkspaceDetailView from "./WorkspaceDetailView";
 
 const WORKSPACE_ICONS = [
-  Hexagon, Diamond, Square, DotOutline, Triangle, CircleHalf, Star, Hexagon, Diamond, Square,
+  Hexagon,
+  Diamond,
+  Square,
+  DotOutline,
+  Triangle,
+  CircleHalf,
+  Star,
+  Hexagon,
+  Diamond,
+  Square,
 ] as const;
 
 function getWorkspaceIcon(id: number): React.ElementType {
@@ -30,16 +53,19 @@ interface WorkspacesViewProps {
   onPreSchedule: () => void;
 }
 
-export default function WorkspacesView({ onOpen, onBack, workspaceContext, onAddTask, onPreSchedule }: WorkspacesViewProps) {
+export default function WorkspacesView({
+  onOpen,
+  onBack,
+  workspaceContext,
+  onAddTask,
+  onPreSchedule,
+}: WorkspacesViewProps) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [creating, setCreating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
-  // fetchWorkspaceTasks is only used in handleOpen — get stable ref via getState()
-  // so it never causes WorkspacesView to re-render when the store updates.
-  const fetchWorkspaceTasks = useReminderStore.getState().fetchWorkspaceTasks;
 
   useEffect(() => {
     setLoading(true);
@@ -79,7 +105,9 @@ export default function WorkspacesView({ onOpen, onBack, workspaceContext, onAdd
     }
     setNewName("");
     setCreating(false);
-    getWorkspaces().then(setWorkspaces).catch((e) => console.error("Failed to refresh workspaces:", e));
+    getWorkspaces()
+      .then(setWorkspaces)
+      .catch((e) => console.error("Failed to refresh workspaces:", e));
   }
 
   async function handleOpen(id: number, name: string) {
@@ -103,7 +131,9 @@ export default function WorkspacesView({ onOpen, onBack, workspaceContext, onAdd
     } catch (e) {
       console.error("Failed to delete workspace:", e);
     }
-    getWorkspaces().then(setWorkspaces).catch((e) => console.error("Failed to refresh workspaces:", e));
+    getWorkspaces()
+      .then(setWorkspaces)
+      .catch((e) => console.error("Failed to refresh workspaces:", e));
   }
 
   // If in workspace detail context, show the detail view
@@ -124,360 +154,394 @@ export default function WorkspacesView({ onOpen, onBack, workspaceContext, onAdd
 
   return (
     <AnimatePresence mode="wait">
-    <motion.div
-      key="workspace-list"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 10 }}
-      transition={{ duration: 0.15 }}
-      style={{
-        padding: "24px",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        gap: "20px",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <h2
+      <motion.div
+        key="workspace-list"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 10 }}
+        transition={{ duration: 0.15 }}
+        style={{
+          padding: "24px",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          gap: "20px",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <h2
+              style={{
+                fontSize: "18px",
+                fontWeight: 600,
+                color: "var(--text-primary)",
+                fontFamily: "'Geist Mono', monospace",
+                letterSpacing: "-0.5px",
+              }}
+            >
+              Workspaces
+            </h2>
+            <p
+              style={{
+                fontSize: "11px",
+                color: "var(--text-muted)",
+                marginTop: "2px",
+                fontFamily: "'Geist Mono', monospace",
+              }}
+            >
+              {workspaces.length} saved {workspaces.length === 1 ? "workspace" : "workspaces"}
+            </p>
+          </div>
+
+          <button
+            onClick={() => setCreating(true)}
+            className="shiny-btn"
             style={{
-              fontSize: "18px",
-              fontWeight: 600,
-              color: "var(--text-primary)",
-              fontFamily: "'Geist Mono', monospace",
-              letterSpacing: "-0.5px",
-            }}
-          >
-            Workspaces
-          </h2>
-          <p
-            style={{
+              border: "none",
+              borderRadius: "6px",
+              padding: "7px 14px",
               fontSize: "11px",
-              color: "var(--text-muted)",
-              marginTop: "2px",
+              fontWeight: 600,
+              cursor: "pointer",
               fontFamily: "'Geist Mono', monospace",
+              position: "relative",
+              overflow: "hidden",
             }}
           >
-            {workspaces.length} saved {workspaces.length === 1 ? "workspace" : "workspaces"}
-          </p>
+            + Workspace
+          </button>
         </div>
 
-        <button
-          onClick={() => setCreating(true)}
-          className="shiny-btn"
-          style={{
-            border: "none",
-            borderRadius: "6px",
-            padding: "7px 14px",
-            fontSize: "11px",
-            fontWeight: 600,
-            cursor: "pointer",
-            fontFamily: "'Geist Mono', monospace",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          + Workspace
-        </button>
-      </div>
-
-      <AnimatePresence>
-        {creating && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            style={{
-              background: "var(--bg-card)",
-              border: "1px solid var(--border)",
-              borderRadius: "8px",
-              padding: "12px",
-              display: "flex",
-              gap: "8px",
-            }}
-          >
-            <input
-              autoFocus
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleCreate();
-                if (e.key === "Escape") setCreating(false);
-              }}
-              placeholder="Workspace name..."
-              style={{
-                flex: 1,
-                background: "var(--bg-app)",
-                border: "1px solid var(--border)",
-                borderRadius: "5px",
-                padding: "7px 10px",
-                color: "var(--text-primary)",
-                fontSize: "12px",
-                fontFamily: "'Geist Mono', monospace",
-                outline: "none",
-              }}
-            />
-            <button
-              onClick={handleCreate}
-              style={{
-                background: "var(--text-primary)",
-                color: "var(--text-inverse)",
-                border: "none",
-                borderRadius: "5px",
-                padding: "7px 14px",
-                fontSize: "11px",
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "'Geist Mono', monospace",
-              }}
-            >
-              Save
-            </button>
-            <button
-              onClick={() => setCreating(false)}
-              style={{
-                background: "transparent",
-                color: "var(--text-muted)",
-                border: "1px solid var(--border-light)",
-                borderRadius: "5px",
-                padding: "7px 10px",
-                fontSize: "11px",
-                cursor: "pointer",
-                fontFamily: "'Geist Mono', monospace",
-              }}
-            >
-              Cancel
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {loading ? (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-            gap: "12px",
-          }}
-        >
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
+        <AnimatePresence>
+          {creating && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
               style={{
                 background: "var(--bg-card)",
                 border: "1px solid var(--border)",
-                borderRadius: "12px",
-                padding: "16px",
+                borderRadius: "8px",
+                padding: "12px",
                 display: "flex",
-                flexDirection: "column",
-                gap: "12px",
+                gap: "8px",
               }}
             >
-              <Skeleton width={44} height={44} borderRadius={10} />
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <Skeleton width={`${50 + i * 15}%`} height={14} />
-                <Skeleton width={`${30 + i * 10}%`} height={10} />
+              <input
+                autoFocus
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleCreate();
+                  if (e.key === "Escape") setCreating(false);
+                }}
+                placeholder="Workspace name..."
+                style={{
+                  flex: 1,
+                  background: "var(--bg-app)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "5px",
+                  padding: "7px 10px",
+                  color: "var(--text-primary)",
+                  fontSize: "12px",
+                  fontFamily: "'Geist Mono', monospace",
+                  outline: "none",
+                }}
+              />
+              <button
+                onClick={handleCreate}
+                style={{
+                  background: "var(--text-primary)",
+                  color: "var(--text-inverse)",
+                  border: "none",
+                  borderRadius: "5px",
+                  padding: "7px 14px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontFamily: "'Geist Mono', monospace",
+                }}
+              >
+                Save
+              </button>
+              <button
+                onClick={() => setCreating(false)}
+                style={{
+                  background: "transparent",
+                  color: "var(--text-muted)",
+                  border: "1px solid var(--border-light)",
+                  borderRadius: "5px",
+                  padding: "7px 10px",
+                  fontSize: "11px",
+                  cursor: "pointer",
+                  fontFamily: "'Geist Mono', monospace",
+                }}
+              >
+                Cancel
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {loading ? (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+              gap: "12px",
+            }}
+          >
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                style={{
+                  background: "var(--bg-card)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "12px",
+                  padding: "16px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                }}
+              >
+                <Skeleton width={44} height={44} borderRadius={10} />
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <Skeleton width={`${50 + i * 15}%`} height={14} />
+                  <Skeleton width={`${30 + i * 10}%`} height={10} />
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      ) : workspaces.length === 0 && !creating ? (
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "12px",
-          }}
-        >
-          <Hexagon size={32} weight="light" style={{ opacity: 0.2, color: "var(--text-primary)" }} />
-          <p style={{ fontSize: "12px", color: "var(--text-muted)", fontFamily: "'Geist Mono', monospace" }}>
-            No workspaces yet
-          </p>
-          <p style={{ fontSize: "11px", color: "var(--text-dim)", fontFamily: "'Geist Mono', monospace" }}>
-            Arrange your floating cards and save as a workspace
-          </p>
-        </div>
-      ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-            gap: "12px",
-          }}
-        >
-          <AnimatePresence>
-            {workspaces.map((ws) => {
-              let taskCount = 0;
-              try {
-                const parsed = JSON.parse(ws.state_json);
-                taskCount = parsed.cards?.length ?? 0;
-              } catch {}
-              return (
-                <motion.div
-                  key={ws.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.15 }}
-                  onClick={() => handleOpen(ws.id, ws.name)}
-                  style={{
-                    background: "var(--bg-card)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "12px",
-                    padding: "16px",
-                    cursor: "pointer",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "12px",
-                    position: "relative",
-                    transition: "border-color 0.12s, background 0.12s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "var(--border-hover)";
-                    e.currentTarget.style.background = "var(--bg-card-hover)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "var(--border)";
-                    e.currentTarget.style.background = "var(--bg-card)";
-                  }}
-                >
-                  {/* Delete trigger */}
-                  <div style={{ position: "absolute", top: "12px", right: "12px" }}>
-                    <button
-                      data-delete-popover
-                      onClick={(e) => handleDelete(e, ws.id)}
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        color: "var(--text-dim)",
-                        cursor: "pointer",
-                        fontSize: "16px",
-                        padding: "2px 6px",
-                        borderRadius: "4px",
-                        fontFamily: "'Geist Mono', monospace",
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-dim)")}
-                    >
-                      <DotsThree size={16} weight="light" />
-                    </button>
-
-                    {/* Delete confirmation popover */}
-                    {deleteTarget === ws.id && (
-                      <div
-                        data-delete-popover
-                        onClick={(e) => e.stopPropagation()}
-                        style={{
-                          position: "absolute",
-                          top: "32px",
-                          right: "0",
-                          zIndex: 20,
-                          background: "var(--bg-menu)",
-                          border: "1px solid var(--border)",
-                          borderRadius: "8px",
-                          boxShadow: "var(--shadow-menu)",
-                          padding: "8px",
-                          minWidth: "140px",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "4px",
-                        }}
-                      >
-                        <div style={{ fontSize: "11px", color: "var(--text-muted)", padding: "4px 8px", whiteSpace: "nowrap" }}>
-                          Delete this workspace?
-                        </div>
-                        <button
-                          onClick={() => confirmDelete(ws.id)}
-                          style={{
-                            background: "transparent",
-                            border: "none",
-                            borderRadius: "6px",
-                            padding: "6px 10px",
-                            fontSize: "12px",
-                            color: "var(--text-primary)",
-                            cursor: "pointer",
-                            textAlign: "left",
-                            fontFamily: "'Geist Mono', monospace",
-                            transition: "background 0.1s",
-                          }}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-delete-hover)"; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-                        >
-                          Delete
-                        </button>
-                        <button
-                          onClick={() => setDeleteTarget(null)}
-                          style={{
-                            background: "transparent",
-                            border: "none",
-                            borderRadius: "6px",
-                            padding: "6px 10px",
-                            fontSize: "12px",
-                            color: "var(--text-secondary)",
-                            cursor: "pointer",
-                            textAlign: "left",
-                            fontFamily: "'Geist Mono', monospace",
-                          }}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-menu-hover)"; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  <div
+            ))}
+          </div>
+        ) : workspaces.length === 0 && !creating ? (
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "12px",
+            }}
+          >
+            <Hexagon
+              size={32}
+              weight="light"
+              style={{ opacity: 0.2, color: "var(--text-primary)" }}
+            />
+            <p
+              style={{
+                fontSize: "12px",
+                color: "var(--text-muted)",
+                fontFamily: "'Geist Mono', monospace",
+              }}
+            >
+              No workspaces yet
+            </p>
+            <p
+              style={{
+                fontSize: "11px",
+                color: "var(--text-dim)",
+                fontFamily: "'Geist Mono', monospace",
+              }}
+            >
+              Arrange your floating cards and save as a workspace
+            </p>
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+              gap: "12px",
+            }}
+          >
+            <AnimatePresence>
+              {workspaces.map((ws) => {
+                let taskCount = 0;
+                try {
+                  const parsed = JSON.parse(ws.state_json);
+                  taskCount = parsed.cards?.length ?? 0;
+                } catch {}
+                return (
+                  <motion.div
+                    key={ws.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    onClick={() => handleOpen(ws.id, ws.name)}
                     style={{
-                      width: "44px",
-                      height: "44px",
-                      background: "var(--bg-hover)",
+                      background: "var(--bg-card)",
                       border: "1px solid var(--border)",
-                      borderRadius: "10px",
+                      borderRadius: "12px",
+                      padding: "16px",
+                      cursor: "pointer",
                       display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "20px",
-                      color: "var(--text-primary)",
+                      flexDirection: "column",
+                      gap: "12px",
+                      position: "relative",
+                      transition: "border-color 0.12s, background 0.12s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = "var(--border-hover)";
+                      e.currentTarget.style.background = "var(--bg-card-hover)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "var(--border)";
+                      e.currentTarget.style.background = "var(--bg-card)";
                     }}
                   >
-                    {(() => { const Icon = getWorkspaceIcon(ws.id); return <Icon size={20} weight="light" />; })()}
-                  </div>
+                    {/* Delete trigger */}
+                    <div style={{ position: "absolute", top: "12px", right: "12px" }}>
+                      <button
+                        data-delete-popover
+                        onClick={(e) => handleDelete(e, ws.id)}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "var(--text-dim)",
+                          cursor: "pointer",
+                          fontSize: "16px",
+                          padding: "2px 6px",
+                          borderRadius: "4px",
+                          fontFamily: "'Geist Mono', monospace",
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-dim)")}
+                      >
+                        <DotsThree size={16} weight="light" />
+                      </button>
 
-                  <div>
+                      {/* Delete confirmation popover */}
+                      {deleteTarget === ws.id && (
+                        <div
+                          data-delete-popover
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            position: "absolute",
+                            top: "32px",
+                            right: "0",
+                            zIndex: 20,
+                            background: "var(--bg-menu)",
+                            border: "1px solid var(--border)",
+                            borderRadius: "8px",
+                            boxShadow: "var(--shadow-menu)",
+                            padding: "8px",
+                            minWidth: "140px",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "4px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: "11px",
+                              color: "var(--text-muted)",
+                              padding: "4px 8px",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            Delete this workspace?
+                          </div>
+                          <button
+                            onClick={() => confirmDelete(ws.id)}
+                            style={{
+                              background: "transparent",
+                              border: "none",
+                              borderRadius: "6px",
+                              padding: "6px 10px",
+                              fontSize: "12px",
+                              color: "var(--text-primary)",
+                              cursor: "pointer",
+                              textAlign: "left",
+                              fontFamily: "'Geist Mono', monospace",
+                              transition: "background 0.1s",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = "var(--bg-delete-hover)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = "transparent";
+                            }}
+                          >
+                            Delete
+                          </button>
+                          <button
+                            onClick={() => setDeleteTarget(null)}
+                            style={{
+                              background: "transparent",
+                              border: "none",
+                              borderRadius: "6px",
+                              padding: "6px 10px",
+                              fontSize: "12px",
+                              color: "var(--text-secondary)",
+                              cursor: "pointer",
+                              textAlign: "left",
+                              fontFamily: "'Geist Mono', monospace",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = "var(--bg-menu-hover)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = "transparent";
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
                     <div
                       style={{
-                        fontSize: "13px",
-                        fontWeight: 600,
+                        width: "44px",
+                        height: "44px",
+                        background: "var(--bg-hover)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "10px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "20px",
                         color: "var(--text-primary)",
-                        fontFamily: "'Geist Mono', monospace",
-                        letterSpacing: "-0.3px",
                       }}
                     >
-                      {ws.name}
+                      {(() => {
+                        const Icon = getWorkspaceIcon(ws.id);
+                        return <Icon size={20} weight="light" />;
+                      })()}
                     </div>
-                    <div
-                      style={{
-                        fontSize: "11px",
-                        color: "var(--text-muted)",
-                        marginTop: "4px",
-                        fontFamily: "'Geist Mono', monospace",
-                      }}
-                    >
-                      {formatDate(ws.created_at)} · {taskCount} tasks
+
+                    <div>
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          color: "var(--text-primary)",
+                          fontFamily: "'Geist Mono', monospace",
+                          letterSpacing: "-0.3px",
+                        }}
+                      >
+                        {ws.name}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "11px",
+                          color: "var(--text-muted)",
+                          marginTop: "4px",
+                          fontFamily: "'Geist Mono', monospace",
+                        }}
+                      >
+                        {formatDate(ws.created_at)} · {taskCount} tasks
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </div>
-      )}
-    </motion.div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        )}
+      </motion.div>
     </AnimatePresence>
   );
 }

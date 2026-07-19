@@ -5,6 +5,8 @@ import { LogicalSize } from "@tauri-apps/api/dpi";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { Check, ClockCountdown, ArrowsClockwise, CaretDown } from "@phosphor-icons/react";
+import { formatCardDate } from "@/lib/utils";
+
 const SQUARE_SIZE = 80;
 const FULL_WIDTH = 122;
 const FULL_HEIGHT = 110;
@@ -15,21 +17,6 @@ function getHoursAgo(createdAt: string): string {
   const diff = Date.now() - t;
   const h = Math.floor(diff / 3600000);
   return h < 1 ? "< 1h" : `${h}h`;
-}
-
-function formatCardDate(dateStr: string): string {
-  if (!dateStr) return "";
-  const due = new Date(dateStr + "T00:00:00");
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const diff = due.getTime() - today.getTime();
-  if (diff === 0) return "Today";
-  if (diff === 86400000) return "Tomorrow";
-  if (diff === -86400000) return "Yesterday";
-  const days = Math.round(diff / 86400000);
-  if (days < -1) return `${Math.abs(days)}d overdue`;
-  if (days > 1) return `In ${days}d`;
-  return due.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 export default function TaskCard({
@@ -60,29 +47,42 @@ export default function TaskCard({
   const [customW, setCustomW] = useState<number | null>(null);
   const [customH, setCustomH] = useState<number | null>(null);
 
-  const tagList = tags?.split(",").map((t) => t.trim()).filter(Boolean) ?? [];
+  const tagList =
+    tags
+      ?.split(",")
+      .map((t) => t.trim())
+      .filter(Boolean) ?? [];
   const hasRecurrence = !!recurrence;
-  const isMinimal = !description && tagList.length === 0 && !dueTime && !createdAt && !timeLimitMinutes && !startedAt;
+  const isMinimal =
+    !description &&
+    tagList.length === 0 &&
+    !dueTime &&
+    !createdAt &&
+    !timeLimitMinutes &&
+    !startedAt;
 
   useEffect(() => {
-    invoke<Record<string, string>>("get_settings_map").then((map) => {
-      let cw = FULL_WIDTH, ch = FULL_HEIGHT;
-      if (map.custom_card_width && map.custom_card_height) {
-        cw = parseInt(map.custom_card_width);
-        ch = parseInt(map.custom_card_height);
-        setCustomW(cw);
-        setCustomH(ch);
-      }
-      const w = isMinimal ? SQUARE_SIZE : cw + 28;
-      const h = isMinimal ? SQUARE_SIZE : ch;
-      getCurrentWindow().setSize(new LogicalSize(w, h));
-      invoke("reassert_window_properties");
-    }).catch(() => {
-      const w = isMinimal ? SQUARE_SIZE : FULL_WIDTH + 28;
-      const h = isMinimal ? SQUARE_SIZE : FULL_HEIGHT;
-      getCurrentWindow().setSize(new LogicalSize(w, h));
-      invoke("reassert_window_properties");
-    });
+    invoke<Record<string, string>>("get_settings_map")
+      .then((map) => {
+        let cw = FULL_WIDTH,
+          ch = FULL_HEIGHT;
+        if (map.custom_card_width && map.custom_card_height) {
+          cw = parseInt(map.custom_card_width);
+          ch = parseInt(map.custom_card_height);
+          setCustomW(cw);
+          setCustomH(ch);
+        }
+        const w = isMinimal ? SQUARE_SIZE : cw + 28;
+        const h = isMinimal ? SQUARE_SIZE : ch;
+        getCurrentWindow().setSize(new LogicalSize(w, h));
+        invoke("reassert_window_properties");
+      })
+      .catch(() => {
+        const w = isMinimal ? SQUARE_SIZE : FULL_WIDTH + 28;
+        const h = isMinimal ? SQUARE_SIZE : FULL_HEIGHT;
+        getCurrentWindow().setSize(new LogicalSize(w, h));
+        invoke("reassert_window_properties");
+      });
   }, []);
 
   useEffect(() => {
@@ -93,9 +93,16 @@ export default function TaskCard({
       const h = isMinimal ? SQUARE_SIZE : height;
       getCurrentWindow().setSize(new LogicalSize(w, h));
       invoke("reassert_window_properties");
-      if (!isMinimal) { setCustomW(width); setCustomH(height); }
-    }).then((u) => { unlisten = u; });
-    return () => { unlisten?.(); };
+      if (!isMinimal) {
+        setCustomW(width);
+        setCustomH(height);
+      }
+    }).then((u) => {
+      unlisten = u;
+    });
+    return () => {
+      unlisten?.();
+    };
   }, [isMinimal]);
 
   const cardW = isMinimal ? SQUARE_SIZE : customW || FULL_WIDTH;
@@ -164,9 +171,13 @@ export default function TaskCard({
       if ((dx > 6 || dy > 6) && !dragInitiated) {
         dragInitiated = true;
         didDrag.current = true;
-        try { await getCurrentWindow().startDragging(); }
-        catch { didDrag.current = false; }
-        finally { cleanup(); }
+        try {
+          await getCurrentWindow().startDragging();
+        } catch {
+          didDrag.current = false;
+        } finally {
+          cleanup();
+        }
       }
     };
     const onUp = () => cleanup();
@@ -206,16 +217,23 @@ export default function TaskCard({
         flexDirection: "column",
       }}
     >
-      <div style={{
-        position: "absolute",
-        left: 0, top: 0, bottom: 0,
-        width: "3px",
-        background: "var(--left-accent, transparent)",
-        borderRadius: "3px 0 0 3px",
-      }} />
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: "3px",
+          background: "var(--left-accent, transparent)",
+          borderRadius: "3px 0 0 3px",
+        }}
+      />
 
       <button
-        onClick={(e) => { e.stopPropagation(); setShowActions((p) => !p); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          setShowActions((p) => !p);
+        }}
         title={showActions ? "Show task info" : "Show actions"}
         style={{
           position: "absolute",
@@ -235,43 +253,122 @@ export default function TaskCard({
           opacity: 0.6,
           transition: "opacity 0.15s ease",
         }}
-        onMouseEnter={(e) => e.currentTarget.style.opacity = "1"}
-        onMouseLeave={(e) => e.currentTarget.style.opacity = "0.6"}
+        onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+        onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.6")}
       >
-        <CaretDown size={12} weight="bold" style={{
-          transform: showActions ? "rotate(180deg)" : "rotate(0deg)",
-          transition: "transform 0.2s ease",
-        }} />
+        <CaretDown
+          size={12}
+          weight="bold"
+          style={{
+            transform: showActions ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 0.2s ease",
+          }}
+        />
       </button>
 
       {showActions ? (
-        <div style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          padding: `${contPad}px 14px`,
-          gap: `${btnGap}px`,
-        }}>
-          <button className="v-action" onClick={(e) => { e.stopPropagation(); handleDone(); }}
-            style={{ width: "100%", fontSize: `${btnFont}px`, padding: `${btnPad}px 0`, background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "6px", cursor: "pointer", textAlign: "center" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Check size={btnIcon} weight="light" /> Done</span>
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            padding: `${contPad}px 14px`,
+            gap: `${btnGap}px`,
+          }}
+        >
+          <button
+            className="v-action"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDone();
+            }}
+            style={{
+              width: "100%",
+              fontSize: `${btnFont}px`,
+              padding: `${btnPad}px 0`,
+              background: "transparent",
+              color: "var(--text-primary-card)",
+              border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))",
+              borderRadius: "6px",
+              cursor: "pointer",
+              textAlign: "center",
+            }}
+          >
+            <span
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                justifyContent: "center",
+              }}
+            >
+              <Check size={btnIcon} weight="light" /> Done
+            </span>
           </button>
-          <button className="v-action" onClick={(e) => { e.stopPropagation(); handleSnooze(); }}
-            style={{ width: "100%", fontSize: `${btnFont}px`, padding: `${btnPad}px 0`, background: "transparent", color: "var(--text-primary-card)", border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))", borderRadius: "6px", cursor: "pointer", textAlign: "center" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><ClockCountdown size={btnIcon} weight="light" /> Snooze</span>
+          <button
+            className="v-action"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSnooze();
+            }}
+            style={{
+              width: "100%",
+              fontSize: `${btnFont}px`,
+              padding: `${btnPad}px 0`,
+              background: "transparent",
+              color: "var(--text-primary-card)",
+              border: "1px solid var(--border-card-light, rgba(255,255,255,0.15))",
+              borderRadius: "6px",
+              cursor: "pointer",
+              textAlign: "center",
+            }}
+          >
+            <span
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                justifyContent: "center",
+              }}
+            >
+              <ClockCountdown size={btnIcon} weight="light" /> Snooze
+            </span>
           </button>
         </div>
       ) : isMinimal ? (
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 14px" }}>
-          <span style={{
-            fontSize: "13px", fontWeight: 500, color: "var(--text-primary-card)",
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            textAlign: "center", maxWidth: "100%",
-          }}>
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "12px 14px",
+          }}
+        >
+          <span
+            style={{
+              fontSize: "13px",
+              fontWeight: 500,
+              color: "var(--text-primary-card)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              textAlign: "center",
+              maxWidth: "100%",
+            }}
+          >
             {title}
             {hasRecurrence && (
-              <span title={`Repeats ${recurrence}`} style={{ fontSize: "11px", color: "var(--text-dim-card)", flexShrink: 0, marginLeft: "4px" }}>
+              <span
+                title={`Repeats ${recurrence}`}
+                style={{
+                  fontSize: "11px",
+                  color: "var(--text-dim-card)",
+                  flexShrink: 0,
+                  marginLeft: "4px",
+                }}
+              >
                 <ArrowsClockwise size={12} weight="light" />
               </span>
             )}
@@ -279,15 +376,30 @@ export default function TaskCard({
         </div>
       ) : (
         <div style={{ padding: "12px 14px", flex: 1, display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <span style={{
-              fontSize: "13px", fontWeight: 500, color: "var(--text-primary-card)",
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              flex: 1, marginRight: "8px", display: "flex", alignItems: "center", gap: "4px",
-            }}>
+          <div
+            style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}
+          >
+            <span
+              style={{
+                fontSize: "13px",
+                fontWeight: 500,
+                color: "var(--text-primary-card)",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                flex: 1,
+                marginRight: "8px",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+              }}
+            >
               {title}
               {hasRecurrence && (
-                <span title={`Repeats ${recurrence}`} style={{ fontSize: "11px", color: "var(--text-dim-card)", flexShrink: 0 }}>
+                <span
+                  title={`Repeats ${recurrence}`}
+                  style={{ fontSize: "11px", color: "var(--text-dim-card)", flexShrink: 0 }}
+                >
                   <ArrowsClockwise size={12} weight="light" />
                 </span>
               )}
@@ -295,7 +407,18 @@ export default function TaskCard({
           </div>
 
           {description && (
-            <p title={description} style={{ fontSize: "11px", color: "var(--text-dim-card)", marginTop: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "160px" }}>
+            <p
+              title={description}
+              style={{
+                fontSize: "11px",
+                color: "var(--text-dim-card)",
+                marginTop: "4px",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                maxWidth: "160px",
+              }}
+            >
               {description}
             </p>
           )}
@@ -303,7 +426,17 @@ export default function TaskCard({
           {tagList.length > 0 && (
             <div style={{ display: "flex", gap: "4px", marginTop: "6px", flexWrap: "wrap" }}>
               {tagList.map((tag) => (
-                <span key={tag} style={{ fontSize: "10px", color: "var(--text-dim-card)", background: "var(--bg-tag-card)", border: "1px solid var(--border-card-tag)", borderRadius: "999px", padding: "2px 7px" }}>
+                <span
+                  key={tag}
+                  style={{
+                    fontSize: "10px",
+                    color: "var(--text-dim-card)",
+                    background: "var(--bg-tag-card)",
+                    border: "1px solid var(--border-card-tag)",
+                    borderRadius: "999px",
+                    padding: "2px 7px",
+                  }}
+                >
                   {tag}
                 </span>
               ))}
@@ -312,29 +445,80 @@ export default function TaskCard({
 
           <div style={{ marginTop: "auto" }}>
             {dueTime && (
-              <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "var(--text-dim-card)" }}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim-card)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  fontSize: "11px",
+                  color: "var(--text-dim-card)",
+                }}
+              >
+                <svg
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="var(--text-dim-card)"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
                 <span>{formatCardDate(dueTime)}</span>
               </div>
             )}
 
             {createdAt && (
-              <div style={{ fontSize: "10px", color: "var(--text-faint-card)", fontFamily: "'Geist Mono', monospace" }}>
+              <div
+                style={{
+                  fontSize: "10px",
+                  color: "var(--text-faint-card)",
+                  fontFamily: "'Geist Mono', monospace",
+                }}
+              >
                 {getHoursAgo(createdAt)}
               </div>
             )}
 
-            <div style={{ width: "100%", height: "1px", background: "var(--card-progress-track, var(--progress-track-card))", marginTop: "6px", borderRadius: "2px", overflow: "hidden" }}>
-              <div style={{ width: `${progressPercent}%`, height: "100%", background: "var(--card-progress-fill, var(--progress-fill-card))", transition: "width 0.4s ease", borderRadius: "2px" }} />
+            <div
+              style={{
+                width: "100%",
+                height: "1px",
+                background: "var(--card-progress-track, var(--progress-track-card))",
+                marginTop: "6px",
+                borderRadius: "2px",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  width: `${progressPercent}%`,
+                  height: "100%",
+                  background: "var(--card-progress-fill, var(--progress-fill-card))",
+                  transition: "width 0.4s ease",
+                  borderRadius: "2px",
+                }}
+              />
             </div>
           </div>
         </div>
       )}
 
       {showTimeLimitBar && (
-        <div style={{ width: "100%", height: "4px", background: "var(--card-border, var(--border-card))", borderRadius: "0 0 14px 14px", overflow: "hidden" }}>
+        <div
+          style={{
+            width: "100%",
+            height: "4px",
+            background: "var(--card-border, var(--border-card))",
+            borderRadius: "0 0 14px 14px",
+            overflow: "hidden",
+          }}
+        >
           <motion.div
             animate={{ width: `${tlProgress}%`, backgroundColor: finalBarColor }}
             transition={{ duration: 0.8, ease: "linear" }}

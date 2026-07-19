@@ -266,14 +266,11 @@ export default function App() {
     getEdgePeekEnabled()
       .then(setEdgePeekEnabledLocal)
       .catch(() => {});
+    // Compact mode and edge peek are mutually exclusive — when compact mode
+    // turns on, reflect that edge peek is now off in the footer toggle.
     const p1 = listen("compact_mode_enabled", () => setEdgePeekEnabledLocal(false));
-    const p2 = listen("edge_peek_auto_hide", () => setEdgePeekEnabledLocal(false));
     return () => {
       p1.then(
-        (f) => f(),
-        () => {},
-      );
-      p2.then(
         (f) => f(),
         () => {},
       );

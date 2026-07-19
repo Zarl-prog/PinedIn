@@ -1,7 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { Task } from "@/lib/tauriCommands";
-import type { Task } from "@/lib/tauriCommands";
 
 /**
  * Merge Tailwind CSS classes with conflict resolution.

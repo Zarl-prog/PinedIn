@@ -1,7 +1,7 @@
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { createTask, uncompleteTask } from "@/lib/tauriCommands";
 import { useReminderStore } from "@/store/reminderStore";
-import { createTask, completeTask, uncompleteTask } from "@/lib/tauriCommands";
 
 export default function UndoToast() {
   const undoEntry = useReminderStore((s) => s.undoEntry);

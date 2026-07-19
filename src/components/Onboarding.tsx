@@ -1,8 +1,16 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import {
+  ArrowRight,
+  CheckCircle,
+  Command,
+  GearSix,
+  List,
+  Plus,
+  Sparkle,
+} from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { ArrowRight, X, CheckCircle, Plus, List, Command, GearSix, Sparkle } from "@phosphor-icons/react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Step {
   id: string;
@@ -19,7 +27,8 @@ const STEPS: Step[] = [
   {
     id: "add-task",
     title: "Create your first task",
-    description: "Click the \"+ Add Task\" button to create your first floating task card. Try it now!",
+    description:
+      'Click the "+ Add Task" button to create your first floating task card. Try it now!',
     selector: "button:has(span:contains('+ Add Task'))",
     placement: "bottom",
     highlightPadding: 8,
@@ -28,7 +37,8 @@ const STEPS: Step[] = [
   {
     id: "task-list",
     title: "Your tasks, organized",
-    description: "Every task appears here in the task list. You can search, filter, and manage them all from this view.",
+    description:
+      "Every task appears here in the task list. You can search, filter, and manage them all from this view.",
     selector: ".tasks-body",
     placement: "top",
     highlightPadding: 4,
@@ -36,7 +46,8 @@ const STEPS: Step[] = [
   {
     id: "toolbar",
     title: "Power tools at your fingertips",
-    description: "Compact mode collapses cards into a pill. Zen mode hides them. Align snaps cards into a grid. Shake makes urgent tasks pulse.",
+    description:
+      "Compact mode collapses cards into a pill. Zen mode hides them. Align snaps cards into a grid. Shake makes urgent tasks pulse.",
     selector: ".feature-btn",
     placement: "top",
     highlightPadding: 8,
@@ -44,7 +55,8 @@ const STEPS: Step[] = [
   {
     id: "settings",
     title: "Tweak everything",
-    description: "Change themes, adjust card shake intervals, configure autostart, and check for updates — all from Settings.",
+    description:
+      "Change themes, adjust card shake intervals, configure autostart, and check for updates — all from Settings.",
     selector: ".feature-btn.ghost",
     placement: "left",
     highlightPadding: 8,
@@ -52,7 +64,8 @@ const STEPS: Step[] = [
   {
     id: "finish",
     title: "You're all set!",
-    description: "You now know the essentials. Start adding tasks, try compact mode when things get busy, and use zen mode when you need focus.",
+    description:
+      "You now know the essentials. Start adding tasks, try compact mode when things get busy, and use zen mode when you need focus.",
     placement: "bottom",
   },
 ];
@@ -64,7 +77,9 @@ function useScrollLock(locked: boolean) {
     } else {
       document.body.style.overflow = "";
     }
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [locked]);
 }
 
@@ -74,7 +89,7 @@ export default function Onboarding() {
   const [stepIndex, setStepIndex] = useState(0);
   const [highlightRect, setHighlightRect] = useState<DOMRect | null>(null);
   const [tooltipReady, setTooltipReady] = useState(false);
-  const [clickedAddTask, setClickedAddTask] = useState(false);
+  const [, setClickedAddTask] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const spotlightRef = useRef<HTMLDivElement>(null);
 
@@ -82,15 +97,27 @@ export default function Onboarding() {
 
   useEffect(() => {
     const p = listen("show_onboarding", () => setVisible(true));
-    return () => { p.then(f => f(), () => {}); };
+    return () => {
+      p.then(
+        (f) => f(),
+        () => {},
+      );
+    };
   }, []);
 
   useEffect(() => {
     if (phase !== "tour") return;
-    if (stepIndex >= STEPS.length) { handleComplete(); return; }
+    if (stepIndex >= STEPS.length) {
+      handleComplete();
+      return;
+    }
 
     const step = STEPS[stepIndex];
-    if (!step.selector) { setHighlightRect(null); setTooltipReady(true); return; }
+    if (!step.selector) {
+      setHighlightRect(null);
+      setTooltipReady(true);
+      return;
+    }
 
     const update = () => {
       const el = document.querySelector(step.selector!) as HTMLElement | null;
@@ -119,7 +146,7 @@ export default function Onboarding() {
       const el = document.querySelector(step.observeSelector!);
       if (el) {
         if (step.id === "add-task") setClickedAddTask(true);
-        setTimeout(() => setStepIndex(s => s + 1), 600);
+        setTimeout(() => setStepIndex((s) => s + 1), 600);
       }
     };
     const id = setInterval(check, 300);
@@ -135,7 +162,7 @@ export default function Onboarding() {
 
   function handleNext() {
     if (stepIndex < STEPS.length - 1) {
-      setStepIndex(s => s + 1);
+      setStepIndex((s) => s + 1);
     } else {
       handleComplete();
     }
@@ -163,7 +190,11 @@ export default function Onboarding() {
       case "top": {
         let left = highlightRect.left + highlightRect.width / 2 - tW / 2;
         left = Math.max(12, Math.min(left, winW - tW - 12));
-        return { bottom: `${winH - highlightRect.top + gap}px`, left: `${left}px`, width: `${tW}px` };
+        return {
+          bottom: `${winH - highlightRect.top + gap}px`,
+          left: `${left}px`,
+          width: `${tW}px`,
+        };
       }
       case "left": {
         let top = highlightRect.top + highlightRect.height / 2 - tH / 2;
@@ -180,19 +211,22 @@ export default function Onboarding() {
     }
   }
 
-  const handleSpotlightClick = useCallback((e: React.MouseEvent) => {
-    const step = STEPS[stepIndex];
-    if (!step || !step.selector) return;
-    const el = document.querySelector(step.selector) as HTMLElement | null;
-    if (el && el.contains(e.target as Node)) {
-      if (step.action === "click") {
-        el.click();
-        if (step.id === "add-task") {
-          setClickedAddTask(true);
+  const handleSpotlightClick = useCallback(
+    (e: React.MouseEvent) => {
+      const step = STEPS[stepIndex];
+      if (!step || !step.selector) return;
+      const el = document.querySelector(step.selector) as HTMLElement | null;
+      if (el && el.contains(e.target as Node)) {
+        if (step.action === "click") {
+          el.click();
+          if (step.id === "add-task") {
+            setClickedAddTask(true);
+          }
         }
       }
-    }
-  }, [stepIndex]);
+    },
+    [stepIndex],
+  );
 
   return (
     <AnimatePresence>
@@ -303,58 +337,89 @@ export default function Onboarding() {
                   zIndex: 10001,
                 }}
               >
-                <div style={{
-                  width: "60px",
-                  height: "60px",
-                  background: "#fff",
-                  borderRadius: "14px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: "20px"
-                }}>
-                  <span style={{ fontSize: "26px", fontWeight: 700, color: "#000", fontFamily: "'Geist Mono', monospace" }}>P</span>
+                <div
+                  style={{
+                    width: "60px",
+                    height: "60px",
+                    background: "#fff",
+                    borderRadius: "14px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: "20px",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "26px",
+                      fontWeight: 700,
+                      color: "#000",
+                      fontFamily: "'Geist Mono', monospace",
+                    }}
+                  >
+                    P
+                  </span>
                 </div>
 
-                <h1 style={{
-                  fontSize: "22px",
-                  fontWeight: 700,
-                  color: "#ffffff",
-                  fontFamily: "'Geist Mono', monospace",
-                  marginBottom: "10px",
-                }}>
+                <h1
+                  style={{
+                    fontSize: "22px",
+                    fontWeight: 700,
+                    color: "#ffffff",
+                    fontFamily: "'Geist Mono', monospace",
+                    marginBottom: "10px",
+                  }}
+                >
                   Welcome to PinedIn
                 </h1>
 
-                <p style={{
-                  fontSize: "13px",
-                  color: "#666",
-                  fontFamily: "'Geist Mono', monospace",
-                  lineHeight: 1.6,
-                  marginBottom: "28px",
-                  maxWidth: "340px"
-                }}>
+                <p
+                  style={{
+                    fontSize: "13px",
+                    color: "#666",
+                    fontFamily: "'Geist Mono', monospace",
+                    lineHeight: 1.6,
+                    marginBottom: "28px",
+                    maxWidth: "340px",
+                  }}
+                >
                   Tasks that float above every window, so you never lose track of what's next.
                 </p>
 
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", justifyContent: "center", marginBottom: "28px" }}>
-                  {["Always on top", "No cloud", "Global hotkey", "AI ready", "Open source"].map(tag => (
-                    <span key={tag} style={{
-                      background: "#0a0a0a",
-                      border: "1px solid #1a1a1a",
-                      borderRadius: "999px",
-                      padding: "4px 12px",
-                      fontSize: "11px",
-                      color: "#666",
-                      fontFamily: "'Geist Mono', monospace"
-                    }}>
-                      {tag}
-                    </span>
-                  ))}
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "6px",
+                    justifyContent: "center",
+                    marginBottom: "28px",
+                  }}
+                >
+                  {["Always on top", "No cloud", "Global hotkey", "AI ready", "Open source"].map(
+                    (tag) => (
+                      <span
+                        key={tag}
+                        style={{
+                          background: "#0a0a0a",
+                          border: "1px solid #1a1a1a",
+                          borderRadius: "999px",
+                          padding: "4px 12px",
+                          fontSize: "11px",
+                          color: "#666",
+                          fontFamily: "'Geist Mono', monospace",
+                        }}
+                      >
+                        {tag}
+                      </span>
+                    ),
+                  )}
                 </div>
 
                 <button
-                  onClick={() => { setPhase("tour"); setStepIndex(0); }}
+                  onClick={() => {
+                    setPhase("tour");
+                    setStepIndex(0);
+                  }}
                   style={{
                     background: "#ffffff",
                     color: "#000000",
@@ -382,7 +447,7 @@ export default function Onboarding() {
                     cursor: "pointer",
                     fontSize: "11px",
                     fontFamily: "'Geist Mono', monospace",
-                    marginTop: "12px"
+                    marginTop: "12px",
                   }}
                 >
                   I'll figure it out myself
@@ -408,48 +473,80 @@ export default function Onboarding() {
                   ...getTooltipPos(currentStep),
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
-                  <span style={{
-                    width: "28px",
-                    height: "28px",
-                    background: "#0a0a0a",
-                    border: "1px solid #1a1a1a",
-                    borderRadius: "7px",
+                <div
+                  style={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    color: "#fff",
-                    fontSize: "12px",
-                    flexShrink: 0,
-                  }}>
-                    {stepIndex === 0 ? <Plus size={14} /> :
-                     stepIndex === 1 ? <List size={14} /> :
-                     stepIndex === 2 ? <Command size={14} /> :
-                     stepIndex === 3 ? <GearSix size={14} /> :
-                     <Sparkle size={14} />}
+                    gap: "8px",
+                    marginBottom: "10px",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      background: "#0a0a0a",
+                      border: "1px solid #1a1a1a",
+                      borderRadius: "7px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#fff",
+                      fontSize: "12px",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {stepIndex === 0 ? (
+                      <Plus size={14} />
+                    ) : stepIndex === 1 ? (
+                      <List size={14} />
+                    ) : stepIndex === 2 ? (
+                      <Command size={14} />
+                    ) : stepIndex === 3 ? (
+                      <GearSix size={14} />
+                    ) : (
+                      <Sparkle size={14} />
+                    )}
                   </span>
-                  <span style={{ fontSize: "13px", fontWeight: 600, color: "#fff", fontFamily: "'Geist Mono', monospace" }}>
+                  <span
+                    style={{
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#fff",
+                      fontFamily: "'Geist Mono', monospace",
+                    }}
+                  >
                     {currentStep.title}
                   </span>
                 </div>
 
-                <p style={{
-                  fontSize: "12px",
-                  color: "#666",
-                  fontFamily: "'Geist Mono', monospace",
-                  lineHeight: 1.7,
-                  margin: 0,
-                  marginBottom: "16px",
-                }}>
+                <p
+                  style={{
+                    fontSize: "12px",
+                    color: "#666",
+                    fontFamily: "'Geist Mono', monospace",
+                    lineHeight: 1.7,
+                    margin: 0,
+                    marginBottom: "16px",
+                  }}
+                >
                   {currentStep.description}
                 </p>
 
-                <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}>
-                  <span style={{ fontSize: "11px", color: "#333", fontFamily: "'Geist Mono', monospace" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      color: "#333",
+                      fontFamily: "'Geist Mono', monospace",
+                    }}
+                  >
                     {stepIndex + 1} / {STEPS.length}
                   </span>
                   <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -467,7 +564,13 @@ export default function Onboarding() {
                       Skip
                     </button>
                     {currentStep.action === "click" && !isLast ? (
-                      <span style={{ fontSize: "11px", color: "#555", fontFamily: "'Geist Mono', monospace" }}>
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          color: "#555",
+                          fontFamily: "'Geist Mono', monospace",
+                        }}
+                      >
                         Click the highlighted button above
                       </span>
                     ) : (
@@ -488,7 +591,15 @@ export default function Onboarding() {
                           gap: "6px",
                         }}
                       >
-                        {isLast ? <><CheckCircle size={13} weight="bold" /> Done</> : <>Next <ArrowRight size={12} weight="light" /></>}
+                        {isLast ? (
+                          <>
+                            <CheckCircle size={13} weight="bold" /> Done
+                          </>
+                        ) : (
+                          <>
+                            Next <ArrowRight size={12} weight="light" />
+                          </>
+                        )}
                       </button>
                     )}
                   </div>

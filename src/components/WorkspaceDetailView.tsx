@@ -3,9 +3,23 @@ import { motion } from "framer-motion";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useReminderStore } from "@/store/reminderStore";
-import { completeTask as completeTaskCmd, uncompleteTask as uncompleteTaskCmd, deleteTask } from "@/lib/tauriCommands";
+import {
+  completeTask as completeTaskCmd,
+  uncompleteTask as uncompleteTaskCmd,
+  deleteTask,
+} from "@/lib/tauriCommands";
 import type { Task } from "@/lib/tauriCommands";
-import { ArrowLeft, Circle, Play, Diamond, ArrowsClockwise, Alarm, X, PencilSimpleLine } from "@phosphor-icons/react";
+import {
+  ArrowLeft,
+  Circle,
+  Play,
+  Diamond,
+  ArrowsClockwise,
+  Alarm,
+  X,
+  PencilSimpleLine,
+} from "@phosphor-icons/react";
+import { formatCardDate, sortTasks } from "@/lib/utils";
 
 interface WorkspaceDetailViewProps {
   workspaceId: number;
@@ -13,28 +27,6 @@ interface WorkspaceDetailViewProps {
   onBack: () => void;
   onAddTask: () => void;
   onPreSchedule: () => void;
-}
-
-function formatCardDate(dateStr: string): string {
-  if (!dateStr) return "";
-  const due = new Date(dateStr + "T00:00:00");
-  if (isNaN(due.getTime())) return "";
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const diffTime = due.getTime() - today.getTime();
-  if (diffTime === 0) return "Today";
-  if (diffTime === 86400000) return "Tomorrow";
-  if (diffTime === -86400000) return "Yesterday";
-  const diffDays = Math.round(diffTime / 86400000);
-  if (diffDays < -1) return `${Math.abs(diffDays)}d overdue`;
-  if (diffDays > 1) return `In ${diffDays}d`;
-  return due.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-
-function sortTasks(a: Task, b: Task): number {
-  const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
-  const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
-  return ta - tb;
 }
 
 export default function WorkspaceDetailView({
@@ -166,7 +158,7 @@ export default function WorkspaceDetailView({
 
   const workspaceScheduledTasks = useMemo(
     () => scheduledTasks.filter((t) => t.workspace_id === workspaceId),
-    [scheduledTasks, workspaceId]
+    [scheduledTasks, workspaceId],
   );
   const incompleteTasks = workspaceTasks.filter((t) => !t.completed).sort(sortTasks);
   const completedTasks = workspaceTasks.filter((t) => t.completed).sort(sortTasks);
@@ -193,7 +185,9 @@ export default function WorkspaceDetailView({
           className="feature-btn"
           style={{ fontSize: "12px", padding: "6px 12px" }}
         >
-          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><ArrowLeft size={14} weight="light" /> Workspaces</span>
+          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <ArrowLeft size={14} weight="light" /> Workspaces
+          </span>
         </button>
         <div>
           <h2
@@ -207,7 +201,13 @@ export default function WorkspaceDetailView({
           >
             {workspaceName}
           </h2>
-          <p style={{ fontSize: "12px", color: "var(--text-muted)", fontFamily: "'Geist Mono', monospace" }}>
+          <p
+            style={{
+              fontSize: "12px",
+              color: "var(--text-muted)",
+              fontFamily: "'Geist Mono', monospace",
+            }}
+          >
             {incompleteTasks.length} incomplete · {completedTasks.length} completed
           </p>
         </div>
@@ -223,7 +223,9 @@ export default function WorkspaceDetailView({
                 padding: "7px 14px",
               }}
             >
-              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Circle size={12} weight="fill" /> Active — Deactivate</span>
+              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                <Circle size={12} weight="fill" /> Active — Deactivate
+              </span>
             </button>
           ) : (
             <button
@@ -231,14 +233,12 @@ export default function WorkspaceDetailView({
               className="feature-btn primary"
               style={{ padding: "7px 14px" }}
             >
-              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Play size={14} weight="light" /> Activate Workspace</span>
+              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                <Play size={14} weight="light" /> Activate Workspace
+              </span>
             </button>
           )}
-          <button
-            onClick={onPreSchedule}
-            className="feature-btn"
-            style={{ padding: "6px 12px" }}
-          >
+          <button onClick={onPreSchedule} className="feature-btn" style={{ padding: "6px 12px" }}>
             + Pre-Schedule
           </button>
           <button
@@ -251,7 +251,12 @@ export default function WorkspaceDetailView({
           <button
             onClick={() => useReminderStore.getState().setCustomizeOpen(true)}
             className="feature-btn"
-            style={{ padding: "6px 8px", display: "flex", alignItems: "center", justifyContent: "center" }}
+            style={{
+              padding: "6px 8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
             title="Customize your tasks"
           >
             <PencilSimpleLine size={16} weight="light" />
@@ -262,10 +267,19 @@ export default function WorkspaceDetailView({
       {/* Task list */}
       <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
         {loading ? (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "100%",
+            }}
+          >
             <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>Loading tasks...</p>
           </div>
-        ) : workspaceScheduledTasks.length === 0 && incompleteTasks.length === 0 && completedTasks.length === 0 ? (
+        ) : workspaceScheduledTasks.length === 0 &&
+          incompleteTasks.length === 0 &&
+          completedTasks.length === 0 ? (
           <div
             style={{
               display: "flex",
@@ -276,11 +290,27 @@ export default function WorkspaceDetailView({
               gap: "12px",
             }}
           >
-            <Diamond size={32} weight="light" style={{ opacity: 0.2, color: "var(--text-primary)" }} />
-            <p style={{ fontSize: "12px", color: "var(--text-muted)", fontFamily: "'Geist Mono', monospace" }}>
+            <Diamond
+              size={32}
+              weight="light"
+              style={{ opacity: 0.2, color: "var(--text-primary)" }}
+            />
+            <p
+              style={{
+                fontSize: "12px",
+                color: "var(--text-muted)",
+                fontFamily: "'Geist Mono', monospace",
+              }}
+            >
               No tasks in this workspace yet
             </p>
-            <p style={{ fontSize: "11px", color: "var(--text-dim)", fontFamily: "'Geist Mono', monospace" }}>
+            <p
+              style={{
+                fontSize: "11px",
+                color: "var(--text-dim)",
+                fontFamily: "'Geist Mono', monospace",
+              }}
+            >
               Add a task or pre-schedule one to get started
             </p>
           </div>
@@ -288,7 +318,15 @@ export default function WorkspaceDetailView({
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {workspaceScheduledTasks.length > 0 && (
               <>
-                <p style={{ fontSize: "11px", color: "var(--text-muted)", fontFamily: "'Geist Mono', monospace", marginBottom: "4px", marginTop: "8px" }}>
+                <p
+                  style={{
+                    fontSize: "11px",
+                    color: "var(--text-muted)",
+                    fontFamily: "'Geist Mono', monospace",
+                    marginBottom: "4px",
+                    marginTop: "8px",
+                  }}
+                >
                   Scheduled — {workspaceScheduledTasks.length}
                 </p>
                 {workspaceScheduledTasks.map((task) => (
@@ -305,7 +343,14 @@ export default function WorkspaceDetailView({
 
             {incompleteTasks.length > 0 && (
               <>
-                <p style={{ fontSize: "11px", color: "var(--text-muted)", fontFamily: "'Geist Mono', monospace", marginBottom: "4px" }}>
+                <p
+                  style={{
+                    fontSize: "11px",
+                    color: "var(--text-muted)",
+                    fontFamily: "'Geist Mono', monospace",
+                    marginBottom: "4px",
+                  }}
+                >
                   Active — {incompleteTasks.length}
                 </p>
                 {incompleteTasks.map((task) => (
@@ -321,7 +366,15 @@ export default function WorkspaceDetailView({
 
             {completedTasks.length > 0 && (
               <>
-                <p style={{ fontSize: "11px", color: "var(--text-muted)", fontFamily: "'Geist Mono', monospace", marginTop: "16px", marginBottom: "4px" }}>
+                <p
+                  style={{
+                    fontSize: "11px",
+                    color: "var(--text-muted)",
+                    fontFamily: "'Geist Mono', monospace",
+                    marginTop: "16px",
+                    marginBottom: "4px",
+                  }}
+                >
                   Completed — {completedTasks.length}
                 </p>
                 {completedTasks.map((task) => (
@@ -441,7 +494,10 @@ interface TaskRowProps {
 
 function TaskRow({ task, onComplete, onUncomplete, onDelete }: TaskRowProps) {
   const tagList = task.tags
-    ? task.tags.split(",").map((t) => t.trim()).filter(Boolean)
+    ? task.tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean)
     : [];
 
   return (
@@ -459,7 +515,16 @@ function TaskRow({ task, onComplete, onUncomplete, onDelete }: TaskRowProps) {
         title={task.completed ? "Mark incomplete" : "Mark complete"}
       >
         {task.completed && (
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-inverse)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--text-inverse)"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <polyline points="20 6 9 17 4 12" />
           </svg>
         )}
@@ -467,15 +532,37 @@ function TaskRow({ task, onComplete, onUncomplete, onDelete }: TaskRowProps) {
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-          <span className="task-title" style={{ fontSize: "14px", fontWeight: 500, color: "var(--text-primary)" }}>
+          <span
+            className="task-title"
+            style={{ fontSize: "14px", fontWeight: 500, color: "var(--text-primary)" }}
+          >
             {task.title}
           </span>
           {task.recurrence && (
-            <span title={`Repeats ${task.recurrence}`} style={{ fontSize: "11px", color: "var(--text-dim)", display: "inline-flex", alignItems: "center" }}><ArrowsClockwise size={11} weight="light" /></span>
+            <span
+              title={`Repeats ${task.recurrence}`}
+              style={{
+                fontSize: "11px",
+                color: "var(--text-dim)",
+                display: "inline-flex",
+                alignItems: "center",
+              }}
+            >
+              <ArrowsClockwise size={11} weight="light" />
+            </span>
           )}
         </div>
         {task.description && (
-          <p style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <p
+            style={{
+              fontSize: "12px",
+              color: "var(--text-secondary)",
+              marginTop: "2px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
             {task.description}
           </p>
         )}
@@ -488,14 +575,17 @@ function TaskRow({ task, onComplete, onUncomplete, onDelete }: TaskRowProps) {
           {tagList.length > 0 && (
             <div style={{ display: "flex", gap: "3px", flexWrap: "wrap" }}>
               {tagList.map((tag) => (
-                <span key={tag} style={{
-                  fontSize: "10px",
-                  color: "var(--text-muted)",
-                  background: "var(--bg-tag)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "999px",
-                  padding: "1px 6px",
-                }}>
+                <span
+                  key={tag}
+                  style={{
+                    fontSize: "10px",
+                    color: "var(--text-muted)",
+                    background: "var(--bg-tag)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "999px",
+                    padding: "1px 6px",
+                  }}
+                >
                   {tag}
                 </span>
               ))}

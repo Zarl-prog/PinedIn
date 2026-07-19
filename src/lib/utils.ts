@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import type { Task } from "@/lib/tauriCommands";
 
 /**
  * Merge Tailwind CSS classes with conflict resolution.
@@ -41,4 +42,26 @@ export function localIsoString(d: Date = new Date()): string {
   const sign = offsetMin >= 0 ? "+" : "-";
   const abs = Math.abs(offsetMin);
   return `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`;
+}
+
+export function formatCardDate(dateStr: string): string {
+  if (!dateStr) return "";
+  const due = new Date(dateStr + "T00:00:00");
+  if (isNaN(due.getTime())) return "";
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffTime = due.getTime() - today.getTime();
+  if (diffTime === 0) return "Today";
+  if (diffTime === 86400000) return "Tomorrow";
+  if (diffTime === -86400000) return "Yesterday";
+  const diffDays = Math.round(diffTime / 86400000);
+  if (diffDays < -1) return `${Math.abs(diffDays)}d overdue`;
+  if (diffDays > 1) return `In ${diffDays}d`;
+  return due.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+export function sortTasks(a: Task, b: Task): number {
+  const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
+  const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
+  return ta - tb;
 }

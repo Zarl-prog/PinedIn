@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { Lightning } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
-import { Plus, Lightning } from "@phosphor-icons/react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { useEffect, useRef, useState } from "react";
 
 export default function QuickAdd() {
   const [value, setValue] = useState("");
@@ -51,35 +51,32 @@ export default function QuickAdd() {
   }
 
   return (
-    <div style={{
-      width: "480px",
-      height: "64px",
-      maxHeight: "64px",
-      background: "#000000",
-      border: "1px solid #2a2a2a",
-      borderRadius: "14px",
-      display: "flex",
-      alignItems: "center",
-      gap: "12px",
-      padding: "0 18px",
-      overflow: "hidden",
-      boxSizing: "border-box",
-      boxShadow: "0 8px 32px rgba(0,0,0,0.8)"
-    }}>
+    <div
+      style={{
+        width: "480px",
+        height: "64px",
+        maxHeight: "64px",
+        background: "#000000",
+        border: "1px solid #2a2a2a",
+        borderRadius: "14px",
+        display: "flex",
+        alignItems: "center",
+        gap: "12px",
+        padding: "0 18px",
+        overflow: "hidden",
+        boxSizing: "border-box",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.8)",
+      }}
+    >
       {/* Icon */}
-      <Lightning
-        size={15}
-        weight="light"
-        color="#444"
-        style={{ flexShrink: 0 }}
-      />
+      <Lightning size={15} weight="light" color="#444" style={{ flexShrink: 0 }} />
 
       {/* Input */}
       <input
         ref={inputRef}
         value={value}
-        onChange={e => setValue(e.target.value)}
-        onKeyDown={e => e.key === "Enter" && handleSubmit()}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
         placeholder="Task name..."
         disabled={saving}
         style={{
@@ -91,18 +88,20 @@ export default function QuickAdd() {
           fontSize: "14px",
           fontFamily: "'Geist Mono', monospace",
           caretColor: "#ffffff",
-          minWidth: 0
+          minWidth: 0,
         }}
       />
 
       {/* Right hint */}
-      <span style={{
-        fontSize: "11px",
-        color: "#333",
-        fontFamily: "'Geist Mono', monospace",
-        flexShrink: 0,
-        whiteSpace: "nowrap"
-      }}>
+      <span
+        style={{
+          fontSize: "11px",
+          color: "#333",
+          fontFamily: "'Geist Mono', monospace",
+          flexShrink: 0,
+          whiteSpace: "nowrap",
+        }}
+      >
         {saving ? "Adding..." : "esc to close"}
       </span>
     </div>

@@ -2,10 +2,7 @@ use crate::commands::ZEN_MODE;
 use crate::db::Task;
 use std::sync::atomic::Ordering;
 use std::sync::OnceLock;
-use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, Position, Size, WebviewUrl, WebviewWindowBuilder};
-
-#[cfg(target_os = "windows")]
-use windows::Win32::UI::WindowsAndMessaging::{SetWindowPos, HWND, SWP_NOZORDER, SWP_NOACTIVATE, SWP_NOOWNERZORDER};
+use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, Position, Size, WebviewUrl, WebviewWindowBuilder};
 
 pub const CARD_WIDTH: f64 = 308.0;
 pub const CARD_HEIGHT: f64 = 120.0;
@@ -436,110 +433,35 @@ fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
     let sh = monitor.size().height as f64 / scale;
     let (x, y, w, h) = edge_peek_geometry(sw, sh, expanded);
 
-    // Atomic resize+move: single platform call to avoid intermediate stale frames
     #[cfg(target_os = "windows")]
     {
-        use windows::Win32::Foundation::HWND;
-        use windows::Win32::UI::WindowsAndMessaging::{SetWindowPos, SWP_NOZORDER, SWP_NOACTIVATE, SWP_NOOWNERZORDER};
-        
         if let Ok(hwnd) = window.hwnd() {
-            let hwnd = HWND(hwnd as *mut std::ffi::c_void);
+            let hwnd = windows::Win32::Foundation::HWND(hwnd as *mut std::ffi::c_void);
             let x_px = (x * scale) as i32;
             let y_px = (y * scale) as i32;
             let w_px = (w * scale) as i32;
             let h_px = (h * scale) as i32;
             unsafe {
-                SetWindowPos(
+                windows::Win32::UI::WindowsAndMessaging::SetWindowPos(
                     hwnd,
                     None,
-                    x_px,
-                    y_px,
-                    w_px,
-                    h_px,
-                    SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER,
+                    x_px, y_px, w_px, h_px,
+                    windows::Win32::UI::WindowsAndMessaging::SWP_NOZORDER
+                        | windows::Win32::UI::WindowsAndMessaging::SWP_NOACTIVATE
+                        | windows::Win32::UI::WindowsAndMessaging::SWP_NOOWNERZORDER,
                 );
-            }
-            // Force repaint after collapse to clear any stale compositor frames
-            if !expanded {
-                use windows::Win32::UI::WindowsAndMessaging::{InvalidateRect, RedrawWindow, RDW_ERASE, RDW_INVALIDATE, RDW_UPDATENOW, RDW_FRAME};
-                InvalidateRect(hwnd, None, true);
-                RedrawWindow(hwnd, None, None, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW | RDW_FRAME);
             }
             return;
         }
     }
 
-#[cfg(target_os = "linux")]
-        {
-            // Linux-specific: try to use GTK for atomic move_resize if available
-            // Note: This requires Tauri's gtk feature to be enabled
-            #[cfg(feature = "gtk")]
-            {
-                use gtk::prelude::*;
-                use gdk::prelude::*;
-                use gtk::auto::widget::WidgetExt;
-                
-                if let Ok(gtk_window) = window.gtk_window() {
-                    if let Some(gdk_window) = gtk_window.window() {
-                        let x_px = (x * scale) as i32;
-                        let y_px = (y * scale) as i32;
-                        let w_px = (w * scale) as i32;
-                        let h_px = (h * scale) as i32;
-                        gdk_window.move_resize(x_px, y_px, w_px, h_px);
-                        
-                        // Force repaint after collapse
-                        if !expanded {
-                            let allocation = gtk::Allocation::new(x_px, y_px, w_px, h_px);
-                            WidgetExt::queue_draw(&gtk_window);
-                            gdk_window.invalidate_rect(&allocation.to_gdk_rectangle(), true);
-                            gdk_window.flush();
-                        }
-                        return;
-                    }
-                }
-            }
-            
-            // Fallback for Linux without GTK feature
-            let _ = window.set_position(Position::Logical(LogicalPosition::new(x, y)));
-            let _ = window.set_size(Size::Logical(LogicalSize::new(w, h)));
-        }
-        #[cfg(not(target_os = "linux"))]
-        {
-            // Windows and other platforms
-            let _ = window.set_position(Position::Logical(LogicalPosition::new(x, y)));
-            let _ = window.set_size(Size::Logical(LogicalSize::new(w, h)));
-        }
-    let current_w = window
-        .inner_size()
-        .ok()
-        .map(|s| s.width as f64 / scale)
-        .unwrap_or(w);
-
-    if w >= current_w {
-        let _ = window.set_position(Position::Logical(LogicalPosition::new(x, y)));
-        let _ = window.set_size(Size::Logical(LogicalSize::new(w, h)));
-    } else {
-        let _ = window.set_size(Size::Logical(LogicalSize::new(w, h)));
-        let _ = window.set_position(Position::Logical(LogicalPosition::new(x, y)));
-    }
-
-    // Fallback repaint for non-Windows/Linux
-    if !expanded {
-        // Trigger a repaint by briefly toggling visibility
-        let _ = window.hide();
-        std::thread::sleep(std::time::Duration::from_millis(10));
-        let _ = window.show();
-    }
-
-    #[cfg(any(target_os = "linux", target_os = "windows"))]
-    let _ = window.set_always_on_top(true);
+    // Cross-platform fallback (Linux, macOS):
+    let _ = window.set_position(Position::Logical(LogicalPosition::new(x, y)));
+    let _ = window.set_size(Size::Logical(LogicalSize::new(w, h)));
 }
 
 pub fn open_edge_peek_window(app: &AppHandle, expanded: bool) {
     let label = "edge_peek";
-    if app.get_webview_window(label).is_some() {
-        return;
-    }
 
     if let Some(monitor) = app.primary_monitor().ok().flatten() {
         let scale = monitor.scale_factor();
@@ -556,11 +478,10 @@ pub fn open_edge_peek_window(app: &AppHandle, expanded: bool) {
             .decorations(false)
             .always_on_top(true)
             .skip_taskbar(true)
+            .shadow(false)
             .focused(false)
             .position(x, y);
 
-            // Use solid background color instead of transparency for reliability
-            // Transparent windows on Linux (WebKitGTK) have issues with rounded corners and resize artifacts
             #[cfg(not(target_os = "macos"))]
             {
                 builder = builder.background_color(tauri::utils::config::Color(10, 10, 10, 255));
@@ -595,16 +516,12 @@ pub fn expand_edge_peek(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("edge_peek") {
         apply_edge_peek_geometry(&window, true);
         let _ = window.set_focus();
-        // Emit event after resize is complete
-        let _ = window.emit("edge-peek-resize-complete", true);
     }
 }
 
 pub fn collapse_edge_peek(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("edge_peek") {
         apply_edge_peek_geometry(&window, false);
-        // Emit event after resize is complete
-        let _ = window.emit("edge-peek-resize-complete", false);
     }
 }
 

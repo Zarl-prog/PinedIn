@@ -1,18 +1,17 @@
+import { Circle, Hourglass, PencilSimpleLine, Tag, X } from "@phosphor-icons/react";
+import { getVersion } from "@tauri-apps/api/app";
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useSettings } from "@/hooks/useSettings";
-import { useReminderStore } from "@/store/reminderStore";
 import {
-  isAutostartEnabled,
-  enableAutostart,
   disableAutostart,
+  enableAutostart,
   getShakeInterval,
+  isAutostartEnabled,
   setShakeInterval,
-  setCompactMode,
 } from "@/lib/tauriCommands";
 import { checkAndInstall } from "@/lib/updater";
-import { X, Circle, Hourglass, PencilSimpleLine, Tag, DotsThree } from "@phosphor-icons/react";
-import { getVersion } from "@tauri-apps/api/app";
+import { useReminderStore } from "@/store/reminderStore";
 
 const SHAKE_OPTIONS: { value: number; label: string }[] = [
   { value: 10, label: "10s" },

@@ -1,5 +1,6 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
-import { motion, useMotionValue, useAnimationFrame, useTransform } from "motion/react";
+import { motion, useAnimationFrame, useMotionValue, useTransform } from "motion/react";
+import type React from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import "./ShinyText.css";
 
 interface ShinyTextProps {
@@ -23,8 +24,6 @@ const ShinyText: React.FC<ShinyTextProps> = ({
   speed = 2,
   className = "",
   style,
-  color = "#b5b5b5",
-  shineColor = "#ffffff",
   spread = 120,
   yoyo = false,
   pauseOnHover = false,

@@ -261,6 +261,10 @@ export default function App() {
   }, []);
 
   const [edgePeekEnabled, setEdgePeekEnabledLocal] = useState(false);
+  // Show a "new" dot on the Edge Peek feature until the user tries it once.
+  const [edgePeekSeen, setEdgePeekSeen] = useState(
+    () => localStorage.getItem("edgePeekSeen") === "1",
+  );
 
   useEffect(() => {
     getEdgePeekEnabled()
@@ -284,6 +288,10 @@ export default function App() {
   };
 
   const toggleEdgePeek = async () => {
+    if (!edgePeekSeen) {
+      setEdgePeekSeen(true);
+      localStorage.setItem("edgePeekSeen", "1");
+    }
     const next = !edgePeekEnabled;
     setEdgePeekEnabledLocal(next);
     try {
@@ -1040,6 +1048,13 @@ export default function App() {
         >
           <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             <Diamond size={15} weight="light" /> Edge Peek
+            {!edgePeekSeen && (
+              <span
+                className="feature-new-dot"
+                aria-label="New feature"
+                title="New"
+              />
+            )}
           </span>
         </button>
       </div>

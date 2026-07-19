@@ -1,25 +1,24 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
-  getWorkspaces,
-  saveWorkspace,
-  loadWorkspace,
-  deleteWorkspace,
-  Workspace,
-} from "../lib/tauriCommands";
-import { useReminderStore } from "@/store/reminderStore";
-import WorkspaceDetailView from "./WorkspaceDetailView";
-import Skeleton from "./ui/Skeleton";
-import {
-  Hexagon,
-  Diamond,
-  Square,
-  DotOutline,
-  Triangle,
   CircleHalf,
-  Star,
+  Diamond,
+  DotOutline,
   DotsThree,
+  Hexagon,
+  Square,
+  Star,
+  Triangle,
 } from "@phosphor-icons/react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import {
+  deleteWorkspace,
+  getWorkspaces,
+  loadWorkspace,
+  saveWorkspace,
+  type Workspace,
+} from "../lib/tauriCommands";
+import Skeleton from "./ui/Skeleton";
+import WorkspaceDetailView from "./WorkspaceDetailView";
 
 const WORKSPACE_ICONS = [
   Hexagon,
@@ -67,9 +66,6 @@ export default function WorkspacesView({
   const [newName, setNewName] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
-  // fetchWorkspaceTasks is only used in handleOpen — get stable ref via getState()
-  // so it never causes WorkspacesView to re-render when the store updates.
-  const fetchWorkspaceTasks = useReminderStore.getState().fetchWorkspaceTasks;
 
   useEffect(() => {
     setLoading(true);

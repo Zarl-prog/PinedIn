@@ -9,7 +9,10 @@
         "build": "tsc && vite build",
         "preview": "vite preview",
         "tauri": "tauri",
-        "build:installer": "tauri build"
+        "build:installer": "tauri build",
+        "lint": "biome check src",
+        "format": "biome format --write src",
+        "lint:fix": "biome check --write src"
     },
     "dependencies": {
         "@phosphor-icons/react": "^2.1.10",
@@ -26,6 +29,7 @@
         "zustand": "^5.0.0"
     },
     "devDependencies": {
+        "@biomejs/biome": "2.5.4",
         "@tauri-apps/cli": "^2.0.0",
         "@types/react": "^18.3.0",
         "@types/react-dom": "^18.3.0",

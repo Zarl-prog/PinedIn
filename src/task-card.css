@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&display=swap");
 
 :root {
   --bg-float-card: #ffffff;
@@ -16,12 +16,12 @@
   --text-secondary-card: #666666;
   --text-muted-card: #999999;
   --text-dim-card: #888888;
-  --text-faint-card: rgba(0,0,0,0.25);
+  --text-faint-card: rgba(0, 0, 0, 0.25);
   --progress-track-card: #e0e0e0;
   --progress-fill-card: #1a1a1a;
   --shadow-hover-card: none;
   --card-shadow: none;
-  --shake-glow: rgba(255,255,255,0.4);
+  --shake-glow: rgba(255, 255, 255, 0.4);
   --pill-bg: #ffffff;
   --pill-border: #000000;
   --pill-text: #000000;
@@ -45,12 +45,12 @@
   --text-secondary-card: #aaaaaa;
   --text-muted-card: #777777;
   --text-dim-card: #888888;
-  --text-faint-card: rgba(255,255,255,0.2);
+  --text-faint-card: rgba(255, 255, 255, 0.2);
   --progress-track-card: #111111;
   --progress-fill-card: #ffffff;
   --shadow-hover-card: none;
   --card-shadow: none;
-  --shake-glow: rgba(255,255,255,0.4);
+  --shake-glow: rgba(255, 255, 255, 0.4);
   --pill-bg: #060608;
   --pill-border: #1a1a1a;
   --pill-text: #ffffff;
@@ -113,7 +113,8 @@ html {
   background: transparent !important;
 }
 
-body.task-card-view, body.task-card-view #root {
+body.task-card-view,
+body.task-card-view #root {
   width: 308px;
   height: auto;
   overflow: hidden !important;
@@ -121,7 +122,8 @@ body.task-card-view, body.task-card-view #root {
   isolation: isolate;
 }
 
-body, #root {
+body,
+#root {
   background: transparent !important;
 }
 
@@ -133,7 +135,7 @@ body, #root {
 
 body {
   color: var(--text-primary-card);
-  font-family: 'Geist Mono', monospace;
+  font-family: "Geist Mono", monospace;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -150,7 +152,9 @@ body {
   border: 1px solid var(--border-card);
   border-radius: 14px;
   padding: 12px 14px;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
   cursor: grab;
   user-select: none;
   width: 100%;
@@ -211,7 +215,7 @@ body {
   cursor: pointer;
   border-radius: 8px;
   padding: 8px 14px;
-  font-family: 'Geist Mono', monospace;
+  font-family: "Geist Mono", monospace;
 }
 
 .v-action:hover {

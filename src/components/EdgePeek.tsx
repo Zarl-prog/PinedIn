@@ -28,7 +28,9 @@ export default function EdgePeek() {
 
   // Load persisted expanded state on mount
   useEffect(() => {
-    invoke<boolean>("get_edge_peek_expanded").then(setExpanded).catch(() => {});
+    invoke<boolean>("get_edge_peek_expanded")
+      .then(setExpanded)
+      .catch(() => {});
   }, []);
 
   async function refresh() {
@@ -286,12 +288,8 @@ export default function EdgePeek() {
                       gap: "5px",
                       cursor: "default",
                     }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.borderColor = "#2A2A2A")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.borderColor = "#1A1A1A")
-                    }
+                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#1A1A1A")}
                   >
                     <div
                       style={{

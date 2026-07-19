@@ -15,10 +15,7 @@ export function useSettings() {
     fetchSettings();
   }, []); // fetchSettings is stable
 
-  const updateSetting = async (
-    key: string,
-    value: string | boolean | number,
-  ) => {
+  const updateSetting = async (key: string, value: string | boolean | number) => {
     const stringValue = String(value);
     await saveSetting(key, stringValue);
   };

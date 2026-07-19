@@ -3,11 +3,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useReminderStore } from "@/store/reminderStore";
-import { Check, Alarm, ClockCountdown, ArrowsClockwise, CaretRight, DotsThree, PencilSimple, Trash, X } from "@phosphor-icons/react";
 import {
-  type Task,
-  closeTaskCard,
-} from "@/lib/tauriCommands";
+  Check,
+  Alarm,
+  ClockCountdown,
+  ArrowsClockwise,
+  CaretRight,
+  DotsThree,
+  PencilSimple,
+  Trash,
+  X,
+} from "@phosphor-icons/react";
+import { type Task, closeTaskCard } from "@/lib/tauriCommands";
 import Skeleton from "./ui/Skeleton";
 
 interface TaskListProps {
@@ -68,8 +75,14 @@ export default function TaskList({ searchQuery }: TaskListProps) {
       setActiveWorkspaceId(null);
     });
     return () => {
-      p1.then((f) => f(), () => {});
-      p2.then((f) => f(), () => {});
+      p1.then(
+        (f) => f(),
+        () => {},
+      );
+      p2.then(
+        (f) => f(),
+        () => {},
+      );
     };
   }, []);
 
@@ -94,9 +107,7 @@ export default function TaskList({ searchQuery }: TaskListProps) {
     if (!searchQuery.trim()) return displayTasks;
     const q = searchQuery.toLowerCase();
     return displayTasks.filter(
-      (t) =>
-        t.title.toLowerCase().includes(q) ||
-        t.description.toLowerCase().includes(q),
+      (t) => t.title.toLowerCase().includes(q) || t.description.toLowerCase().includes(q),
     );
   }, [displayTasks, searchQuery]);
 
@@ -105,9 +116,7 @@ export default function TaskList({ searchQuery }: TaskListProps) {
     if (!searchQuery.trim()) return scheduledTasks;
     const q = searchQuery.toLowerCase();
     return scheduledTasks.filter(
-      (t) =>
-        t.title.toLowerCase().includes(q) ||
-        t.description.toLowerCase().includes(q),
+      (t) => t.title.toLowerCase().includes(q) || t.description.toLowerCase().includes(q),
     );
   }, [scheduledTasks, searchQuery, activeWorkspaceId]);
 
@@ -150,8 +159,8 @@ export default function TaskList({ searchQuery }: TaskListProps) {
         {loading ? (
           <SkeletonRows />
         ) : incompleteTasks.length === 0 &&
-        completedTasks.length === 0 &&
-        filteredScheduledTasks.length === 0 ? (
+          completedTasks.length === 0 &&
+          filteredScheduledTasks.length === 0 ? (
           <EmptyState onAdd={() => setAddTaskOpen(true)} />
         ) : (
           <>
@@ -161,9 +170,7 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                 task={task}
                 expanded={expandedId === task.id}
                 menuOpen={menuOpenId === task.id}
-                onToggle={() =>
-                  setExpandedId(expandedId === task.id ? null : (task.id ?? null))
-                }
+                onToggle={() => setExpandedId(expandedId === task.id ? null : (task.id ?? null))}
                 onToggleMenu={() =>
                   setMenuOpenId(menuOpenId === task.id ? null : (task.id ?? null))
                 }
@@ -219,11 +226,13 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                       gap: "4px",
                     }}
                   >
-                    <span style={{
-                      display: "inline-block",
-                      transition: "transform 0.15s ease",
-                      transform: completedExpanded ? "rotate(90deg)" : "rotate(0deg)",
-                    }}>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        transition: "transform 0.15s ease",
+                        transform: completedExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                      }}
+                    >
                       <CaretRight size={12} weight="light" />
                     </span>
                     Completed ({completedTasks.length})
@@ -234,8 +243,8 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                         e.stopPropagation();
                         Promise.all(
                           completedTasks.map((t) =>
-                            t.id != null ? removeTask(t.id).catch(reportError) : Promise.resolve()
-                          )
+                            t.id != null ? removeTask(t.id).catch(reportError) : Promise.resolve(),
+                          ),
                         ).then(() => setCompletedExpanded(false));
                       }}
                       title="Delete all completed tasks"
@@ -266,37 +275,38 @@ export default function TaskList({ searchQuery }: TaskListProps) {
                   <div style={{ flex: 1, height: "1px", background: "var(--divider)" }} />
                 </div>
                 <AnimatePresence>
-                  {completedExpanded && completedTasks.map((task) => (
-                    <TaskCardItem
-                      key={task.id}
-                      task={task}
-                      expanded={expandedId === task.id}
-                      menuOpen={menuOpenId === task.id}
-                      onToggle={() =>
-                        setExpandedId(expandedId === task.id ? null : (task.id ?? null))
-                      }
-                      onToggleMenu={() =>
-                        setMenuOpenId(menuOpenId === task.id ? null : (task.id ?? null))
-                      }
-                      onComplete={() => {
-                        if (task.id != null) {
-                          uncompleteFromStore(task.id).catch(reportError);
+                  {completedExpanded &&
+                    completedTasks.map((task) => (
+                      <TaskCardItem
+                        key={task.id}
+                        task={task}
+                        expanded={expandedId === task.id}
+                        menuOpen={menuOpenId === task.id}
+                        onToggle={() =>
+                          setExpandedId(expandedId === task.id ? null : (task.id ?? null))
                         }
-                        setExpandedId(null);
-                      }}
-                      onEdit={() => {
-                        setEditingTask(task);
-                        setExpandedId(null);
-                        setMenuOpenId(null);
-                      }}
-                      onDelete={() => {
-                        handleDelete(task);
-                        setExpandedId(null);
-                        setMenuOpenId(null);
-                      }}
-                      completed
-                    />
-                  ))}
+                        onToggleMenu={() =>
+                          setMenuOpenId(menuOpenId === task.id ? null : (task.id ?? null))
+                        }
+                        onComplete={() => {
+                          if (task.id != null) {
+                            uncompleteFromStore(task.id).catch(reportError);
+                          }
+                          setExpandedId(null);
+                        }}
+                        onEdit={() => {
+                          setEditingTask(task);
+                          setExpandedId(null);
+                          setMenuOpenId(null);
+                        }}
+                        onDelete={() => {
+                          handleDelete(task);
+                          setExpandedId(null);
+                          setMenuOpenId(null);
+                        }}
+                        completed
+                      />
+                    ))}
                 </AnimatePresence>
               </>
             )}
@@ -367,7 +377,10 @@ function TaskCardItem({
   const hasDueDate = task.due_time && task.due_time.length > 0;
   const hasRecurrence = !!task.recurrence;
   const tags = task.tags
-    ? task.tags.split(",").map((t) => t.trim()).filter(Boolean)
+    ? task.tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean)
     : [];
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -394,7 +407,11 @@ function TaskCardItem({
       onClick={() => {
         if (!completed) onToggle();
       }}
-      style={{ marginBottom: "8px", cursor: completed ? "default" : "pointer", position: "relative" }}
+      style={{
+        marginBottom: "8px",
+        cursor: completed ? "default" : "pointer",
+        position: "relative",
+      }}
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
         <button
@@ -406,15 +423,33 @@ function TaskCardItem({
           style={{ marginTop: "2px" }}
         >
           {completed && (
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-inverse)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--text-inverse)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <polyline points="20 6 9 17 4 12" />
             </svg>
           )}
         </button>
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0, flex: 1 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "8px",
+            }}
+          >
+            <div
+              style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0, flex: 1 }}
+            >
               <span
                 className="task-title"
                 style={{
@@ -429,7 +464,10 @@ function TaskCardItem({
                 {task.title}
               </span>
               {hasRecurrence && (
-                <span style={{ fontSize: "12px", color: "var(--text-muted)", flexShrink: 0 }} title={`Repeats ${task.recurrence}`}>
+                <span
+                  style={{ fontSize: "12px", color: "var(--text-muted)", flexShrink: 0 }}
+                  title={`Repeats ${task.recurrence}`}
+                >
                   <ArrowsClockwise size={12} weight="light" />
                 </span>
               )}
@@ -514,7 +552,9 @@ function TaskCardItem({
                         textAlign: "left",
                         width: "100%",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-menu-hover)")}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background = "var(--bg-menu-hover)")
+                      }
                       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     >
                       <PencilSimple size={14} weight="light" color="var(--text-secondary)" />
@@ -537,7 +577,9 @@ function TaskCardItem({
                         textAlign: "left",
                         width: "100%",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-delete-hover)")}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background = "var(--bg-delete-hover)")
+                      }
                       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     >
                       <Trash size={14} weight="light" color="var(--text-danger)" />
@@ -595,7 +637,16 @@ function TaskCardItem({
                 color: "var(--text-muted)",
               }}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="var(--text-muted)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                 <line x1="16" y1="2" x2="16" y2="6" />
                 <line x1="8" y1="2" x2="8" y2="6" />
@@ -607,10 +658,7 @@ function TaskCardItem({
 
           {!completed && (
             <div className="progress-track" style={{ marginTop: "8px" }}>
-              <div
-                className="progress-fill"
-                style={{ width: `${progressPercent}%` }}
-              />
+              <div className="progress-fill" style={{ width: `${progressPercent}%` }} />
             </div>
           )}
         </div>
@@ -636,17 +684,41 @@ function TaskCardItem({
             >
               <button
                 className="v-action"
-                onClick={(e) => { e.stopPropagation(); onComplete(); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onComplete();
+                }}
                 style={{ flex: 1, textAlign: "center", padding: "8px 10px" }}
               >
-                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Check size={14} weight="light" /> Done</span>
+                <span
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Check size={14} weight="light" /> Done
+                </span>
               </button>
               <button
                 className="v-action"
-                onClick={(e) => { e.stopPropagation(); onSnooze?.(); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSnooze?.();
+                }}
                 style={{ flex: 1, textAlign: "center", padding: "8px 10px" }}
               >
-                <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><ClockCountdown size={14} weight="light" /> Snooze</span>
+                <span
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    justifyContent: "center",
+                  }}
+                >
+                  <ClockCountdown size={14} weight="light" /> Snooze
+                </span>
               </button>
             </div>
           </motion.div>
@@ -762,13 +834,27 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
         strokeLinejoin="round"
         style={{ marginBottom: "12px" }}
       >
-        <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-14 0Z"/>
-        <circle cx="12" cy="9" r="2.5" fill="currentColor" stroke="none"/>
+        <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-14 0Z" />
+        <circle cx="12" cy="9" r="2.5" fill="currentColor" stroke="none" />
       </svg>
-      <span style={{ fontSize: "15px", fontWeight: 600, color: "var(--text-muted)", marginBottom: "4px" }}>
+      <span
+        style={{
+          fontSize: "15px",
+          fontWeight: 600,
+          color: "var(--text-muted)",
+          marginBottom: "4px",
+        }}
+      >
         No tasks yet
       </span>
-      <span style={{ fontSize: "13px", color: "var(--text-muted)", textAlign: "center", marginBottom: "16px" }}>
+      <span
+        style={{
+          fontSize: "13px",
+          color: "var(--text-muted)",
+          textAlign: "center",
+          marginBottom: "16px",
+        }}
+      >
         Create your first task to get started
       </span>
       <button

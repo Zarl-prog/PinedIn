@@ -1,4 +1,4 @@
-import { CaretRight, CheckCircle } from "@phosphor-icons/react";
+import { CaretLeft, CaretRight, CheckCircle } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -10,11 +10,6 @@ export default function EdgePeek() {
   const [hovered, setHovered] = useState(false);
   const [visible, setVisible] = useState(false);
   const toggling = useRef(false);
-  const expandedRef = useRef(expanded);
-
-  useEffect(() => {
-    expandedRef.current = expanded;
-  }, [expanded]);
 
   useEffect(() => {
     invoke<boolean>("get_edge_peek_expanded")
@@ -35,12 +30,8 @@ export default function EdgePeek() {
   useEffect(() => {
     refresh();
     const unTasks = listen("tasks-updated", refresh);
-    const unAutoHide = listen("edge_peek_auto_hide", () => {
-      if (expandedRef.current) collapse();
-    });
     return () => {
       unTasks.then((f) => f());
-      unAutoHide.then((f) => f());
     };
   }, []);
 
@@ -80,37 +71,30 @@ export default function EdgePeek() {
       <div style={containerStyle}>
         <div
           style={{
-            ...panelStyle,
+            ...stripStyle,
             opacity: visible ? 1 : 0,
             transition: "opacity 150ms ease",
           }}
         >
-          <div style={headerStyle}>
-            <span style={headerTitleStyle}>
-              Tasks &middot; {tasks.length}
-            </span>
-            <button
-              onClick={collapse}
-              style={collapseButtonStyle}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "var(--border-card-strong, #333)";
-                e.currentTarget.style.color = "var(--text-primary-card, #fff)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "var(--border-card, #1A1A1A)";
-                e.currentTarget.style.color = "var(--text-muted-card, #666)";
-              }}
-            >
-              <CaretRight size={13} weight="light" />
-            </button>
-          </div>
+          <button
+            onClick={collapse}
+            style={chevronButtonStyle}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "var(--text-primary-card, #fff)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "var(--text-muted-card, #666)";
+            }}
+          >
+            <CaretRight size={14} weight="light" />
+          </button>
 
-          <div style={taskListStyle}>
+          <div style={taskRowStyle}>
             {tasks.length === 0 ? (
-              <div style={emptyStyle}>All clear</div>
+              <span style={emptyStyle}>All clear</span>
             ) : (
               tasks.map((task) => (
-                <TaskRow
+                <TaskChip
                   key={task.id}
                   task={task}
                   onDone={() => handleDone(task.id)}
@@ -136,13 +120,13 @@ export default function EdgePeek() {
             : "var(--pill-border, #1A1A1A)",
         }}
       >
-        <CaretRight
-          size={16}
+        <CaretLeft
+          size={14}
           weight="light"
           style={{
             color: "var(--pill-text, #fff)",
             flexShrink: 0,
-            transform: hovered ? "translateX(4px)" : "translateX(0)",
+            transform: hovered ? "translateX(-3px)" : "translateX(0)",
             transition: "transform 150ms ease",
           }}
         />
@@ -155,7 +139,13 @@ export default function EdgePeek() {
   );
 }
 
-function TaskRow({ task, onDone }: { task: Task; onDone: () => void }) {
+function TaskChip({
+  task,
+  onDone,
+}: {
+  task: Task;
+  onDone: () => void;
+}) {
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -163,32 +153,24 @@ function TaskRow({ task, onDone }: { task: Task; onDone: () => void }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        ...taskCardStyle,
+        ...chipStyle,
         borderColor: hovered
           ? "var(--border-card-hover, #2A2A2A)"
           : "var(--border-card, #1A1A1A)",
       }}
     >
-      <div style={taskTitleStyle}>{task.title}</div>
-      {task.description && (
-        <div style={taskDescStyle}>{task.description}</div>
-      )}
-      {task.due_time && (
-        <div style={taskDueStyle}>due {task.due_time}</div>
-      )}
+      <span style={chipTitleStyle}>{task.title}</span>
       <button
         onClick={onDone}
-        style={doneButtonStyle}
+        style={chipDoneStyle}
         onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = "var(--border-card-strong, #444)";
           e.currentTarget.style.color = "var(--text-primary-card, #fff)";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = "var(--border-card-hover, #2A2A2A)";
-          e.currentTarget.style.color = "var(--text-secondary-card, #AAA)";
+          e.currentTarget.style.color = "var(--text-muted-card, #666)";
         }}
       >
-        <CheckCircle size={13} weight="light" /> Done
+        <CheckCircle size={13} weight="light" />
       </button>
     </div>
   );
@@ -199,7 +181,7 @@ function TaskRow({ task, onDone }: { task: Task; onDone: () => void }) {
 const containerStyle: React.CSSProperties = {
   width: "100%",
   height: "100%",
-  background: "var(--pill-bg, #0A0A0A)",
+  background: "transparent",
   display: "flex",
   justifyContent: "flex-end",
   alignItems: "center",
@@ -242,113 +224,81 @@ const labelStyle: React.CSSProperties = {
   lineHeight: 1,
 };
 
-const panelStyle: React.CSSProperties = {
-  width: "320px",
-  height: "100%",
+const stripStyle: React.CSSProperties = {
+  width: "100%",
+  height: "68px",
   background: "var(--card-bg, #0A0A0A)",
   border: "1px solid var(--border-card, #1A1A1A)",
-  borderRadius: "16px 0 0 16px",
+  borderRight: "none",
+  borderRadius: "34px 0 0 34px",
   display: "flex",
-  flexDirection: "column",
+  flexDirection: "row",
+  alignItems: "center",
+  paddingLeft: "12px",
+  paddingRight: "8px",
+  gap: "10px",
   overflow: "hidden",
   fontFamily: "'Geist Mono', monospace",
 };
 
-const headerStyle: React.CSSProperties = {
-  padding: "14px 16px",
-  borderBottom: "1px solid var(--border-card-light, #111)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  flexShrink: 0,
-  background: "var(--card-bg, #0A0A0A)",
-};
-
-const headerTitleStyle: React.CSSProperties = {
-  fontSize: "12px",
-  fontWeight: 600,
-  color: "var(--text-primary-card, #fff)",
-  fontFamily: "'Geist Mono', monospace",
-  letterSpacing: "0.05em",
-  textTransform: "uppercase",
-};
-
-const collapseButtonStyle: React.CSSProperties = {
-  background: "transparent",
-  border: "1px solid var(--border-card, #1A1A1A)",
-  borderRadius: "6px",
-  width: "28px",
-  height: "28px",
+const chevronButtonStyle: React.CSSProperties = {
+  background: "none",
+  border: "none",
+  cursor: "pointer",
+  color: "var(--text-muted-card, #666)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  color: "var(--text-muted-card, #666)",
-  cursor: "pointer",
-  transition: "border-color 120ms, color 120ms",
+  padding: "6px",
+  flexShrink: 0,
+  transition: "color 150ms ease",
 };
 
-const taskListStyle: React.CSSProperties = {
-  flex: 1,
-  overflowY: "auto",
-  padding: "12px",
+const taskRowStyle: React.CSSProperties = {
   display: "flex",
-  flexDirection: "column",
+  flexDirection: "row",
   gap: "8px",
+  overflow: "hidden",
+  flex: 1,
+  alignItems: "center",
+};
+
+const chipStyle: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "row",
+  alignItems: "center",
+  gap: "6px",
+  padding: "6px 10px",
+  borderRadius: "16px",
+  border: "1px solid var(--border-card, #1A1A1A)",
+  background: "var(--pill-bg, #0A0A0A)",
+  flexShrink: 0,
+  maxWidth: "180px",
+  transition: "border-color 150ms ease",
+};
+
+const chipTitleStyle: React.CSSProperties = {
+  fontSize: "12px",
+  color: "var(--text-primary-card, #fff)",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  lineHeight: 1,
+};
+
+const chipDoneStyle: React.CSSProperties = {
+  background: "none",
+  border: "none",
+  cursor: "pointer",
+  color: "var(--text-muted-card, #666)",
+  display: "flex",
+  alignItems: "center",
+  padding: "2px",
+  flexShrink: 0,
+  transition: "color 150ms ease",
 };
 
 const emptyStyle: React.CSSProperties = {
-  flex: 1,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: "var(--text-muted-card, #333)",
   fontSize: "12px",
-};
-
-const taskCardStyle: React.CSSProperties = {
-  background: "var(--card-bg, #0A0A0A)",
-  border: "1px solid var(--border-card, #1A1A1A)",
-  borderRadius: "10px",
-  padding: "12px 14px",
-  display: "flex",
-  flexDirection: "column",
-  gap: "5px",
-  cursor: "default",
-  transition: "border-color 120ms ease",
-};
-
-const taskTitleStyle: React.CSSProperties = {
-  fontSize: "12px",
-  fontWeight: 600,
-  color: "var(--text-primary-card, #fff)",
-  lineHeight: 1.3,
-};
-
-const taskDescStyle: React.CSSProperties = {
-  fontSize: "11px",
-  color: "var(--text-faint-card, rgba(255,255,255,0.38))",
-  lineHeight: 1.4,
-};
-
-const taskDueStyle: React.CSSProperties = {
-  fontSize: "10px",
-  color: "var(--text-faint-card, rgba(255,255,255,0.25))",
-};
-
-const doneButtonStyle: React.CSSProperties = {
-  marginTop: "4px",
-  padding: "6px",
-  borderRadius: "7px",
-  border: "1px solid var(--border-card-hover, #2A2A2A)",
-  background: "transparent",
-  color: "var(--text-secondary-card, #AAA)",
-  fontSize: "11px",
-  fontWeight: 600,
-  cursor: "pointer",
-  fontFamily: "'Geist Mono', monospace",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "5px",
-  transition: "border-color 120ms, color 120ms",
+  color: "var(--text-muted-card, #666)",
 };

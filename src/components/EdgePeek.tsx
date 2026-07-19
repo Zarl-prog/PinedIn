@@ -1,39 +1,27 @@
 import { CaretRight, CheckCircle } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { AnimatePresence, motion } from "framer-motion";
-import type { CSSProperties } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Task } from "../lib/tauriCommands";
 
-/**
- * Edge Peek — right-edge task display.
- *
- * Collapsed: 80×68px pill, vertically centered, right-edge flush.
- *   Content: chevron (16px) + count (17px) + "TASKS" (10px).
- *   Border-radius: 34px 0 0 34px. Colors: #0A0A0A bg, #1A1A1A border, #FFFFFF text, #666666 label.
- *   Hover: border #333333, chevron nudges +4px right.
- *
- * Expanded: 320px wide panel, same vertical center, grows leftward.
- *
- * Window geometry (position/size) is owned by Rust. This component synchronizes
- * with native resize via Tauri events to avoid visual glitches.
- */
 export default function EdgePeek() {
   const [expanded, setExpanded] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [hovered, setHovered] = useState(false);
-  const isAnimating = useRef(false);
-  const exitCompleteResolver = useRef<(() => void) | null>(null);
+  const [visible, setVisible] = useState(false);
+  const toggling = useRef(false);
   const expandedRef = useRef(expanded);
+
   useEffect(() => {
     expandedRef.current = expanded;
   }, [expanded]);
 
-  // Load persisted expanded state on mount
   useEffect(() => {
     invoke<boolean>("get_edge_peek_expanded")
-      .then(setExpanded)
+      .then((exp) => {
+        setExpanded(exp);
+        if (exp) setVisible(true);
+      })
       .catch(() => {});
   }, []);
 
@@ -41,73 +29,45 @@ export default function EdgePeek() {
     try {
       const all = await invoke<Task[]>("get_incomplete_tasks");
       setTasks(all);
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (_) {}
   }
 
   useEffect(() => {
     refresh();
-    const unlistenTasks = listen("tasks-updated", refresh);
-    const unlistenAutoHide = listen("edge_peek_auto_hide", () => {
-      if (expandedRef.current) handleClick();
+    const unTasks = listen("tasks-updated", refresh);
+    const unAutoHide = listen("edge_peek_auto_hide", () => {
+      if (expandedRef.current) collapse();
     });
     return () => {
-      unlistenTasks.then((f) => f());
-      unlistenAutoHide.then((f) => f());
+      unTasks.then((f) => f());
+      unAutoHide.then((f) => f());
     };
   }, []);
 
-  async function handleClick() {
-    if (isAnimating.current) return;
-    isAnimating.current = true;
-
+  async function expand() {
+    if (toggling.current) return;
+    toggling.current = true;
     try {
-      if (expanded) {
-        // COLLAPSE: animate first (exit), THEN native resize
-        // 1. Signal intent to collapse - this triggers AnimatePresence exit animation
-        setExpanded(false);
-        // 2. Wait for exit animation to complete (AnimatePresence onExitComplete)
-        await new Promise<void>((resolve) => {
-          exitCompleteResolver.current = resolve;
-        });
-        // 3. Now native window can safely shrink - content already faded out
-        await invoke("collapse_edge_peek");
-      } else {
-        // EXPAND: native resize first (window must be big enough before content grows), then animate
-        await invoke("expand_edge_peek");
-        await waitForResizeComplete(true);
-        setExpanded(true);
-      }
-    } catch (e) {
-      console.error("[EdgePeek] toggle failed:", e);
+      await invoke("expand_edge_peek");
+      setExpanded(true);
+      requestAnimationFrame(() => setVisible(true));
     } finally {
-      isAnimating.current = false;
+      toggling.current = false;
     }
   }
 
-  function waitForResizeComplete(targetExpanded: boolean): Promise<void> {
-    return new Promise((resolve) => {
-      if (resizeListener.current) {
-        resizeListener.current();
-        resizeListener.current = undefined;
-      }
-
-      listen("edge-peek-resize-complete", (event) => {
-        if (event.payload === targetExpanded) {
-          if (resizeListener.current) {
-            resizeListener.current();
-            resizeListener.current = undefined;
-          }
-          resolve();
-        }
-      }).then((unlisten) => {
-        resizeListener.current = unlisten;
-      });
-    });
-  }
-
-  const resizeListener = useRef<() => void>();
+  const collapse = useCallback(async () => {
+    if (toggling.current) return;
+    toggling.current = true;
+    try {
+      setVisible(false);
+      await new Promise((r) => setTimeout(r, 150));
+      await invoke("collapse_edge_peek");
+      setExpanded(false);
+    } finally {
+      toggling.current = false;
+    }
+  }, []);
 
   async function handleDone(id: number | undefined | null) {
     if (!id) return;
@@ -115,275 +75,280 @@ export default function EdgePeek() {
     refresh();
   }
 
-  // Called by AnimatePresence when exit animation completes
-  const onExitComplete = useCallback(() => {
-    if (exitCompleteResolver.current) {
-      exitCompleteResolver.current();
-      exitCompleteResolver.current = null;
-    }
-  }, []);
+  if (expanded) {
+    return (
+      <div style={containerStyle}>
+        <div
+          style={{
+            ...panelStyle,
+            opacity: visible ? 1 : 0,
+            transition: "opacity 150ms ease",
+          }}
+        >
+          <div style={headerStyle}>
+            <span style={headerTitleStyle}>
+              Tasks &middot; {tasks.length}
+            </span>
+            <button
+              onClick={collapse}
+              style={collapseButtonStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "var(--border-card-strong, #333)";
+                e.currentTarget.style.color = "var(--text-primary-card, #fff)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "var(--border-card, #1A1A1A)";
+                e.currentTarget.style.color = "var(--text-muted-card, #666)";
+              }}
+            >
+              <CaretRight size={13} weight="light" />
+            </button>
+          </div>
 
-  // ─── Styles ─────────────────────────────────────────────────────────────
-  const containerStyle: CSSProperties = {
-    width: "100%",
-    height: "100%",
-    background: "#0A0A0A",
-    display: "flex",
-    justifyContent: "flex-end",
-    alignItems: "center",
-    overflow: "hidden",
-  };
-
-  const pillStyle: CSSProperties = {
-    width: "80px",
-    height: "68px",
-    borderRadius: "34px 0 0 34px",
-    background: "#0A0A0A",
-    border: `1px solid ${hovered ? "#333333" : "#1A1A1A"}`,
-    borderRight: "none",
-    cursor: "pointer",
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    paddingLeft: "14px",
-    gap: "8px",
-    boxShadow: "none",
-    userSelect: "none",
-    transition: "border-color 0.15s ease",
-  };
-
-  const chevronStyle = (isHovered: boolean): CSSProperties => ({
-    width: "16px",
-    height: "16px",
-    color: "#FFFFFF",
-    flexShrink: 0,
-    transform: isHovered ? "translateX(4px)" : "translateX(0)",
-    transition: "transform 0.15s ease",
-  });
-
-  const countStyle: CSSProperties = {
-    fontSize: "17px",
-    fontWeight: 500,
-    color: "#FFFFFF",
-    fontFamily: "'Geist Mono', monospace",
-    lineHeight: 1,
-    letterSpacing: "-0.02em",
-  };
-
-  const labelStyle: CSSProperties = {
-    fontSize: "10px",
-    color: "#666666",
-    fontFamily: "'Geist Mono', monospace",
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-    lineHeight: 1,
-  };
-
-  const panelStyle: CSSProperties = {
-    width: "320px",
-    height: "100%",
-    background: "#0A0A0A",
-    border: "1px solid #1A1A1A",
-    borderRadius: "16px 0 0 16px",
-    display: "flex",
-    flexDirection: "column",
-    overflow: "hidden",
-    fontFamily: "'Geist Mono', monospace",
-  };
+          <div style={taskListStyle}>
+            {tasks.length === 0 ? (
+              <div style={emptyStyle}>All clear</div>
+            ) : (
+              tasks.map((task) => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  onDone={() => handleDone(task.id)}
+                />
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={containerStyle}>
-      <AnimatePresence mode="wait" initial={false} onExitComplete={onExitComplete}>
-        {expanded ? (
-          <motion.div
-            key="panel"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            style={panelStyle}
-          >
-            <div
-              style={{
-                padding: "14px 16px",
-                borderBottom: "1px solid #111",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                flexShrink: 0,
-                background: "#0A0A0A",
-              }}
-            >
-              <span
-                style={{
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: "#FFFFFF",
-                  fontFamily: "'Geist Mono', monospace",
-                  letterSpacing: "0.05em",
-                  textTransform: "uppercase",
-                }}
-              >
-                Tasks &middot; {tasks.length}
-              </span>
-              <button
-                onClick={handleClick}
-                style={{
-                  background: "transparent",
-                  border: "1px solid #1A1A1A",
-                  borderRadius: "6px",
-                  width: "28px",
-                  height: "28px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#666666",
-                  cursor: "pointer",
-                  transition: "border-color 0.12s, color 0.12s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "#333333";
-                  e.currentTarget.style.color = "#FFFFFF";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "#1A1A1A";
-                  e.currentTarget.style.color = "#666666";
-                }}
-              >
-                <CaretRight size={13} weight="light" />
-              </button>
-            </div>
-
-            <div
-              style={{
-                flex: 1,
-                overflowY: "auto",
-                padding: "12px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "8px",
-              }}
-            >
-              {tasks.length === 0 ? (
-                <div
-                  style={{
-                    flex: 1,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#333333",
-                    fontSize: "12px",
-                  }}
-                >
-                  All clear
-                </div>
-              ) : (
-                tasks.map((task) => (
-                  <div
-                    key={task.id}
-                    style={{
-                      background: "#0A0A0A",
-                      border: "1px solid #1A1A1A",
-                      borderRadius: "10px",
-                      padding: "12px 14px",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "5px",
-                      cursor: "default",
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#2A2A2A")}
-                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#1A1A1A")}
-                  >
-                    <div
-                      style={{
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        color: "#FFFFFF",
-                        lineHeight: 1.3,
-                      }}
-                    >
-                      {task.title}
-                    </div>
-
-                    {task.description && (
-                      <div
-                        style={{
-                          fontSize: "11px",
-                          color: "rgba(255,255,255,0.38)",
-                          lineHeight: 1.4,
-                        }}
-                      >
-                        {task.description}
-                      </div>
-                    )}
-
-                    {task.due_time && (
-                      <div
-                        style={{
-                          fontSize: "10px",
-                          color: "rgba(255,255,255,0.25)",
-                        }}
-                      >
-                        due {task.due_time}
-                      </div>
-                    )}
-
-                    <button
-                      onClick={() => handleDone(task.id)}
-                      style={{
-                        marginTop: "4px",
-                        padding: "6px",
-                        borderRadius: "7px",
-                        border: "1px solid #2A2A2A",
-                        background: "transparent",
-                        color: "#AAAAAA",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        fontFamily: "'Geist Mono', monospace",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "5px",
-                        transition: "border-color 0.12s, color 0.12s",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = "#444444";
-                        e.currentTarget.style.color = "#FFFFFF";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = "#2A2A2A";
-                        e.currentTarget.style.color = "#AAAAAA";
-                      }}
-                    >
-                      <CheckCircle size={13} weight="light" /> Mark Done
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="pill"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.12 }}
-            onClick={handleClick}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-            style={pillStyle}
-          >
-            <CaretRight size={16} weight="light" style={chevronStyle(hovered)} />
-            <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
-              <span style={countStyle}>{tasks.length}</span>
-              <span style={labelStyle}>TASKS</span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div
+        onClick={expand}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          ...pillStyle,
+          borderColor: hovered
+            ? "var(--border-card-strong, #333)"
+            : "var(--pill-border, #1A1A1A)",
+        }}
+      >
+        <CaretRight
+          size={16}
+          weight="light"
+          style={{
+            color: "var(--pill-text, #fff)",
+            flexShrink: 0,
+            transform: hovered ? "translateX(4px)" : "translateX(0)",
+            transition: "transform 150ms ease",
+          }}
+        />
+        <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
+          <span style={countStyle}>{tasks.length}</span>
+          <span style={labelStyle}>TASKS</span>
+        </div>
+      </div>
     </div>
   );
 }
+
+function TaskRow({ task, onDone }: { task: Task; onDone: () => void }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        ...taskCardStyle,
+        borderColor: hovered
+          ? "var(--border-card-hover, #2A2A2A)"
+          : "var(--border-card, #1A1A1A)",
+      }}
+    >
+      <div style={taskTitleStyle}>{task.title}</div>
+      {task.description && (
+        <div style={taskDescStyle}>{task.description}</div>
+      )}
+      {task.due_time && (
+        <div style={taskDueStyle}>due {task.due_time}</div>
+      )}
+      <button
+        onClick={onDone}
+        style={doneButtonStyle}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = "var(--border-card-strong, #444)";
+          e.currentTarget.style.color = "var(--text-primary-card, #fff)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = "var(--border-card-hover, #2A2A2A)";
+          e.currentTarget.style.color = "var(--text-secondary-card, #AAA)";
+        }}
+      >
+        <CheckCircle size={13} weight="light" /> Done
+      </button>
+    </div>
+  );
+}
+
+// ─── Styles ─────────────────────────────────────────────────────────────────
+
+const containerStyle: React.CSSProperties = {
+  width: "100%",
+  height: "100%",
+  background: "var(--pill-bg, #0A0A0A)",
+  display: "flex",
+  justifyContent: "flex-end",
+  alignItems: "center",
+  overflow: "hidden",
+};
+
+const pillStyle: React.CSSProperties = {
+  width: "80px",
+  height: "68px",
+  borderRadius: "34px 0 0 34px",
+  background: "var(--pill-bg, #0A0A0A)",
+  border: "1px solid var(--pill-border, #1A1A1A)",
+  borderRight: "none",
+  cursor: "pointer",
+  display: "flex",
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  paddingLeft: "14px",
+  gap: "8px",
+  userSelect: "none",
+  transition: "border-color 150ms ease",
+};
+
+const countStyle: React.CSSProperties = {
+  fontSize: "17px",
+  fontWeight: 500,
+  color: "var(--pill-text, #fff)",
+  fontFamily: "'Geist Mono', monospace",
+  lineHeight: 1,
+  letterSpacing: "-0.02em",
+};
+
+const labelStyle: React.CSSProperties = {
+  fontSize: "10px",
+  color: "var(--pill-text-muted, #666)",
+  fontFamily: "'Geist Mono', monospace",
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+  lineHeight: 1,
+};
+
+const panelStyle: React.CSSProperties = {
+  width: "320px",
+  height: "100%",
+  background: "var(--card-bg, #0A0A0A)",
+  border: "1px solid var(--border-card, #1A1A1A)",
+  borderRadius: "16px 0 0 16px",
+  display: "flex",
+  flexDirection: "column",
+  overflow: "hidden",
+  fontFamily: "'Geist Mono', monospace",
+};
+
+const headerStyle: React.CSSProperties = {
+  padding: "14px 16px",
+  borderBottom: "1px solid var(--border-card-light, #111)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  flexShrink: 0,
+  background: "var(--card-bg, #0A0A0A)",
+};
+
+const headerTitleStyle: React.CSSProperties = {
+  fontSize: "12px",
+  fontWeight: 600,
+  color: "var(--text-primary-card, #fff)",
+  fontFamily: "'Geist Mono', monospace",
+  letterSpacing: "0.05em",
+  textTransform: "uppercase",
+};
+
+const collapseButtonStyle: React.CSSProperties = {
+  background: "transparent",
+  border: "1px solid var(--border-card, #1A1A1A)",
+  borderRadius: "6px",
+  width: "28px",
+  height: "28px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "var(--text-muted-card, #666)",
+  cursor: "pointer",
+  transition: "border-color 120ms, color 120ms",
+};
+
+const taskListStyle: React.CSSProperties = {
+  flex: 1,
+  overflowY: "auto",
+  padding: "12px",
+  display: "flex",
+  flexDirection: "column",
+  gap: "8px",
+};
+
+const emptyStyle: React.CSSProperties = {
+  flex: 1,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "var(--text-muted-card, #333)",
+  fontSize: "12px",
+};
+
+const taskCardStyle: React.CSSProperties = {
+  background: "var(--card-bg, #0A0A0A)",
+  border: "1px solid var(--border-card, #1A1A1A)",
+  borderRadius: "10px",
+  padding: "12px 14px",
+  display: "flex",
+  flexDirection: "column",
+  gap: "5px",
+  cursor: "default",
+  transition: "border-color 120ms ease",
+};
+
+const taskTitleStyle: React.CSSProperties = {
+  fontSize: "12px",
+  fontWeight: 600,
+  color: "var(--text-primary-card, #fff)",
+  lineHeight: 1.3,
+};
+
+const taskDescStyle: React.CSSProperties = {
+  fontSize: "11px",
+  color: "var(--text-faint-card, rgba(255,255,255,0.38))",
+  lineHeight: 1.4,
+};
+
+const taskDueStyle: React.CSSProperties = {
+  fontSize: "10px",
+  color: "var(--text-faint-card, rgba(255,255,255,0.25))",
+};
+
+const doneButtonStyle: React.CSSProperties = {
+  marginTop: "4px",
+  padding: "6px",
+  borderRadius: "7px",
+  border: "1px solid var(--border-card-hover, #2A2A2A)",
+  background: "transparent",
+  color: "var(--text-secondary-card, #AAA)",
+  fontSize: "11px",
+  fontWeight: 600,
+  cursor: "pointer",
+  fontFamily: "'Geist Mono', monospace",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "5px",
+  transition: "border-color 120ms, color 120ms",
+};

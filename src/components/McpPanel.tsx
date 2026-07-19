@@ -111,7 +111,16 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
                 marginBottom: "20px",
               }}
             >
-              <span style={{ fontSize: "17px", fontWeight: 600, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "8px" }}>
+              <span
+                style={{
+                  fontSize: "17px",
+                  fontWeight: 600,
+                  color: "var(--text-primary)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
                 <Plug size={18} weight="fill" style={{ color: "#22c55e" }} />
                 MCP Server
               </span>
@@ -160,12 +169,26 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />
+                  <span
+                    style={{
+                      width: "7px",
+                      height: "7px",
+                      borderRadius: "50%",
+                      background: "#22c55e",
+                      flexShrink: 0,
+                    }}
+                  />
                   <span style={{ fontSize: "13px", color: "var(--text-primary)", fontWeight: 500 }}>
                     Running on port 7890
                   </span>
                 </div>
-                <div style={{ fontSize: "12px", color: "var(--text-secondary)", fontFamily: "'Geist Mono', monospace" }}>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "var(--text-secondary)",
+                    fontFamily: "'Geist Mono', monospace",
+                  }}
+                >
                   Connect Claude Desktop, Cursor, or any MCP client
                 </div>
                 <div
@@ -179,7 +202,14 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
                     padding: "8px 10px",
                   }}
                 >
-                  <code style={{ fontSize: "12px", color: "var(--text-primary)", fontFamily: "'Geist Mono', monospace", fontWeight: 500 }}>
+                  <code
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--text-primary)",
+                      fontFamily: "'Geist Mono', monospace",
+                      fontWeight: 500,
+                    }}
+                  >
                     http://127.0.0.1:7890/sse
                   </code>
                   <button
@@ -222,8 +252,12 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
                   padding: "16px",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text-secondary)" }}>
+                <div
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+                >
+                  <span
+                    style={{ fontSize: "13px", fontWeight: 500, color: "var(--text-secondary)" }}
+                  >
                     Zero-config prompt for any AI
                   </span>
                   <button
@@ -270,52 +304,52 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
                       overflowY: expanded ? "auto" : "visible",
                     }}
                   >
-                  <pre
-                    style={{
-                      margin: 0,
-                      fontSize: "12px",
-                      lineHeight: 1.6,
-                      color: "var(--text-primary)",
-                      fontFamily: "'Geist Mono', monospace",
-                      whiteSpace: "pre-wrap",
-                      wordBreak: "break-word",
-                      padding: "12px 14px",
-                      paddingBottom: expanded && !scrolledToBottom ? "32px" : "12px",
-                    }}
-                  >
-                    {expanded
-                      ? MCP_PROMPT
-                      : MCP_PROMPT.split("\n").slice(0, PREVIEW_LINES).join("\n") + "\n…"}
-                  </pre>
-                  {expanded && !scrolledToBottom && (
-                    <div
+                    <pre
                       style={{
-                        position: "sticky",
-                        bottom: 0,
-                        width: "100%",
-                        display: "flex",
-                        justifyContent: "center",
-                        pointerEvents: "none",
-                        marginTop: "-28px",
-                        paddingBottom: "6px",
+                        margin: 0,
+                        fontSize: "12px",
+                        lineHeight: 1.6,
+                        color: "var(--text-primary)",
+                        fontFamily: "'Geist Mono', monospace",
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-word",
+                        padding: "12px 14px",
+                        paddingBottom: expanded && !scrolledToBottom ? "32px" : "12px",
                       }}
                     >
+                      {expanded
+                        ? MCP_PROMPT
+                        : MCP_PROMPT.split("\n").slice(0, PREVIEW_LINES).join("\n") + "\n…"}
+                    </pre>
+                    {expanded && !scrolledToBottom && (
                       <div
                         style={{
+                          position: "sticky",
+                          bottom: 0,
+                          width: "100%",
                           display: "flex",
-                          alignItems: "center",
                           justifyContent: "center",
-                          width: "24px",
-                          height: "24px",
-                          borderRadius: "50%",
-                          background: "var(--bg-badge)",
-                          border: "1px solid var(--border-light)",
+                          pointerEvents: "none",
+                          marginTop: "-28px",
+                          paddingBottom: "6px",
                         }}
                       >
-                        <ArrowDown size={14} weight="bold" color="var(--text-secondary)" />
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: "24px",
+                            height: "24px",
+                            borderRadius: "50%",
+                            background: "var(--bg-badge)",
+                            border: "1px solid var(--border-light)",
+                          }}
+                        >
+                          <ArrowDown size={14} weight="bold" color="var(--text-secondary)" />
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                   </div>
                   <button
                     onClick={() => setExpanded(!expanded)}
@@ -335,8 +369,12 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
                       fontWeight: 600,
                       transition: "color 0.15s ease",
                     }}
-                    onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-primary)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "var(--text-primary)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "var(--text-muted)";
+                    }}
                   >
                     {expanded ? <CaretUp size={12} /> : <CaretDown size={12} />}
                     {expanded ? "Collapse" : "Show full prompt"}
@@ -354,7 +392,8 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
                   textAlign: "center",
                 }}
               >
-                Paste the prompt into any AI chat (Claude, ChatGPT, Gemini) — it will call your MCP endpoints automatically.
+                Paste the prompt into any AI chat (Claude, ChatGPT, Gemini) — it will call your MCP
+                endpoints automatically.
               </div>
             </div>
           </motion.div>

@@ -69,13 +69,9 @@ function UnitDropdown({
           whiteSpace: "nowrap",
           transition: "border-color 0.15s ease",
         }}
-        onMouseEnter={(e) =>
-          (e.currentTarget.style.borderColor = "var(--border-hover)")
-        }
+        onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--border-hover)")}
         onMouseLeave={(e) =>
-          (e.currentTarget.style.borderColor = open
-            ? "var(--text-muted)"
-            : "var(--border)")
+          (e.currentTarget.style.borderColor = open ? "var(--text-muted)" : "var(--border)")
         }
       >
         {selected.label}
@@ -127,13 +123,9 @@ function UnitDropdown({
                 width: "100%",
                 textAlign: "left",
                 padding: "8px 12px",
-                background:
-                  opt.value === value ? "var(--bg-hover)" : "transparent",
+                background: opt.value === value ? "var(--bg-hover)" : "transparent",
                 border: "none",
-                color:
-                  opt.value === value
-                    ? "var(--text-primary)"
-                    : "var(--text-secondary)",
+                color: opt.value === value ? "var(--text-primary)" : "var(--text-secondary)",
                 fontSize: "12px",
                 fontFamily: "'Geist Mono', monospace",
                 cursor: "pointer",
@@ -147,9 +139,7 @@ function UnitDropdown({
                 e.currentTarget.style.background =
                   opt.value === value ? "var(--bg-hover)" : "transparent";
                 e.currentTarget.style.color =
-                  opt.value === value
-                    ? "var(--text-primary)"
-                    : "var(--text-secondary)";
+                  opt.value === value ? "var(--text-primary)" : "var(--text-secondary)";
               }}
             >
               {opt.label}
@@ -166,12 +156,7 @@ function UnitDropdown({
  * Pre-schedule lives in its own dedicated PreScheduleModal — no toggle here.
  * All styling uses the exact palette from the spec: #0a0a0a, #1a1a1a, #ededed, etc.
  */
-export default function AddTaskModal({
-  open,
-  onClose,
-  editTask,
-  workspaceId,
-}: AddTaskModalProps) {
+export default function AddTaskModal({ open, onClose, editTask, workspaceId }: AddTaskModalProps) {
   const addTask = useReminderStore((s) => s.addTask);
   const editTaskAction = useReminderStore((s) => s.editTask);
 
@@ -208,8 +193,7 @@ export default function AddTaskModal({
       const timeLimitMinutes = timeLimitValue
         ? parseInt(timeLimitValue, 10) * (timeLimitUnit === "hours" ? 60 : 1)
         : null;
-      const safeTimeLimit =
-        timeLimitMinutes && timeLimitMinutes > 0 ? timeLimitMinutes : null;
+      const safeTimeLimit = timeLimitMinutes && timeLimitMinutes > 0 ? timeLimitMinutes : null;
 
       if (editTask?.id != null) {
         await editTaskAction(
@@ -430,9 +414,7 @@ export default function AddTaskModal({
               </button>
             </div>
 
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "14px" }}
-            >
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
               <div>
                 <label
                   style={{
@@ -487,8 +469,7 @@ export default function AddTaskModal({
                     marginBottom: "6px",
                   }}
                 >
-                  Due Date{" "}
-                  <span style={{ color: "var(--text-muted)" }}>(optional)</span>
+                  Due Date <span style={{ color: "var(--text-muted)" }}>(optional)</span>
                 </label>
                 <div style={{ position: "relative" }}>
                   <svg
@@ -537,8 +518,7 @@ export default function AddTaskModal({
                   border: "1px solid var(--border-light, #444)",
                   background: "transparent",
                   color: "var(--text-secondary)",
-                  transition:
-                    "background 0.15s ease, color 0.15s ease, border-color 0.15s ease",
+                  transition: "background 0.15s ease, color 0.15s ease, border-color 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = "var(--bg-hover)";
@@ -548,8 +528,7 @@ export default function AddTaskModal({
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "transparent";
                   e.currentTarget.style.color = "var(--text-secondary)";
-                  e.currentTarget.style.borderColor =
-                    "var(--border-light, #444)";
+                  e.currentTarget.style.borderColor = "var(--border-light, #444)";
                 }}
               >
                 <span
@@ -570,11 +549,7 @@ export default function AddTaskModal({
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
-                    {showAdvanced ? (
-                      <path d="M18 15l-6-6-6 6" />
-                    ) : (
-                      <path d="M6 9l6 6 6-6" />
-                    )}
+                    {showAdvanced ? <path d="M18 15l-6-6-6 6" /> : <path d="M6 9l6 6 6-6" />}
                   </svg>
                   {showAdvanced ? "Basic" : "Advanced"}
                 </span>
@@ -604,10 +579,7 @@ export default function AddTaskModal({
                           marginBottom: "6px",
                         }}
                       >
-                        Time Limit{" "}
-                        <span style={{ color: "var(--text-muted)" }}>
-                          (optional)
-                        </span>
+                        Time Limit <span style={{ color: "var(--text-muted)" }}>(optional)</span>
                       </label>
                       <div
                         style={{
@@ -631,9 +603,7 @@ export default function AddTaskModal({
                             type="button"
                             onClick={() =>
                               setTimeLimitValue((v) =>
-                                String(
-                                  Math.max(1, (parseInt(v, 10) || 0) - 1) || "",
-                                ),
+                                String(Math.max(1, (parseInt(v, 10) || 0) - 1) || ""),
                               )
                             }
                             style={{
@@ -649,14 +619,11 @@ export default function AddTaskModal({
                               alignItems: "center",
                               justifyContent: "center",
                               flexShrink: 0,
-                              transition:
-                                "background 0.1s ease, color 0.1s ease",
+                              transition: "background 0.1s ease, color 0.1s ease",
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.background =
-                                "var(--bg-hover)";
-                              e.currentTarget.style.color =
-                                "var(--text-primary)";
+                              e.currentTarget.style.background = "var(--bg-hover)";
+                              e.currentTarget.style.color = "var(--text-primary)";
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.background = "transparent";
@@ -687,9 +654,7 @@ export default function AddTaskModal({
                           <button
                             type="button"
                             onClick={() =>
-                              setTimeLimitValue((v) =>
-                                String((parseInt(v, 10) || 0) + 1),
-                              )
+                              setTimeLimitValue((v) => String((parseInt(v, 10) || 0) + 1))
                             }
                             style={{
                               width: "30px",
@@ -704,14 +669,11 @@ export default function AddTaskModal({
                               alignItems: "center",
                               justifyContent: "center",
                               flexShrink: 0,
-                              transition:
-                                "background 0.1s ease, color 0.1s ease",
+                              transition: "background 0.1s ease, color 0.1s ease",
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.background =
-                                "var(--bg-hover)";
-                              e.currentTarget.style.color =
-                                "var(--text-primary)";
+                              e.currentTarget.style.background = "var(--bg-hover)";
+                              e.currentTarget.style.color = "var(--text-primary)";
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.background = "transparent";
@@ -721,10 +683,7 @@ export default function AddTaskModal({
                             <Plus size={14} weight="light" />
                           </button>
                         </div>
-                        <UnitDropdown
-                          value={timeLimitUnit}
-                          onChange={setTimeLimitUnit}
-                        />
+                        <UnitDropdown value={timeLimitUnit} onChange={setTimeLimitUnit} />
                       </div>
                     </div>
 
@@ -764,10 +723,7 @@ export default function AddTaskModal({
                           marginBottom: "6px",
                         }}
                       >
-                        Tags{" "}
-                        <span style={{ color: "var(--text-muted)" }}>
-                          (max 5)
-                        </span>
+                        Tags <span style={{ color: "var(--text-muted)" }}>(max 5)</span>
                       </label>
                       <div
                         style={{
@@ -859,7 +815,10 @@ export default function AddTaskModal({
 
               <div style={{ display: "flex", justifyContent: "center", marginTop: "12px" }}>
                 <button
-                  onClick={() => { onClose(); useReminderStore.getState().setCustomizeOpen(true); }}
+                  onClick={() => {
+                    onClose();
+                    useReminderStore.getState().setCustomizeOpen(true);
+                  }}
                   style={{
                     background: "none",
                     border: "none",
@@ -871,10 +830,11 @@ export default function AddTaskModal({
                     opacity: 0.7,
                     transition: "opacity 0.15s",
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.opacity = "1"}
-                  onMouseLeave={(e) => e.currentTarget.style.opacity = "0.7"}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.7")}
                 >
-                  <PencilSimpleLine size={14} weight="light" style={{ marginRight: "4px" }} /> Customize your tasks
+                  <PencilSimpleLine size={14} weight="light" style={{ marginRight: "4px" }} />{" "}
+                  Customize your tasks
                 </button>
               </div>
 
@@ -905,10 +865,19 @@ export default function AddTaskModal({
                   }}
                 >
                   {isSubmitting ? "Saving..." : editTask ? "Save" : "Add Task"}
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "10px", opacity: 0.5, marginLeft: "8px" }}>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "3px",
+                      fontSize: "10px",
+                      opacity: 0.5,
+                      marginLeft: "8px",
+                    }}
+                  >
                     Ctrl
                     <svg width="13" height="13" viewBox="0 -960 960 960" fill="currentColor">
-                      <path d="M360-240 120-480l240-240 56 56-144 144h488v-160h80v240H272l144 144-56 56Z"/>
+                      <path d="M360-240 120-480l240-240 56 56-144 144h488v-160h80v240H272l144 144-56 56Z" />
                     </svg>
                   </span>
                 </button>

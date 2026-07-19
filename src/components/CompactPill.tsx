@@ -55,7 +55,12 @@ export default function CompactPill() {
   useEffect(() => {
     refresh();
     const p = listen("tasks-updated", refresh);
-    return () => { p.then(f => f(), () => {}); };
+    return () => {
+      p.then(
+        (f) => f(),
+        () => {},
+      );
+    };
   }, []);
 
   useEffect(() => {
@@ -65,7 +70,7 @@ export default function CompactPill() {
   }, []);
 
   useEffect(() => {
-    const hasTimed = tasks.some(t => t.time_limit_minutes && t.started_at);
+    const hasTimed = tasks.some((t) => t.time_limit_minutes && t.started_at);
     if (!hasTimed) {
       setTimerBorderColor(null);
       return;
@@ -154,9 +159,13 @@ export default function CompactPill() {
       if ((dx > 6 || dy > 6) && !dragInitiated) {
         dragInitiated = true;
         didDrag.current = true;
-        try { await getCurrentWindow().startDragging(); }
-        catch { didDrag.current = false; }
-        finally { cleanup(); }
+        try {
+          await getCurrentWindow().startDragging();
+        } catch {
+          didDrag.current = false;
+        } finally {
+          cleanup();
+        }
       }
     };
     const onUp = () => cleanup();
@@ -164,13 +173,16 @@ export default function CompactPill() {
     window.addEventListener("mouseup", onUp);
   }, []);
 
-  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest("button")) return;
-    if (didDrag.current) return;
-    const wasExpanded = expanded;
-    if (!wasExpanded) isHoveringRef.current = true;
-    setExpanded(!wasExpanded);
-  }, [expanded]);
+  const handleDoubleClick = useCallback(
+    (e: React.MouseEvent) => {
+      if ((e.target as HTMLElement).closest("button")) return;
+      if (didDrag.current) return;
+      const wasExpanded = expanded;
+      if (!wasExpanded) isHoveringRef.current = true;
+      setExpanded(!wasExpanded);
+    },
+    [expanded],
+  );
 
   async function handleDone() {
     if (tasks.length === 0) return;
@@ -190,11 +202,11 @@ export default function CompactPill() {
   }
 
   function handleNext() {
-    setCurrentIndex(i => (i + 1) % Math.max(tasks.length, 1));
+    setCurrentIndex((i) => (i + 1) % Math.max(tasks.length, 1));
   }
 
   function handlePrev() {
-    setCurrentIndex(i => (i - 1 + Math.max(tasks.length, 1)) % Math.max(tasks.length, 1));
+    setCurrentIndex((i) => (i - 1 + Math.max(tasks.length, 1)) % Math.max(tasks.length, 1));
   }
 
   const currentTask = tasks[currentIndex];
@@ -224,24 +236,109 @@ export default function CompactPill() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <span style={{ fontSize: "11px", color: "var(--pill-text, #ffffff)", fontFamily: "'Geist Mono', monospace", fontWeight: 600 }}>
+          <span
+            style={{
+              fontSize: "11px",
+              color: "var(--pill-text, #ffffff)",
+              fontFamily: "'Geist Mono', monospace",
+              fontWeight: 600,
+            }}
+          >
             {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
           </span>
         </div>
-        <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--pill-text, #ffffff)", fontFamily: "'Geist Mono', monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+        <div
+          style={{
+            fontSize: "12px",
+            fontWeight: 600,
+            color: "var(--pill-text, #ffffff)",
+            fontFamily: "'Geist Mono', monospace",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
           {currentTask?.title}
         </div>
-        <div style={{ fontSize: "10px", color: "var(--pill-text-muted, #777)", fontFamily: "'Geist Mono', monospace" }}>
+        <div
+          style={{
+            fontSize: "10px",
+            color: "var(--pill-text-muted, #777)",
+            fontFamily: "'Geist Mono', monospace",
+          }}
+        >
           {currentIndex + 1} / {tasks.length}
         </div>
         <div style={{ display: "flex", gap: "5px" }}>
-          <button onClick={(e) => { e.stopPropagation(); handlePrev(); }} style={{ width: "24px", height: "24px", borderRadius: "5px", border: "1px solid var(--pill-border, #1a1a1a)", background: "transparent", color: "var(--pill-text-muted, #777)", fontSize: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handlePrev();
+            }}
+            style={{
+              width: "24px",
+              height: "24px",
+              borderRadius: "5px",
+              border: "1px solid var(--pill-border, #1a1a1a)",
+              background: "transparent",
+              color: "var(--pill-text-muted, #777)",
+              fontSize: "12px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <CaretLeft size={14} weight="light" />
           </button>
-          <button onClick={(e) => { e.stopPropagation(); handleDone(); }} style={{ flex: 1, height: "24px", borderRadius: "5px", border: "1px solid var(--btn-done-border, rgba(34,197,94,0.3))", background: "var(--btn-done-bg, rgba(34,197,94,0.1))", color: "var(--btn-done-text, #22c55e)", fontSize: "10px", fontWeight: 600, cursor: "pointer", fontFamily: "'Geist Mono', monospace" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Check size={14} weight="light" /> Done</span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDone();
+            }}
+            style={{
+              flex: 1,
+              height: "24px",
+              borderRadius: "5px",
+              border: "1px solid var(--btn-done-border, rgba(34,197,94,0.3))",
+              background: "var(--btn-done-bg, rgba(34,197,94,0.1))",
+              color: "var(--btn-done-text, #22c55e)",
+              fontSize: "10px",
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: "'Geist Mono', monospace",
+            }}
+          >
+            <span
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                justifyContent: "center",
+              }}
+            >
+              <Check size={14} weight="light" /> Done
+            </span>
           </button>
-          <button onClick={(e) => { e.stopPropagation(); handleNext(); }} style={{ width: "24px", height: "24px", borderRadius: "5px", border: "1px solid var(--pill-border, #1a1a1a)", background: "transparent", color: "var(--pill-text-muted, #777)", fontSize: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleNext();
+            }}
+            style={{
+              width: "24px",
+              height: "24px",
+              borderRadius: "5px",
+              border: "1px solid var(--pill-border, #1a1a1a)",
+              background: "transparent",
+              color: "var(--pill-text-muted, #777)",
+              fontSize: "12px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <CaretRight size={14} weight="light" />
           </button>
         </div>
@@ -250,33 +347,52 @@ export default function CompactPill() {
   }
 
   return (
-      <div
-        onMouseDown={handleMouseDown}
-        onDoubleClick={handleDoubleClick}
-        style={{
-          width: COLLAPSED_W,
-          height: COLLAPSED_H,
-          background: "var(--pill-bg, #060608)",
-          border: "0.65px solid #e8e8e8",
-          boxShadow: timerBorderColor ? `0 0 0 1px ${timerBorderColor}` : "none",
-          borderRadius: "999px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "6px",
-          cursor: "grab",
-          userSelect: "none",
-          overflow: "hidden",
-          flexShrink: 0,
-          transition: "border-color 0.5s ease",
-          boxSizing: "border-box",
-        }}
+    <div
+      onMouseDown={handleMouseDown}
+      onDoubleClick={handleDoubleClick}
+      style={{
+        width: COLLAPSED_W,
+        height: COLLAPSED_H,
+        background: "var(--pill-bg, #060608)",
+        border: "0.65px solid #e8e8e8",
+        boxShadow: timerBorderColor ? `0 0 0 1px ${timerBorderColor}` : "none",
+        borderRadius: "999px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "6px",
+        cursor: "grab",
+        userSelect: "none",
+        overflow: "hidden",
+        flexShrink: 0,
+        transition: "border-color 0.5s ease",
+        boxSizing: "border-box",
+      }}
     >
       {tasks.length === 0 ? (
-        <span style={{ fontSize: "11px", color: "var(--pill-text-muted, #444)", fontFamily: "'Geist Mono', monospace", display: "flex", alignItems: "center", gap: "4px" }}><Check size={14} weight="light" /> All clear</span>
+        <span
+          style={{
+            fontSize: "11px",
+            color: "var(--pill-text-muted, #444)",
+            fontFamily: "'Geist Mono', monospace",
+            display: "flex",
+            alignItems: "center",
+            gap: "4px",
+          }}
+        >
+          <Check size={14} weight="light" /> All clear
+        </span>
       ) : (
         <>
-          <span style={{ fontSize: "11px", color: "var(--pill-text, #ffffff)", fontFamily: "'Geist Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>
+          <span
+            style={{
+              fontSize: "11px",
+              color: "var(--pill-text, #ffffff)",
+              fontFamily: "'Geist Mono', monospace",
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+            }}
+          >
             {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
           </span>
         </>

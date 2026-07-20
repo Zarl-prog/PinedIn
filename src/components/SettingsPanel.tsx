@@ -1,5 +1,6 @@
-import { Circle, Hourglass, PencilSimpleLine, Tag, X } from "@phosphor-icons/react";
+import { Circle, Compass, Hourglass, PencilSimpleLine, Tag, X } from "@phosphor-icons/react";
 import { getVersion } from "@tauri-apps/api/app";
+import { emit } from "@tauri-apps/api/event";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useSettings } from "@/hooks/useSettings";
@@ -269,6 +270,75 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                     style={{ flexShrink: 0 }}
                   >
                     <span className={`toggle-thumb${autostartOn ? " active" : ""}`} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Restart tour */}
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    color: "var(--text-secondary)",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Onboarding
+                </label>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    background: "var(--bg-input)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "8px",
+                    padding: "14px 16px",
+                  }}
+                >
+                  <div>
+                    <span
+                      style={{
+                        display: "block",
+                        fontSize: "14px",
+                        fontWeight: 500,
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      Restart tour
+                    </span>
+                    <span
+                      style={{
+                        display: "block",
+                        fontSize: "13px",
+                        color: "var(--text-muted)",
+                        marginTop: "2px",
+                      }}
+                    >
+                      Replay the guided walkthrough of PinedIn
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      // Let the settings panel finish closing before the tour appears.
+                      setTimeout(() => {
+                        emit("show_onboarding").catch(() => {});
+                      }, 250);
+                    }}
+                    className="feature-btn"
+                    style={{
+                      flexShrink: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "8px 14px",
+                    }}
+                  >
+                    <Compass size={15} weight="light" /> Start
                   </button>
                 </div>
               </div>

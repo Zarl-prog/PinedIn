@@ -88,10 +88,10 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
             onClick={onClose}
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            initial={{ opacity: 0, scale: 0.96, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            transition={{ duration: 0.15 }}
+            exit={{ opacity: 0, scale: 0.97, y: 8 }}
+            transition={{ type: "spring", stiffness: 380, damping: 30 }}
             style={{
               position: "relative",
               zIndex: 10,
@@ -99,7 +99,8 @@ export default function McpPanel({ open, onClose }: McpPanelProps) {
               maxWidth: "480px",
               background: "var(--bg-modal)",
               border: "1px solid var(--border)",
-              borderRadius: "10px",
+              borderRadius: "14px",
+              boxShadow: "var(--shadow-menu)",
               padding: "24px",
             }}
           >

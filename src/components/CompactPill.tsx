@@ -1,4 +1,4 @@
-import { CaretLeft, CaretRight, Check } from "@phosphor-icons/react";
+import { ArrowsOut, CaretLeft, CaretRight, Check } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { LogicalSize } from "@tauri-apps/api/dpi";
 import { listen } from "@tauri-apps/api/event";
@@ -205,6 +205,17 @@ export default function CompactPill() {
     setCurrentIndex((i) => (i + 1) % Math.max(tasks.length, 1));
   }
 
+  // Exit compact mode: turns it off in the backend, which closes this pill
+  // and restores the main window + normal task cards.
+  async function handleExitCompact(e: React.MouseEvent) {
+    e.stopPropagation();
+    try {
+      await invoke("set_compact_mode", { enabled: false });
+    } catch (err) {
+      console.error("[CompactPill] Failed to exit compact mode:", err);
+    }
+  }
+
   function handlePrev() {
     setCurrentIndex((i) => (i - 1 + Math.max(tasks.length, 1)) % Math.max(tasks.length, 1));
   }
@@ -246,6 +257,26 @@ export default function CompactPill() {
           >
             {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
           </span>
+          <button
+            onClick={handleExitCompact}
+            title="Exit compact mode"
+            style={{
+              marginLeft: "auto",
+              width: "20px",
+              height: "20px",
+              borderRadius: "5px",
+              border: "1px solid var(--pill-border, #1a1a1a)",
+              background: "transparent",
+              color: "var(--pill-text-muted, #777)",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <ArrowsOut size={12} weight="bold" />
+          </button>
         </div>
         <div
           style={{

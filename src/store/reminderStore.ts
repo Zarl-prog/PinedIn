@@ -46,6 +46,7 @@ export interface OverlayState {
   // Actions - Task management
   fetchTasks: () => Promise<void>;
   fetchWorkspaceTasks: (workspaceId: number) => Promise<void>;
+  clearWorkspaceCache: (workspaceId: number) => void;
   addTask: (
     title: string,
     description: string,
@@ -146,6 +147,15 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
     } catch (error) {
       console.error("Failed to fetch workspace tasks:", error);
     }
+  },
+
+  clearWorkspaceCache: (workspaceId: number) => {
+    set((state) => {
+      if (!(workspaceId in state.workspaceTasks)) return state;
+      const next = { ...state.workspaceTasks };
+      delete next[workspaceId];
+      return { workspaceTasks: next };
+    });
   },
 
   addTask: async (

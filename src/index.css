@@ -469,16 +469,21 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   color: var(--text-secondary);
   border: 1px solid var(--border-light);
   background: transparent;
-  transition: all 0.15s ease;
+  transition:
+    color 0.18s var(--ease-out),
+    border-color 0.18s var(--ease-out),
+    background 0.18s var(--ease-out),
+    box-shadow 0.18s var(--ease-out),
+    transform 0.18s var(--ease-spring);
   cursor: pointer;
 }
 
 .v-btn:hover {
   color: var(--text-primary);
-  border-color: #555;
+  border-color: var(--border-hover);
   background: var(--bg-hover);
   box-shadow: var(--shadow-hover);
-  transform: scale(1.02);
+  transform: translateY(-1px);
 }
 
 /* ─── Action Button Styles (.v-action) ──────────────────────────────────── */
@@ -488,7 +493,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   color: var(--text-muted);
   border: 1px solid var(--border-light);
   background: transparent;
-  transition: all 0.15s ease;
+  transition:
+    color 0.18s var(--ease-out),
+    border-color 0.18s var(--ease-out),
+    background 0.18s var(--ease-out),
+    box-shadow 0.18s var(--ease-out),
+    transform 0.18s var(--ease-spring);
   cursor: pointer;
   border-radius: 8px;
   padding: 8px 14px;
@@ -497,10 +507,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .v-action:hover {
   color: var(--text-primary);
-  border-color: #555;
+  border-color: var(--border-hover);
   background: var(--bg-hover);
   box-shadow: var(--shadow-hover);
-  transform: scale(1.02);
+  transform: translateY(-1px);
 }
 
 /* ─── Progress Bar Styles ───────────────────────────────────────────────── */
@@ -541,7 +551,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .toggle-track.active {
-  background: var(--text-primary);
+  background: var(--accent);
 }
 
 .toggle-thumb {
@@ -550,9 +560,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   width: 20px;
   transform: translateX(3px);
   border-radius: 999px;
-  background: var(--text-inverse);
-  transition: transform 0.2s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  background: #ffffff;
+  transition: transform 0.28s var(--ease-spring);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
 
 .toggle-thumb.active {
@@ -600,11 +610,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-size: 14px;
   font-family: "Geist Mono", monospace;
   outline: none;
-  transition: border-color 0.15s ease;
+  transition:
+    border-color 0.18s var(--ease-out),
+    box-shadow 0.18s var(--ease-out);
 }
 
 .input-field:focus {
-  border-color: var(--text-muted);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
 }
 
 .input-field::placeholder {
@@ -711,7 +724,12 @@ input[type="number"] {
   border-radius: 5px;
   padding: 6px 12px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition:
+    color 0.18s var(--ease-out),
+    border-color 0.18s var(--ease-out),
+    background 0.18s var(--ease-out),
+    box-shadow 0.18s var(--ease-out),
+    transform 0.18s var(--ease-spring);
   user-select: none;
 }
 
@@ -720,25 +738,30 @@ input[type="number"] {
   border-color: var(--border-hover);
   background: var(--bg-hover);
   box-shadow: var(--shadow-hover);
-  transform: scale(1.02);
+  transform: translateY(-1px);
+}
+
+.feature-btn:active {
+  transform: translateY(0);
 }
 
 .feature-btn.primary {
-  background: var(--text-primary);
-  color: var(--text-inverse);
+  background: var(--accent);
+  color: var(--accent-contrast);
   border: none;
   font-weight: 600;
 }
 
 .feature-btn.primary:hover {
-  opacity: 0.85;
-  transform: scale(1.02);
+  background: var(--accent-hover);
+  transform: translateY(-1px);
   box-shadow: var(--shadow-hover);
 }
 
 .feature-btn.active {
-  color: var(--text-primary);
-  border-color: var(--text-muted);
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .feature-btn.danger {

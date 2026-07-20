@@ -1,18 +1,20 @@
 import {
   ArrowRight,
+  ArrowsInSimple,
   Circle,
-  Diamond,
-  DotOutline,
   Eye,
+  EyeSlash,
   GearSix,
   GridFour,
   Info,
-  Lightning,
   Moon,
+  Newspaper,
   Pause,
   Play,
   Plus,
+  SidebarSimple,
   Sun,
+  Vibrate,
   Warning,
 } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
@@ -405,7 +407,7 @@ export default function App() {
         subtitle: "Collapse cards into a pill",
         group: "View",
         keywords: "compact pill collapse minimize",
-        icon: <DotOutline size={15} weight="bold" />,
+        icon: <ArrowsInSimple size={15} weight="bold" />,
         perform: () => toggleCompactMode(),
       },
       {
@@ -414,7 +416,7 @@ export default function App() {
         subtitle: "Hide all cards to focus",
         group: "View",
         keywords: "zen focus hide",
-        icon: <Eye size={15} weight="bold" />,
+        icon: <EyeSlash size={15} weight="bold" />,
         perform: () => toggleZenMode(),
       },
       {
@@ -432,7 +434,7 @@ export default function App() {
         subtitle: "Pulse urgent tasks",
         group: "View",
         keywords: "shake pulse urgent",
-        icon: <Lightning size={15} weight="bold" />,
+        icon: <Vibrate size={15} weight="bold" />,
         perform: () => toggleShake(),
       },
       {
@@ -1102,13 +1104,13 @@ export default function App() {
             onClick={toggleCompactMode}
             className={`feature-seg-btn${compactMode ? " active" : ""}`}
           >
-            <DotOutline size={15} weight="light" /> Compact
+            <ArrowsInSimple size={15} weight="light" /> Compact
           </button>
           <button
             onClick={toggleEdgePeek}
             className={`feature-seg-btn${edgePeekEnabled ? " active" : ""}`}
           >
-            <Diamond size={15} weight="light" /> Edge
+            <SidebarSimple size={15} weight="light" /> Edge
             {!edgePeekSeen && (
               <span className="feature-new-dot" aria-label="New feature" title="New" />
             )}
@@ -1126,7 +1128,7 @@ export default function App() {
           }
         >
           <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <Diamond size={15} weight="light" /> Digest
+            <Newspaper size={15} weight="light" /> Digest
           </span>
         </button>
         <button
@@ -1144,11 +1146,11 @@ export default function App() {
           <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             {zenMode ? (
               <>
-                <Circle size={15} weight="light" /> Zen On
+                <EyeSlash size={15} weight="light" /> Zen On
               </>
             ) : (
               <>
-                <Circle size={15} weight="light" /> Zen
+                <Eye size={15} weight="light" /> Zen
               </>
             )}
           </span>
@@ -1172,11 +1174,11 @@ export default function App() {
           <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             {shakeEnabled ? (
               <>
-                <Lightning size={15} weight="light" /> Shake On
+                <Vibrate size={15} weight="light" /> Shake On
               </>
             ) : (
               <>
-                <Lightning size={15} weight="light" /> Shake
+                <Vibrate size={15} weight="light" /> Shake
               </>
             )}
           </span>

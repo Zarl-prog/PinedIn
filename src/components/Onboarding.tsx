@@ -1,8 +1,11 @@
 import {
+  ArrowLeft,
   ArrowRight,
   CheckCircle,
   Command,
+  Eye,
   GearSix,
+  GridFour,
   List,
   Plus,
   Sparkle,
@@ -10,93 +13,151 @@ import {
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { setCompactMode, setZenMode } from "@/lib/tauriCommands";
+
+type Placement = "bottom" | "top" | "right" | "left" | "center";
 
 interface Step {
   id: string;
+  icon: React.ReactNode;
   title: string;
   description: string;
-  selector?: string;
-  placement?: "bottom" | "top" | "right" | "left";
+  /** data-onboarding value of the element to spotlight. Omit for centered steps. */
+  target?: string;
+  placement?: Placement;
   highlightPadding?: number;
-  action?: "click" | "observe" | null;
-  observeSelector?: string;
+  /**
+   * "user" = the user must click the highlighted element to advance.
+   * "demo" = the tour performs the action itself, then the user clicks Next.
+   * undefined = purely informational, advance with Next.
+   */
+  interaction?: "user" | "demo";
+  /** Hint shown in the tooltip footer for "user" steps. */
+  actionHint?: string;
 }
 
 const STEPS: Step[] = [
   {
     id: "add-task",
+    icon: <Plus size={15} weight="bold" />,
     title: "Create your first task",
     description:
-      'Click the "+ Add Task" button to create your first floating task card. Try it now!',
-    selector: "button:has(span:contains('+ Add Task'))",
+      "Tasks live as floating cards that stay above every other window. Go ahead — click “+ Add Task” to make one.",
+    target: "add-task",
     placement: "bottom",
     highlightPadding: 8,
-    action: "click",
+    interaction: "user",
+    actionHint: "Click the highlighted button to continue",
   },
   {
     id: "task-list",
-    title: "Your tasks, organized",
+    icon: <List size={15} weight="bold" />,
+    title: "Your command center",
     description:
-      "Every task appears here in the task list. You can search, filter, and manage them all from this view.",
-    selector: ".tasks-body",
-    placement: "top",
-    highlightPadding: 4,
+      "Every task shows up here. Search, filter, and manage them all from this list — even the ones floating on your desktop.",
+    target: "task-list",
+    placement: "right",
+    highlightPadding: 6,
   },
   {
-    id: "toolbar",
-    title: "Power tools at your fingertips",
+    id: "compact",
+    icon: <Command size={15} weight="bold" />,
+    title: "Compact mode",
     description:
-      "Compact mode collapses cards into a pill. Zen mode hides them. Align snaps cards into a grid. Shake makes urgent tasks pulse.",
-    selector: ".feature-btn",
+      "When your screen gets busy, Compact collapses every card into a single tidy pill. Watch — I’ll turn it on.",
+    target: "compact",
     placement: "top",
     highlightPadding: 8,
+    interaction: "demo",
+  },
+  {
+    id: "zen",
+    icon: <Eye size={15} weight="bold" />,
+    title: "Zen mode",
+    description:
+      "Need to focus? Zen hides the cards entirely so nothing distracts you. They snap right back when you’re ready.",
+    target: "zen",
+    placement: "top",
+    highlightPadding: 8,
+    interaction: "demo",
+  },
+  {
+    id: "align",
+    icon: <GridFour size={15} weight="bold" />,
+    title: "Align to grid",
+    description:
+      "Cards scattered everywhere? Align snaps them into a neat grid in one click. Try it yourself.",
+    target: "align",
+    placement: "top",
+    highlightPadding: 8,
+    interaction: "user",
+    actionHint: "Click Align to tidy your cards",
   },
   {
     id: "settings",
-    title: "Tweak everything",
+    icon: <GearSix size={15} weight="bold" />,
+    title: "Make it yours",
     description:
-      "Change themes, adjust card shake intervals, configure autostart, and check for updates — all from Settings.",
-    selector: ".feature-btn.ghost",
+      "Themes, global hotkeys, autostart, and updates all live in Settings. You can even replay this tour from here.",
+    target: "settings",
     placement: "left",
     highlightPadding: 8,
   },
   {
     id: "finish",
-    title: "You're all set!",
+    icon: <Sparkle size={15} weight="fill" />,
+    title: "You’re all set",
     description:
-      "You now know the essentials. Start adding tasks, try compact mode when things get busy, and use zen mode when you need focus.",
-    placement: "bottom",
+      "That’s the tour. Start pinning what matters — PinedIn keeps it in sight until it’s done.",
+    placement: "center",
   },
 ];
 
+const REDUCED_MOTION =
+  typeof window !== "undefined" &&
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
 function useScrollLock(locked: boolean) {
   useEffect(() => {
-    if (locked) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    if (locked) document.body.style.overflow = "hidden";
+    else document.body.style.overflow = "";
     return () => {
       document.body.style.overflow = "";
     };
   }, [locked]);
 }
 
+interface Rect {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+
 export default function Onboarding() {
   const [visible, setVisible] = useState(false);
-  const [phase, setPhase] = useState<"welcome" | "tour" | "done">("welcome");
+  const [phase, setPhase] = useState<"welcome" | "tour">("welcome");
   const [stepIndex, setStepIndex] = useState(0);
-  const [highlightRect, setHighlightRect] = useState<DOMRect | null>(null);
+  const [rect, setRect] = useState<Rect | null>(null);
   const [tooltipReady, setTooltipReady] = useState(false);
-  const [, setClickedAddTask] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
-  const spotlightRef = useRef<HTMLDivElement>(null);
+  // Tracks live-demo effects so they can be cleaned up if the user skips mid-demo.
+  const demoActiveRef = useRef(false);
 
   useScrollLock(visible);
 
+  const currentStep = phase === "tour" ? STEPS[stepIndex] : null;
+  const isLast = stepIndex === STEPS.length - 1;
+  const pad = currentStep?.highlightPadding ?? 6;
+
+  // ─── Listen for the backend's first-launch / replay signal ───────────────
   useEffect(() => {
-    const p = listen("show_onboarding", () => setVisible(true));
+    const p = listen("show_onboarding", () => {
+      setPhase("welcome");
+      setStepIndex(0);
+      setVisible(true);
+    });
     return () => {
       p.then(
         (f) => f(),
@@ -105,504 +166,584 @@ export default function Onboarding() {
     };
   }, []);
 
-  useEffect(() => {
-    if (phase !== "tour") return;
-    if (stepIndex >= STEPS.length) {
-      handleComplete();
-      return;
-    }
+  // ─── Revert any live-demo mode we may have turned on ─────────────────────
+  const revertDemo = useCallback(async () => {
+    if (!demoActiveRef.current) return;
+    demoActiveRef.current = false;
+    await Promise.allSettled([setCompactMode(false), setZenMode(false)]);
+  }, []);
 
-    const step = STEPS[stepIndex];
-    if (!step.selector) {
-      setHighlightRect(null);
+  const finish = useCallback(async () => {
+    await revertDemo();
+    setVisible(false);
+    setPhase("welcome");
+    setStepIndex(0);
+    await invoke("complete_onboarding").catch(() => {});
+  }, [revertDemo]);
+
+  // ─── Locate & track the highlighted element for the current step ─────────
+  useEffect(() => {
+    if (phase !== "tour" || !currentStep) return;
+
+    if (!currentStep.target) {
+      setRect(null);
       setTooltipReady(true);
       return;
     }
 
-    const update = () => {
-      const el = document.querySelector(step.selector!) as HTMLElement | null;
+    setTooltipReady(false);
+    let raf = 0;
+    let retry: ReturnType<typeof setTimeout>;
+
+    const measure = () => {
+      const el = document.querySelector<HTMLElement>(
+        `[data-onboarding="${currentStep.target}"]`,
+      );
       if (el) {
         const r = el.getBoundingClientRect();
-        setHighlightRect(r);
+        setRect({ top: r.top, left: r.left, width: r.width, height: r.height });
         setTooltipReady(true);
       } else {
-        setHighlightRect(null);
-        setTooltipReady(false);
-        const retry = setTimeout(update, 300);
-        return () => clearTimeout(retry);
+        retry = setTimeout(measure, 250);
       }
     };
+    measure();
 
-    update();
-    const interval = setInterval(update, 500);
-    return () => clearInterval(interval);
-  }, [phase, stepIndex]);
+    const onScrollResize = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(measure);
+    };
+    window.addEventListener("resize", onScrollResize);
+    window.addEventListener("scroll", onScrollResize, true);
+    const interval = setInterval(measure, 500);
 
+    return () => {
+      clearTimeout(retry);
+      clearInterval(interval);
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", onScrollResize);
+      window.removeEventListener("scroll", onScrollResize, true);
+    };
+  }, [phase, stepIndex, currentStep]);
+
+  // ─── Run live demos on entering a "demo" step ────────────────────────────
   useEffect(() => {
-    if (phase !== "tour") return;
-    const step = STEPS[stepIndex];
-    if (!step.observeSelector) return;
-    const check = () => {
-      const el = document.querySelector(step.observeSelector!);
-      if (el) {
-        if (step.id === "add-task") setClickedAddTask(true);
-        setTimeout(() => setStepIndex((s) => s + 1), 600);
+    if (phase !== "tour" || !currentStep || currentStep.interaction !== "demo") return;
+    let cancelled = false;
+
+    (async () => {
+      demoActiveRef.current = true;
+      if (currentStep.id === "compact") {
+        await setCompactMode(true).catch(() => {});
+      } else if (currentStep.id === "zen") {
+        await setZenMode(true).catch(() => {});
+      }
+      // Hold the effect on screen, then revert so the user isn't left changed.
+      await new Promise((r) => setTimeout(r, REDUCED_MOTION ? 400 : 2200));
+      if (cancelled) return;
+      if (currentStep.id === "compact") await setCompactMode(false).catch(() => {});
+      else if (currentStep.id === "zen") await setZenMode(false).catch(() => {});
+      demoActiveRef.current = false;
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [phase, stepIndex, currentStep]);
+
+  // ─── Detect the user completing a "user" interaction step ────────────────
+  useEffect(() => {
+    if (phase !== "tour" || !currentStep || currentStep.interaction !== "user") return;
+    if (!currentStep.target) return;
+
+    const el = document.querySelector<HTMLElement>(
+      `[data-onboarding="${currentStep.target}"]`,
+    );
+    if (!el) return;
+
+    const advance = () => {
+      setTimeout(() => setStepIndex((s) => Math.min(s + 1, STEPS.length - 1)), 450);
+    };
+    el.addEventListener("click", advance, { once: true });
+    return () => el.removeEventListener("click", advance);
+  }, [phase, stepIndex, currentStep]);
+
+  const goNext = useCallback(async () => {
+    await revertDemo();
+    if (stepIndex < STEPS.length - 1) setStepIndex((s) => s + 1);
+    else await finish();
+  }, [stepIndex, revertDemo, finish]);
+
+  const goBack = useCallback(async () => {
+    await revertDemo();
+    setStepIndex((s) => Math.max(0, s - 1));
+  }, [revertDemo]);
+
+  // ─── Keyboard navigation ─────────────────────────────────────────────────
+  useEffect(() => {
+    if (!visible) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        finish();
+      } else if (phase === "tour" && (e.key === "ArrowRight" || e.key === "Enter")) {
+        // Don't auto-advance a "user" step — they must perform the action.
+        if (currentStep?.interaction === "user") return;
+        e.preventDefault();
+        goNext();
+      } else if (phase === "tour" && e.key === "ArrowLeft") {
+        e.preventDefault();
+        goBack();
       }
     };
-    const id = setInterval(check, 300);
-    return () => clearInterval(id);
-  }, [phase, stepIndex]);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [visible, phase, currentStep, finish, goNext, goBack]);
 
-  async function handleComplete() {
-    setPhase("done");
-    setVisible(false);
-    setClickedAddTask(false);
-    await invoke("complete_onboarding");
-  }
+  // Move focus into the tooltip when it appears (accessibility).
+  useEffect(() => {
+    if (phase === "tour" && tooltipReady) tooltipRef.current?.focus();
+  }, [phase, tooltipReady, stepIndex]);
 
-  function handleNext() {
-    if (stepIndex < STEPS.length - 1) {
-      setStepIndex((s) => s + 1);
-    } else {
-      handleComplete();
+  const spring = REDUCED_MOTION
+    ? { duration: 0 }
+    : { type: "spring" as const, stiffness: 380, damping: 32 };
+
+  const tooltipPos = useMemo<React.CSSProperties>(() => {
+    const tW = 340;
+    const gap = 14;
+    if (!currentStep || currentStep.placement === "center" || !rect) {
+      return { top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: tW };
     }
-  }
-
-  const currentStep = stepIndex < STEPS.length ? STEPS[stepIndex] : null;
-  const isLast = stepIndex === STEPS.length - 1;
-
-  function getTooltipPos(step: Step): React.CSSProperties {
-    if (!highlightRect || !step.selector) {
-      return { bottom: "40px", left: "50%", transform: "translateX(-50%)" };
-    }
-    const gap = 12;
     const winW = window.innerWidth;
     const winH = window.innerHeight;
-    const tW = 340;
-    const tH = 180;
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const clampX = (x: number) => Math.max(12, Math.min(x, winW - tW - 12));
 
-    switch (step.placement || "bottom") {
-      case "bottom": {
-        let left = highlightRect.left + highlightRect.width / 2 - tW / 2;
-        left = Math.max(12, Math.min(left, winW - tW - 12));
-        return { top: `${highlightRect.bottom + gap}px`, left: `${left}px`, width: `${tW}px` };
-      }
-      case "top": {
-        let left = highlightRect.left + highlightRect.width / 2 - tW / 2;
-        left = Math.max(12, Math.min(left, winW - tW - 12));
+    switch (currentStep.placement) {
+      case "top":
+        return { bottom: winH - rect.top + gap + pad, left: clampX(cx - tW / 2), width: tW };
+      case "left":
         return {
-          bottom: `${winH - highlightRect.top + gap}px`,
-          left: `${left}px`,
-          width: `${tW}px`,
+          right: winW - rect.left + gap + pad,
+          top: Math.max(12, Math.min(cy - 90, winH - 200)),
+          width: tW,
         };
-      }
-      case "left": {
-        let top = highlightRect.top + highlightRect.height / 2 - tH / 2;
-        top = Math.max(12, Math.min(top, winH - tH - 12));
-        return { right: `${winW - highlightRect.left + gap}px`, top: `${top}px`, width: `${tW}px` };
-      }
-      case "right": {
-        let top = highlightRect.top + highlightRect.height / 2 - tH / 2;
-        top = Math.max(12, Math.min(top, winH - tH - 12));
-        return { left: `${highlightRect.right + gap}px`, top: `${top}px`, width: `${tW}px` };
-      }
+      case "right":
+        return {
+          left: rect.left + rect.width + gap + pad,
+          top: Math.max(12, Math.min(cy - 90, winH - 200)),
+          width: tW,
+        };
       default:
-        return { bottom: "40px", left: "50%", transform: "translateX(-50%)", width: `${tW}px` };
+        return { top: rect.top + rect.height + gap + pad, left: clampX(cx - tW / 2), width: tW };
     }
-  }
+  }, [currentStep, rect, pad]);
 
-  const handleSpotlightClick = useCallback(
-    (e: React.MouseEvent) => {
-      const step = STEPS[stepIndex];
-      if (!step || !step.selector) return;
-      const el = document.querySelector(step.selector) as HTMLElement | null;
-      if (el && el.contains(e.target as Node)) {
-        if (step.action === "click") {
-          el.click();
-          if (step.id === "add-task") {
-            setClickedAddTask(true);
-          }
-        }
-      }
-    },
-    [stepIndex],
-  );
+  const showSpotlight = phase === "tour" && rect && currentStep?.target;
 
   return (
     <AnimatePresence>
       {visible && (
         <motion.div
+          key="onboarding-root"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 9998,
-            pointerEvents: phase === "welcome" ? "auto" : "auto",
-          }}
+          transition={{ duration: REDUCED_MOTION ? 0 : 0.28 }}
+          style={{ position: "fixed", inset: 0, zIndex: 9998, pointerEvents: "none" }}
+          role="dialog"
+          aria-modal="true"
+          aria-label={currentStep ? `Onboarding: ${currentStep.title}` : "Welcome to PinedIn"}
         >
-          {phase === "tour" && highlightRect && currentStep?.selector && (
-            <>
-              {/* Full backdrop */}
-              <div
-                style={{
-                  position: "fixed",
-                  inset: 0,
-                  background: "rgba(0,0,0,0.7)",
-                  zIndex: 9998,
-                }}
-                onClick={() => {}}
+          {/* ─── Dimmed backdrop with animated spotlight cutout ───────────── */}
+          {showSpotlight ? (
+            <motion.svg
+              style={{ position: "fixed", inset: 0, width: "100%", height: "100%", zIndex: 9998 }}
+              aria-hidden
+            >
+              <defs>
+                <mask id="ob-spotlight">
+                  <rect width="100%" height="100%" fill="white" />
+                  <motion.rect
+                    initial={false}
+                    animate={{
+                      x: rect.left - pad,
+                      y: rect.top - pad,
+                      width: rect.width + pad * 2,
+                      height: rect.height + pad * 2,
+                    }}
+                    transition={spring}
+                    rx={10}
+                    fill="black"
+                  />
+                </mask>
+              </defs>
+              <rect
+                width="100%"
+                height="100%"
+                fill="var(--bg-overlay, rgba(0,0,0,0.55))"
+                mask="url(#ob-spotlight)"
               />
-
-              {/* Cutout highlight */}
-              <svg
-                style={{
-                  position: "fixed",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
-                  zIndex: 9999,
-                  pointerEvents: "none",
-                }}
-              >
-                <defs>
-                  <mask id="spotlight-mask">
-                    <rect width="100%" height="100%" fill="white" />
-                    <rect
-                      x={highlightRect.left - (currentStep.highlightPadding || 4)}
-                      y={highlightRect.top - (currentStep.highlightPadding || 4)}
-                      width={highlightRect.width + (currentStep.highlightPadding || 4) * 2}
-                      height={highlightRect.height + (currentStep.highlightPadding || 4) * 2}
-                      rx="8"
-                      fill="black"
-                    />
-                  </mask>
-                </defs>
-                <rect
-                  width="100%"
-                  height="100%"
-                  fill="rgba(0,0,0,0.7)"
-                  mask="url(#spotlight-mask)"
-                />
-              </svg>
-
-              {/* Interactive highlight border */}
-              <div
-                ref={spotlightRef}
-                onClick={handleSpotlightClick}
-                style={{
-                  position: "fixed",
-                  left: highlightRect.left - (currentStep.highlightPadding || 4) - 2,
-                  top: highlightRect.top - (currentStep.highlightPadding || 4) - 2,
-                  width: highlightRect.width + (currentStep.highlightPadding || 4) * 2 + 4,
-                  height: highlightRect.height + (currentStep.highlightPadding || 4) * 2 + 4,
-                  borderRadius: "10px",
-                  border: "2px solid rgba(255,255,255,0.4)",
-                  boxShadow: "0 0 30px rgba(255,255,255,0.1)",
-                  zIndex: 10000,
-                  pointerEvents: currentStep.action === "click" ? "auto" : "none",
-                  cursor: currentStep.action === "click" ? "pointer" : "default",
-                  transition: "all 0.3s ease",
-                }}
-              />
-            </>
+            </motion.svg>
+          ) : (
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "var(--bg-overlay, rgba(0,0,0,0.55))",
+                zIndex: 9998,
+              }}
+            />
           )}
 
-          {/* Tooltip card */}
+          {/* ─── Glowing ring around the spotlight target ─────────────────── */}
+          {showSpotlight && (
+            <motion.div
+              initial={false}
+              animate={{
+                left: rect.left - pad,
+                top: rect.top - pad,
+                width: rect.width + pad * 2,
+                height: rect.height + pad * 2,
+              }}
+              transition={spring}
+              style={{
+                position: "fixed",
+                borderRadius: 12,
+                border: "2px solid var(--text-primary)",
+                boxShadow: "0 0 0 4px var(--bg-overlay), 0 0 32px 4px rgba(120,120,255,0.25)",
+                zIndex: 9999,
+                pointerEvents: "none",
+              }}
+            >
+              {/* Pulse for interactive steps to invite the click */}
+              {currentStep?.interaction === "user" && !REDUCED_MOTION && (
+                <motion.div
+                  animate={{ opacity: [0.6, 0, 0.6], scale: [1, 1.12, 1] }}
+                  transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                  style={{
+                    position: "absolute",
+                    inset: -2,
+                    borderRadius: 12,
+                    border: "2px solid var(--text-primary)",
+                  }}
+                />
+              )}
+            </motion.div>
+          )}
+
+          {/* ─── Welcome card ─────────────────────────────────────────────── */}
           <AnimatePresence mode="wait">
             {phase === "welcome" && (
               <motion.div
                 key="welcome"
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                initial={{ opacity: 0, scale: 0.96, y: 16 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: -20 }}
-                transition={{ type: "spring", stiffness: 300, damping: 28 }}
+                exit={{ opacity: 0, scale: 0.96, y: -16 }}
+                transition={spring}
                 style={{
                   position: "fixed",
                   top: "50%",
                   left: "50%",
                   transform: "translate(-50%, -50%)",
-                  background: "#000",
-                  border: "1px solid #1a1a1a",
-                  borderRadius: "16px",
+                  background: "var(--bg-modal)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 18,
                   width: "100%",
-                  maxWidth: "460px",
-                  padding: "36px",
+                  maxWidth: 460,
+                  padding: 40,
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
                   textAlign: "center",
+                  boxShadow: "var(--shadow-menu)",
                   zIndex: 10001,
+                  fontFamily: "'Geist Mono', monospace",
+                  pointerEvents: "auto",
                 }}
               >
-                <div
+                <motion.div
+                  initial={{ scale: 0.5, rotate: -12, opacity: 0 }}
+                  animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                  transition={{ ...spring, delay: 0.1 }}
                   style={{
-                    width: "60px",
-                    height: "60px",
-                    background: "#fff",
-                    borderRadius: "14px",
+                    width: 64,
+                    height: 64,
+                    background: "var(--text-primary)",
+                    borderRadius: 16,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    marginBottom: "20px",
+                    marginBottom: 22,
                   }}
                 >
-                  <span
-                    style={{
-                      fontSize: "26px",
-                      fontWeight: 700,
-                      color: "#000",
-                      fontFamily: "'Geist Mono', monospace",
-                    }}
+                  <svg
+                    width="30"
+                    height="30"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="var(--text-inverse)"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
                   >
-                    P
-                  </span>
-                </div>
+                    <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-14 0Z" />
+                    <circle cx="12" cy="9" r="2.5" fill="var(--text-inverse)" stroke="none" />
+                  </svg>
+                </motion.div>
 
                 <h1
                   style={{
-                    fontSize: "22px",
+                    fontSize: 24,
                     fontWeight: 700,
-                    color: "#ffffff",
-                    fontFamily: "'Geist Mono', monospace",
-                    marginBottom: "10px",
+                    color: "var(--text-primary)",
+                    marginBottom: 10,
+                    letterSpacing: "-0.5px",
                   }}
                 >
                   Welcome to PinedIn
                 </h1>
-
                 <p
                   style={{
-                    fontSize: "13px",
-                    color: "#666",
-                    fontFamily: "'Geist Mono', monospace",
+                    fontSize: 13,
+                    color: "var(--text-secondary)",
                     lineHeight: 1.6,
-                    marginBottom: "28px",
-                    maxWidth: "340px",
+                    marginBottom: 26,
+                    maxWidth: 340,
                   }}
                 >
-                  Tasks that float above every window, so you never lose track of what's next.
+                  Tasks that float above every window, so you never lose track of what’s next.
+                  Take the 60-second tour — I’ll show you around, live.
                 </p>
 
                 <div
                   style={{
                     display: "flex",
                     flexWrap: "wrap",
-                    gap: "6px",
+                    gap: 6,
                     justifyContent: "center",
-                    marginBottom: "28px",
+                    marginBottom: 30,
                   }}
                 >
                   {["Always on top", "No cloud", "Global hotkey", "AI ready", "Open source"].map(
-                    (tag) => (
-                      <span
+                    (tag, i) => (
+                      <motion.span
                         key={tag}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 + i * 0.05 }}
                         style={{
-                          background: "#0a0a0a",
-                          border: "1px solid #1a1a1a",
-                          borderRadius: "999px",
+                          background: "var(--bg-badge)",
+                          border: "1px solid var(--border)",
+                          borderRadius: 999,
                           padding: "4px 12px",
-                          fontSize: "11px",
-                          color: "#666",
-                          fontFamily: "'Geist Mono', monospace",
+                          fontSize: 11,
+                          color: "var(--text-secondary)",
                         }}
                       >
                         {tag}
-                      </span>
+                      </motion.span>
                     ),
                   )}
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => {
                     setPhase("tour");
                     setStepIndex(0);
                   }}
                   style={{
-                    background: "#ffffff",
-                    color: "#000000",
+                    background: "var(--btn-primary-bg)",
+                    color: "var(--btn-primary-text)",
                     border: "none",
-                    borderRadius: "8px",
-                    padding: "12px 32px",
-                    fontSize: "13px",
+                    borderRadius: 10,
+                    padding: "13px 34px",
+                    fontSize: 13,
                     fontWeight: 600,
                     cursor: "pointer",
                     fontFamily: "'Geist Mono', monospace",
                     display: "flex",
                     alignItems: "center",
-                    gap: "8px",
+                    gap: 8,
                   }}
                 >
-                  Show me around <ArrowRight size={14} weight="bold" />
+                  Take the tour <ArrowRight size={14} weight="bold" />
                 </button>
-
                 <button
-                  onClick={handleComplete}
+                  type="button"
+                  onClick={finish}
                   style={{
                     background: "transparent",
                     border: "none",
-                    color: "#444",
+                    color: "var(--text-muted)",
                     cursor: "pointer",
-                    fontSize: "11px",
+                    fontSize: 11,
                     fontFamily: "'Geist Mono', monospace",
-                    marginTop: "12px",
+                    marginTop: 14,
                   }}
                 >
-                  I'll figure it out myself
+                  I’ll figure it out myself
                 </button>
               </motion.div>
             )}
 
+            {/* ─── Tour tooltip ───────────────────────────────────────────── */}
             {phase === "tour" && currentStep && tooltipReady && (
               <motion.div
-                key={`tooltip-${stepIndex}`}
+                key={`tip-${stepIndex}`}
                 ref={tooltipRef}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 300, damping: 28, delay: 0.1 }}
+                tabIndex={-1}
+                initial={{ opacity: 0, scale: 0.97, y: 6 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.97, y: -6 }}
+                transition={{ ...spring, delay: REDUCED_MOTION ? 0 : 0.08 }}
                 style={{
                   position: "fixed",
                   zIndex: 10002,
-                  background: "#000",
-                  border: "1px solid #1a1a1a",
-                  borderRadius: "12px",
-                  padding: "20px",
-                  ...getTooltipPos(currentStep),
+                  background: "var(--bg-modal)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 14,
+                  padding: 20,
+                  boxShadow: "var(--shadow-menu)",
+                  outline: "none",
+                  fontFamily: "'Geist Mono', monospace",
+                  pointerEvents: "auto",
+                  ...tooltipPos,
                 }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    marginBottom: "10px",
-                  }}
-                >
+                <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 10 }}>
                   <span
                     style={{
-                      width: "28px",
-                      height: "28px",
-                      background: "#0a0a0a",
-                      border: "1px solid #1a1a1a",
-                      borderRadius: "7px",
+                      width: 30,
+                      height: 30,
+                      background: "var(--bg-badge)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 8,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      color: "#fff",
-                      fontSize: "12px",
+                      color: "var(--text-primary)",
                       flexShrink: 0,
                     }}
                   >
-                    {stepIndex === 0 ? (
-                      <Plus size={14} />
-                    ) : stepIndex === 1 ? (
-                      <List size={14} />
-                    ) : stepIndex === 2 ? (
-                      <Command size={14} />
-                    ) : stepIndex === 3 ? (
-                      <GearSix size={14} />
-                    ) : (
-                      <Sparkle size={14} />
-                    )}
+                    {currentStep.icon}
                   </span>
-                  <span
-                    style={{
-                      fontSize: "13px",
-                      fontWeight: 600,
-                      color: "#fff",
-                      fontFamily: "'Geist Mono', monospace",
-                    }}
-                  >
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>
                     {currentStep.title}
                   </span>
                 </div>
 
                 <p
                   style={{
-                    fontSize: "12px",
-                    color: "#666",
-                    fontFamily: "'Geist Mono', monospace",
+                    fontSize: 12,
+                    color: "var(--text-secondary)",
                     lineHeight: 1.7,
-                    margin: 0,
-                    marginBottom: "16px",
+                    margin: "0 0 16px",
                   }}
                 >
                   {currentStep.description}
                 </p>
+
+                {/* Progress rail */}
+                <div style={{ display: "flex", gap: 5, marginBottom: 14 }}>
+                  {STEPS.map((s, i) => (
+                    <span
+                      key={s.id}
+                      style={{
+                        height: 3,
+                        flex: 1,
+                        borderRadius: 2,
+                        background:
+                          i <= stepIndex ? "var(--text-primary)" : "var(--border)",
+                        transition: "background 0.3s ease",
+                      }}
+                    />
+                  ))}
+                </div>
 
                 <div
                   style={{
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
+                    gap: 8,
                   }}
                 >
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      color: "#333",
-                      fontFamily: "'Geist Mono', monospace",
-                    }}
-                  >
-                    {stepIndex + 1} / {STEPS.length}
-                  </span>
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    {stepIndex > 0 && (
+                      <button
+                        type="button"
+                        onClick={goBack}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "var(--text-muted)",
+                          cursor: "pointer",
+                          fontSize: 11,
+                          fontFamily: "'Geist Mono', monospace",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        <ArrowLeft size={12} /> Back
+                      </button>
+                    )}
                     <button
-                      onClick={handleComplete}
+                      type="button"
+                      onClick={finish}
                       style={{
                         background: "transparent",
                         border: "none",
-                        color: "#333",
+                        color: "var(--text-muted)",
                         cursor: "pointer",
-                        fontSize: "11px",
+                        fontSize: 11,
                         fontFamily: "'Geist Mono', monospace",
+                        padding: "0 6px",
                       }}
                     >
                       Skip
                     </button>
-                    {currentStep.action === "click" && !isLast ? (
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          color: "#555",
-                          fontFamily: "'Geist Mono', monospace",
-                        }}
-                      >
-                        Click the highlighted button above
-                      </span>
-                    ) : (
-                      <button
-                        onClick={handleNext}
-                        style={{
-                          background: "#ffffff",
-                          color: "#000",
-                          border: "none",
-                          borderRadius: "6px",
-                          padding: "7px 14px",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          fontFamily: "'Geist Mono', monospace",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
-                      >
-                        {isLast ? (
-                          <>
-                            <CheckCircle size={13} weight="bold" /> Done
-                          </>
-                        ) : (
-                          <>
-                            Next <ArrowRight size={12} weight="light" />
-                          </>
-                        )}
-                      </button>
-                    )}
                   </div>
+
+                  {currentStep.interaction === "user" ? (
+                    <span style={{ fontSize: 11, color: "var(--text-primary)", fontWeight: 500 }}>
+                      {currentStep.actionHint ?? "Try it above"}
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={goNext}
+                      style={{
+                        background: "var(--btn-primary-bg)",
+                        color: "var(--btn-primary-text)",
+                        border: "none",
+                        borderRadius: 7,
+                        padding: "8px 16px",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        fontFamily: "'Geist Mono', monospace",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      {isLast ? (
+                        <>
+                          <CheckCircle size={13} weight="bold" /> Done
+                        </>
+                      ) : (
+                        <>
+                          Next <ArrowRight size={12} weight="bold" />
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               </motion.div>
             )}

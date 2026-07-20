@@ -15,6 +15,7 @@ import { listen } from "@tauri-apps/api/event";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { setCompactMode, setZenMode } from "@/lib/tauriCommands";
+import { useReminderStore } from "@/store/reminderStore";
 
 type Placement = "bottom" | "top" | "right" | "left" | "center";
 
@@ -144,6 +145,10 @@ export default function Onboarding() {
   const tooltipRef = useRef<HTMLDivElement>(null);
   // Tracks live-demo effects so they can be cleaned up if the user skips mid-demo.
   const demoActiveRef = useRef(false);
+  // The add-task step waits for the user to actually open the modal and then
+  // close it (task created or cancelled) before advancing — advancing on the
+  // raw button click would drop the tour backdrop on top of the open modal.
+  const isAddTaskOpen = useReminderStore((s) => s.isAddTaskOpen);
 
   useScrollLock(visible);
 
@@ -252,9 +257,26 @@ export default function Onboarding() {
   }, [phase, stepIndex, currentStep]);
 
   // ─── Detect the user completing a "user" interaction step ────────────────
+  // The add-task step is special: it opens a modal, so we advance when the
+  // modal has been opened and then closed again (not on the button click,
+  // which would leave the tour backdrop covering the open modal).
+  const addTaskWasOpenRef = useRef(false);
+  useEffect(() => {
+    if (phase !== "tour" || currentStep?.id !== "add-task") return;
+    if (isAddTaskOpen) {
+      addTaskWasOpenRef.current = true;
+    } else if (addTaskWasOpenRef.current) {
+      // Modal opened then closed — the user created or cancelled a task.
+      addTaskWasOpenRef.current = false;
+      const t = setTimeout(() => setStepIndex((s) => Math.min(s + 1, STEPS.length - 1)), 300);
+      return () => clearTimeout(t);
+    }
+  }, [phase, currentStep, isAddTaskOpen]);
+
+  // Other "user" steps (e.g. Align) advance on a direct click of the target.
   useEffect(() => {
     if (phase !== "tour" || !currentStep || currentStep.interaction !== "user") return;
-    if (!currentStep.target) return;
+    if (!currentStep.target || currentStep.id === "add-task") return;
 
     const el = document.querySelector<HTMLElement>(
       `[data-onboarding="${currentStep.target}"]`,
@@ -341,11 +363,14 @@ export default function Onboarding() {
     }
   }, [currentStep, rect, pad]);
 
-  const showSpotlight = phase === "tour" && rect && currentStep?.target;
+  // While the Add Task modal is open, hide the tour visuals entirely so the
+  // backdrop/tooltip never cover the form the user is filling in.
+  const hiddenForModal = isAddTaskOpen && currentStep?.id === "add-task";
+  const showSpotlight = phase === "tour" && rect && currentStep?.target && !hiddenForModal;
 
   return (
     <AnimatePresence>
-      {visible && (
+      {visible && !hiddenForModal && (
         <motion.div
           key="onboarding-root"
           initial={{ opacity: 0 }}

@@ -453,6 +453,7 @@ export default function App() {
             <button
               onClick={() => setSettingsOpen(true)}
               title="Settings"
+              data-onboarding="settings"
               className="feature-btn ghost"
               style={{
                 padding: "4px",
@@ -797,6 +798,7 @@ export default function App() {
       {/* ─── Body ─────────────────────────────────────────────── */}
       <div
         className={activeTab === "tasks" ? "tasks-body" : undefined}
+        data-onboarding={activeTab === "tasks" ? "task-list" : undefined}
         style={{
           flex: 1,
           display: "flex",
@@ -846,6 +848,7 @@ export default function App() {
                 <button
                   onClick={() => setAddTaskOpen(true)}
                   className="feature-btn primary"
+                  data-onboarding="add-task"
                   style={{ fontSize: "11px", padding: "6px 12px" }}
                 >
                   + Add Task
@@ -957,6 +960,7 @@ export default function App() {
         <button
           onClick={toggleCompactMode}
           className="feature-btn"
+          data-onboarding="compact"
           style={
             compactMode
               ? {
@@ -972,6 +976,7 @@ export default function App() {
         <button
           onClick={toggleZenMode}
           className="feature-btn"
+          data-onboarding="zen"
           style={
             zenMode
               ? {
@@ -992,7 +997,7 @@ export default function App() {
             )}
           </span>
         </button>
-        <button onClick={() => snapAllCardsToGrid()} className="feature-btn">
+        <button onClick={() => snapAllCardsToGrid()} className="feature-btn" data-onboarding="align">
           <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             <GridFour size={15} weight="light" /> Align
           </span>

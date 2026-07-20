@@ -1,0 +1,85 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Placement ideas</title>
+<style>
+  body { background:#111; color:#ddd; font-family:monospace; padding:24px; display:flex; gap:24px; flex-wrap:wrap; }
+  .col { width:300px; }
+  .col h2 { font-size:14px; margin-bottom:8px; color:#4d84ff; }
+  .col p { font-size:12px; color:#888; margin-bottom:10px; }
+  .win { border:1px solid #333; border-radius:10px; overflow:hidden; background:#000; }
+  .bar { display:flex; align-items:center; gap:6px; padding:8px 10px; }
+  .top { border-bottom:1px solid #222; }
+  .foot { border-top:1px solid #222; }
+  .title { flex:1; font-weight:600; font-size:13px; }
+  .b { font-size:10px; border:1px solid #333; border-radius:5px; padding:4px 8px; color:#aaa; }
+  .b.on { color:#4d84ff; border-color:#4d84ff; background:rgba(77,132,255,.12); }
+  .body { padding:14px; min-height:150px; display:flex; }
+  .content { flex:1; }
+  .task { font-size:11px; background:#0d0d0d; border:1px solid #222; border-radius:6px; padding:8px; margin-bottom:6px; }
+  /* left rail */
+  .rail { display:flex; flex-direction:column; gap:6px; padding:10px 6px; border-right:1px solid #222; }
+  .ic { width:30px; height:30px; border-radius:6px; border:1px solid #333; color:#aaa; display:flex; align-items:center; justify-content:center; font-size:13px; }
+  .ic.on { color:#4d84ff; border-color:#4d84ff; background:rgba(77,132,255,.12); }
+  /* dropdown */
+  .menu { position:relative; }
+  .pop { border:1px solid #333; border-radius:8px; background:#0a0a0a; padding:5px; margin-top:6px; width:150px; }
+  .row { font-size:11px; padding:7px 8px; border-radius:5px; color:#ccc; display:flex; justify-content:space-between; }
+  .row .d { color:#4d84ff; }
+</style>
+
+<div class="col">
+  <h2>A. Top toolbar</h2>
+  <p>Controls move up by the title. Bottom bar gone.</p>
+  <div class="win">
+    <div class="bar top">
+      <span class="title">PinedIn</span>
+      <span class="b on">Compact</span>
+      <span class="b">Zen</span>
+      <span class="b">Align</span>
+      <span class="b">⋯</span>
+    </div>
+    <div class="body"><div class="content">
+      <div class="task">Ship onboarding tour</div>
+      <div class="task">Review PR #42</div>
+    </div></div>
+  </div>
+</div>
+
+<div class="col">
+  <h2>B. Left icon rail</h2>
+  <p>Vertical strip of icons, like VS Code / Slack.</p>
+  <div class="win">
+    <div class="bar top"><span class="title">PinedIn</span><span class="b">⚙</span></div>
+    <div class="body">
+      <div class="rail">
+        <span class="ic on">◐</span>
+        <span class="ic">○</span>
+        <span class="ic">▦</span>
+        <span class="ic">⚡</span>
+        <span class="ic">◆</span>
+      </div>
+      <div class="content">
+        <div class="task">Ship onboarding tour</div>
+        <div class="task">Review PR #42</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="col">
+  <h2>C. View dropdown</h2>
+  <p>One "View" button opens all modes. 7 buttons → 1.</p>
+  <div class="win">
+    <div class="bar top"><span class="title">PinedIn</span><span class="b on">View ▾</span></div>
+    <div class="body"><div class="content">
+      <div class="menu"><div class="pop">
+        <div class="row">Compact <span class="d">●</span></div>
+        <div class="row">Zen</div>
+        <div class="row">Align</div>
+        <div class="row">Shake</div>
+        <div class="row">Digest</div>
+        <div class="row">Edge Peek</div>
+      </div></div>
+    </div></div>
+  </div>
+</div>

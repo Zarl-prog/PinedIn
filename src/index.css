@@ -785,6 +785,47 @@ input[type="number"] {
   border-color: var(--border);
 }
 
+/* ─── Feature Segmented Control (.feature-seg) ──────────────────────────── */
+
+.feature-seg {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.feature-seg-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "Geist Mono", monospace;
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--border);
+  padding: 6px 12px;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    color 0.18s var(--ease-out),
+    background 0.18s var(--ease-out);
+}
+
+.feature-seg-btn:last-child {
+  border-right: none;
+}
+
+.feature-seg-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.feature-seg-btn.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
 /* ─── Tasks Body Dot Texture ────────────────────────────────────────────── */
 
 .tasks-body::after {

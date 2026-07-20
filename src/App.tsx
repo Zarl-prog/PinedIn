@@ -1097,12 +1097,28 @@ export default function App() {
             )}
           </span>
         </button>
+        <div className="feature-seg" data-onboarding="compact">
+          <button
+            onClick={toggleCompactMode}
+            className={`feature-seg-btn${compactMode ? " active" : ""}`}
+          >
+            <DotOutline size={15} weight="light" /> Compact
+          </button>
+          <button
+            onClick={toggleEdgePeek}
+            className={`feature-seg-btn${edgePeekEnabled ? " active" : ""}`}
+          >
+            <Diamond size={15} weight="light" /> Edge
+            {!edgePeekSeen && (
+              <span className="feature-new-dot" aria-label="New feature" title="New" />
+            )}
+          </button>
+        </div>
         <button
-          onClick={toggleCompactMode}
+          onClick={toggleDigest}
           className="feature-btn"
-          data-onboarding="compact"
           style={
-            compactMode
+            digestEnabled
               ? {
                   borderBottom: "2px solid var(--accent)",
                 }
@@ -1110,7 +1126,7 @@ export default function App() {
           }
         >
           <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <DotOutline size={15} weight="light" /> Compact
+            <Diamond size={15} weight="light" /> Digest
           </span>
         </button>
         <button
@@ -1162,43 +1178,6 @@ export default function App() {
               <>
                 <Lightning size={15} weight="light" /> Shake
               </>
-            )}
-          </span>
-        </button>
-        <button
-          onClick={toggleDigest}
-          className="feature-btn"
-          style={
-            digestEnabled
-              ? {
-                  borderBottom: "2px solid var(--accent)",
-                }
-              : undefined
-          }
-        >
-          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <Diamond size={15} weight="light" /> Digest
-          </span>
-        </button>
-        <button
-          onClick={toggleEdgePeek}
-          className="feature-btn"
-          style={
-            edgePeekEnabled
-              ? {
-                  borderBottom: "2px solid var(--accent)",
-                }
-              : undefined
-          }
-        >
-          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <Diamond size={15} weight="light" /> Edge Peek
-            {!edgePeekSeen && (
-              <span
-                className="feature-new-dot"
-                aria-label="New feature"
-                title="New"
-              />
             )}
           </span>
         </button>

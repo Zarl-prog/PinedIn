@@ -1080,7 +1080,7 @@ export default function App() {
           style={
             isPaused
               ? {
-                  borderBottom: "2px solid var(--tab-active-bg)",
+                  borderBottom: "2px solid var(--accent)",
                 }
               : undefined
           }
@@ -1104,7 +1104,7 @@ export default function App() {
           style={
             compactMode
               ? {
-                  borderBottom: "2px solid var(--tab-active-bg)",
+                  borderBottom: "2px solid var(--accent)",
                 }
               : undefined
           }
@@ -1120,7 +1120,7 @@ export default function App() {
           style={
             zenMode
               ? {
-                  borderBottom: "2px solid var(--tab-active-bg)",
+                  borderBottom: "2px solid var(--accent)",
                 }
               : undefined
           }
@@ -1148,7 +1148,7 @@ export default function App() {
           style={
             shakeEnabled
               ? {
-                  borderBottom: "2px solid var(--tab-active-bg)",
+                  borderBottom: "2px solid var(--accent)",
                 }
               : undefined
           }
@@ -1171,7 +1171,7 @@ export default function App() {
           style={
             digestEnabled
               ? {
-                  borderBottom: "2px solid var(--tab-active-bg)",
+                  borderBottom: "2px solid var(--accent)",
                 }
               : undefined
           }
@@ -1186,7 +1186,7 @@ export default function App() {
           style={
             edgePeekEnabled
               ? {
-                  borderBottom: "2px solid var(--tab-active-bg)",
+                  borderBottom: "2px solid var(--accent)",
                 }
               : undefined
           }
@@ -1265,7 +1265,8 @@ export default function App() {
               maxWidth: "400px",
               background: "var(--bg-modal)",
               border: "1px solid var(--border)",
-              borderRadius: "10px",
+              borderRadius: "14px",
+              boxShadow: "var(--shadow-menu)",
               padding: "24px",
             }}
           >
@@ -1302,8 +1303,8 @@ export default function App() {
                   padding: "8px 0",
                   borderRadius: "8px",
                   border: "none",
-                  background: "var(--text-primary)",
-                  color: "var(--text-inverse)",
+                  background: "var(--accent)",
+                  color: "var(--accent-contrast)",
                   fontSize: "14px",
                   fontWeight: 600,
                   cursor: "pointer",

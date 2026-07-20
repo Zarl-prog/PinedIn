@@ -1,4 +1,14 @@
-import { Circle, Compass, Hourglass, PencilSimpleLine, Tag, X } from "@phosphor-icons/react";
+import {
+  Compass,
+  DownloadSimple,
+  Hourglass,
+  Palette,
+  PencilSimpleLine,
+  Power,
+  SlidersHorizontal,
+  Tag,
+  X,
+} from "@phosphor-icons/react";
 import { getVersion } from "@tauri-apps/api/app";
 import { emit } from "@tauri-apps/api/event";
 import { AnimatePresence, motion } from "framer-motion";
@@ -27,6 +37,102 @@ interface SettingsPanelProps {
   open: boolean;
   onClose: () => void;
   updateAvailable?: string | null;
+}
+
+/** A titled group of settings rows, rendered as one card. */
+function Section({
+  icon,
+  title,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "7px",
+          margin: "0 2px 8px",
+          fontSize: "11px",
+          fontWeight: 600,
+          letterSpacing: "0.5px",
+          textTransform: "uppercase",
+          color: "var(--text-muted)",
+        }}
+      >
+        <span style={{ display: "flex", color: "var(--text-secondary)" }}>{icon}</span>
+        {title}
+      </div>
+      <div
+        style={{
+          background: "var(--bg-input)",
+          border: "1px solid var(--border)",
+          borderRadius: "12px",
+          overflow: "hidden",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/** A single settings row: leading text block + trailing control. Rows inside
+ *  a Section are separated by a hairline divider (all but the last). */
+function Row({
+  title,
+  description,
+  control,
+  last,
+}: {
+  title: string;
+  description?: string;
+  control: React.ReactNode;
+  last?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "14px",
+        padding: "13px 15px",
+        borderBottom: last ? "none" : "1px solid var(--divider)",
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <span
+          style={{
+            display: "block",
+            fontSize: "13.5px",
+            fontWeight: 500,
+            color: "var(--text-primary)",
+          }}
+        >
+          {title}
+        </span>
+        {description && (
+          <span
+            style={{
+              display: "block",
+              fontSize: "12px",
+              color: "var(--text-muted)",
+              marginTop: "3px",
+              lineHeight: 1.5,
+            }}
+          >
+            {description}
+          </span>
+        )}
+      </div>
+      <div style={{ flexShrink: 0 }}>{control}</div>
+    </div>
+  );
 }
 
 /**
@@ -167,10 +273,10 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
               position: "relative",
               zIndex: 10,
               width: "100%",
-              maxWidth: "420px",
+              maxWidth: "460px",
               background: "var(--bg-modal)",
               border: "1px solid var(--border)",
-              borderRadius: "14px",
+              borderRadius: "16px",
               padding: "24px",
               boxShadow: "var(--shadow-menu)",
             }}
@@ -180,17 +286,47 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                marginBottom: "20px",
+                marginBottom: "22px",
               }}
             >
-              <span style={{ fontSize: "17px", fontWeight: 600, color: "var(--text-primary)" }}>
-                Settings
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: "11px" }}>
+                <div
+                  style={{
+                    width: "34px",
+                    height: "34px",
+                    borderRadius: "10px",
+                    background: "var(--accent-soft)",
+                    color: "var(--accent)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <SlidersHorizontal size={17} weight="bold" />
+                </div>
+                <div>
+                  <span
+                    style={{
+                      display: "block",
+                      fontSize: "17px",
+                      fontWeight: 600,
+                      color: "var(--text-primary)",
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    Settings
+                  </span>
+                  <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                    Preferences &amp; appearance
+                  </span>
+                </div>
+              </div>
               <button
                 onClick={onClose}
                 style={{
-                  width: "24px",
-                  height: "24px",
+                  width: "28px",
+                  height: "28px",
                   borderRadius: "8px",
                   border: "1px solid var(--border-light)",
                   background: "transparent",
@@ -217,162 +353,80 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
               </button>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-              {/* Launch at login */}
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    color: "var(--text-secondary)",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Launch at login
-                </label>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    background: "var(--bg-input)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "8px",
-                    padding: "14px 16px",
-                  }}
-                >
-                  <div>
-                    <span
-                      style={{
-                        display: "block",
-                        fontSize: "14px",
-                        fontWeight: 500,
-                        color: "var(--text-primary)",
-                      }}
-                    >
-                      {autostartOn ? "Enabled" : "Disabled"}
-                    </span>
-                    <span
-                      style={{
-                        display: "block",
-                        fontSize: "13px",
-                        color: "var(--text-muted)",
-                        marginTop: "2px",
-                      }}
-                    >
-                      Automatically start PinedIn when you log in
-                    </span>
-                  </div>
-                  <button
-                    onClick={handleAutostartToggle}
-                    disabled={autostartLoading}
-                    className={`toggle-track${autostartOn ? " active" : ""}`}
-                    style={{ flexShrink: 0 }}
-                  >
-                    <span className={`toggle-thumb${autostartOn ? " active" : ""}`} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Restart tour */}
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    color: "var(--text-secondary)",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Onboarding
-                </label>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    background: "var(--bg-input)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "8px",
-                    padding: "14px 16px",
-                  }}
-                >
-                  <div>
-                    <span
-                      style={{
-                        display: "block",
-                        fontSize: "14px",
-                        fontWeight: 500,
-                        color: "var(--text-primary)",
-                      }}
-                    >
-                      Restart tour
-                    </span>
-                    <span
-                      style={{
-                        display: "block",
-                        fontSize: "13px",
-                        color: "var(--text-muted)",
-                        marginTop: "2px",
-                      }}
-                    >
-                      Replay the guided walkthrough of PinedIn
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      // Let the settings panel finish closing before the tour appears.
-                      setTimeout(() => {
-                        emit("show_onboarding").catch(() => {});
-                      }, 250);
-                    }}
-                    className="feature-btn"
-                    style={{
-                      flexShrink: 0,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      padding: "8px 14px",
-                    }}
-                  >
-                    <Compass size={15} weight="light" /> Start
-                  </button>
-                </div>
-              </div>
-
-              {/* Theme */}
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    color: "var(--text-secondary)",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Theme
-                </label>
-                <div style={{ display: "flex", gap: "6px" }}>
-                  {themeOptions.map((option) => (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "20px",
+                maxHeight: "min(70vh, 620px)",
+                overflowY: "auto",
+                margin: "0 -4px",
+                padding: "0 4px",
+              }}
+            >
+              {/* ─── General ─────────────────────────────────────── */}
+              <Section icon={<Power size={13} weight="bold" />} title="General">
+                <Row
+                  title="Launch at login"
+                  description="Automatically start PinedIn when you log in"
+                  control={
                     <button
-                      key={option.value}
-                      onClick={() => handleThemeChange(option.value)}
-                      className={`pill-toggle${settings.theme === option.value ? " selected" : ""}`}
+                      onClick={handleAutostartToggle}
+                      disabled={autostartLoading}
+                      className={`toggle-track${autostartOn ? " active" : ""}`}
+                    >
+                      <span className={`toggle-thumb${autostartOn ? " active" : ""}`} />
+                    </button>
+                  }
+                />
+                <Row
+                  last
+                  title="Restart tour"
+                  description="Replay the guided walkthrough of PinedIn"
+                  control={
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        // Let the panel finish closing before the tour appears.
+                        setTimeout(() => {
+                          emit("show_onboarding").catch(() => {});
+                        }, 250);
+                      }}
+                      className="feature-btn"
                       style={{
-                        flex: 1,
-                        textAlign: "center",
                         display: "flex",
-                        flexDirection: "column",
                         alignItems: "center",
                         gap: "6px",
-                        padding: "12px 14px",
+                        padding: "8px 14px",
                       }}
                     >
+                      <Compass size={15} weight="light" /> Start
+                    </button>
+                  }
+                />
+              </Section>
+
+              {/* ─── Appearance ──────────────────────────────────── */}
+              <Section icon={<Palette size={13} weight="bold" />} title="Appearance">
+                <div style={{ padding: "13px 15px" }}>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    {themeOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => handleThemeChange(option.value)}
+                        className={`pill-toggle${settings.theme === option.value ? " selected" : ""}`}
+                        style={{
+                          flex: 1,
+                          textAlign: "center",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: "6px",
+                          padding: "12px 10px",
+                          borderRadius: "9px",
+                        }}
+                      >
                       {option.value === "light" && (
                         <svg
                           width="18"
@@ -445,209 +499,122 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                       <span style={{ fontSize: "12px" }}>{option.label}</span>
                     </button>
                   ))}
-                </div>
-              </div>
-
-              {/* Card shake interval */}
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    color: "var(--text-secondary)",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Card shake interval
-                </label>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "6px",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  {SHAKE_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => handleShakeIntervalChange(option.value)}
-                      className={`pill-toggle${shakeInterval === option.value ? " selected" : ""}`}
-                      style={{
-                        flex: 1,
-                        minWidth: "56px",
-                        textAlign: "center",
-                        padding: "10px 12px",
-                        fontSize: "12px",
-                      }}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Customize tasks */}
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    color: "var(--text-secondary)",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Customize your tasks
-                </label>
-                <button
-                  onClick={() => {
-                    useReminderStore.getState().setCustomizeOpen(true);
-                    onClose();
-                  }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    width: "100%",
-                    background: "var(--bg-input)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "8px",
-                    padding: "14px 16px",
-                    cursor: "pointer",
-                    color: "var(--text-primary)",
-                    fontSize: "14px",
-                    fontWeight: 500,
-                    textAlign: "left",
-                    transition: "border-color 0.15s",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.borderColor = "var(--border-hover, var(--text-muted))")
-                  }
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
-                >
-                  <PencilSimpleLine
-                    size={20}
-                    weight="light"
-                    style={{ flexShrink: 0, opacity: 0.7 }}
-                  />
-                  <span>Resize your task cards by dragging their edges</span>
-                  <span style={{ marginLeft: "auto", fontSize: "12px", opacity: 0.5 }}>→</span>
-                </button>
-              </div>
-
-              {/* Updates */}
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    color: "var(--text-secondary)",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Updates{" "}
-                  {updateAvailable && (
-                    <span
-                      style={{
-                        color: "#ef4444",
-                        marginLeft: "6px",
-                        fontSize: "12px",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "4px",
-                      }}
-                    >
-                      <Circle size={10} weight="fill" />
-                      Update v{updateAvailable} ready
-                    </span>
-                  )}
-                </label>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    background: "var(--bg-input)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "8px",
-                    padding: "14px 16px",
-                  }}
-                >
-                  <div>
-                    <span
-                      style={{
-                        display: "block",
-                        fontSize: "14px",
-                        fontWeight: 500,
-                        color: "var(--text-primary)",
-                      }}
-                    >
-                      {updateStatus.state === "checking"
-                        ? "Checking…"
-                        : updateStatus.state === "available"
-                          ? `Update v${updateStatus.version} ready`
-                          : updateStatus.state === "none"
-                            ? "Up to date"
-                            : updateStatus.state === "error"
-                              ? "Update check failed"
-                              : "Auto-update installer"}
-                    </span>
-                    <span
-                      style={{
-                        display: "block",
-                        fontSize: "13px",
-                        color: "var(--text-muted)",
-                        marginTop: "2px",
-                      }}
-                    >
-                      {updateStatus.state === "error"
-                        ? updateStatus.error
-                        : updateStatus.state === "idle"
-                          ? "Checks for new versions on each build"
-                          : ""}
-                    </span>
                   </div>
-                  <button
-                    onClick={handleCheckUpdates}
-                    disabled={updateStatus.state === "checking"}
-                    className="v-action"
-                    style={{ flexShrink: 0, fontSize: "12px", padding: "6px 12px" }}
-                  >
-                    {updateStatus.state === "checking" ? (
-                      <Hourglass size={14} weight="light" />
-                    ) : updateStatus.state === "available" ? (
-                      "Install"
-                    ) : (
-                      "Check"
-                    )}
-                  </button>
                 </div>
-              </div>
+              </Section>
 
-              {/* Version */}
-              <div
-                style={{
-                  marginTop: "4px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "6px",
-                  padding: "12px",
-                }}
-              >
-                <Tag size={13} weight="light" color="var(--text-secondary)" />
-                <span
-                  style={{
-                    fontSize: "13px",
-                    color: "var(--text-secondary)",
-                    fontFamily: "'Geist Mono', monospace",
-                  }}
-                >
-                  v{appVersion}
-                </span>
-              </div>
+              {/* ─── Tasks ───────────────────────────────────────── */}
+              <Section icon={<SlidersHorizontal size={13} weight="bold" />} title="Tasks">
+                <Row
+                  title="Card shake interval"
+                  description="How often urgent cards pulse to get your attention"
+                  control={
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "4px",
+                        flexWrap: "wrap",
+                        justifyContent: "flex-end",
+                        maxWidth: "180px",
+                      }}
+                    >
+                      {SHAKE_OPTIONS.map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => handleShakeIntervalChange(option.value)}
+                          className={`pill-toggle${shakeInterval === option.value ? " selected" : ""}`}
+                          style={{
+                            textAlign: "center",
+                            padding: "5px 9px",
+                            fontSize: "11px",
+                          }}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  }
+                />
+                <Row
+                  last
+                  title="Customize task cards"
+                  description="Resize your cards by dragging their edges"
+                  control={
+                    <button
+                      onClick={() => {
+                        useReminderStore.getState().setCustomizeOpen(true);
+                        onClose();
+                      }}
+                      className="feature-btn"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        padding: "8px 14px",
+                      }}
+                    >
+                      <PencilSimpleLine size={15} weight="light" /> Customize
+                    </button>
+                  }
+                />
+              </Section>
+
+              {/* ─── About ───────────────────────────────────────── */}
+              <Section icon={<DownloadSimple size={13} weight="bold" />} title="About">
+                <Row
+                  last={!updateAvailable}
+                  title={
+                    updateStatus.state === "checking"
+                      ? "Checking…"
+                      : updateStatus.state === "available"
+                        ? `Update v${updateStatus.version} ready`
+                        : updateStatus.state === "none"
+                          ? "Up to date"
+                          : updateStatus.state === "error"
+                            ? "Update check failed"
+                            : "Software update"
+                  }
+                  description={
+                    updateStatus.state === "error"
+                      ? updateStatus.error
+                      : "Checks for new versions on each build"
+                  }
+                  control={
+                    <button
+                      onClick={handleCheckUpdates}
+                      disabled={updateStatus.state === "checking"}
+                      className="feature-btn"
+                      style={{ padding: "8px 14px", display: "flex", alignItems: "center", gap: "6px" }}
+                    >
+                      {updateStatus.state === "checking" ? (
+                        <Hourglass size={14} weight="light" />
+                      ) : updateStatus.state === "available" ? (
+                        "Install"
+                      ) : (
+                        "Check"
+                      )}
+                    </button>
+                  }
+                />
+                <Row
+                  last
+                  title="Version"
+                  control={
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        fontSize: "13px",
+                        color: "var(--text-secondary)",
+                        fontFamily: "'Geist Mono', monospace",
+                      }}
+                    >
+                      <Tag size={13} weight="light" /> v{appVersion}
+                    </span>
+                  }
+                />
+              </Section>
             </div>
           </motion.div>
         </div>

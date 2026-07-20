@@ -51,6 +51,10 @@ import { useReminderStore } from "@/store/reminderStore";
 
 type AppTab = "tasks" | "workspaces";
 
+// Detect Mac once so the shortcut hint reads ⌘K there and Ctrl K elsewhere.
+const IS_MAC =
+  typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
+
 export default function App() {
   useReminders();
 
@@ -1026,8 +1030,34 @@ export default function App() {
                 placeholder="Search tasks..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ paddingLeft: "32px" }}
+                style={{ paddingLeft: "32px", paddingRight: "58px" }}
               />
+              {/* Command palette hint — opens ⌘K / Ctrl+K */}
+              <button
+                type="button"
+                onClick={() => setPaletteOpen(true)}
+                title="Open command palette"
+                style={{
+                  position: "absolute",
+                  right: "8px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "3px",
+                  background: "var(--bg-badge)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "5px",
+                  padding: "3px 7px",
+                  fontSize: "10px",
+                  fontFamily: "'Geist Mono', monospace",
+                  color: "var(--text-muted)",
+                  cursor: "pointer",
+                  lineHeight: 1,
+                }}
+              >
+                {IS_MAC ? "⌘" : "Ctrl"} K
+              </button>
             </div>
 
             {/* Task List */}

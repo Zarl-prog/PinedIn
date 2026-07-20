@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Option 5 — Canvas context menu</title>
+    <link rel="stylesheet" href="_shared.css" />
+  </head>
+  <body>
+    <div class="stage">
+      <div class="caption">
+        <h1>Option 5 — Canvas right-click actions</h1>
+        <p>
+          One-shot / spatial actions (Align, Compact, Zen) live where the cards are — right-click
+          the desktop canvas. The bottom bar shrinks to just persistent state. Best paired with
+          <kbd>⌘K</kbd> for discoverability.
+        </p>
+      </div>
+
+      <div class="win">
+        <div class="titlebar">
+          <div class="brand">
+            <div class="logo"></div>
+            <span class="brand-name">PinedIn</span>
+          </div>
+          <div class="tb-actions">
+            <button class="icon-ghost" title="MCP">
+              <svg viewBox="0 0 24 24" class="i" style="color:#22c55e"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            </button>
+            <button class="icon-ghost" title="Settings">
+              <svg viewBox="0 0 24 24" class="i"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <button class="tab active">Tasks</button>
+          <button class="tab">Workspace</button>
+        </div>
+
+        <div class="body canvas-hint">
+          <div class="tasks-head">
+            <div class="tasks-title">Tasks <span class="muted">3 remaining</span></div>
+            <div class="row-gap">
+              <button class="btn">+ Pre-Schedule</button>
+              <button class="btn primary">+ Add Task</button>
+            </div>
+          </div>
+          <div class="search">Search tasks…</div>
+          <div class="task-row"><span class="dot amber"></span> Ship onboarding tour</div>
+          <div class="task-row"><span class="dot"></span> Review PR #42</div>
+          <div class="task-row"><span class="dot red"></span> Fix edge-peek drift</div>
+
+          <!-- floating context menu overlay -->
+          <div class="ctx">
+            <div class="ctx-item"><svg viewBox="0 0 24 24" class="i"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> Align to grid</div>
+            <div class="ctx-item"><svg viewBox="0 0 24 24" class="i"><circle cx="12" cy="12" r="4"/></svg> Compact all</div>
+            <div class="ctx-item"><svg viewBox="0 0 24 24" class="i"><circle cx="12" cy="12" r="9"/></svg> Enter Zen mode</div>
+            <div class="ctx-sep"></div>
+            <div class="ctx-item"><svg viewBox="0 0 24 24" class="i"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg> Shake urgent</div>
+          </div>
+        </div>
+
+        <div class="bottombar">
+          <button class="bar-btn"><svg viewBox="0 0 24 24" class="i" style="fill:currentColor;stroke:none"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg> Pause</button>
+          <div class="bar-spacer"></div>
+          <span style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:7px">
+            Right-click canvas for view actions <kbd>⌘K</kbd>
+          </span>
+        </div>
+      </div>
+
+      <div class="notes">
+        <div class="note"><b>On the canvas (right-click):</b> Align, Compact, Zen, Shake.</div>
+        <div class="note"><b>In the bar:</b> just Pause + a hint.</div>
+        <div class="note"><b>Tradeoff:</b> most discoverable via ⌘K; right-click is hidden until learned.</div>
+      </div>
+    </div>
+  </body>
+</html>

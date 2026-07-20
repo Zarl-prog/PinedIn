@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Current — what ships today</title>
+    <link rel="stylesheet" href="_shared.css" />
+  </head>
+  <body>
+    <div class="stage">
+      <div class="caption">
+        <h1>Current — what ships today</h1>
+        <p>
+          All 7 controls sit in one flat row as equal-weight buttons — a state toggle (Pause), view
+          modes (Compact, Zen), a one-shot action (Align), and feature toggles (Shake, Digest, Edge
+          Peek). This is the baseline the other options are compared against.
+        </p>
+      </div>
+
+      <div class="win">
+        <div class="titlebar">
+          <div class="brand">
+            <div class="logo"></div>
+            <span class="brand-name">PinedIn</span>
+          </div>
+          <div class="tb-actions">
+            <button class="icon-ghost" title="MCP">
+              <svg viewBox="0 0 24 24" class="i" style="color:#22c55e"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            </button>
+            <button class="icon-ghost" title="Settings">
+              <svg viewBox="0 0 24 24" class="i"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <button class="tab active">Tasks</button>
+          <button class="tab">Workspace</button>
+        </div>
+
+        <div class="body">
+          <div class="tasks-head">
+            <div class="tasks-title">Tasks <span class="muted">3 remaining</span></div>
+            <div class="row-gap">
+              <button class="btn">+ Pre-Schedule</button>
+              <button class="btn primary">+ Add Task</button>
+            </div>
+          </div>
+          <div class="search">Search tasks…</div>
+          <div class="task-row"><span class="dot amber"></span> Ship onboarding tour</div>
+          <div class="task-row"><span class="dot"></span> Review PR #42</div>
+          <div class="task-row"><span class="dot red"></span> Fix edge-peek drift</div>
+        </div>
+
+        <!-- current bottom bar: 7 flat buttons -->
+        <div class="bottombar" style="flex-wrap:wrap;height:auto;padding:8px 12px;gap:4px">
+          <button class="bar-btn"><svg viewBox="0 0 24 24" class="i" style="fill:currentColor;stroke:none"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg> Pause</button>
+          <button class="bar-btn active"><svg viewBox="0 0 24 24" class="i"><circle cx="12" cy="12" r="4"/></svg> Compact</button>
+          <button class="bar-btn"><svg viewBox="0 0 24 24" class="i"><circle cx="12" cy="12" r="9"/></svg> Zen</button>
+          <button class="bar-btn"><svg viewBox="0 0 24 24" class="i"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> Align</button>
+          <button class="bar-btn"><svg viewBox="0 0 24 24" class="i"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg> Shake</button>
+          <button class="bar-btn"><svg viewBox="0 0 24 24" class="i"><path d="M12 2 2 12l10 10 10-10z"/></svg> Digest</button>
+          <button class="bar-btn"><svg viewBox="0 0 24 24" class="i"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="15" y1="4" x2="15" y2="20"/></svg> Edge</button>
+        </div>
+      </div>
+
+      <div class="notes">
+        <div class="note"><b>Problem:</b> 7 equal-weight buttons, no hierarchy — the eye can't tell a one-shot action from a persistent toggle.</div>
+        <div class="note"><b>At 460px wide</b> the row is near capacity; the next feature forces a wrap or overflow.</div>
+      </div>
+    </div>
+  </body>
+</html>

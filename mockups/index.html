@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PinedIn bottom-bar mockups</title>
+<link rel="stylesheet" href="_shared.css" />
+<style>
+  .mock-head { max-width: 900px; margin: 0 auto 26px; }
+  .kicker { font-size: 11px; letter-spacing: 1px; color: var(--accent); margin-bottom: 8px; }
+  .mock-head h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.4px; }
+  .mock-head p { font-size: 13px; color: var(--text-secondary); line-height: 1.7; margin-top: 10px; }
+  .mock-head b { color: var(--text-primary); font-weight: 500; }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .tile {
+    text-decoration: none;
+    color: inherit;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    background: var(--bg-app);
+    transition: all 0.2s var(--ease-out);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .tile:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-menu);
+  }
+  .tile .n { font-size: 11px; color: var(--accent); letter-spacing: 1px; }
+  .tile h2 { font-size: 15px; font-weight: 600; }
+  .tile p { font-size: 12px; color: var(--text-secondary); line-height: 1.55; }
+  .tile .rec {
+    display: inline-block; font-size: 10px; color: var(--accent-contrast);
+    background: var(--accent); border-radius: 999px; padding: 2px 8px; width: fit-content;
+  }
+  .mini {
+    margin-top: 6px; border: 1px solid var(--divider); border-radius: 8px; background: #050505;
+    padding: 8px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; min-height: 44px;
+  }
+  .chip { font-size: 9px; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 4px 7px; white-space: nowrap; }
+  .chip.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .chip.icon { width: 24px; text-align: center; padding: 4px 0; }
+  .mini .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 5px; overflow: hidden; }
+  .mini .seg .chip { border: none; border-radius: 0; }
+  .divline { width: 1px; height: 16px; background: var(--divider); margin: 0 4px; }
+</style>
+</head>
+<body>
+  <div class="mock-head">
+    <div class="kicker">PinedIn · UI exploration</div>
+    <h1>Bottom bar — 5 ways to present the feature controls</h1>
+    <p>Each mockup uses the app's real dark tokens, Geist&nbsp;Mono, and the new accent. The problem being solved: the current bar mixes a <b>state toggle</b> (Pause), <b>view modes</b> (Compact/Zen), a <b>one-shot action</b> (Align), and <b>feature toggles</b> (Shake/Digest/Edge&nbsp;Peek) as one flat wall of equal-weight buttons. Click any tile to open the full window mockup.</p>
+  </div>
+
+  <div class="grid">
+    <a class="tile" href="option0-current.html">
+      <span class="n">CURRENT</span>
+      <h2>What ships today</h2>
+      <p>All 7 controls in one flat row. Baseline for comparison.</p>
+      <div class="mini">
+        <span class="chip">⏸ Pause</span>
+        <span class="chip">Compact</span>
+        <span class="chip">Zen</span>
+        <span class="chip">Align</span>
+        <span class="chip">Shake</span>
+        <span class="chip">Digest</span>
+        <span class="chip">Edge</span>
+      </div>
+    </a>
+
+    <a class="tile" href="option1-split.html">
+      <span class="n">OPTION 1</span>
+      <span class="rec">Recommended</span>
+      <h2>Split by purpose</h2>
+      <p>View modes stay in the bar. Feature toggles move to Settings. Pause promoted to the header. Leans on ⌘K.</p>
+      <div class="mini">
+        <span class="chip">Compact</span>
+        <span class="chip">Zen</span>
+        <span class="chip">Align</span>
+        <span class="divline"></span>
+        <span class="chip" style="color:var(--text-muted)">⋯ in Settings</span>
+      </div>
+    </a>
+
+    <a class="tile" href="option2-segmented.html">
+      <span class="n">OPTION 2</span>
+      <h2>Grouped segmented control</h2>
+      <p>Everything stays, but clustered: a segmented pill for view modes, a divider, then toggles. Adds hierarchy.</p>
+      <div class="mini">
+        <span class="seg"><span class="chip on">Compact</span><span class="chip">Zen</span></span>
+        <span class="chip">Align</span>
+        <span class="divline"></span>
+        <span class="chip">Shake</span>
+        <span class="chip">Digest</span>
+        <span class="chip">Edge</span>
+      </div>
+    </a>
+
+    <a class="tile" href="option3-iconbar.html">
+      <span class="n">OPTION 3</span>
+      <h2>Icon-only + tooltips</h2>
+      <p>Drop text labels, keep icons, reveal label on hover. Frees ~60% width, reads like a pro status bar.</p>
+      <div class="mini">
+        <span class="chip icon">⏸</span>
+        <span class="chip icon on">◐</span>
+        <span class="chip icon">○</span>
+        <span class="chip icon">▦</span>
+        <span class="chip icon">⚡</span>
+        <span class="chip icon">◆</span>
+        <span class="chip icon">▤</span>
+      </div>
+    </a>
+
+    <a class="tile" href="option4-overflow.html">
+      <span class="n">OPTION 4</span>
+      <h2>Pinned + overflow menu</h2>
+      <p>Pin 3 primary controls, tuck the rest behind a “⋯ More” menu. Scales as the feature list grows.</p>
+      <div class="mini">
+        <span class="chip">Compact</span>
+        <span class="chip">Zen</span>
+        <span class="chip">Align</span>
+        <span class="divline"></span>
+        <span class="chip">⋯ More</span>
+      </div>
+    </a>
+
+    <a class="tile" href="option5-context.html">
+      <span class="n">OPTION 5</span>
+      <h2>Right-click canvas actions</h2>
+      <p>One-shot actions (Align especially) move to a right-click menu on the desktop canvas, off the permanent bar.</p>
+      <div class="mini">
+        <span class="chip">Compact</span>
+        <span class="chip">Zen</span>
+        <span class="divline"></span>
+        <span class="chip" style="color:var(--text-muted)">right-click ▦ Align</span>
+      </div>
+    </a>
+  </div>
+</body>
+</html>

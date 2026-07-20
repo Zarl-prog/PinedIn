@@ -3,18 +3,24 @@ import {
   Circle,
   Diamond,
   DotOutline,
+  Eye,
+  GearSix,
   GridFour,
   Info,
   Lightning,
+  Moon,
   Pause,
   Play,
+  Plus,
+  Sun,
   Warning,
 } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AddTaskModal from "@/components/AddTaskModal";
+import CommandPalette, { type Command } from "@/components/CommandPalette";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import CustomizeCardModal from "@/components/CustomizeCardModal";
 import McpPanel from "@/components/McpPanel";
@@ -64,6 +70,7 @@ export default function App() {
   const togglePaused = useReminderStore.getState().togglePaused;
 
   const [activeTab, setActiveTab] = useState<AppTab>("tasks");
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   const [workspaceContext, setWorkspaceContext] = useState<{
     workspaceId: number;
@@ -331,6 +338,18 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const incompleteCount = tasks.filter((t) => !t.completed).length;
 
+  // ─── Cmd/Ctrl+K opens the command palette ──────────────────────────────
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   function handleTabChange(tab: AppTab) {
     setActiveTab(tab);
     setWorkspaceContext(null);
@@ -349,6 +368,127 @@ export default function App() {
   }
 
   const effectiveWorkspaceId = workspaceContext?.workspaceId ?? null;
+
+  // ─── Command palette command list ──────────────────────────────────────
+  const paletteCommands = useMemo<Command[]>(() => {
+    const setTheme = (t: string) => useReminderStore.getState().saveSetting("theme", t);
+    const cmds: Command[] = [
+      {
+        id: "add-task",
+        title: "Add Task",
+        subtitle: "Create a new floating task card",
+        group: "Tasks",
+        keywords: "new create task todo",
+        icon: <Plus size={15} weight="bold" />,
+        perform: () => setAddTaskOpen(true),
+      },
+      {
+        id: "pre-schedule",
+        title: "Pre-Schedule Task",
+        subtitle: "Schedule a task for later",
+        group: "Tasks",
+        keywords: "schedule later future remind",
+        icon: <ArrowRight size={15} weight="bold" />,
+        perform: () => setPreScheduleOpen(true),
+      },
+      {
+        id: "toggle-pause",
+        title: isPaused ? "Resume reminders" : "Pause reminders",
+        group: "Tasks",
+        keywords: "pause resume stop notifications",
+        icon: isPaused ? <Play size={15} weight="bold" /> : <Pause size={15} weight="bold" />,
+        perform: () => togglePaused(),
+      },
+      {
+        id: "compact",
+        title: "Toggle Compact mode",
+        subtitle: "Collapse cards into a pill",
+        group: "View",
+        keywords: "compact pill collapse minimize",
+        icon: <DotOutline size={15} weight="bold" />,
+        perform: () => toggleCompactMode(),
+      },
+      {
+        id: "zen",
+        title: "Toggle Zen mode",
+        subtitle: "Hide all cards to focus",
+        group: "View",
+        keywords: "zen focus hide",
+        icon: <Eye size={15} weight="bold" />,
+        perform: () => toggleZenMode(),
+      },
+      {
+        id: "align",
+        title: "Align cards to grid",
+        subtitle: "Snap floating cards into a grid",
+        group: "View",
+        keywords: "align grid snap tidy arrange",
+        icon: <GridFour size={15} weight="bold" />,
+        perform: () => snapAllCardsToGrid(),
+      },
+      {
+        id: "shake",
+        title: "Toggle Shake",
+        subtitle: "Pulse urgent tasks",
+        group: "View",
+        keywords: "shake pulse urgent",
+        icon: <Lightning size={15} weight="bold" />,
+        perform: () => toggleShake(),
+      },
+      {
+        id: "settings",
+        title: "Open Settings",
+        group: "App",
+        keywords: "settings preferences config options",
+        icon: <GearSix size={15} weight="bold" />,
+        perform: () => setSettingsOpen(true),
+      },
+      {
+        id: "restart-tour",
+        title: "Restart onboarding tour",
+        group: "App",
+        keywords: "tour onboarding help guide walkthrough",
+        icon: <Info size={15} weight="bold" />,
+        perform: () => {
+          emit("show_onboarding").catch(() => {});
+        },
+      },
+      {
+        id: "theme-light",
+        title: "Theme: Light",
+        group: "Theme",
+        keywords: "theme light color appearance",
+        icon: <Sun size={15} weight="bold" />,
+        perform: () => setTheme("light"),
+      },
+      {
+        id: "theme-dark",
+        title: "Theme: Dark",
+        group: "Theme",
+        keywords: "theme dark color appearance",
+        icon: <Moon size={15} weight="bold" />,
+        perform: () => setTheme("dark"),
+      },
+      {
+        id: "theme-parchment",
+        title: "Theme: Parchment",
+        group: "Theme",
+        keywords: "theme parchment sepia warm color appearance",
+        icon: <Circle size={15} weight="bold" />,
+        perform: () => setTheme("parchment"),
+      },
+    ];
+    return cmds;
+  }, [
+    isPaused,
+    setAddTaskOpen,
+    setPreScheduleOpen,
+    togglePaused,
+    toggleCompactMode,
+    toggleZenMode,
+    toggleShake,
+    setSettingsOpen,
+  ]);
 
   return (
     <div
@@ -1090,6 +1230,12 @@ export default function App() {
       <McpPanel open={isMcpOpen} onClose={() => setMcpOpen(false)} />
 
       <CustomizeCardModal />
+
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        commands={paletteCommands}
+      />
 
       {/* Update Modal */}
       {showUpdateModal && updateAvailable && (

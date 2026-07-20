@@ -753,6 +753,42 @@ pub fn delete_workspace(app: AppHandle, workspace_id: i64) -> Result<(), String>
 
 // ─── Edge Peek Commands ───────────────────────────────────────────────────────
 
+/// Close any open task cards and reopen the normal floating cards for the
+/// current view (active workspace if one is set, otherwise the global
+/// incomplete tasks). Does nothing in compact mode, where the pill is the
+/// display surface. Shared by compact-off and edge-peek-off so both restore
+/// the same set of cards.
+pub fn reopen_task_cards(app: &AppHandle, db: &DbHandle) {
+    // In compact mode the pill is the display — don't spawn individual cards.
+    if get_compact_mode_state(app) {
+        return;
+    }
+
+    // Close whatever cards may already be open to avoid duplicates.
+    let windows = app.webview_windows();
+    for (label, window) in &windows {
+        if label.starts_with("task_") {
+            let _ = window.close();
+        }
+    }
+
+    // Reopen for the active workspace if one is active, else global tasks.
+    let active_ws = match db.get_setting("active_workspace_id") {
+        Ok(Some(val)) if !val.is_empty() => val.parse::<i64>().ok(),
+        _ => None,
+    };
+    let tasks = match active_ws {
+        Some(id) => db.get_workspace_tasks(id),
+        None => db.get_incomplete_tasks(),
+    };
+    if let Ok(tasks) = tasks {
+        for (i, task) in tasks.iter().enumerate() {
+            let _ = window::open_task_card(app, task, i);
+        }
+        window::restack_task_cards(app);
+    }
+}
+
 #[tauri::command]
 pub fn get_edge_peek_enabled(db: State<'_, Arc<DbHandle>>) -> Result<bool, String> {
     let map = db.get_settings_map()?;
@@ -771,6 +807,14 @@ pub fn set_edge_peek_enabled(app: AppHandle, db: State<'_, Arc<DbHandle>>, enabl
         COMPACT_MODE.store(false, Ordering::SeqCst);
         crate::window::close_compact_pill_window(&app);
 
+        // Close any open task cards — edge peek replaces them with the pill.
+        let windows = app.webview_windows();
+        for (label, window) in &windows {
+            if label.starts_with("task_") {
+                let _ = window.close();
+            }
+        }
+
         // Check if there are incomplete tasks before opening
         if let Ok(tasks) = db.get_incomplete_tasks() {
             if !tasks.is_empty() {
@@ -779,6 +823,8 @@ pub fn set_edge_peek_enabled(app: AppHandle, db: State<'_, Arc<DbHandle>>, enabl
         }
     } else {
         crate::window::close_edge_peek_window(&app);
+        // Restore the normal floating task cards (mirrors compact-mode off).
+        reopen_task_cards(&app, db.inner());
     }
     Ok(())
 }
@@ -789,6 +835,13 @@ pub fn set_edge_peek_enabled_internal(app: AppHandle, db: Arc<DbHandle>, enabled
     EDGE_PEEK_ENABLED.store(enabled, Ordering::SeqCst);
 
     if enabled {
+        // Close any open task cards — edge peek replaces them with the pill.
+        let windows = app.webview_windows();
+        for (label, window) in &windows {
+            if label.starts_with("task_") {
+                let _ = window.close();
+            }
+        }
         if let Ok(tasks) = db.get_incomplete_tasks() {
             if !tasks.is_empty() {
                 crate::window::open_edge_peek_window(&app, false);
@@ -796,6 +849,8 @@ pub fn set_edge_peek_enabled_internal(app: AppHandle, db: Arc<DbHandle>, enabled
         }
     } else {
         crate::window::close_edge_peek_window(&app);
+        // Restore the normal floating task cards.
+        reopen_task_cards(&app, &db);
     }
     Ok(())
 }

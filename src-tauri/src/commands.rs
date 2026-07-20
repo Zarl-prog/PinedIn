@@ -730,17 +730,24 @@ pub fn load_workspace(app: AppHandle, workspace_id: i64) -> Result<(), String> {
 #[tauri::command]
 pub fn delete_workspace(app: AppHandle, workspace_id: i64) -> Result<(), String> {
     let db = app.state::<Arc<DbHandle>>();
+
+    // Was the workspace being deleted the currently active one?
+    let was_active = matches!(
+        db.get_setting("active_workspace_id"),
+        Ok(Some(val)) if val == workspace_id.to_string()
+    );
+
     db.delete_workspace(workspace_id).map_err(|e| e.to_string())?;
 
-    // Clear active_workspace_id if it matched the deleted workspace
-    let active = db.get_setting("active_workspace_id");
-    if let Ok(Some(val)) = active {
-        if val == workspace_id.to_string() {
-            let _ = db.update_setting("active_workspace_id", "");
-        }
+    if was_active {
+        // Fall back to the global view so the UI isn't left filtering to a
+        // workspace that no longer exists. Reuses the shared deactivate logic
+        // (clears the setting, reopens global cards, emits workspace_deactivated).
+        deactivate_workspace_inner(&app, &db)?;
+    } else {
+        emit_tasks_updated(&app, &db);
     }
 
-    emit_tasks_updated(&app, &db);
     Ok(())
 }
 
@@ -980,8 +987,11 @@ pub fn get_all_workspace_tasks(db: State<'_, Arc<DbHandle>>, workspace_id: i64) 
     db.get_all_workspace_tasks(workspace_id)
 }
 
-#[tauri::command]
-pub fn activate_workspace(app: AppHandle, db: State<'_, Arc<DbHandle>>, workspace_id: i64) -> Result<(), String> {
+/// Core logic for activating a workspace: persist the active id, close all
+/// task cards, reopen the workspace's cards (unless compact), and emit the
+/// events the frontend listens for. Shared by the Tauri command and the MCP
+/// handler so both entry points behave identically.
+pub fn activate_workspace_inner(app: &AppHandle, db: &DbHandle, workspace_id: i64) -> Result<(), String> {
     let workspace = db.get_workspace_by_id(workspace_id)?;
     let workspace_name = workspace.name.clone();
     db.update_setting("active_workspace_id", &workspace_id.to_string())?;
@@ -994,21 +1004,23 @@ pub fn activate_workspace(app: AppHandle, db: State<'_, Arc<DbHandle>>, workspac
     }
 
     // Don't open individual cards in compact mode
-    if !get_compact_mode_state(&app) {
+    if !get_compact_mode_state(app) {
         let tasks = db.get_workspace_tasks(workspace_id)?;
         for (i, task) in tasks.iter().enumerate() {
-            let _ = window::open_task_card(&app, task, i);
+            let _ = window::open_task_card(app, task, i);
         }
-        window::restack_task_cards(&app);
+        window::restack_task_cards(app);
     }
 
     let _ = app.emit("workspace_activated", serde_json::json!({ "name": workspace_name }));
-    emit_tasks_updated(&app, &db);
+    emit_tasks_updated(app, db);
     Ok(())
 }
 
-#[tauri::command]
-pub fn deactivate_workspace(app: AppHandle, db: State<'_, Arc<DbHandle>>) -> Result<(), String> {
+/// Core logic for deactivating the active workspace: clear the active id,
+/// close task cards, reopen global incomplete cards (unless compact), and
+/// emit `workspace_deactivated`. Shared by the Tauri command and MCP handler.
+pub fn deactivate_workspace_inner(app: &AppHandle, db: &DbHandle) -> Result<(), String> {
     db.update_setting("active_workspace_id", "")?;
 
     let windows = app.webview_windows();
@@ -1019,18 +1031,28 @@ pub fn deactivate_workspace(app: AppHandle, db: State<'_, Arc<DbHandle>>) -> Res
     }
 
     // Don't open individual cards in compact mode
-    if !get_compact_mode_state(&app) {
+    if !get_compact_mode_state(app) {
         if let Ok(tasks) = db.get_incomplete_tasks() {
             for (i, task) in tasks.iter().enumerate() {
-                let _ = window::open_task_card(&app, task, i);
+                let _ = window::open_task_card(app, task, i);
             }
-            window::restack_task_cards(&app);
+            window::restack_task_cards(app);
         }
     }
 
     let _ = app.emit("workspace_deactivated", ());
-    emit_tasks_updated(&app, &db);
+    emit_tasks_updated(app, db);
     Ok(())
+}
+
+#[tauri::command]
+pub fn activate_workspace(app: AppHandle, db: State<'_, Arc<DbHandle>>, workspace_id: i64) -> Result<(), String> {
+    activate_workspace_inner(&app, &db, workspace_id)
+}
+
+#[tauri::command]
+pub fn deactivate_workspace(app: AppHandle, db: State<'_, Arc<DbHandle>>) -> Result<(), String> {
+    deactivate_workspace_inner(&app, &db)
 }
 
 #[tauri::command]

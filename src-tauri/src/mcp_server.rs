@@ -936,14 +936,12 @@ fn tool_activate_workspace(
         .and_then(|v| v.as_i64())
         .ok_or_else(|| "Missing required argument: workspace_id".to_string())?;
 
-    state.db.update_setting("active_workspace_id", &workspace_id.to_string())?;
-    let _ = state.app_handle.emit("active_workspace_changed", workspace_id);
+    commands::activate_workspace_inner(&state.app_handle, &state.db, workspace_id)?;
     Ok(format!("Activated workspace {}.", workspace_id))
 }
 
 fn tool_deactivate_workspace(state: &McpState) -> Result<String, String> {
-    state.db.update_setting("active_workspace_id", "")?;
-    let _ = state.app_handle.emit("active_workspace_changed", serde_json::Value::Null);
+    commands::deactivate_workspace_inner(&state.app_handle, &state.db)?;
     Ok("Showing all workspaces.".to_string())
 }
 

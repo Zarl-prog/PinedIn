@@ -17,6 +17,7 @@ import {
   saveWorkspace,
   type Workspace,
 } from "../lib/tauriCommands";
+import { useReminderStore } from "../store/reminderStore";
 import Skeleton from "./ui/Skeleton";
 import WorkspaceDetailView from "./WorkspaceDetailView";
 
@@ -128,6 +129,9 @@ export default function WorkspacesView({
     setDeleteTarget(null);
     try {
       await deleteWorkspace(id);
+      // Drop the in-memory task cache for this workspace so stale rows
+      // don't linger until a full reload.
+      useReminderStore.getState().clearWorkspaceCache(id);
     } catch (e) {
       console.error("Failed to delete workspace:", e);
     }
@@ -427,7 +431,7 @@ export default function WorkspacesView({
                             borderRadius: "8px",
                             boxShadow: "var(--shadow-menu)",
                             padding: "8px",
-                            minWidth: "140px",
+                            minWidth: "200px",
                             display: "flex",
                             flexDirection: "column",
                             gap: "4px",
@@ -436,12 +440,13 @@ export default function WorkspacesView({
                           <div
                             style={{
                               fontSize: "11px",
-                              color: "var(--text-muted)",
-                              padding: "4px 8px",
-                              whiteSpace: "nowrap",
+                              color: "var(--text-secondary)",
+                              padding: "4px 8px 6px",
+                              lineHeight: 1.5,
                             }}
                           >
-                            Delete this workspace?
+                            Delete <b style={{ color: "var(--text-primary)" }}>{ws.name}</b>? Its
+                            tasks are permanently deleted. This can't be undone.
                           </div>
                           <button
                             onClick={() => confirmDelete(ws.id)}
@@ -451,7 +456,8 @@ export default function WorkspacesView({
                               borderRadius: "6px",
                               padding: "6px 10px",
                               fontSize: "12px",
-                              color: "var(--text-primary)",
+                              fontWeight: 600,
+                              color: "var(--text-danger)",
                               cursor: "pointer",
                               textAlign: "left",
                               fontFamily: "'Geist Mono', monospace",
@@ -464,7 +470,7 @@ export default function WorkspacesView({
                               e.currentTarget.style.background = "transparent";
                             }}
                           >
-                            Delete
+                            Delete workspace &amp; tasks
                           </button>
                           <button
                             onClick={() => setDeleteTarget(null)}

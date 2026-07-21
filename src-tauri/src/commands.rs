@@ -57,6 +57,7 @@ fn check_edge_peek_visibility(app: &AppHandle, db: &DbHandle) {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub fn create_task(
     app: tauri::AppHandle,
@@ -104,9 +105,9 @@ pub fn create_task(
         if get_compact_mode_state(&app_clone) {
             return;
         }
-        let index = if task_clone.workspace_id.is_some() {
+        let index = if let Some(workspace_id) = task_clone.workspace_id {
             db_clone
-                .get_workspace_tasks(task_clone.workspace_id.unwrap())
+                .get_workspace_tasks(workspace_id)
                 .ok()
                 .and_then(|tasks| tasks.iter().position(|t| t.id == task_clone.id))
                 .unwrap_or(0)
@@ -164,6 +165,7 @@ pub fn get_task_by_id(db: State<'_, Arc<DbHandle>>, id: i64) -> Result<Task, Str
     db.get_task_by_id(id)
 }
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub fn update_task(
     app: tauri::AppHandle,
@@ -992,6 +994,7 @@ pub fn fire_time_limit_notification(
 
 // ─── Pre-Scheduled Tasks ────────────────────────────────────────────────────
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub fn add_presceduled_task(
     app: AppHandle,

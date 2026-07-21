@@ -251,6 +251,7 @@ impl DbHandle {
     /// Insert a task. When `time_limit_minutes` is set, `started_at` is
     /// populated with the current local time so the frontend can compute
     /// remaining time even after a restart.
+    #[allow(clippy::too_many_arguments)]
     pub fn create_task_with_tags(
         &self,
         title: &str,
@@ -307,6 +308,7 @@ impl DbHandle {
     /// `scheduled_at` to the given ISO datetime. Pre-scheduled tasks
     /// are hidden from the normal active task lists until the
     /// scheduler activates them.
+    #[allow(clippy::too_many_arguments)]
     pub fn create_presceduled_task(
         &self,
         title: &str,
@@ -561,6 +563,7 @@ impl DbHandle {
         ).map_err(|e| format!("Failed to get task by id: {e}"))
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn update_task(
         &self,
         id: i64,
@@ -600,6 +603,7 @@ impl DbHandle {
     /// Atomically create a recurred task and mark the original as completed.
     /// Both operations share one SQLite transaction so a failure on either
     /// side rolls back the whole unit.
+    #[allow(clippy::too_many_arguments)]
     pub fn complete_with_recurrence(
         &self,
         id: i64,
@@ -767,10 +771,8 @@ impl DbHandle {
             })
             .map_err(|e| format!("Query error: {e}"))?;
 
-        for row in rows {
-            if let Ok((key, value)) = row {
-                map.insert(key, value);
-            }
+        for (key, value) in rows.flatten() {
+            map.insert(key, value);
         }
         Ok(map)
     }
@@ -788,10 +790,8 @@ impl DbHandle {
             })
             .map_err(|e| format!("Query error: {e}"))?;
 
-        for row in rows {
-            if let Ok((key, value)) = row {
-                map.insert(key, value);
-            }
+        for (key, value) in rows.flatten() {
+            map.insert(key, value);
         }
 
         Ok(AppSettings {
@@ -830,11 +830,9 @@ impl DbHandle {
                 })
             })
             .map_err(|e| format!("Query error: {e}"))?;
-        let mut workspaces = vec![];
-        for row in rows {
-            if let Ok(w) = row {
-                workspaces.push(w);
-            }
+        let mut workspaces: Vec<Workspace> = vec![];
+        for w in rows.flatten() {
+            workspaces.push(w);
         }
         Ok(workspaces)
     }

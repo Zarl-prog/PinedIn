@@ -606,7 +606,7 @@ fn tool_add_task(
 
     if let Some(task_id) = task.id {
         let _ = window::open_task_card(&state.app_handle, &task, 0);
-        let _ = commands::emit_tasks_updated(&state.app_handle, &state.db);
+        commands::emit_tasks_updated(&state.app_handle, &state.db);
         Ok(format!(
             "Task '{}' added successfully with ID {}. It is now floating on the user's screen.",
             title, task_id
@@ -651,8 +651,8 @@ fn tool_complete_task(
         .ok_or_else(|| "Missing required argument: task_id".to_string())?;
 
     state.db.complete_task(task_id)?;
-    let _ = window::close_task_card(&state.app_handle, task_id);
-    let _ = commands::emit_tasks_updated(&state.app_handle, &state.db);
+    window::close_task_card(&state.app_handle, task_id);
+    commands::emit_tasks_updated(&state.app_handle, &state.db);
 
     Ok(format!("Task {} marked as complete.", task_id))
 }
@@ -697,7 +697,7 @@ async fn tool_add_multiple_tasks(
         }
     }
 
-    let _ = commands::emit_tasks_updated(&state.app_handle, &state.db);
+    commands::emit_tasks_updated(&state.app_handle, &state.db);
 
     Ok(format!(
         "Added {} tasks: {}",
@@ -741,7 +741,7 @@ fn tool_update_task(
         None,
     )?;
 
-    let _ = commands::emit_tasks_updated(&state.app_handle, &state.db);
+    commands::emit_tasks_updated(&state.app_handle, &state.db);
     Ok(format!("Task {} updated successfully.", task_id))
 }
 
@@ -755,8 +755,8 @@ fn tool_delete_task(
         .ok_or_else(|| "Missing required argument: task_id".to_string())?;
 
     state.db.delete_task(task_id)?;
-    let _ = window::close_task_card(&state.app_handle, task_id);
-    let _ = commands::emit_tasks_updated(&state.app_handle, &state.db);
+    window::close_task_card(&state.app_handle, task_id);
+    commands::emit_tasks_updated(&state.app_handle, &state.db);
     Ok(format!("Task {} deleted.", task_id))
 }
 
@@ -898,8 +898,8 @@ fn tool_snooze_task(
         None,
     )?;
 
-    let _ = window::close_task_card(&state.app_handle, task_id);
-    let _ = commands::emit_tasks_updated(&state.app_handle, &state.db);
+    window::close_task_card(&state.app_handle, task_id);
+    commands::emit_tasks_updated(&state.app_handle, &state.db);
     Ok(format!("Task {} snoozed until {}.", task_id, due))
 }
 
@@ -1001,7 +1001,7 @@ fn tool_uncomplete_task(
         window::restack_task_cards(&state.app_handle);
     }
 
-    let _ = commands::emit_tasks_updated(&state.app_handle, &state.db);
+    commands::emit_tasks_updated(&state.app_handle, &state.db);
     Ok(format!("Task {} re-opened.", task_id))
 }
 
@@ -1120,7 +1120,7 @@ fn tool_load_workspace(
 
     state.db.update_setting("active_workspace_id", &workspace_id.to_string())?;
     let _ = state.app_handle.emit("workspace_activated", serde_json::json!({ "name": workspace.name }));
-    let _ = commands::emit_tasks_updated(&state.app_handle, &state.db);
+    commands::emit_tasks_updated(&state.app_handle, &state.db);
     Ok(format!("Workspace {} loaded.", workspace_id))
 }
 
@@ -1167,7 +1167,7 @@ fn tool_add_task_to_workspace(
         .ok_or_else(|| "Missing required argument: workspace_id".to_string())?;
 
     state.db.set_task_workspace(task_id, Some(workspace_id))?;
-    let _ = commands::emit_tasks_updated(&state.app_handle, &state.db);
+    commands::emit_tasks_updated(&state.app_handle, &state.db);
     Ok(format!("Task {} added to workspace {}.", task_id, workspace_id))
 }
 
@@ -1243,7 +1243,7 @@ fn tool_add_presceduled_task(
         None,
     )?;
 
-    let _ = commands::emit_tasks_updated(&state.app_handle, &state.db);
+    commands::emit_tasks_updated(&state.app_handle, &state.db);
     Ok(format!("Pre-scheduled task '{}' created with ID {}.", title, id))
 }
 
@@ -1329,7 +1329,7 @@ fn tool_focus_next_card(
     if let Some(window) = state.app_handle.get_webview_window(next_label) {
         window.set_focus().map_err(|e| e.to_string())?;
     }
-    Ok(format!("Focused next card."))
+    Ok("Focused next card.".to_string())
 }
 
 fn tool_focus_prev_card(
@@ -1369,7 +1369,7 @@ fn tool_focus_prev_card(
     if let Some(window) = state.app_handle.get_webview_window(prev_label) {
         window.set_focus().map_err(|e| e.to_string())?;
     }
-    Ok(format!("Focused previous card."))
+    Ok("Focused previous card.".to_string())
 }
 
 fn tool_get_autostart_state(state: &McpState) -> Result<String, String> {

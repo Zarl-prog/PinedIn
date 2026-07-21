@@ -42,6 +42,7 @@ fn bump_edge_peek_gen() -> u64 {
     atomic.fetch_add(1, Ordering::SeqCst) + 1
 }
 
+#[cfg(target_os = "linux")]
 fn current_edge_peek_gen() -> u64 {
     let atomic = EDGE_PEEK_GEN.get_or_init(|| std::sync::atomic::AtomicU64::new(0));
     atomic.load(Ordering::SeqCst)

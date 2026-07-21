@@ -452,7 +452,7 @@ fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
     #[cfg(target_os = "windows")]
     {
         if let Ok(hwnd) = window.hwnd() {
-            let hwnd = windows::Win32::Foundation::HWND(hwnd as *mut std::ffi::c_void);
+            let hwnd: windows::Win32::Foundation::HWND = hwnd;
             let x_px = (x * scale) as i32;
             let y_px = (y * scale) as i32;
             let w_px = (w * scale) as i32;

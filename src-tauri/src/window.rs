@@ -458,7 +458,7 @@ fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
             let w_px = (w * scale) as i32;
             let h_px = (h * scale) as i32;
             unsafe {
-                windows::Win32::UI::WindowsAndMessaging::SetWindowPos(
+                let _ = windows::Win32::UI::WindowsAndMessaging::SetWindowPos(
                     hwnd,
                     None,
                     x_px, y_px, w_px, h_px,

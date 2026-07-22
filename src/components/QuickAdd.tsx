@@ -65,7 +65,6 @@ export default function QuickAdd() {
         padding: "0 18px",
         overflow: "hidden",
         boxSizing: "border-box",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.8)",
       }}
     >
       {/* Icon */}

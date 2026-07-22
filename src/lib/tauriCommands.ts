@@ -178,10 +178,6 @@ export async function collapseEdgePeek(): Promise<void> {
   return invoke("collapse_edge_peek");
 }
 
-export async function setEdgePeekY(y: number): Promise<void> {
-  return invoke("set_edge_peek_y", { y });
-}
-
 // ─── Zen Mode ─────────────────────────────────────────────────────────────────
 export async function setZenMode(hidden: boolean): Promise<void> {
   return invoke("set_zen_mode", { hidden });

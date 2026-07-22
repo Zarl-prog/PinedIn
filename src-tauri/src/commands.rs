@@ -904,6 +904,17 @@ pub fn get_edge_peek_expanded(db: State<'_, Arc<DbHandle>>) -> Result<bool, Stri
     Ok(value == "true")
 }
 
+#[tauri::command]
+pub fn set_edge_peek_y(app: AppHandle, db: State<'_, Arc<DbHandle>>, y: f64) -> Result<(), String> {
+    let clamped = y.max(0.0);
+    crate::window::set_anchor_center_y(clamped);
+    db.update_setting("edge_peek_y", &clamped.to_string())?;
+    if let Some(window) = app.get_webview_window("edge_peek") {
+        crate::window::apply_edge_peek_geometry(&window, EDGE_PEEK_EXPANDED.load(Ordering::SeqCst));
+    }
+    Ok(())
+}
+
 // ─── Compact Mode ──────────────────────────────────────────────────────────────
 
 #[tauri::command]

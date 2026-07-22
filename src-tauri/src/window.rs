@@ -56,7 +56,7 @@ fn get_anchor_center_y() -> f64 {
     f64::from_bits(atomic.load(Ordering::Relaxed))
 }
 
-pub(crate) fn set_anchor_center_y(y: f64) {
+fn set_anchor_center_y(y: f64) {
     let atomic = ANCHOR_CENTER_Y.get_or_init(|| std::sync::atomic::AtomicU64::new(0));
     atomic.store(y.to_bits(), Ordering::Relaxed);
 }
@@ -435,7 +435,7 @@ fn edge_peek_geometry(sw: f64, _sh: f64, expanded: bool) -> (f64, f64, f64, f64)
     (x, y, w, h)
 }
 
-pub(crate) fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
+fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
     let Some(monitor) = window
         .current_monitor()
         .ok()

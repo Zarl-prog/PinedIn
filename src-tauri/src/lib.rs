@@ -198,13 +198,6 @@ pub fn run() {
             commands::COMPACT_MODE.store(compact_enabled, std::sync::atomic::Ordering::SeqCst);
             commands::EDGE_PEEK_ENABLED.store(edge_peek_enabled, std::sync::atomic::Ordering::SeqCst);
 
-            // Restore saved Y position
-            if let Ok(Some(y_str)) = db_handle.get_setting("edge_peek_y") {
-                if let Ok(y) = y_str.parse::<f64>() {
-                    window::set_anchor_center_y(y.max(0.0));
-                }
-            }
-
             // Only open edge peek if enabled AND there are incomplete tasks
             if edge_peek_enabled {
                 if let Ok(tasks) = db_handle.get_incomplete_tasks() {
@@ -369,7 +362,6 @@ pub fn run() {
             commands::expand_edge_peek,
             commands::collapse_edge_peek,
             commands::get_edge_peek_expanded,
-            commands::set_edge_peek_y,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

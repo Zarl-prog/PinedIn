@@ -3,20 +3,36 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Task } from "../lib/tauriCommands";
+import { formatCardDate } from "../lib/utils";
+
+// Remaining time on a timed task, formatted compactly (e.g. "2h left",
+// "12m left", "overdue"). Returns null when the task isn't timed or
+// hasn't been started yet.
+function getTimeLeft(task: Task): string | null {
+  if (!task.time_limit_minutes || !task.started_at) return null;
+  const totalMs = task.time_limit_minutes * 60 * 1000;
+  const elapsed = Date.now() - new Date(task.started_at).getTime();
+  const remaining = totalMs - elapsed;
+  if (remaining <= 0) return "overdue";
+  const mins = Math.round(remaining / 60000);
+  if (mins >= 60) {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return m > 0 ? `${h}h ${m}m left` : `${h}h left`;
+  }
+  return `${Math.max(1, mins)}m left`;
+}
 
 export default function EdgePeek() {
   const [expanded, setExpanded] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [hovered, setHovered] = useState(false);
-  const [visible, setVisible] = useState(false);
+  const [, setTick] = useState(0);
   const toggling = useRef(false);
 
   useEffect(() => {
     invoke<boolean>("get_edge_peek_expanded")
-      .then((exp) => {
-        setExpanded(exp);
-        if (exp) setVisible(true);
-      })
+      .then(setExpanded)
       .catch(() => {});
   }, []);
 
@@ -35,13 +51,20 @@ export default function EdgePeek() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!expanded) return;
+    const hasTimed = tasks.some((t) => t.time_limit_minutes && t.started_at);
+    if (!hasTimed) return;
+    const id = setInterval(() => setTick((n) => n + 1), 1000);
+    return () => clearInterval(id);
+  }, [expanded, tasks]);
+
   async function expand() {
     if (toggling.current) return;
     toggling.current = true;
     try {
       await invoke("expand_edge_peek");
       setExpanded(true);
-      requestAnimationFrame(() => setVisible(true));
     } finally {
       toggling.current = false;
     }
@@ -51,10 +74,9 @@ export default function EdgePeek() {
     if (toggling.current) return;
     toggling.current = true;
     try {
-      setVisible(false);
+      setExpanded(false);
       await new Promise((r) => setTimeout(r, 150));
       await invoke("collapse_edge_peek");
-      setExpanded(false);
     } finally {
       toggling.current = false;
     }
@@ -66,16 +88,10 @@ export default function EdgePeek() {
     refresh();
   }
 
-  if (expanded) {
-    return (
-      <div style={containerStyle}>
-        <div
-          style={{
-            ...stripStyle,
-            opacity: visible ? 1 : 0,
-            transition: "opacity 150ms ease",
-          }}
-        >
+  return (
+    <div style={containerStyle}>
+      {expanded ? (
+        <div style={stripStyle}>
           <button
             onClick={collapse}
             style={chevronButtonStyle}
@@ -103,38 +119,34 @@ export default function EdgePeek() {
             )}
           </div>
         </div>
-      </div>
-    );
-  }
-
-  return (
-    <div style={containerStyle}>
-      <div
-        onClick={expand}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        style={{
-          ...pillStyle,
-          borderColor: hovered
-            ? "var(--border-card-strong, #333)"
-            : "var(--pill-border, #1A1A1A)",
-        }}
-      >
-        <CaretLeft
-          size={14}
-          weight="light"
+      ) : (
+        <div
+          onClick={expand}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
           style={{
-            color: "var(--pill-text, #fff)",
-            flexShrink: 0,
-            transform: hovered ? "translateX(-3px)" : "translateX(0)",
-            transition: "transform 150ms ease",
+            ...pillStyle,
+            borderColor: hovered
+              ? "var(--border-card-strong, #333)"
+              : "var(--pill-border, #1A1A1A)",
           }}
-        />
-        <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
-          <span style={countStyle}>{tasks.length}</span>
-          <span style={labelStyle}>TASKS</span>
+        >
+          <CaretLeft
+            size={14}
+            weight="light"
+            style={{
+              color: "var(--pill-text, #fff)",
+              flexShrink: 0,
+              transform: hovered ? "translateX(-3px)" : "translateX(0)",
+              transition: "transform 150ms ease",
+            }}
+          />
+          <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
+            <span style={countStyle}>{tasks.length}</span>
+            <span style={labelStyle}>TASKS</span>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -148,6 +160,12 @@ function TaskChip({
 }) {
   const [hovered, setHovered] = useState(false);
 
+  // Meta line: the due date (if set) plus any running timer countdown,
+  // e.g. "Today · 2h left". Shown only when there is something to say.
+  const timeLeft = getTimeLeft(task);
+  const dueLabel = task.due_time ? formatCardDate(task.due_time) : "";
+  const meta = [dueLabel, timeLeft].filter(Boolean).join(" · ");
+
   return (
     <div
       onMouseEnter={() => setHovered(true)}
@@ -159,18 +177,21 @@ function TaskChip({
           : "var(--border-card, #1A1A1A)",
       }}
     >
-      <span style={chipTitleStyle}>{task.title}</span>
+      <div style={chipTextStyle}>
+        <span style={chipTitleStyle}>{task.title}</span>
+        <span style={chipMetaStyle}>{meta}</span>
+      </div>
       <button
         onClick={onDone}
         style={chipDoneStyle}
         onMouseEnter={(e) => {
-          e.currentTarget.style.color = "var(--text-primary-card, #fff)";
+          e.currentTarget.style.color = "#22c55e";
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.color = "var(--text-muted-card, #666)";
         }}
       >
-        <CheckCircle size={13} weight="light" />
+        <CheckCircle size={20} weight="light" />
       </button>
     </div>
   );
@@ -233,11 +254,9 @@ const stripStyle: React.CSSProperties = {
   borderRadius: "34px 0 0 34px",
   display: "flex",
   flexDirection: "row",
-  alignItems: "center",
   paddingLeft: "12px",
   paddingRight: "8px",
   gap: "10px",
-  overflow: "hidden",
   fontFamily: "'Geist Mono', monospace",
 };
 
@@ -251,6 +270,7 @@ const chevronButtonStyle: React.CSSProperties = {
   justifyContent: "center",
   padding: "6px",
   flexShrink: 0,
+  alignSelf: "center",
   transition: "color 150ms ease",
 };
 
@@ -258,23 +278,34 @@ const taskRowStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "row",
   gap: "8px",
-  overflow: "hidden",
+  overflowX: "auto",
+  overflowY: "hidden",
   flex: 1,
   alignItems: "center",
+  scrollbarWidth: "thin",
+  paddingBottom: "2px",
 };
 
 const chipStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "row",
   alignItems: "center",
-  gap: "6px",
-  padding: "6px 10px",
+  gap: "8px",
+  padding: "8px 10px",
   borderRadius: "16px",
   border: "1px solid var(--border-card, #1A1A1A)",
   background: "var(--pill-bg, #0A0A0A)",
   flexShrink: 0,
-  maxWidth: "180px",
+  maxWidth: "200px",
   transition: "border-color 150ms ease",
+};
+
+const chipTextStyle: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "3px",
+  minWidth: 0,
+  flex: 1,
 };
 
 const chipTitleStyle: React.CSSProperties = {
@@ -283,7 +314,17 @@ const chipTitleStyle: React.CSSProperties = {
   whiteSpace: "nowrap",
   overflow: "hidden",
   textOverflow: "ellipsis",
+  lineHeight: 1.1,
+};
+
+const chipMetaStyle: React.CSSProperties = {
+  fontSize: "10px",
+  color: "var(--text-muted-card, #666)",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
   lineHeight: 1,
+  letterSpacing: "0.02em",
 };
 
 const chipDoneStyle: React.CSSProperties = {

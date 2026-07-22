@@ -1140,7 +1140,7 @@ export default function App() {
             onClick={toggleEdgePeek}
             className={`feature-seg-btn${edgePeekEnabled ? " active" : ""}`}
           >
-            <SidebarSimple size={15} weight="light" /> Edge
+            <SidebarSimple size={15} weight="light" /> Slide
             {!edgePeekSeen && (
               <span className="feature-new-dot" aria-label="New feature" title="New" />
             )}

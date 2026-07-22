@@ -1,11 +1,9 @@
 import { CaretLeft, CaretRight, CheckCircle } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { getCurrentWindow, LogicalPosition } from "@tauri-apps/api/window";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Task } from "../lib/tauriCommands";
 import { formatCardDate } from "../lib/utils";
-import { setEdgePeekY } from "../lib/tauriCommands";
 
 // Remaining time on a timed task, formatted compactly (e.g. "2h left",
 // "12m left", "overdue"). Returns null when the task isn't timed or
@@ -29,69 +27,13 @@ export default function EdgePeek() {
   const [expanded, setExpanded] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [hovered, setHovered] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
   const [, setTick] = useState(0);
   const toggling = useRef(false);
-  const dragStartMouseY = useRef(0);
-  const dragStartWindowY = useRef(0);
-  const dragWindowX = useRef(0);
-  const dragActive = useRef(false);
-  const dragCancel = useRef(false);
 
   useEffect(() => {
     invoke<boolean>("get_edge_peek_expanded")
       .then(setExpanded)
       .catch(() => {});
-    getCurrentWindow().outerPosition().then((pos) => {
-      dragStartWindowY.current = pos.y;
-      dragWindowX.current = pos.x;
-    });
-  }, []);
-
-  // Document-level drag listeners — attached once, active only when
-  // the left button is held after a mousedown on the edge-peek.
-  useEffect(() => {
-    function onMouseMove(e: MouseEvent) {
-      if (e.buttons !== 1) {
-        if (dragActive.current) {
-          dragActive.current = false;
-          setIsDragging(false);
-        }
-        return;
-      }
-      const dy = e.clientY - dragStartMouseY.current;
-      if (Math.abs(dy) > 3 && !dragActive.current) {
-        dragActive.current = true;
-        setIsDragging(true);
-      }
-      if (dragActive.current) {
-        getCurrentWindow().setPosition(
-          new LogicalPosition(dragWindowX.current, Math.max(0, dragStartWindowY.current + dy)),
-        );
-      }
-    }
-
-    function onMouseUp(e: MouseEvent) {
-      if (dragActive.current) {
-        const dy = e.clientY - dragStartMouseY.current;
-        setEdgePeekY(Math.max(0, dragStartWindowY.current + dy));
-        dragCancel.current = true;
-        // Allow click handlers to check the flag before it resets
-        requestAnimationFrame(() => {
-          dragCancel.current = false;
-        });
-      }
-      dragActive.current = false;
-      setIsDragging(false);
-    }
-
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
-    return () => {
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-      dragActive.current = false;
-    };
   }, []);
 
   async function refresh() {
@@ -146,37 +88,12 @@ export default function EdgePeek() {
     refresh();
   }
 
-  function handleMouseDown(e: React.MouseEvent) {
-    if (e.button !== 0) return;
-    dragStartMouseY.current = e.clientY;
-    dragActive.current = false;
-    setIsDragging(false);
-    getCurrentWindow().outerPosition().then((pos) => {
-      dragStartWindowY.current = pos.y;
-      dragWindowX.current = pos.x;
-    });
-  }
-
-  const dragLiftStyle: React.CSSProperties = isDragging
-    ? {
-        transform: "translateX(-6px)",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
-        transition: "transform 100ms ease, box-shadow 100ms ease",
-      }
-    : {};
-
   return (
-    <div style={containerStyle} onMouseDown={handleMouseDown}>
-      {isDragging && (
-        <div style={dropIndicatorStyle} />
-      )}
+    <div style={containerStyle}>
       {expanded ? (
-        <div style={{ ...stripStyle, ...dragLiftStyle }}>
+        <div style={stripStyle}>
           <button
-            onClick={() => {
-              if (dragCancel.current) return;
-              collapse();
-            }}
+            onClick={collapse}
             style={chevronButtonStyle}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = "var(--text-primary-card, #fff)";
@@ -204,15 +121,11 @@ export default function EdgePeek() {
         </div>
       ) : (
         <div
-          onClick={() => {
-            if (dragCancel.current) return;
-            expand();
-          }}
+          onClick={expand}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
           style={{
             ...pillStyle,
-            ...dragLiftStyle,
             borderColor: hovered
               ? "var(--border-card-strong, #333)"
               : "var(--pill-border, #1A1A1A)",
@@ -289,23 +202,11 @@ function TaskChip({
 const containerStyle: React.CSSProperties = {
   width: "100%",
   height: "100%",
-  position: "relative",
   background: "transparent",
   display: "flex",
   justifyContent: "flex-end",
   alignItems: "center",
   overflow: "hidden",
-};
-
-const dropIndicatorStyle: React.CSSProperties = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
-  height: "2px",
-  background: "var(--accent, #2f6df6)",
-  pointerEvents: "none",
-  zIndex: 10,
 };
 
 const pillStyle: React.CSSProperties = {

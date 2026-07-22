@@ -333,6 +333,7 @@ export default function Onboarding() {
 
   const tooltipPos = useMemo<React.CSSProperties>(() => {
     const tW = 340;
+    const tH = 240; // approx height, used to keep the tip on-screen vertically
     const gap = 14;
     if (!currentStep || currentStep.placement === "center" || !rect) {
       return { top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: tW };
@@ -342,24 +343,32 @@ export default function Onboarding() {
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
     const clampX = (x: number) => Math.max(12, Math.min(x, winW - tW - 12));
+    const clampY = (y: number) => Math.max(12, Math.min(y, winH - tH - 12));
 
     switch (currentStep.placement) {
-      case "top":
+      case "top": {
+        // If there isn't room above the target, drop below it instead.
+        if (rect.top < tH + gap + pad + 12) {
+          return { top: clampY(rect.top + rect.height + gap + pad), left: clampX(cx - tW / 2), width: tW };
+        }
         return { bottom: winH - rect.top + gap + pad, left: clampX(cx - tW / 2), width: tW };
-      case "left":
-        return {
-          right: winW - rect.left + gap + pad,
-          top: Math.max(12, Math.min(cy - 90, winH - 200)),
-          width: tW,
-        };
-      case "right":
-        return {
-          left: rect.left + rect.width + gap + pad,
-          top: Math.max(12, Math.min(cy - 90, winH - 200)),
-          width: tW,
-        };
+      }
+      case "left": {
+        // If the target is too wide to leave room on its left, center horizontally.
+        if (rect.left < tW + gap + pad + 12) {
+          return { top: clampY(cy - tH / 2), left: clampX(cx - tW / 2), width: tW };
+        }
+        return { right: winW - rect.left + gap + pad, top: clampY(cy - 90), width: tW };
+      }
+      case "right": {
+        // If the target is too wide to leave room on its right, center horizontally.
+        if (rect.left + rect.width + tW + gap + pad + 12 > winW) {
+          return { top: clampY(cy - tH / 2), left: clampX(cx - tW / 2), width: tW };
+        }
+        return { left: rect.left + rect.width + gap + pad, top: clampY(cy - 90), width: tW };
+      }
       default:
-        return { top: rect.top + rect.height + gap + pad, left: clampX(cx - tW / 2), width: tW };
+        return { top: clampY(rect.top + rect.height + gap + pad), left: clampX(cx - tW / 2), width: tW };
     }
   }, [currentStep, rect, pad]);
 

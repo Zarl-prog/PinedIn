@@ -55,7 +55,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: bundle-windows
-          path: src-tauri/target/release/bundle/
+          path: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/
 
   build-linux:
     needs: verify-version
@@ -124,7 +124,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: bundle-macos
-          path: src-tauri/target/release/bundle/
+          path: src-tauri/target/aarch64-apple-darwin/release/bundle/
 
   create-release:
     needs: [build-windows, build-linux, build-macos]

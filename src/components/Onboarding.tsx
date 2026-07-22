@@ -464,15 +464,27 @@ export default function Onboarding() {
             {phase === "welcome" && (
               <motion.div
                 key="welcome"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: REDUCED_MOTION ? 0 : 0.28 }}
+                style={{
+                  position: "fixed",
+                  inset: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 24,
+                  zIndex: 10001,
+                  pointerEvents: "none",
+                }}
+              >
+              <motion.div
                 initial={{ opacity: 0, scale: 0.96, y: 16 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.96, y: -16 }}
                 transition={spring}
                 style={{
-                  position: "fixed",
-                  top: "50%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
                   background: "var(--bg-modal)",
                   border: "1px solid var(--border)",
                   borderRadius: 18,
@@ -484,7 +496,6 @@ export default function Onboarding() {
                   alignItems: "center",
                   textAlign: "center",
                   boxShadow: "var(--shadow-menu)",
-                  zIndex: 10001,
                   fontFamily: "'Geist Mono', monospace",
                   pointerEvents: "auto",
                 }}
@@ -613,6 +624,7 @@ export default function Onboarding() {
                 >
                   I’ll figure it out myself
                 </button>
+              </motion.div>
               </motion.div>
             )}
 

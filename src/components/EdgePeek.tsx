@@ -256,6 +256,7 @@ const stripStyle: React.CSSProperties = {
   paddingLeft: "12px",
   paddingRight: "8px",
   gap: "10px",
+  overflow: "hidden",
   fontFamily: "'Geist Mono', monospace",
 };
 

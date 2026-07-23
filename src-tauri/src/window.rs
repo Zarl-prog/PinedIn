@@ -417,8 +417,8 @@ const EDGE_PEEK_TOP_OFFSET: f64 = 100.0;
 
 /// Returns (x, y, w, h) in logical pixels, right-edge anchored.
 /// Height stays fixed at 68px in both states — expanding only widens leftward.
-/// Y is always EDGE_PEEK_TOP_OFFSET from the top (stored as anchor for consistency).
-fn edge_peek_geometry(sw: f64, _sh: f64, expanded: bool) -> (f64, f64, f64, f64) {
+/// Y is clamped so the window stays fully on-screen.
+fn edge_peek_geometry(sw: f64, sh: f64, expanded: bool) -> (f64, f64, f64, f64) {
     let anchor_y = get_anchor_center_y();
     if anchor_y == 0.0 {
         // Anchor is the TOP of the pill, not center
@@ -431,7 +431,8 @@ fn edge_peek_geometry(sw: f64, _sh: f64, expanded: bool) -> (f64, f64, f64, f64)
         (EDGE_PEEK_TAB_W, EDGE_PEEK_TAB_H)
     };
     let x = (sw - w).max(0.0);
-    let y = get_anchor_center_y();
+    let max_y = (sh - h).max(0.0);
+    let y = get_anchor_center_y().clamp(0.0, max_y);
     (x, y, w, h)
 }
 

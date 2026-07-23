@@ -56,7 +56,7 @@ fn get_anchor_center_y() -> f64 {
     f64::from_bits(atomic.load(Ordering::Relaxed))
 }
 
-fn set_anchor_center_y(y: f64) {
+pub(crate) fn set_anchor_center_y(y: f64) {
     let atomic = ANCHOR_CENTER_Y.get_or_init(|| std::sync::atomic::AtomicU64::new(0));
     atomic.store(y.to_bits(), Ordering::Relaxed);
 }

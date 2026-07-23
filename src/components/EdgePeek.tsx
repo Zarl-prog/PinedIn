@@ -74,9 +74,8 @@ export default function EdgePeek() {
     if (toggling.current) return;
     toggling.current = true;
     try {
-      setExpanded(false);
-      await new Promise((r) => setTimeout(r, 150));
       await invoke("collapse_edge_peek");
+      setExpanded(false);
     } finally {
       toggling.current = false;
     }

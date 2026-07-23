@@ -215,7 +215,7 @@ const pillStyle: React.CSSProperties = {
   background: "var(--pill-bg, #0A0A0A)",
   border: "1px solid var(--pill-border, #1A1A1A)",
   borderRight: "none",
-  cursor: "pointer",
+  cursor: "grab",
   display: "flex",
   flexDirection: "row",
   alignItems: "center",

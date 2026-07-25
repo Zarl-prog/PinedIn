@@ -100,22 +100,16 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    let u1: (() => void) | null = null;
+    let u2: (() => void) | null = null;
     const p1 = listen<{ name: string }>("workspace_activated", (e) => {
       setActiveWorkspaceName(e.payload.name);
     });
     const p2 = listen("workspace_deactivated", () => {
       setActiveWorkspaceName(null);
     });
-    return () => {
-      p1.then(
-        (f) => f(),
-        () => {},
-      );
-      p2.then(
-        (f) => f(),
-        () => {},
-      );
-    };
+    Promise.all([p1, p2]).then(([f1, f2]) => { u1 = f1; u2 = f2; });
+    return () => { u1?.(); u2?.(); };
   }, []);
 
   const [updateAvailable, setUpdateAvailable] = useState<string | null>(null);
@@ -131,6 +125,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    let unlisten: (() => void) | null = null;
     const p = listen<number>("open_edit_task", (event) => {
       const taskId = event.payload;
       const task = useReminderStore.getState().tasks.find((t) => t.id === taskId);
@@ -140,25 +135,18 @@ export default function App() {
         setEditingTask(found);
       }
     });
-    return () => {
-      p.then(
-        (f) => f(),
-        () => {},
-      );
-    };
-  }, []); // all refs are stable
+    p.then((u) => { unlisten = u; });
+    return () => { unlisten?.(); };
+  }, []);
 
   useEffect(() => {
+    let unlisten: (() => void) | null = null;
     const p = listen("tasks-updated", () => {
       fetchTasks();
     });
-    return () => {
-      p.then(
-        (f) => f(),
-        () => {},
-      );
-    };
-  }, []); // fetchTasks is stable via getState()
+    p.then((u) => { unlisten = u; });
+    return () => { unlisten?.(); };
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -222,18 +210,12 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    let u1: (() => void) | null = null;
+    let u2: (() => void) | null = null;
     const p1 = listen("compact_mode_enabled", () => setCompactModeLocal(true));
     const p2 = listen("compact_mode_disabled", () => setCompactModeLocal(false));
-    return () => {
-      p1.then(
-        (f) => f(),
-        () => {},
-      );
-      p2.then(
-        (f) => f(),
-        () => {},
-      );
-    };
+    Promise.all([p1, p2]).then(([f1, f2]) => { u1 = f1; u2 = f2; });
+    return () => { u1?.(); u2?.(); };
   }, []);
 
   const toggleCompactMode = async () => {
@@ -283,15 +265,10 @@ export default function App() {
     getEdgePeekEnabled()
       .then(setEdgePeekEnabledLocal)
       .catch(() => {});
-    // Compact mode and edge peek are mutually exclusive — when compact mode
-    // turns on, reflect that edge peek is now off in the footer toggle.
+    let unlisten: (() => void) | null = null;
     const p1 = listen("compact_mode_enabled", () => setEdgePeekEnabledLocal(false));
-    return () => {
-      p1.then(
-        (f) => f(),
-        () => {},
-      );
-    };
+    p1.then((u) => { unlisten = u; });
+    return () => { unlisten?.(); };
   }, []);
 
   const toggleShake = async () => {
@@ -318,27 +295,21 @@ export default function App() {
   const [showGnomeTrayWarning, setShowGnomeTrayWarning] = useState(false);
 
   useEffect(() => {
+    let unlisten: (() => void) | null = null;
     const p = listen("show_wayland_warning", () => {
       setShowWaylandWarning(true);
     });
-    return () => {
-      p.then(
-        (f) => f(),
-        () => {},
-      );
-    };
+    p.then((u) => { unlisten = u; });
+    return () => { unlisten?.(); };
   }, []);
 
   useEffect(() => {
+    let unlisten: (() => void) | null = null;
     const p = listen("show_gnome_tray_warning", () => {
       setShowGnomeTrayWarning(true);
     });
-    return () => {
-      p.then(
-        (f) => f(),
-        () => {},
-      );
-    };
+    p.then((u) => { unlisten = u; });
+    return () => { unlisten?.(); };
   }, []);
 
   const [searchQuery, setSearchQuery] = useState("");

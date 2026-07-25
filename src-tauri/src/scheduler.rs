@@ -1,6 +1,6 @@
 use crate::db::DbHandle;
 use crate::window;
-use chrono::Local;
+use chrono::Utc;
 use std::sync::Arc;
 use std::time::Duration;
 use tauri::{AppHandle, Manager};
@@ -27,7 +27,7 @@ fn check_and_spawn_due_tasks(app: &AppHandle) {
         None => return,
     };
 
-    let now = Local::now().to_rfc3339();
+    let now = Utc::now().to_rfc3339();
     let due = match db.get_due_presceduled_tasks(&now) {
         Ok(tasks) => tasks,
         Err(e) => {

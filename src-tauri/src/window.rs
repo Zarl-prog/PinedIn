@@ -198,24 +198,25 @@ pub fn restack_task_cards(app: &AppHandle) {
 
 /// Open task card windows for all incomplete tasks, stacked vertically.
 pub fn open_all_task_cards(app: &AppHandle, tasks: &[Task]) {
-    for (i, task) in tasks.iter().enumerate() {
-        #[cfg(target_os = "linux")]
-        {
-            // Stagger each window by 200ms on Linux to prevent WebKitGTK
-            // crash from spawning too many WebView processes at once.
-            if i > 0 {
-                std::thread::sleep(std::time::Duration::from_millis(200 * i as u64));
+    let app = app.clone();
+    let tasks: Vec<Task> = tasks.to_vec();
+    std::thread::spawn(move || {
+        for (i, task) in tasks.iter().enumerate() {
+            #[cfg(target_os = "linux")]
+            {
+                if i > 0 {
+                    std::thread::sleep(std::time::Duration::from_millis(200));
+                }
+            }
+            if let Err(e) = open_task_card(&app, task, 0) {
+                eprintln!(
+                    "Failed to open task card for task {}: {e}",
+                    task.id.unwrap_or(0)
+                );
             }
         }
-        let _ = i; // suppress unused warning on non-Linux
-        if let Err(e) = open_task_card(app, task, 0) {
-            eprintln!(
-                "Failed to open task card for task {}: {e}",
-                task.id.unwrap_or(0)
-            );
-        }
-    }
-    restack_task_cards(app);
+        restack_task_cards(&app);
+    });
 }
 
 /// Open a task card window at an explicit position (for workspace restore).

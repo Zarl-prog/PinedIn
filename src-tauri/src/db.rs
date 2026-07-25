@@ -615,7 +615,7 @@ impl DbHandle {
         time_limit_minutes: Option<i64>,
         workspace_id: Option<i64>,
     ) -> Result<Task, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let mut conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
         let now = chrono::Utc::now().to_rfc3339();
         let started_at = if time_limit_minutes.is_some() {
             Some(chrono::Local::now().to_rfc3339())
@@ -623,9 +623,11 @@ impl DbHandle {
             None
         };
 
-        conn.execute_batch("BEGIN").map_err(|e| format!("Transaction error: {e}"))?;
+        let tx = conn
+            .transaction()
+            .map_err(|e| format!("Transaction error: {e}"))?;
 
-        if let Err(e) = conn.execute(
+        tx.execute(
             "INSERT INTO tasks (title, description, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at, workspace_id)
              VALUES (?1, ?2, ?3, 0, ?4, ?5, ?6, ?7, ?8, 0, NULL, ?9)",
             rusqlite::params![
@@ -639,22 +641,18 @@ impl DbHandle {
                 started_at,
                 workspace_id
             ],
-        ) {
-            let _ = conn.execute_batch("ROLLBACK");
-            return Err(format!("Failed to create recurred task: {e}"));
-        }
+        )
+        .map_err(|e| format!("Failed to create recurred task: {e}"))?;
 
-        let new_id = conn.last_insert_rowid();
+        let new_id = tx.last_insert_rowid();
 
-        if let Err(e) = conn.execute(
+        tx.execute(
             "UPDATE tasks SET completed=1 WHERE id=?1",
             rusqlite::params![id],
-        ) {
-            let _ = conn.execute_batch("ROLLBACK");
-            return Err(format!("Failed to complete original task: {e}"));
-        }
+        )
+        .map_err(|e| format!("Failed to complete original task: {e}"))?;
 
-        conn.execute_batch("COMMIT").map_err(|e| format!("Commit error: {e}"))?;
+        tx.commit().map_err(|e| format!("Commit error: {e}"))?;
 
         Ok(Task {
             id: Some(new_id),
@@ -855,26 +853,24 @@ impl DbHandle {
     }
 
     pub fn delete_workspace(&self, id: i64) -> Result<(), String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
-        conn.execute_batch("BEGIN").map_err(|e| format!("Transaction error: {e}"))?;
+        let mut conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let tx = conn
+            .transaction()
+            .map_err(|e| format!("Transaction error: {e}"))?;
 
-        if let Err(e) = conn.execute(
+        tx.execute(
             "DELETE FROM tasks WHERE workspace_id = ?1",
             rusqlite::params![id],
-        ) {
-            let _ = conn.execute_batch("ROLLBACK");
-            return Err(format!("Failed to delete workspace tasks: {e}"));
-        }
+        )
+        .map_err(|e| format!("Failed to delete workspace tasks: {e}"))?;
 
-        if let Err(e) = conn.execute(
+        tx.execute(
             "DELETE FROM workspaces WHERE id = ?1",
             rusqlite::params![id],
-        ) {
-            let _ = conn.execute_batch("ROLLBACK");
-            return Err(format!("Failed to delete workspace: {e}"));
-        }
+        )
+        .map_err(|e| format!("Failed to delete workspace: {e}"))?;
 
-        conn.execute_batch("COMMIT").map_err(|e| format!("Commit error: {e}"))?;
+        tx.commit().map_err(|e| format!("Commit error: {e}"))?;
         Ok(())
     }
 

@@ -882,25 +882,36 @@ fn tool_snooze_task(
         .and_then(|v| v.as_i64())
         .ok_or_else(|| "Missing required argument: minutes".to_string())?;
 
-    let task = state.db.get_task_by_id(task_id)?;
-    let now = chrono::Utc::now();
-    let snooze_until = now + chrono::Duration::minutes(minutes);
-    let due = snooze_until.format("%Y-%m-%d %H:%M").to_string();
-
-    state.db.update_task(
-        task_id,
-        &task.title,
-        &task.description,
-        &due,
-        None,
-        None,
-        None,
-        None,
-    )?;
-
+    // MCP snooze: hide the card and re-show after N minutes with a background
+    // thread (same approach as the Tauri command). Unlike the Tauri command
+    // (which uses a fixed 30-min default), the MCP tool lets the caller
+    // specify an exact duration. Crucially, we do NOT mutate the task's
+    // due_date — the old Tauri-command approach did that and permanently
+    // corrupted it.
     window::close_task_card(&state.app_handle, task_id);
+    commands::pending_snoozes()
+        .lock()
+        .map_err(|e| e.to_string())?
+        .insert(task_id);
+
+    let app_clone = state.app_handle.clone();
+    let db_clone = state.db.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(minutes as u64 * 60));
+        let task = match db_clone.get_task_by_id(task_id) {
+            Ok(t) if !t.completed => t,
+            _ => {
+                let _ = commands::pending_snoozes().lock().map(|mut s| s.remove(&task_id));
+                return;
+            }
+        };
+        if !crate::commands::COMPACT_MODE.load(std::sync::atomic::Ordering::SeqCst) {
+            let _ = window::open_task_card(&app_clone, &task, 0);
+        }
+        let _ = commands::pending_snoozes().lock().map(|mut s| s.remove(&task_id));
+    });
     commands::emit_tasks_updated(&state.app_handle, &state.db);
-    Ok(format!("Task {} snoozed until {}.", task_id, due))
+    Ok(format!("Task {} snoozed for {} minutes.", task_id, minutes))
 }
 
 fn tool_update_setting(
@@ -921,7 +932,13 @@ fn tool_update_setting(
     state.db.update_setting(&key, &value)?;
 
     if key == "compact_mode" {
-        let _ = state.app_handle.emit("compact_mode_changed", value == "true");
+        let enabled = value == "true";
+        crate::commands::COMPACT_MODE.store(enabled, std::sync::atomic::Ordering::SeqCst);
+        if enabled {
+            let _ = state.app_handle.emit("compact_mode_enabled", ());
+        } else {
+            let _ = state.app_handle.emit("compact_mode_disabled", ());
+        }
     }
 
     Ok(format!("Setting '{}' set to '{}'.", key, value))
@@ -1018,7 +1035,7 @@ fn tool_get_settings(state: &McpState) -> Result<String, String> {
 }
 
 fn tool_get_shake_interval(state: &McpState) -> Result<String, String> {
-    let val = state.db.get_setting("shake_interval")?.unwrap_or_else(|| "5".to_string());
+    let val = state.db.get_setting("shake_interval")?.unwrap_or_else(|| "30".to_string());
     Ok(format!("Shake interval: {} seconds.", val))
 }
 
@@ -1233,6 +1250,13 @@ fn tool_add_presceduled_task(
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
 
+    // Validate scheduled_at is not in the past
+    let scheduled_dt = chrono::DateTime::parse_from_rfc3339(&scheduled_at)
+        .map_err(|e| format!("Invalid scheduled_at format: {e}"))?;
+    if scheduled_dt <= chrono::Utc::now() {
+        return Err("scheduled_at must be in the future".to_string());
+    }
+
     let id = state.db.create_presceduled_task(
         &title,
         &description,
@@ -1260,7 +1284,7 @@ fn tool_get_presceduled_tasks(state: &McpState) -> Result<String, String> {
                 "- #{} {} (scheduled: {}, due: {})",
                 id,
                 t.title,
-                t.created_at,
+                t.scheduled_at.as_deref().unwrap_or("unknown"),
                 if t.due_time.is_empty() { "none" } else { &t.due_time }
             )
         })

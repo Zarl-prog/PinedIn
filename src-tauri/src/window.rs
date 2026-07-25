@@ -545,13 +545,8 @@ pub fn open_edge_peek_window(app: &AppHandle, expanded: bool) {
         #[cfg(not(target_os = "linux"))]
         let result = build();
 
-        match result {
-            Ok(window) => {
-                apply_edge_peek_geometry(&window, expanded);
-            }
-            Err(e) => {
-                eprintln!("Failed to open edge peek window: {e}");
-            }
+        if let Err(e) = result {
+            eprintln!("Failed to open edge peek window: {e}");
         }
     } else {
         eprintln!("[edge_peek] no primary monitor, cannot open window");

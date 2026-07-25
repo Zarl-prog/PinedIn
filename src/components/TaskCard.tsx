@@ -187,7 +187,6 @@ export default function TaskCard({
 
   const handleDone = useCallback(async () => {
     await invoke("complete_task", { id: taskId });
-    await getCurrentWindow().close();
   }, [taskId]);
 
   const handleSnooze = useCallback(async () => {

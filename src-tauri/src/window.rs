@@ -201,10 +201,10 @@ pub fn open_all_task_cards(app: &AppHandle, tasks: &[Task]) {
     let app = app.clone();
     let tasks: Vec<Task> = tasks.to_vec();
     std::thread::spawn(move || {
-        for (i, task) in tasks.iter().enumerate() {
+        for (_i, task) in tasks.iter().enumerate() {
             #[cfg(target_os = "linux")]
             {
-                if i > 0 {
+                if _i > 0 {
                     std::thread::sleep(std::time::Duration::from_millis(200));
                 }
             }
@@ -464,8 +464,8 @@ fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
             let hwnd: windows::Win32::Foundation::HWND = hwnd;
             let x_px = (x * scale).round() as i32;
             let y_px = (y * scale).round() as i32;
-            let w_px = (w * scale).round().max(1) as i32;
-            let h_px = (h * scale).round().max(1) as i32;
+            let w_px = (w * scale).round().max(1.0) as i32;
+            let h_px = (h * scale).round().max(1.0) as i32;
             unsafe {
                 let ok = windows::Win32::UI::WindowsAndMessaging::SetWindowPos(
                     hwnd,
@@ -476,10 +476,10 @@ fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
                         | windows::Win32::UI::WindowsAndMessaging::SWP_NOOWNERZORDER
                         | windows::Win32::UI::WindowsAndMessaging::SWP_ASYNCWINDOWPOS,
                 );
-                if !ok.as_bool() {
+                if let Err(e) = ok {
                     eprintln!(
                         "[edge_peek] SetWindowPos failed: {}",
-                        std::io::Error::last_os_error()
+                        e
                     );
                 }
             }

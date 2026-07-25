@@ -150,19 +150,6 @@ pub fn run() {
                 {
                     let _ = main_window.hide();
                     let _ = main_window.show();
-                    // Request round corners via DWM on Windows 11.
-                    // Windows 10 and older ignore this gracefully.
-                    if let Ok(hwnd) = main_window.hwnd() {
-                        let pref: u32 = 2;
-                        unsafe {
-                            let _ = windows::Win32::UI::Controls::DwmSetWindowAttribute(
-                                hwnd,
-                                windows::Win32::UI::Controls::DWMWA_WINDOW_CORNER_PREFERENCE,
-                                &pref as *const _ as *const std::ffi::c_void,
-                                std::mem::size_of::<u32>() as u32,
-                            );
-                        }
-                    }
                 }
 
                 // Retry: if WebKit failed to load the bundled frontend on

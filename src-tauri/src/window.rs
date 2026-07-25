@@ -443,6 +443,7 @@ fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
         .flatten()
         .or_else(|| window.primary_monitor().ok().flatten())
     else {
+        eprintln!("[edge_peek] no monitor available, skipping geometry update");
         return;
     };
     let scale = monitor.scale_factor();
@@ -524,9 +525,6 @@ pub fn open_edge_peek_window(app: &AppHandle, expanded: bool) {
             .inner_size(w, h)
             .resizable(false)
             .decorations(false);
-            // Transparent so only the rounded pill/strip is visible — the
-            // rest of the window (outside the rounded corners) shows through
-            // instead of rendering as a black rectangle.
             #[cfg(not(target_os = "macos"))]
             let builder = builder.transparent(true);
             builder
@@ -551,6 +549,8 @@ pub fn open_edge_peek_window(app: &AppHandle, expanded: bool) {
                 eprintln!("Failed to open edge peek window: {e}");
             }
         }
+    } else {
+        eprintln!("[edge_peek] no primary monitor, cannot open window");
     }
 }
 

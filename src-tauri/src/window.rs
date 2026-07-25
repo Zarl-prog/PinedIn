@@ -191,9 +191,6 @@ pub fn restack_task_cards(app: &AppHandle) {
             let _ = window.set_position(LogicalPosition::new(x, y));
             #[cfg(target_os = "linux")]
             let _ = window.set_always_on_top(true);
-
-    #[cfg(target_os = "windows")]
-    let _ = window.set_background_color(Some(tauri::utils::config::Color(0, 0, 0, 255)));
             y += size.height + CARD_GAP;
         }
     }
@@ -327,8 +324,6 @@ pub fn open_quick_add_window(app: &AppHandle) {
         }
     });
 
-    #[cfg(target_os = "windows")]
-    let _ = window.set_background_color(Some(tauri::utils::config::Color(0, 0, 0, 255)));
 }
 
 fn get_quick_add_position(app: &AppHandle) -> (f64, f64) {

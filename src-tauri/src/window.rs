@@ -450,34 +450,44 @@ fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
     let sh = monitor.size().height as f64 / scale;
     let (x, y, w, h) = edge_peek_geometry(sw, sh, expanded);
 
+    // Always update Tauri's internal state first — this is the source of truth
+    // for the webview bounds cache. Without it WebView2 content layout desyncs
+    // from the native window on Windows (B1).
+    let gen = bump_edge_peek_gen();
+    let _ = window.set_size(Size::Logical(LogicalSize::new(w, h)));
+    let _ = window.set_position(Position::Logical(LogicalPosition::new(x, y)));
+
     #[cfg(target_os = "windows")]
     {
+        // Reinforce with the native API so the OS sees the change immediately,
+        // but never bypass Tauri's internal state (B1). Use SWP_ASYNCWINDOWPOS
+        // because commands run on tokio threads, not the UI thread — a
+        // synchronous SetWindowPos could deadlock (B2).
         if let Ok(hwnd) = window.hwnd() {
             let hwnd: windows::Win32::Foundation::HWND = hwnd;
-            let x_px = (x * scale) as i32;
-            let y_px = (y * scale) as i32;
-            let w_px = (w * scale) as i32;
-            let h_px = (h * scale) as i32;
+            let x_px = (x * scale).round() as i32;
+            let y_px = (y * scale).round() as i32;
+            let w_px = (w * scale).round().max(1) as i32;
+            let h_px = (h * scale).round().max(1) as i32;
             unsafe {
-                let _ = windows::Win32::UI::WindowsAndMessaging::SetWindowPos(
+                let ok = windows::Win32::UI::WindowsAndMessaging::SetWindowPos(
                     hwnd,
                     None,
                     x_px, y_px, w_px, h_px,
                     windows::Win32::UI::WindowsAndMessaging::SWP_NOZORDER
                         | windows::Win32::UI::WindowsAndMessaging::SWP_NOACTIVATE
-                        | windows::Win32::UI::WindowsAndMessaging::SWP_NOOWNERZORDER,
+                        | windows::Win32::UI::WindowsAndMessaging::SWP_NOOWNERZORDER
+                        | windows::Win32::UI::WindowsAndMessaging::SWP_ASYNCWINDOWPOS,
                 );
+                if !ok.as_bool() {
+                    eprintln!(
+                        "[edge_peek] SetWindowPos failed: {}",
+                        std::io::Error::last_os_error()
+                    );
+                }
             }
-            return;
         }
     }
-
-    // Cross-platform fallback (Linux, macOS):
-    // Linux WMs may reposition the window after a resize (gravity-based anchoring).
-    // We set size+position, then re-assert after a brief yield to override drift.
-    let gen = bump_edge_peek_gen();
-    let _ = window.set_size(Size::Logical(LogicalSize::new(w, h)));
-    let _ = window.set_position(Position::Logical(LogicalPosition::new(x, y)));
 
     #[cfg(target_os = "linux")]
     {

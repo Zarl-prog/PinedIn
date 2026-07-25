@@ -974,8 +974,8 @@ fn tool_align_tasks(state: &McpState) -> Result<String, String> {
     for (i, (_, window)) in task_windows.iter().enumerate() {
         let y = start_y + (i as f64 * (card_height + padding));
         let _ = window.set_position(tauri::PhysicalPosition::new(
-            (x * monitor.scale_factor()) as i32,
-            (y * monitor.scale_factor()) as i32,
+            (x * monitor.scale_factor()).round() as i32,
+            (y * monitor.scale_factor()).round() as i32,
         ));
     }
 

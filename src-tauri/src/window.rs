@@ -512,7 +512,11 @@ fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
 pub fn open_edge_peek_window(app: &AppHandle, expanded: bool) {
     let label = "edge_peek";
 
-    if let Some(monitor) = app.primary_monitor().ok().flatten() {
+    let monitor = app
+        .get_webview_window("main")
+        .and_then(|w| w.current_monitor().ok().flatten())
+        .or_else(|| app.primary_monitor().ok().flatten());
+    if let Some(monitor) = monitor {
         let scale = monitor.scale_factor();
         let sw = monitor.size().width as f64 / scale;
         let sh = monitor.size().height as f64 / scale;

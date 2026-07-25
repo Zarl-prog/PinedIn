@@ -139,27 +139,21 @@ pub fn run() {
                 // Force remove native decorations
                 let _ = main_window.set_decorations(false);
 
-                #[cfg(target_os = "linux")]
-                {
-                    // Transparent background + CSS border-radius on the root
-                    // div creates the appearance of rounded corners through
-                    // transparency clipping. On KDE/GNOME with compositing
-                    // this looks clean; on bare X11 it gracefully degrades.
-                    let _ = main_window.set_background_color(Some(Color(0, 0, 0, 0)));
-                }
-                #[cfg(not(target_os = "linux"))]
-                {
-                    let _ = main_window.set_background_color(Some(Color(0, 0, 0, 255)));
-                }
+                // Transparent background so CSS border-radius on the
+                // root div clips the visible content.  The CSS body
+                // and #root backgrounds fill the window; the corners
+                // outside the radius show the desktop through the
+                // transparent window.
+                let _ = main_window.set_background_color(Some(Color(0, 0, 0, 0)));
 
                 #[cfg(target_os = "windows")]
                 {
                     let _ = main_window.hide();
                     let _ = main_window.show();
-                    // Request rounded corners via DWM on Windows 11.
-                    // Windows 10 ignores this gracefully.
+                    // Request round corners via DWM on Windows 11.
+                    // Windows 10 and older ignore this gracefully.
                     if let Ok(hwnd) = main_window.hwnd() {
-                        let pref: u32 = 2; // DWMWCP_ROUND (small round)
+                        let pref: u32 = 2;
                         unsafe {
                             let _ = windows::Win32::UI::Controls::DwmSetWindowAttribute(
                                 hwnd,

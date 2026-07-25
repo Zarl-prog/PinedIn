@@ -138,9 +138,19 @@ pub fn run() {
 
                 // Force remove native decorations
                 let _ = main_window.set_decorations(false);
-                // Set opaque black background — helps window manager
-                // render the taskbar preview correctly on Linux X11.
-                let _ = main_window.set_background_color(Some(Color(0, 0, 0, 255)));
+
+                #[cfg(target_os = "linux")]
+                {
+                    // Transparent background + CSS border-radius on the root
+                    // div creates the appearance of rounded corners through
+                    // transparency clipping. On KDE/GNOME with compositing
+                    // this looks clean; on bare X11 it gracefully degrades.
+                    let _ = main_window.set_background_color(Some(Color(0, 0, 0, 0)));
+                }
+                #[cfg(not(target_os = "linux"))]
+                {
+                    let _ = main_window.set_background_color(Some(Color(0, 0, 0, 255)));
+                }
 
                 #[cfg(target_os = "windows")]
                 {

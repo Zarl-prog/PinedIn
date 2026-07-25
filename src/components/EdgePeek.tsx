@@ -29,6 +29,10 @@ export default function EdgePeek() {
   const [hovered, setHovered] = useState(false);
   const [, setTick] = useState(0);
   const toggling = useRef(false);
+  const autoCollapseRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hoveringRef = useRef(false);
+
+  const AUTO_COLLAPSE_MS = 3000;
 
   useEffect(() => {
     invoke<boolean>("get_edge_peek_expanded")
@@ -59,6 +63,35 @@ export default function EdgePeek() {
     const id = setInterval(() => setTick((n) => n + 1), 1000);
     return () => clearInterval(id);
   }, [expanded, tasks]);
+
+  // Auto-collapse the expanded strip after a short idle period.
+  // Resets whenever the user hovers in/out.
+  useEffect(() => {
+    if (!expanded) return;
+    function startTimer() {
+      if (autoCollapseRef.current) clearTimeout(autoCollapseRef.current);
+      autoCollapseRef.current = setTimeout(() => {
+        if (!hoveringRef.current) collapse();
+      }, AUTO_COLLAPSE_MS);
+    }
+    startTimer();
+    return () => {
+      if (autoCollapseRef.current) clearTimeout(autoCollapseRef.current);
+    };
+  }, [expanded]);
+
+  function handleStripEnter() {
+    hoveringRef.current = true;
+    if (autoCollapseRef.current) clearTimeout(autoCollapseRef.current);
+  }
+
+  function handleStripLeave() {
+    hoveringRef.current = false;
+    // Small grace period so quick accidental exits don't snap-shut
+    autoCollapseRef.current = setTimeout(() => {
+      if (!hoveringRef.current) collapse();
+    }, AUTO_COLLAPSE_MS);
+  }
 
   async function expand() {
     if (toggling.current) return;
@@ -91,7 +124,11 @@ export default function EdgePeek() {
   return (
     <div style={containerStyle}>
       {expanded ? (
-        <div style={stripStyle}>
+        <div
+          style={stripStyle}
+          onMouseEnter={handleStripEnter}
+          onMouseLeave={handleStripLeave}
+        >
           <button
             onClick={collapse}
             style={chevronButtonStyle}

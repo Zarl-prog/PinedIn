@@ -141,10 +141,24 @@ pub fn run() {
                 // Set opaque black background — helps window manager
                 // render the taskbar preview correctly on Linux X11.
                 let _ = main_window.set_background_color(Some(Color(0, 0, 0, 255)));
+
                 #[cfg(target_os = "windows")]
                 {
                     let _ = main_window.hide();
                     let _ = main_window.show();
+                    // Request rounded corners via DWM on Windows 11.
+                    // Windows 10 ignores this gracefully.
+                    if let Ok(hwnd) = main_window.hwnd() {
+                        let pref: u32 = 2; // DWMWCP_ROUND (small round)
+                        unsafe {
+                            let _ = windows::Win32::UI::Controls::DwmSetWindowAttribute(
+                                hwnd,
+                                windows::Win32::UI::Controls::DWMWA_WINDOW_CORNER_PREFERENCE,
+                                &pref as *const _ as *const std::ffi::c_void,
+                                std::mem::size_of::<u32>() as u32,
+                            );
+                        }
+                    }
                 }
 
                 // Retry: if WebKit failed to load the bundled frontend on

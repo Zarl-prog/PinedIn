@@ -139,10 +139,10 @@ pub fn open_task_card(app: &AppHandle, task: &Task, _index: usize) -> Result<(),
 
     let window = result.map_err(|e| format!("Failed to create task card window: {e}"))?;
 
-    // Re-assert always-on-top after creation — some window managers
-    // (notably GNOME/Mutter on Wayland) ignore the builder hint during
-    // Alt+Tab and may lower the window. This double-assertion helps.
-    #[cfg(any(target_os = "linux", target_os = "windows"))]
+    // Re-assert always-on-top after creation on Linux only — GNOME/Mutter
+    // on Wayland may drop the builder hint during Alt+Tab. Windows/macOS
+    // honour it natively so the re-assert is just noise.
+    #[cfg(target_os = "linux")]
     let _ = window.set_always_on_top(true);
 
     if ZEN_MODE.load(Ordering::SeqCst) {
@@ -189,8 +189,8 @@ pub fn restack_task_cards(app: &AppHandle) {
                 .map(|s| LogicalSize::new(s.width as f64 / scale, s.height as f64 / scale))
                 .unwrap_or(LogicalSize::new(CARD_WIDTH, CARD_HEIGHT));
             let _ = window.set_position(LogicalPosition::new(x, y));
-    #[cfg(any(target_os = "linux", target_os = "windows"))]
-    let _ = window.set_always_on_top(true);
+            #[cfg(target_os = "linux")]
+            let _ = window.set_always_on_top(true);
 
     #[cfg(target_os = "windows")]
     let _ = window.set_background_color(Some(tauri::utils::config::Color(0, 0, 0, 255)));
@@ -263,7 +263,7 @@ pub fn open_task_card_window_at(app: &AppHandle, task: &Task, x: f64, y: f64) {
         }
     };
 
-    #[cfg(any(target_os = "linux", target_os = "windows"))]
+    #[cfg(target_os = "linux")]
     let _ = window.set_always_on_top(true);
 
     if ZEN_MODE.load(Ordering::SeqCst) {
@@ -313,7 +313,7 @@ pub fn open_quick_add_window(app: &AppHandle) {
         }
     };
 
-    #[cfg(any(target_os = "linux", target_os = "windows"))]
+    #[cfg(target_os = "linux")]
     let _ = window.set_always_on_top(true);
 
     #[cfg(target_os = "linux")]
@@ -389,7 +389,7 @@ pub fn open_compact_pill_window(app: &AppHandle) {
         }
     };
 
-    #[cfg(any(target_os = "linux", target_os = "windows"))]
+    #[cfg(target_os = "linux")]
     let _ = _window.set_always_on_top(true);
 }
 

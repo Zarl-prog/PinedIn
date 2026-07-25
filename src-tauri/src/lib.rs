@@ -80,10 +80,10 @@ pub fn run() {
         }))
         .plugin(
             tauri_plugin_window_state::Builder::default()
-                // Deny-list the main window: we own its close behaviour
-                // (minimize-to-tray), and the plugin's own close handler
-                // would otherwise race with ours and destroy the window.
-                .with_denylist(&["main", "quick_add"])
+                // Deny-list windows we position programmatically: the plugin
+                // would otherwise save/restore their geometry from the
+                // registry and race with our own positioning on startup.
+                .with_denylist(&["main", "quick_add", "edge_peek", "compact_pill", "daily_digest"])
                 .build(),
         )
         .plugin(tauri_plugin_notification::init())

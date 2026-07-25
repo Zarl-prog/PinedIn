@@ -51,13 +51,14 @@ fn current_edge_peek_gen() -> u64 {
 /// Atomic anchor center Y for consistent positioning
 static ANCHOR_CENTER_Y: OnceLock<std::sync::atomic::AtomicU64> = OnceLock::new();
 
+/// Returns the anchor Y, or NaN if never set.
 fn get_anchor_center_y() -> f64 {
-    let atomic = ANCHOR_CENTER_Y.get_or_init(|| std::sync::atomic::AtomicU64::new(0));
+    let atomic = ANCHOR_CENTER_Y.get_or_init(|| std::sync::atomic::AtomicU64::new(f64::NAN.to_bits()));
     f64::from_bits(atomic.load(Ordering::Relaxed))
 }
 
 pub(crate) fn set_anchor_center_y(y: f64) {
-    let atomic = ANCHOR_CENTER_Y.get_or_init(|| std::sync::atomic::AtomicU64::new(0));
+    let atomic = ANCHOR_CENTER_Y.get_or_init(|| std::sync::atomic::AtomicU64::new(f64::NAN.to_bits()));
     atomic.store(y.to_bits(), Ordering::Relaxed);
 }
 
@@ -420,8 +421,7 @@ const EDGE_PEEK_TOP_OFFSET: f64 = 100.0;
 /// Y is clamped so the window stays fully on-screen.
 fn edge_peek_geometry(sw: f64, sh: f64, expanded: bool) -> (f64, f64, f64, f64) {
     let anchor_y = get_anchor_center_y();
-    if anchor_y == 0.0 {
-        // Anchor is the TOP of the pill, not center
+    if anchor_y.is_nan() {
         set_anchor_center_y(EDGE_PEEK_TOP_OFFSET);
     }
 

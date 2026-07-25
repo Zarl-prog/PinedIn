@@ -40,7 +40,7 @@
 - **Auto-Updater** – Checks for updates and can auto-install new versions
 - **System Tray** – Quick access from the system tray
 - **SQLite Database** – Persistent local storage for all tasks and settings
-- **Cross-Platform** – Windows, macOS, and Linux
+- **Cross-Platform** – Windows and Linux
 
 ## 📸 Screenshots
 
@@ -268,7 +268,6 @@ CREATE TABLE workspaces (
 | Platform | Status | Notes |
 |----------|--------|-------|
 | **Windows** | ✅ Fully Supported | NSIS installer, tested on Windows 10/11 |
-| **macOS** | ✅ Supported | DMG, requires macOS 12+ |
 | **Linux** | ✅ Supported | AppImage + Deb, tested on Ubuntu 22.04+ |
 
 ## Linux

@@ -654,8 +654,8 @@ pub fn snap_all_cards_to_grid(app: AppHandle) -> Result<(), String> {
         let y = start_y + (i as f64 * (card_height + padding));
         if y + card_height < screen_height {
             let _ = window.set_position(tauri::PhysicalPosition::new(
-                (x * monitor.scale_factor()) as i32,
-                (y * monitor.scale_factor()) as i32,
+                (x * monitor.scale_factor()).round() as i32,
+                (y * monitor.scale_factor()).round() as i32,
             ));
         }
     }

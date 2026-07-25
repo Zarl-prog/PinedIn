@@ -49,6 +49,7 @@ export default function CustomizeCardModal() {
   useEffect(() => {
     if (!open) return;
     setSaved(false);
+    dragging.current = null;
     invoke<Record<string, string>>("get_settings_map")
       .then((map) => {
         setW(map.custom_card_width ? parseInt(map.custom_card_width) : DEFAULT_W);
@@ -82,6 +83,10 @@ export default function CustomizeCardModal() {
 
       const onUp = () => {
         dragging.current = null;
+        cleanup();
+      };
+
+      const cleanup = () => {
         window.removeEventListener("mousemove", onMove);
         window.removeEventListener("mouseup", onUp);
       };

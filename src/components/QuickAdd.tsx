@@ -7,26 +7,30 @@ export default function QuickAdd() {
   const [value, setValue] = useState("");
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isClosing = useRef(false);
 
   useEffect(() => {
-    // Focus input immediately on mount
     const t = setTimeout(() => inputRef.current?.focus(), 50);
     return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {
-    // Close on blur — user clicked away
     const handleBlur = () => {
-      setTimeout(() => getCurrentWindow().close(), 100);
+      if (isClosing.current) return;
+      setTimeout(() => {
+        if (!isClosing.current) getCurrentWindow().close();
+      }, 100);
     };
     window.addEventListener("blur", handleBlur);
     return () => window.removeEventListener("blur", handleBlur);
   }, []);
 
   useEffect(() => {
-    // Close on Escape
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") getCurrentWindow().close();
+      if (e.key === "Escape") {
+        isClosing.current = true;
+        getCurrentWindow().close();
+      }
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
@@ -38,11 +42,15 @@ export default function QuickAdd() {
 
     setSaving(true);
     try {
-      const today = new Date().toISOString().split("T")[0];
+      const now = new Date();
+      const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+        .toISOString()
+        .split("T")[0];
       await invoke("quick_add_task", {
         title,
-        dueDate: today,
+        dueDate: localDate,
       });
+      isClosing.current = true;
       await getCurrentWindow().close();
     } catch (err) {
       console.error("Quick add failed:", err);

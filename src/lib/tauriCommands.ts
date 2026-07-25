@@ -162,14 +162,6 @@ export async function getDisplayMode(): Promise<string> {
   return invoke("get_display_mode");
 }
 
-export async function enableEdgePeek(): Promise<void> {
-  return invoke("enable_edge_peek");
-}
-
-export async function disableEdgePeek(): Promise<void> {
-  return invoke("disable_edge_peek");
-}
-
 export async function expandEdgePeek(): Promise<void> {
   return invoke("expand_edge_peek");
 }

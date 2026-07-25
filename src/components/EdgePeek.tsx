@@ -45,9 +45,10 @@ export default function EdgePeek() {
 
   useEffect(() => {
     refresh();
-    const unTasks = listen("tasks-updated", refresh);
+    let unTasks: (() => void) | null = null;
+    listen("tasks-updated", refresh).then((u) => { unTasks = u; });
     return () => {
-      unTasks.then((f) => f());
+      unTasks?.();
     };
   }, []);
 

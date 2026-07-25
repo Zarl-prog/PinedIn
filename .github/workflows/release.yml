@@ -90,44 +90,8 @@ jobs:
           name: bundle-linux
           path: src-tauri/target/release/bundle/
 
-  build-macos:
-    needs: verify-version
-    strategy:
-      fail-fast: false
-      matrix:
-        target:
-          - aarch64-apple-darwin
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          target: ${{ matrix.target }}
-
-      - run: npm ci
-
-      - run: npm run build
-
-      - uses: tauri-apps/tauri-action@v0
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        with:
-          args: --target ${{ matrix.target }}
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: bundle-macos
-          path: src-tauri/target/aarch64-apple-darwin/release/bundle/
-
-  create-release:
-    needs: [build-windows, build-linux, build-macos]
+    create-release:
+    needs: [build-windows, build-linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -148,7 +112,7 @@ jobs:
           FILES=()
           while IFS= read -r -d '' file; do
             FILES+=("$file")
-          done < <(find . -type f \( -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" -o -name "*.exe" -o -name "*.msi" \) -print0)
+          done < <(find . -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \) -print0)
 
           # Create single release with all platform artifacts
           gh release create "$TAG" --repo "$RELEASE_REPO" \

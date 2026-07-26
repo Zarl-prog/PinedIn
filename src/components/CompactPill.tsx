@@ -387,9 +387,9 @@ export default function CompactPill() {
         <div
           style={{
             position: "fixed",
-            top: tooltip.el.getBoundingClientRect().bottom + 6,
+            top: tooltip.el.getBoundingClientRect().top - 6,
             left: tooltip.el.getBoundingClientRect().left + tooltip.el.getBoundingClientRect().width / 2,
-            transform: "translateX(-50%)",
+            transform: "translateX(-50%) translateY(-100%)",
             background: "var(--pill-bg, #0A0A0A)",
             border: "1px solid var(--border-card, #1A1A1A)",
             borderRadius: "8px",

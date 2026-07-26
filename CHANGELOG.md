@@ -5,6 +5,21 @@ All notable changes to PinedIn will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.14] - 2026-07-26
+
+### Changed
+- **App icon**: Replaced with new white pin logo (outline-only map marker on transparent background)
+- **Scrollbar**: Restored visible thin scrollbar with theme-aware colors (replaces hidden scrollbar)
+- **MCP icon**: Replaced Phosphor Plug icon with custom inline SVG
+- **Command palette**: Moved ⌘K hint from search field into bottom toolbar
+- **Advanced options**: Added badge count showing how many advanced options are selected
+- **Dot pattern**: Increased opacity slightly across all themes
+
+### Fixed
+- **Compact mode**: Hide/show main window on compact mode toggle removed (simplified behavior)
+- **Edge peek / compact mode**: Made mutually exclusive to prevent conflicts
+- **macOS icon (.icns)**: Regenerated with correct multi-size PNG entries
+
 ## [0.3.0] - 2026-06-09
 
 ### Added

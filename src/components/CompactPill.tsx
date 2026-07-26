@@ -25,6 +25,15 @@ export default function CompactPill() {
   const [tooltip, setTooltip] = useState<{ title: string; description?: string; el: HTMLElement } | null>(null);
   const titleRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const win = getCurrentWindow();
+    if (tooltip) {
+      win.setSize(new LogicalSize(EXPANDED_W, EXPANDED_H + 80)).catch(() => {});
+    } else {
+      win.setSize(new LogicalSize(EXPANDED_W, EXPANDED_H)).catch(() => {});
+    }
+  }, [tooltip]);
+
   function getTimerColor(task: Task): string | null {
     if (!task.time_limit_minutes || !task.started_at) return null;
     const totalMs = task.time_limit_minutes * 60 * 1000;
@@ -387,9 +396,9 @@ export default function CompactPill() {
         <div
           style={{
             position: "fixed",
-            top: tooltip.el.getBoundingClientRect().top - 6,
+            top: tooltip.el.getBoundingClientRect().bottom + 6,
             left: tooltip.el.getBoundingClientRect().left + tooltip.el.getBoundingClientRect().width / 2,
-            transform: "translateX(-50%) translateY(-100%)",
+            transform: "translateX(-50%)",
             background: "var(--pill-bg, #0A0A0A)",
             border: "1px solid var(--border-card, #1A1A1A)",
             borderRadius: "8px",

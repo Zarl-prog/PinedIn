@@ -211,22 +211,22 @@ function TaskChip({
       style={{
         ...chipStyle,
         cursor: "pointer",
-        background: hovered
-          ? "radial-gradient(circle at 30% 30%, #22c55e 0%, #16a34a 100%)"
-          : "var(--pill-bg, #0A0A0A)",
+        background: hovered ? "#22c55e" : "var(--pill-bg, #0A0A0A)",
         borderColor: hovered ? "#22c55e" : "var(--border-card, #1A1A1A)",
-        justifyContent: hovered ? "center" : "flex-start",
-        transition: "all 150ms ease",
+        transition: "background 150ms ease, border-color 150ms ease",
       }}
     >
-      {hovered ? (
-        <CheckCircle size={22} weight="bold" style={{ color: "#fff" }} />
-      ) : (
-        <div style={chipTextStyle}>
-          <span style={chipTitleStyle}>{task.title}</span>
-          <span style={chipMetaStyle}>{meta}</span>
-        </div>
+      {hovered && (
+        <CheckCircle size={16} weight="bold" style={{ color: "#fff", flexShrink: 0 }} />
       )}
+      <div style={chipTextStyle}>
+        <span style={{ ...chipTitleStyle, color: hovered ? "#fff" : chipTitleStyle.color }}>
+          {task.title}
+        </span>
+        <span style={{ ...chipMetaStyle, color: hovered ? "rgba(255,255,255,0.7)" : chipMetaStyle.color }}>
+          {meta}
+        </span>
+      </div>
     </div>
   );
 }

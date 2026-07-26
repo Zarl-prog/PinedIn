@@ -905,7 +905,9 @@ fn tool_snooze_task(
                 return;
             }
         };
-        if !crate::commands::COMPACT_MODE.load(std::sync::atomic::Ordering::SeqCst) {
+        if !crate::commands::COMPACT_MODE.load(std::sync::atomic::Ordering::SeqCst)
+            && !crate::commands::EDGE_PEEK_ENABLED.load(std::sync::atomic::Ordering::SeqCst)
+        {
             let _ = window::open_task_card(&app_clone, &task, 0);
         }
         let _ = commands::pending_snoozes().lock().map(|mut s| s.remove(&task_id));
@@ -1013,7 +1015,7 @@ fn tool_uncomplete_task(
 
     if crate::commands::COMPACT_MODE.load(std::sync::atomic::Ordering::SeqCst) {
         crate::window::open_compact_pill_window(&state.app_handle);
-    } else {
+    } else if !crate::commands::EDGE_PEEK_ENABLED.load(std::sync::atomic::Ordering::SeqCst) {
         let _ = window::open_task_card(&state.app_handle, &task, 0);
         window::restack_task_cards(&state.app_handle);
     }
@@ -1122,7 +1124,9 @@ fn tool_load_workspace(
         }
     }
 
-    if !crate::commands::COMPACT_MODE.load(std::sync::atomic::Ordering::SeqCst) {
+    if !crate::commands::COMPACT_MODE.load(std::sync::atomic::Ordering::SeqCst)
+        && !crate::commands::EDGE_PEEK_ENABLED.load(std::sync::atomic::Ordering::SeqCst)
+    {
         if let Some(cards) = parsed["cards"].as_array() {
             for card in cards {
                 let tid = card["task_id"].as_i64().unwrap_or(0);

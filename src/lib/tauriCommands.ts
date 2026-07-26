@@ -162,8 +162,8 @@ export async function getDisplayMode(): Promise<string> {
   return invoke("get_display_mode");
 }
 
-export async function expandEdgePeek(taskCount: number = 0): Promise<void> {
-  return invoke("expand_edge_peek", { taskCount });
+export async function expandEdgePeek(): Promise<void> {
+  return invoke("expand_edge_peek");
 }
 
 export async function collapseEdgePeek(): Promise<void> {

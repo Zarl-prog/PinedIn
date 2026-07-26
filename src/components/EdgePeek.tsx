@@ -97,7 +97,7 @@ export default function EdgePeek() {
     if (toggling.current) return;
     toggling.current = true;
     try {
-      await invoke("expand_edge_peek", { taskCount: tasks.length });
+      await invoke("expand_edge_peek");
       setExpanded(true);
     } finally {
       toggling.current = false;

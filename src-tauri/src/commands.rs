@@ -876,9 +876,9 @@ pub fn toggle_edge_peek_from_shortcut(app: &AppHandle) {
 }
 
 #[tauri::command]
-pub fn expand_edge_peek(app: AppHandle, task_count: u32) -> Result<(), String> {
+pub fn expand_edge_peek(app: AppHandle) -> Result<(), String> {
     EDGE_PEEK_EXPANDED.store(true, Ordering::SeqCst);
-    crate::window::expand_edge_peek(&app, task_count);
+    crate::window::expand_edge_peek(&app);
     // Persist expanded state
     if let Some(db) = app.try_state::<Arc<DbHandle>>() {
         let _ = db.update_setting("edge_peek_expanded", "true");

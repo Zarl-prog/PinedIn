@@ -219,10 +219,10 @@ function TaskChip({
       }}
     >
       <div style={chipTextStyle}>
-        <span style={{ ...chipTitleStyle, color: hovered ? "#fff" : chipTitleStyle.color }}>
+        <span title={task.title} style={{ ...chipTitleStyle, color: hovered ? "#fff" : chipTitleStyle.color }}>
           {task.title}
         </span>
-        <span style={{ ...chipMetaStyle, color: hovered ? "rgba(255,255,255,0.7)" : chipMetaStyle.color }}>
+        <span title={meta} style={{ ...chipMetaStyle, color: hovered ? "rgba(255,255,255,0.7)" : chipMetaStyle.color }}>
           {meta}
         </span>
       </div>

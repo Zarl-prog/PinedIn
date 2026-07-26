@@ -393,21 +393,12 @@ html {
 
 /* ─── Scrollbar ─────────────────────────────────────────────────────────── */
 
-::-webkit-scrollbar {
-  width: 3px;
+/* Hide scrollbar visually but keep scroll functionality */
+* {
+  scrollbar-width: none;
 }
-
-::-webkit-scrollbar-track {
-  background: var(--scrollbar-track);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover);
+*::-webkit-scrollbar {
+  display: none;
 }
 
 /* ─── Date Input ────────────────────────────────────────────────────────── */

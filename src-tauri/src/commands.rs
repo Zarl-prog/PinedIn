@@ -839,8 +839,15 @@ pub fn set_edge_peek_enabled(app: AppHandle, db: State<'_, Arc<DbHandle>>, enabl
         }
     } else {
         crate::window::close_edge_peek_window(&app);
-        // Restore the normal floating task cards (mirrors compact-mode off).
-        reopen_task_cards(&app, db.inner());
+        let _ = app.emit("edge_peek_disabled", ());
+        // Restore the normal floating task cards — spawn to avoid
+        // deadlocking on Windows when creating multiple transparent windows.
+        let app_clone = app.clone();
+        let db_clone = db.inner().clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            reopen_task_cards(&app_clone, &db_clone);
+        });
     }
     Ok(())
 }
@@ -877,8 +884,15 @@ pub fn set_edge_peek_enabled_internal(app: AppHandle, db: Arc<DbHandle>, enabled
         }
     } else {
         crate::window::close_edge_peek_window(&app);
-        // Restore the normal floating task cards.
-        reopen_task_cards(&app, &db);
+        let _ = app.emit("edge_peek_disabled", ());
+        // Restore the normal floating task cards — spawn to avoid
+        // deadlocking on Windows when creating multiple transparent windows.
+        let app_clone = app.clone();
+        let db_clone = db.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            reopen_task_cards(&app_clone, &db_clone);
+        });
     }
     Ok(())
 }
@@ -949,6 +963,7 @@ pub fn set_compact_mode(app: AppHandle, db: State<'_, Arc<DbHandle>>, enabled: b
         db.update_setting("edge_peek_enabled", "false")?;
         EDGE_PEEK_ENABLED.store(false, Ordering::SeqCst);
         crate::window::close_edge_peek_window(&app);
+        let _ = app.emit("edge_peek_disabled", ());
 
         // Close open task cards
         let windows = app.webview_windows();
@@ -957,17 +972,28 @@ pub fn set_compact_mode(app: AppHandle, db: State<'_, Arc<DbHandle>>, enabled: b
                 let _ = window.close();
             }
         }
-        crate::window::open_compact_pill_window(&app);
+
+        // Spawn compact pill window in a thread to avoid deadlock on Windows
+        let app_clone = app.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            crate::window::open_compact_pill_window(&app_clone);
+        });
         let _ = app.emit("compact_mode_enabled", ());
     } else {
         crate::window::close_compact_pill_window(&app);
-        let db = db.inner();
-        if let Ok(tasks) = db.get_all_active_tasks() {
-            for (i, task) in tasks.iter().enumerate() {
-                let _ = crate::window::open_task_card(&app, task, i);
+        // Spawn task card opening in a thread to avoid deadlock on Windows
+        let app_clone = app.clone();
+        let db_clone = Arc::clone(&*db);
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            if let Ok(tasks) = db_clone.get_all_active_tasks() {
+                for (i, task) in tasks.iter().enumerate() {
+                    let _ = crate::window::open_task_card(&app_clone, task, i);
+                }
+                crate::window::restack_task_cards(&app_clone);
             }
-            crate::window::restack_task_cards(&app);
-        }
+        });
         let _ = app.emit("compact_mode_disabled", ());
     }
     Ok(())

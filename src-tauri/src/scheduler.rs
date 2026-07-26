@@ -1,4 +1,4 @@
-use crate::db::DbHandle;
+use crate::db::{DbHandle, Task};
 use crate::window;
 use chrono::Utc;
 use std::sync::Arc;
@@ -40,11 +40,11 @@ fn check_and_spawn_due_tasks(app: &AppHandle) {
         return;
     }
 
-    // Open pill in compact mode, individual cards otherwise
     let compact = crate::commands::get_compact_mode_state(app);
     let edge_peek = crate::commands::EDGE_PEEK_ENABLED.load(std::sync::atomic::Ordering::SeqCst);
 
-    let mut activated_any = false;
+    // Activate all due tasks and collect the ones we successfully activated.
+    let mut activated: Vec<Task> = Vec::new();
     for task in &due {
         let id = match task.id {
             Some(id) => id,
@@ -54,17 +54,42 @@ fn check_and_spawn_due_tasks(app: &AppHandle) {
             eprintln!("[scheduler] Failed to activate pre-scheduled task {id}: {e}");
             continue;
         }
-        activated_any = true;
-        if compact {
-            crate::window::open_compact_pill_window(app);
-        } else if !edge_peek {
-            if let Err(e) = window::open_task_card(app, task, 0) {
-                eprintln!("[scheduler] Failed to open card for task {id}: {e}");
-            }
-        }
+        activated.push(task.clone());
     }
 
-    if activated_any {
-        crate::commands::emit_tasks_updated(app, &db);
+    if activated.is_empty() {
+        return;
+    }
+
+    // Emit tasks-updated so the frontend refreshes the task list.
+    // This also triggers check_edge_peek_visibility for edge peek mode.
+    crate::commands::emit_tasks_updated(app, &db);
+
+    // Open a floating card for each activated task.
+    // Spawn each creation in a thread with a staggered delay to avoid
+    // deadlocking on Windows when creating transparent webview windows
+    // from a background thread.
+    if compact {
+        // Compact pill — open once (has its own idempotent guard).
+        let app_clone = app.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(100));
+            window::open_compact_pill_window(&app_clone);
+        });
+    } else if !edge_peek {
+        // Normal mode — open a floating task card for each activated task.
+        for (i, task) in activated.into_iter().enumerate() {
+            let app_clone = app.clone();
+            std::thread::spawn(move || {
+                let delay_ms = 100 + (i as u64 * 100);
+                std::thread::sleep(Duration::from_millis(delay_ms));
+                if let Err(e) = window::open_task_card(&app_clone, &task, 0) {
+                    eprintln!(
+                        "[scheduler] Failed to open card for task {}: {e}",
+                        task.id.unwrap_or(0)
+                    );
+                }
+            });
+        }
     }
 }

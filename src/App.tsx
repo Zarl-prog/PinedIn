@@ -219,11 +219,16 @@ export default function App() {
   const toggleCompactMode = async () => {
     const next = !compactMode;
     setCompactModeLocal(next);
+    // When enabling compact mode, backend also disables edge peek (mutually exclusive)
+    if (next) {
+      setEdgePeekEnabledLocal(false);
+    }
     try {
       await setCompactMode(next);
     } catch {
       // Roll back optimistic update if backend call failed
       setCompactModeLocal(!next);
+      if (next) setEdgePeekEnabledLocal(true);
     }
   };
 
@@ -263,10 +268,12 @@ export default function App() {
     getEdgePeekEnabled()
       .then(setEdgePeekEnabledLocal)
       .catch(() => {});
-    let unlisten: (() => void) | null = null;
+    let u1: (() => void) | null = null;
+    let u2: (() => void) | null = null;
     const p1 = listen("compact_mode_enabled", () => setEdgePeekEnabledLocal(false));
-    p1.then((u) => { unlisten = u; });
-    return () => { unlisten?.(); };
+    const p2 = listen("edge_peek_disabled", () => setEdgePeekEnabledLocal(false));
+    Promise.all([p1, p2]).then(([f1, f2]) => { u1 = f1; u2 = f2; });
+    return () => { u1?.(); u2?.(); };
   }, []);
 
   const toggleShake = async () => {
@@ -282,10 +289,15 @@ export default function App() {
     }
     const next = !edgePeekEnabled;
     setEdgePeekEnabledLocal(next);
+    // When enabling edge peek, backend also disables compact mode (mutually exclusive)
+    if (next) {
+      setCompactModeLocal(false);
+    }
     try {
       await setEdgePeekEnabled(next);
     } catch {
       setEdgePeekEnabledLocal(!next);
+      if (next) setCompactModeLocal(true);
     }
   };
 

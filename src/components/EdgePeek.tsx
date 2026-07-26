@@ -191,8 +191,8 @@ export default function EdgePeek() {
         <div
           style={{
             position: "fixed",
-            top: tooltip.el.getBoundingClientRect().bottom + 6,
-            left: tooltip.el.getBoundingClientRect().left + tooltip.el.getBoundingClientRect().width / 2,
+            top: tooltip.rect.bottom + 6,
+            left: tooltip.rect.left + tooltip.rect.width / 2,
             transform: "translateX(-50%)",
             background: "var(--pill-bg, #0A0A0A)",
             border: "1px solid var(--border-card, #1A1A1A)",
@@ -237,7 +237,7 @@ function TaskChip({
 }: {
   task: Task;
   onDone: () => void;
-  onTooltip: (t: { title: string; description?: string; el: HTMLElement } | null) => void;
+  onTooltip: (t: { title: string; description?: string; rect: DOMRect } | null) => void;
 }) {
   const chipRef = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState(false);
@@ -256,7 +256,7 @@ function TaskChip({
           onTooltip({
             title: task.title,
             description: task.description,
-            el: chipRef.current,
+            rect: chipRef.current.getBoundingClientRect(),
           });
         }
       }}

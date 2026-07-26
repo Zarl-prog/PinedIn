@@ -405,8 +405,8 @@ pub fn close_compact_pill_window(app: &AppHandle) {
 //   • Height and Y stay fixed — no vertical movement during expand/collapse
 
 const EDGE_PEEK_TAB_W: f64 = 80.0;
-const EDGE_PEEK_TAB_H: f64 = 48.0;
-const EDGE_PEEK_EXPANDED_H: f64 = 48.0;
+const EDGE_PEEK_TAB_H: f64 = 56.0;
+const EDGE_PEEK_EXPANDED_H: f64 = 56.0;
 
 // Each visible task chip needs roughly this many pixels of width,
 // plus the chevron and gaps.

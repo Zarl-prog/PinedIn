@@ -205,31 +205,28 @@ function TaskChip({
 
   return (
     <div
+      onClick={onDone}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
         ...chipStyle,
-        borderColor: hovered
-          ? "var(--border-card-hover, #2A2A2A)"
-          : "var(--border-card, #1A1A1A)",
+        cursor: "pointer",
+        background: hovered
+          ? "radial-gradient(circle at 30% 30%, #22c55e 0%, #16a34a 100%)"
+          : "var(--pill-bg, #0A0A0A)",
+        borderColor: hovered ? "#22c55e" : "var(--border-card, #1A1A1A)",
+        justifyContent: hovered ? "center" : "flex-start",
+        transition: "all 150ms ease",
       }}
     >
-      <div style={chipTextStyle}>
-        <span style={chipTitleStyle}>{task.title}</span>
-        <span style={chipMetaStyle}>{meta}</span>
-      </div>
-      <button
-        onClick={onDone}
-        style={chipDoneStyle}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = "#22c55e";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = "var(--text-muted-card, #666)";
-        }}
-      >
-        <CheckCircle size={20} weight="light" />
-      </button>
+      {hovered ? (
+        <CheckCircle size={22} weight="bold" style={{ color: "#fff" }} />
+      ) : (
+        <div style={chipTextStyle}>
+          <span style={chipTitleStyle}>{task.title}</span>
+          <span style={chipMetaStyle}>{meta}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -363,18 +360,6 @@ const chipMetaStyle: React.CSSProperties = {
   textOverflow: "ellipsis",
   lineHeight: 1,
   letterSpacing: "0.02em",
-};
-
-const chipDoneStyle: React.CSSProperties = {
-  background: "none",
-  border: "none",
-  cursor: "pointer",
-  color: "var(--text-muted-card, #666)",
-  display: "flex",
-  alignItems: "center",
-  padding: "2px",
-  flexShrink: 0,
-  transition: "color 150ms ease",
 };
 
 const emptyStyle: React.CSSProperties = {

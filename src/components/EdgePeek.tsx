@@ -97,7 +97,7 @@ export default function EdgePeek() {
     if (toggling.current) return;
     toggling.current = true;
     try {
-      await invoke("expand_edge_peek");
+      await invoke("expand_edge_peek", { taskCount: tasks.length });
       setExpanded(true);
     } finally {
       toggling.current = false;
@@ -248,8 +248,8 @@ const containerStyle: React.CSSProperties = {
 
 const pillStyle: React.CSSProperties = {
   width: "80px",
-  height: "68px",
-  borderRadius: "34px 0 0 34px",
+  height: "48px",
+  borderRadius: "24px 0 0 24px",
   background: "var(--pill-bg, #0A0A0A)",
   border: "1px solid var(--pill-border, #1A1A1A)",
   borderRight: "none",
@@ -284,11 +284,11 @@ const labelStyle: React.CSSProperties = {
 
 const stripStyle: React.CSSProperties = {
   width: "100%",
-  height: "68px",
+  height: "48px",
   background: "var(--card-bg, #0A0A0A)",
   border: "1px solid var(--border-card, #1A1A1A)",
   borderRight: "none",
-  borderRadius: "34px 0 0 34px",
+  borderRadius: "24px 0 0 24px",
   display: "flex",
   flexDirection: "row",
   paddingLeft: "12px",

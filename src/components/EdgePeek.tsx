@@ -231,7 +231,7 @@ function TaskChip({
           size={32}
           weight="bold"
           style={{
-            color: "rgba(255,255,255,0.3)",
+            color: "rgba(255,255,255,0.6)",
             position: "absolute",
             top: "50%",
             left: "50%",

@@ -31,6 +31,7 @@ export default function EdgePeek() {
   const toggling = useRef(false);
   const autoCollapseRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hoveringRef = useRef(false);
+  const [tooltip, setTooltip] = useState<{ title: string; description?: string; rect: DOMRect } | null>(null);
 
   const AUTO_COLLAPSE_MS = 3000;
 
@@ -151,6 +152,7 @@ export default function EdgePeek() {
                   key={task.id}
                   task={task}
                   onDone={() => handleDone(task.id)}
+                  onTooltip={setTooltip}
                 />
               ))
             )}
@@ -184,6 +186,46 @@ export default function EdgePeek() {
           </div>
         </div>
       )}
+
+      {tooltip && (
+        <div
+          style={{
+            position: "fixed",
+            top: tooltip.el.getBoundingClientRect().bottom + 6,
+            left: tooltip.el.getBoundingClientRect().left + tooltip.el.getBoundingClientRect().width / 2,
+            transform: "translateX(-50%)",
+            background: "var(--pill-bg, #0A0A0A)",
+            border: "1px solid var(--border-card, #1A1A1A)",
+            borderRadius: "8px",
+            padding: "8px 10px",
+            zIndex: 9999,
+            minWidth: "160px",
+            maxWidth: "260px",
+            whiteSpace: "pre-wrap",
+            pointerEvents: "none",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+          }}
+        >
+          <div style={{
+            fontSize: "12px",
+            fontWeight: 600,
+            color: "var(--text-primary-card, #fff)",
+            lineHeight: 1.3,
+          }}>
+            {tooltip.title}
+          </div>
+          {tooltip.description && (
+            <div style={{
+              fontSize: "11px",
+              color: "var(--text-muted-card, #999)",
+              lineHeight: 1.4,
+              marginTop: "4px",
+            }}>
+              {tooltip.description}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -191,29 +233,42 @@ export default function EdgePeek() {
 function TaskChip({
   task,
   onDone,
+  onTooltip,
 }: {
   task: Task;
   onDone: () => void;
+  onTooltip: (t: { title: string; description?: string; el: HTMLElement } | null) => void;
 }) {
+  const chipRef = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState(false);
 
-  // Meta line: the due date (if set) plus any running timer countdown,
-  // e.g. "Today · 2h left". Shown only when there is something to say.
   const timeLeft = getTimeLeft(task);
   const dueLabel = task.due_time ? formatCardDate(task.due_time) : "";
   const meta = [dueLabel, timeLeft].filter(Boolean).join(" · ");
 
   return (
     <div
+      ref={chipRef}
       onClick={onDone}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      title={`${task.title}${task.description ? `\n${task.description}` : ""}`}
+      onMouseEnter={() => {
+        setHovered(true);
+        if (chipRef.current) {
+          onTooltip({
+            title: task.title,
+            description: task.description,
+            el: chipRef.current,
+          });
+        }
+      }}
+      onMouseLeave={() => {
+        setHovered(false);
+        onTooltip(null);
+      }}
       style={{
         ...chipStyle,
         position: "relative",
         cursor: "pointer",
-        overflow: "hidden",
+        overflow: "visible",
         background: hovered ? "#22c55e" : "var(--pill-bg, #0A0A0A)",
         borderColor: hovered ? "#22c55e" : "var(--border-card, #1A1A1A)",
         transition: "background 150ms ease, border-color 150ms ease",

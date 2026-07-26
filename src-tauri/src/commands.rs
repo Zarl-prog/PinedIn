@@ -808,6 +808,7 @@ pub fn set_edge_peek_enabled(app: AppHandle, db: State<'_, Arc<DbHandle>>, enabl
         db.update_setting("compact_mode", "false")?;
         COMPACT_MODE.store(false, Ordering::SeqCst);
         crate::window::close_compact_pill_window(&app);
+        let _ = app.emit("compact_mode_disabled", ());
 
         // Close any open task cards — edge peek replaces them with the pill.
         let windows = app.webview_windows();
@@ -837,6 +838,12 @@ pub fn set_edge_peek_enabled_internal(app: AppHandle, db: Arc<DbHandle>, enabled
     EDGE_PEEK_ENABLED.store(enabled, Ordering::SeqCst);
 
     if enabled {
+        // Disable compact_mode when edge_peek is enabled (mutually exclusive)
+        let _ = db.update_setting("compact_mode", "false");
+        COMPACT_MODE.store(false, Ordering::SeqCst);
+        crate::window::close_compact_pill_window(&app);
+        let _ = app.emit("compact_mode_disabled", ());
+
         // Close any open task cards — edge peek replaces them with the pill.
         let windows = app.webview_windows();
         for (label, window) in &windows {
@@ -931,19 +938,10 @@ pub fn set_compact_mode(app: AppHandle, db: State<'_, Arc<DbHandle>>, enabled: b
                 let _ = window.close();
             }
         }
-        // Hide main window so only the pill remains visible
-        if let Some(main) = app.get_webview_window("main") {
-            let _ = main.hide();
-        }
         crate::window::open_compact_pill_window(&app);
         let _ = app.emit("compact_mode_enabled", ());
     } else {
         crate::window::close_compact_pill_window(&app);
-        // Restore main window
-        if let Some(main) = app.get_webview_window("main") {
-            let _ = main.show();
-            let _ = main.unminimize();
-        }
         let db = db.inner();
         if let Ok(tasks) = db.get_all_active_tasks() {
             for (i, task) in tasks.iter().enumerate() {

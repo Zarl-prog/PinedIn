@@ -401,29 +401,13 @@ pub fn close_compact_pill_window(app: &AppHandle) {
 //   • Right edge always flush with the screen right edge
 //   • Default Y: 100px from top (pill top at ~100px from screen top)
 //   • Collapsed tab: 80×48 pill, border-radius 24px 0 0 24px (flat right edge)
-//   • Expanded strip: dynamic width × 48, grows leftward from same anchor Y
+//   • Expanded strip: fixed 340px width, grows leftward from same anchor Y
 //   • Height and Y stay fixed — no vertical movement during expand/collapse
 
 const EDGE_PEEK_TAB_W: f64 = 80.0;
 const EDGE_PEEK_TAB_H: f64 = 56.0;
+const EDGE_PEEK_EXPANDED_W: f64 = 340.0;
 const EDGE_PEEK_EXPANDED_H: f64 = 56.0;
-
-// Each visible task chip needs roughly this many pixels of width,
-// plus the chevron and gaps.
-const EDGE_PEEK_CHEVRON_W: f64 = 36.0;
-const EDGE_PEEK_CHIP_W: f64 = 110.0;
-const EDGE_PEEK_CHIP_GAP: f64 = 8.0;
-const EDGE_PEEK_MAX_VISIBLE: u32 = 3;
-const EDGE_PEEK_EXPANDED_PAD: f64 = 20.0; // left/right padding inside strip
-
-/// Compute expanded width for a given number of active tasks.
-/// 1 task → narrow strip, 2 → wider, 3+ → max width with scroll.
-pub fn edge_peek_expanded_width(task_count: u32) -> f64 {
-    let visible = task_count.min(EDGE_PEEK_MAX_VISIBLE);
-    let chips_w = visible as f64 * EDGE_PEEK_CHIP_W;
-    let gaps = visible.saturating_sub(1) as f64 * EDGE_PEEK_CHIP_GAP;
-    (EDGE_PEEK_CHEVRON_W + EDGE_PEEK_CHIP_GAP + chips_w + gaps + EDGE_PEEK_EXPANDED_PAD).max(150.0)
-}
 
 /// Default Y offset from top of screen to the top edge of the pill.
 const EDGE_PEEK_TOP_OFFSET: f64 = 100.0;
@@ -431,14 +415,14 @@ const EDGE_PEEK_TOP_OFFSET: f64 = 100.0;
 /// Returns (x, y, w, h) in logical pixels, right-edge anchored.
 /// Height stays fixed — expanding only widens leftward.
 /// Y is clamped so the window stays fully on-screen.
-fn edge_peek_geometry(sw: f64, sh: f64, expanded: bool, task_count: u32) -> (f64, f64, f64, f64) {
+fn edge_peek_geometry(sw: f64, sh: f64, expanded: bool) -> (f64, f64, f64, f64) {
     let anchor_y = get_anchor_center_y();
     if anchor_y.is_nan() {
         set_anchor_center_y(EDGE_PEEK_TOP_OFFSET);
     }
 
     let (w, h) = if expanded {
-        (edge_peek_expanded_width(task_count), EDGE_PEEK_EXPANDED_H)
+        (EDGE_PEEK_EXPANDED_W, EDGE_PEEK_EXPANDED_H)
     } else {
         (EDGE_PEEK_TAB_W, EDGE_PEEK_TAB_H)
     };
@@ -448,7 +432,7 @@ fn edge_peek_geometry(sw: f64, sh: f64, expanded: bool, task_count: u32) -> (f64
     (x, y, w, h)
 }
 
-fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool, task_count: u32) {
+fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
     let Some(monitor) = window
         .current_monitor()
         .ok()
@@ -461,7 +445,7 @@ fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool, task_
     let scale = monitor.scale_factor();
     let sw = monitor.size().width as f64 / scale;
     let sh = monitor.size().height as f64 / scale;
-    let (x, y, w, h) = edge_peek_geometry(sw, sh, expanded, task_count);
+    let (x, y, w, h) = edge_peek_geometry(sw, sh, expanded);
 
     // Always update Tauri's internal state first — this is the source of truth
     // for the webview bounds cache. Without it WebView2 content layout desyncs
@@ -532,7 +516,7 @@ pub fn open_edge_peek_window(app: &AppHandle, expanded: bool) {
         let scale = monitor.scale_factor();
         let sw = monitor.size().width as f64 / scale;
         let sh = monitor.size().height as f64 / scale;
-        let (x, y, w, h) = edge_peek_geometry(sw, sh, expanded, 0);
+        let (x, y, w, h) = edge_peek_geometry(sw, sh, expanded);
 
         let build = || {
             let builder = WebviewWindowBuilder::new(
@@ -571,17 +555,17 @@ pub fn close_edge_peek_window(app: &AppHandle) {
     }
 }
 
-pub fn expand_edge_peek(app: &AppHandle, task_count: u32) {
+pub fn expand_edge_peek(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("edge_peek") {
         // Edge peek is a supplementary overlay — never steal focus from the
         // window the user is actually working in. Just resize/reposition.
-        apply_edge_peek_geometry(&window, true, task_count);
+        apply_edge_peek_geometry(&window, true);
     }
 }
 
 pub fn collapse_edge_peek(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("edge_peek") {
-        apply_edge_peek_geometry(&window, false, 0);
+        apply_edge_peek_geometry(&window, false);
     }
 }
 

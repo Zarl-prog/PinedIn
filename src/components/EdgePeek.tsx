@@ -210,15 +210,14 @@ function TaskChip({
       onMouseLeave={() => setHovered(false)}
       style={{
         ...chipStyle,
+        position: "relative",
         cursor: "pointer",
+        overflow: "hidden",
         background: hovered ? "#22c55e" : "var(--pill-bg, #0A0A0A)",
         borderColor: hovered ? "#22c55e" : "var(--border-card, #1A1A1A)",
         transition: "background 150ms ease, border-color 150ms ease",
       }}
     >
-      {hovered && (
-        <CheckCircle size={16} weight="bold" style={{ color: "#fff", flexShrink: 0 }} />
-      )}
       <div style={chipTextStyle}>
         <span style={{ ...chipTitleStyle, color: hovered ? "#fff" : chipTitleStyle.color }}>
           {task.title}
@@ -227,6 +226,20 @@ function TaskChip({
           {meta}
         </span>
       </div>
+      {hovered && (
+        <CheckCircle
+          size={32}
+          weight="bold"
+          style={{
+            color: "rgba(255,255,255,0.3)",
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            pointerEvents: "none",
+          }}
+        />
+      )}
     </div>
   );
 }

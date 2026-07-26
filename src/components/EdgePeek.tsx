@@ -248,8 +248,8 @@ const containerStyle: React.CSSProperties = {
 
 const pillStyle: React.CSSProperties = {
   width: "80px",
-  height: "48px",
-  borderRadius: "24px 0 0 24px",
+  height: "56px",
+  borderRadius: "28px 0 0 28px",
   background: "var(--pill-bg, #0A0A0A)",
   border: "1px solid var(--pill-border, #1A1A1A)",
   borderRight: "none",
@@ -284,11 +284,11 @@ const labelStyle: React.CSSProperties = {
 
 const stripStyle: React.CSSProperties = {
   width: "100%",
-  height: "48px",
+  height: "56px",
   background: "var(--card-bg, #0A0A0A)",
   border: "1px solid var(--border-card, #1A1A1A)",
   borderRight: "none",
-  borderRadius: "24px 0 0 24px",
+  borderRadius: "28px 0 0 28px",
   display: "flex",
   flexDirection: "row",
   paddingLeft: "12px",

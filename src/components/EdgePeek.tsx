@@ -208,6 +208,7 @@ function TaskChip({
       onClick={onDone}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      title={`${task.title}${task.description ? `\n${task.description}` : ""}`}
       style={{
         ...chipStyle,
         position: "relative",
@@ -219,10 +220,10 @@ function TaskChip({
       }}
     >
       <div style={chipTextStyle}>
-        <span title={task.title} style={{ ...chipTitleStyle, color: hovered ? "#fff" : chipTitleStyle.color }}>
+        <span style={{ ...chipTitleStyle, color: hovered ? "#fff" : chipTitleStyle.color }}>
           {task.title}
         </span>
-        <span title={meta} style={{ ...chipMetaStyle, color: hovered ? "rgba(255,255,255,0.7)" : chipMetaStyle.color }}>
+        <span style={{ ...chipMetaStyle, color: hovered ? "rgba(255,255,255,0.7)" : chipMetaStyle.color }}>
           {meta}
         </span>
       </div>

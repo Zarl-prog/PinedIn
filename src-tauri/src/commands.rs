@@ -707,8 +707,8 @@ pub fn load_workspace(app: AppHandle, workspace_id: i64) -> Result<(), String> {
         }
     }
 
-    // Don't open individual cards in compact mode
-    if !get_compact_mode_state(&app) {
+    // Don't open individual cards in compact or edge peek mode
+    if !get_compact_mode_state(&app) && !EDGE_PEEK_ENABLED.load(Ordering::SeqCst) {
         if let Some(cards) = parsed["cards"].as_array() {
             for card in cards {
                 let task_id = card["task_id"].as_i64().unwrap_or(0);
@@ -762,7 +762,7 @@ pub fn delete_workspace(app: AppHandle, workspace_id: i64) -> Result<(), String>
 /// the same set of cards.
 pub fn reopen_task_cards(app: &AppHandle, db: &DbHandle) {
     // In compact mode the pill is the display — don't spawn individual cards.
-    if get_compact_mode_state(app) {
+    if get_compact_mode_state(app) || EDGE_PEEK_ENABLED.load(Ordering::SeqCst) {
         return;
     }
 
@@ -876,9 +876,9 @@ pub fn toggle_edge_peek_from_shortcut(app: &AppHandle) {
 }
 
 #[tauri::command]
-pub fn expand_edge_peek(app: AppHandle) -> Result<(), String> {
+pub fn expand_edge_peek(app: AppHandle, task_count: u32) -> Result<(), String> {
     EDGE_PEEK_EXPANDED.store(true, Ordering::SeqCst);
-    crate::window::expand_edge_peek(&app);
+    crate::window::expand_edge_peek(&app, task_count);
     // Persist expanded state
     if let Some(db) = app.try_state::<Arc<DbHandle>>() {
         let _ = db.update_setting("edge_peek_expanded", "true");
@@ -1061,8 +1061,8 @@ pub fn activate_workspace_inner(app: &AppHandle, db: &DbHandle, workspace_id: i6
         }
     }
 
-    // Don't open individual cards in compact mode
-    if !get_compact_mode_state(app) {
+    // Don't open individual cards in compact or edge peek mode
+    if !get_compact_mode_state(app) && !EDGE_PEEK_ENABLED.load(Ordering::SeqCst) {
         let tasks = db.get_workspace_tasks(workspace_id)?;
         for (i, task) in tasks.iter().enumerate() {
             let _ = window::open_task_card(app, task, i);
@@ -1088,8 +1088,8 @@ pub fn deactivate_workspace_inner(app: &AppHandle, db: &DbHandle) -> Result<(), 
         }
     }
 
-    // Don't open individual cards in compact mode
-    if !get_compact_mode_state(app) {
+    // Don't open individual cards in compact or edge peek mode
+    if !get_compact_mode_state(app) && !EDGE_PEEK_ENABLED.load(Ordering::SeqCst) {
         if let Ok(tasks) = db.get_incomplete_tasks() {
             for (i, task) in tasks.iter().enumerate() {
                 let _ = window::open_task_card(app, task, i);

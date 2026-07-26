@@ -42,6 +42,7 @@ fn check_and_spawn_due_tasks(app: &AppHandle) {
 
     // Open pill in compact mode, individual cards otherwise
     let compact = crate::commands::get_compact_mode_state(app);
+    let edge_peek = crate::commands::EDGE_PEEK_ENABLED.load(std::sync::atomic::Ordering::SeqCst);
 
     let mut activated_any = false;
     for task in &due {
@@ -56,8 +57,10 @@ fn check_and_spawn_due_tasks(app: &AppHandle) {
         activated_any = true;
         if compact {
             crate::window::open_compact_pill_window(app);
-        } else if let Err(e) = window::open_task_card(app, task, 0) {
-            eprintln!("[scheduler] Failed to open card for task {id}: {e}");
+        } else if !edge_peek {
+            if let Err(e) = window::open_task_card(app, task, 0) {
+                eprintln!("[scheduler] Failed to open card for task {id}: {e}");
+            }
         }
     }
 

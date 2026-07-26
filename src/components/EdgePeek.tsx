@@ -107,10 +107,9 @@ export default function EdgePeek() {
   const collapse = useCallback(async () => {
     if (toggling.current) return;
     toggling.current = true;
-    setExpanded(false);
-    await new Promise(r => setTimeout(r, 450));
     try {
       await invoke("collapse_edge_peek");
+      setExpanded(false);
     } finally {
       toggling.current = false;
     }

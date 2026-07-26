@@ -508,6 +508,11 @@ fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
 pub fn open_edge_peek_window(app: &AppHandle, expanded: bool) {
     let label = "edge_peek";
 
+    // Don't recreate if already exists (idempotent guard)
+    if app.get_webview_window(label).is_some() {
+        return;
+    }
+
     let monitor = app
         .get_webview_window("main")
         .and_then(|w| w.current_monitor().ok().flatten())

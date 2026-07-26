@@ -49,9 +49,15 @@ fn check_edge_peek_visibility(app: &AppHandle, db: &DbHandle) {
                 }
             });
         } else {
-            // Has incomplete tasks - ensure edge_peek is open (collapsed pill)
+            // Has incomplete tasks - ensure edge_peek is open (collapsed pill).
+            // Spawn in a thread to avoid deadlocking the command handler
+            // on Windows when creating a transparent webview window.
             if app.get_webview_window("edge_peek").is_none() {
-                crate::window::open_edge_peek_window(app, false);
+                let app_clone = app.clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                    crate::window::open_edge_peek_window(&app_clone, false);
+                });
             }
         }
     }
@@ -818,10 +824,17 @@ pub fn set_edge_peek_enabled(app: AppHandle, db: State<'_, Arc<DbHandle>>, enabl
             }
         }
 
-        // Check if there are incomplete tasks before opening
+        // Spawn edge peek window creation in a thread to avoid
+        // blocking the Tauri command handler on Windows.
         if let Ok(tasks) = db.get_incomplete_tasks() {
             if !tasks.is_empty() {
-                crate::window::open_edge_peek_window(&app, false);
+                let app_clone = app.clone();
+                std::thread::spawn(move || {
+                    // Small delay so closed windows can finish cleanup
+                    // before we create a new transparent webview (B3).
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                    crate::window::open_edge_peek_window(&app_clone, false);
+                });
             }
         }
     } else {
@@ -851,9 +864,15 @@ pub fn set_edge_peek_enabled_internal(app: AppHandle, db: Arc<DbHandle>, enabled
                 let _ = window.close();
             }
         }
+        // Spawn edge peek window creation in a thread to avoid
+        // blocking the Tauri command handler on Windows.
         if let Ok(tasks) = db.get_incomplete_tasks() {
             if !tasks.is_empty() {
-                crate::window::open_edge_peek_window(&app, false);
+                let app_clone = app.clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                    crate::window::open_edge_peek_window(&app_clone, false);
+                });
             }
         }
     } else {

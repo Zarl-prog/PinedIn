@@ -4,6 +4,7 @@ import { LogicalSize } from "@tauri-apps/api/dpi";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useCallback, useEffect, useRef, useState } from "react";
+import SmartTooltip from "@/components/SmartTooltip";
 import type { Task } from "../lib/tauriCommands";
 
 const COLLAPSED_W = 100;
@@ -393,43 +394,7 @@ export default function CompactPill() {
       </div>
 
       {tooltip && (
-        <div
-          style={{
-            position: "fixed",
-            top: tooltip.el.getBoundingClientRect().bottom + 6,
-            left: tooltip.el.getBoundingClientRect().left + tooltip.el.getBoundingClientRect().width / 2,
-            transform: "translateX(-50%)",
-            background: "var(--pill-bg, #0A0A0A)",
-            border: "1px solid var(--border-card, #1A1A1A)",
-            borderRadius: "8px",
-            padding: "8px 10px",
-            zIndex: 9999,
-            minWidth: "160px",
-            maxWidth: "260px",
-            whiteSpace: "pre-wrap",
-            pointerEvents: "none",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-          }}
-        >
-          <div style={{
-            fontSize: "12px",
-            fontWeight: 600,
-            color: "var(--text-primary-card, #fff)",
-            lineHeight: 1.3,
-          }}>
-            {tooltip.title}
-          </div>
-          {tooltip.description && (
-            <div style={{
-              fontSize: "11px",
-              color: "var(--text-muted-card, #999)",
-              lineHeight: 1.4,
-              marginTop: "4px",
-            }}>
-              {tooltip.description}
-            </div>
-          )}
-        </div>
+        <SmartTooltip anchorEl={tooltip.el} title={tooltip.title} description={tooltip.description} />
       )}
     </>
     );

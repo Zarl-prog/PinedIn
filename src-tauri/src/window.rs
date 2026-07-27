@@ -574,6 +574,37 @@ pub fn collapse_edge_peek(app: &AppHandle) {
     }
 }
 
+/// Move the edge-peek window to a new vertical position while keeping it flush
+/// against the right screen edge (X never changes — Y-axis drag only). `y` is
+/// the desired top edge in logical px; it's clamped so the window stays fully
+/// on-screen. Updates the persisted anchor so expand/collapse reuse this Y.
+/// Returns the applied (clamped) Y.
+pub fn reposition_edge_peek_y(app: &AppHandle, y: f64) -> Option<f64> {
+    let window = app.get_webview_window("edge_peek")?;
+    let monitor = window
+        .current_monitor().ok().flatten()
+        .or_else(|| window.primary_monitor().ok().flatten())?;
+
+    let scale = monitor.scale_factor();
+    let sw = monitor.size().width as f64 / scale;
+    let sh = monitor.size().height as f64 / scale;
+    let mon_x = monitor.position().x as f64 / scale;
+    let mon_y = monitor.position().y as f64 / scale;
+
+    let (w, h) = window
+        .outer_size()
+        .map(|s| (s.width as f64 / scale, s.height as f64 / scale))
+        .unwrap_or((EDGE_PEEK_TAB_W, EDGE_PEEK_TAB_H));
+
+    let new_y = y.clamp(0.0, (sh - h).max(0.0));
+    set_anchor_center_y(new_y);
+
+    let x = (sw - w).max(0.0) + mon_x;
+    let _ = window.set_position(Position::Logical(LogicalPosition::new(x, new_y + mon_y)));
+
+    Some(new_y)
+}
+
 /// Open the small always-on-top Daily Digest popup (420x220) that
 /// summarizes the user's day. The window is centered, non-focusable
 /// (so it doesn't steal focus from the main app), and skipped from the

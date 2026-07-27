@@ -964,6 +964,21 @@ pub fn collapse_edge_peek(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// Move the edge-peek pill vertically (X stays pinned to the right edge).
+/// Called live during a drag with `persist=false` for smooth tracking, and
+/// once on release with `persist=true` to save the final position.
+#[tauri::command]
+pub fn reposition_edge_peek_y(app: AppHandle, y: f64, persist: bool) -> Result<(), String> {
+    if let Some(new_y) = crate::window::reposition_edge_peek_y(&app, y) {
+        if persist {
+            if let Some(db) = app.try_state::<Arc<DbHandle>>() {
+                let _ = db.update_setting("edge_peek_y", &new_y.to_string());
+            }
+        }
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub fn get_edge_peek_expanded(db: State<'_, Arc<DbHandle>>) -> Result<bool, String> {
     let map = db.get_settings_map()?;

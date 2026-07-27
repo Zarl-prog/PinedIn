@@ -143,7 +143,7 @@ export default function EdgePeek() {
             <CaretRight size={14} weight="light" />
           </button>
 
-          <div style={taskRowStyle}>
+          <div className="scrollbar-themed" style={taskRowStyle}>
             {tasks.length === 0 ? (
               <span style={emptyStyle}>All clear</span>
             ) : (

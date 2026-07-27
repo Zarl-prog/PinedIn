@@ -27,6 +27,9 @@
   --pill-text: #000000;
   --pill-text-muted: #666666;
   --pill-shadow: none;
+  --scrollbar-track: #f0f0f0;
+  --scrollbar-thumb: #cccccc;
+  --scrollbar-thumb-hover: #aaaaaa;
 }
 
 .dark {
@@ -56,6 +59,9 @@
   --pill-text: #ffffff;
   --pill-text-muted: #777777;
   --pill-shadow: none;
+  --scrollbar-track: #000000;
+  --scrollbar-thumb: #1a1a1a;
+  --scrollbar-thumb-hover: #2a2a2a;
 }
 
 [data-theme="parchment"] {
@@ -85,6 +91,9 @@
   --pill-text: #ede0d0;
   --pill-text-muted: #8e7a60;
   --pill-shadow: none;
+  --scrollbar-track: #1a1410;
+  --scrollbar-thumb: #3d2e22;
+  --scrollbar-thumb-hover: #5a4633;
 }
 
 * {
@@ -224,6 +233,29 @@ body {
   background: var(--bg-float-card-hover);
   box-shadow: var(--shadow-hover-card);
   transform: scale(1.02);
+}
+
+/* ─── Themed Scrollbar ──────────────────────────────────────────────────── */
+/* These mirror index.css so edge-peek, task-card, compact-pill windows all use themed scrollbars.
+   scrollbar-color/width is the Firefox-standard property; ::-webkit-scrollbar covers Chrome/Edge/Safari. */
+
+.scrollbar-themed {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+.scrollbar-themed::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-themed::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+.scrollbar-themed::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+.scrollbar-themed::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* ─── Priority Border ───────────────────────────────────────────────────── */

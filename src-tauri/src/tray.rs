@@ -63,7 +63,13 @@ pub fn setup_tray(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Erro
                 }
             }
             "quick_task" => {
-                crate::window::open_quick_add_window(app_handle);
+                // Spawn in a thread to avoid deadlocking on Windows when
+                // creating transparent webview windows from tray events.
+                let ah = app_handle.clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                    crate::window::open_quick_add_window(&ah);
+                });
             }
             "quit" => {
                 // Flip the shared quit flag so the main window's

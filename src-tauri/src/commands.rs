@@ -91,24 +91,21 @@ pub fn create_task(
     emit_tasks_updated(&app, &db);
     notifications::check_due_notifications(&app);
 
-    // Check compact mode — open pill instead of individual card
-    if get_compact_mode_state(&app) {
-        crate::window::open_compact_pill_window(&app);
-        return Ok(task);
-    }
-
-    // Check edge peek mode — don't open individual cards if edge peek is enabled
+    // Check edge peek mode — don't open individual cards
     if EDGE_PEEK_ENABLED.load(Ordering::SeqCst) {
         return Ok(task);
     }
 
     // Spawn window creation so we don't block the invoke response
+    // and to avoid deadlocking on Windows when creating transparent webview windows.
     let task_clone = task.clone();
     let app_clone = app.clone();
     let db_clone = Arc::clone(&*db);
     std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(100));
         // Re-check compact mode in case it changed during the thread spawn
         if get_compact_mode_state(&app_clone) {
+            crate::window::open_compact_pill_window(&app_clone);
             return;
         }
         let index = if let Some(workspace_id) = task_clone.workspace_id {
@@ -143,12 +140,21 @@ pub fn quick_add_task(
     let task = db.create_task(&title, "", &due_date)?;
     emit_tasks_updated(&app, &db);
 
+    // Spawn window creation in a thread to avoid deadlocking on Windows
+    // when creating transparent webview windows from the command handler.
     if let Some(task_id) = task.id {
         if let Ok(task) = db.get_task_by_id(task_id) {
-            if get_compact_mode_state(&app) {
-                crate::window::open_compact_pill_window(&app);
-            } else if !EDGE_PEEK_ENABLED.load(Ordering::SeqCst) {
-                let _ = window::open_task_card(&app, &task, 0);
+            if !EDGE_PEEK_ENABLED.load(Ordering::SeqCst) {
+                let app_clone = app.clone();
+                let task_clone = task.clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                    if get_compact_mode_state(&app_clone) {
+                        crate::window::open_compact_pill_window(&app_clone);
+                    } else {
+                        let _ = window::open_task_card(&app_clone, &task_clone, 0);
+                    }
+                });
             }
         }
     }
@@ -291,17 +297,24 @@ pub fn uncomplete_task(
     if task.completed {
         db.uncomplete_task(id)?;
 
-        // Open pill in compact mode, individual card otherwise
-        if get_compact_mode_state(&app) {
-            crate::window::open_compact_pill_window(&app);
-        } else {
-            // Find the task and its position among incomplete tasks, then open its card
-            if let Ok(tasks) = db.get_incomplete_tasks() {
-                let index = tasks.iter().position(|t| t.id == Some(id)).unwrap_or(0);
-                let _ = window::open_task_card(&app, &task, index);
+        // Spawn window creation in a thread to avoid deadlocking on Windows
+        // when creating transparent webview windows from the command handler.
+        let app_clone = app.clone();
+        let task_clone = task.clone();
+        let db_clone = Arc::clone(&*db);
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            if get_compact_mode_state(&app_clone) {
+                crate::window::open_compact_pill_window(&app_clone);
+            } else {
+                // Find the task and its position among incomplete tasks, then open its card
+                if let Ok(tasks) = db_clone.get_incomplete_tasks() {
+                    let index = tasks.iter().position(|t| t.id == task_clone.id).unwrap_or(0);
+                    let _ = window::open_task_card(&app_clone, &task_clone, index);
+                }
+                window::restack_task_cards(&app_clone);
             }
-            window::restack_task_cards(&app);
-        }
+        });
 
         emit_tasks_updated(&app, &db);
         notifications::check_due_notifications(&app);
@@ -599,7 +612,12 @@ pub fn set_daily_digest_enabled(
 
 #[tauri::command]
 pub fn open_daily_digest_window(app: AppHandle) -> Result<(), String> {
-    crate::window::open_daily_digest_window(&app);
+    // Spawn in a thread to avoid deadlocking on Windows when creating
+    // always-on-top webview windows from the command handler.
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(100));
+        crate::window::open_daily_digest_window(&app);
+    });
     Ok(())
 }
 
@@ -713,17 +731,26 @@ pub fn load_workspace(app: AppHandle, workspace_id: i64) -> Result<(), String> {
         }
     }
 
-    // Don't open individual cards in compact or edge peek mode
+    // Don't open individual cards in compact or edge peek mode.
+    // Spawn window creation in a thread to avoid deadlocking on Windows.
     if !get_compact_mode_state(&app) && !EDGE_PEEK_ENABLED.load(Ordering::SeqCst) {
         if let Some(cards) = parsed["cards"].as_array() {
-            for card in cards {
-                let task_id = card["task_id"].as_i64().unwrap_or(0);
-                let x = card["x"].as_f64().unwrap_or(100.0);
-                let y = card["y"].as_f64().unwrap_or(100.0);
-                if let Ok(task) = db.get_task_by_id(task_id) {
-                    crate::window::open_task_card_window_at(&app, &task, x, y);
+            let app_clone = app.clone();
+            let cards_clone = cards.clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_millis(100));
+                // Get DB handle once outside the loop
+                if let Some(db_state) = app_clone.try_state::<Arc<DbHandle>>() {
+                    for card in &cards_clone {
+                        let task_id = card["task_id"].as_i64().unwrap_or(0);
+                        let x = card["x"].as_f64().unwrap_or(100.0);
+                        let y = card["y"].as_f64().unwrap_or(100.0);
+                        if let Ok(task) = db_state.get_task_by_id(task_id) {
+                            crate::window::open_task_card_window_at(&app_clone, &task, x, y);
+                        }
+                    }
                 }
-            }
+            });
         }
     }
 
@@ -1104,13 +1131,19 @@ pub fn activate_workspace_inner(app: &AppHandle, db: &DbHandle, workspace_id: i6
         }
     }
 
-    // Don't open individual cards in compact or edge peek mode
+    // Don't open individual cards in compact or edge peek mode.
+    // Spawn window creation in a thread to avoid deadlocking on Windows.
     if !get_compact_mode_state(app) && !EDGE_PEEK_ENABLED.load(Ordering::SeqCst) {
         let tasks = db.get_workspace_tasks(workspace_id)?;
-        for (i, task) in tasks.iter().enumerate() {
-            let _ = window::open_task_card(app, task, i);
-        }
-        window::restack_task_cards(app);
+        let app_clone = app.clone();
+        let tasks_clone = tasks.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            for (i, task) in tasks_clone.iter().enumerate() {
+                let _ = window::open_task_card(&app_clone, task, i);
+            }
+            window::restack_task_cards(&app_clone);
+        });
     }
 
     let _ = app.emit("workspace_activated", serde_json::json!({ "name": workspace_name }));
@@ -1131,13 +1164,19 @@ pub fn deactivate_workspace_inner(app: &AppHandle, db: &DbHandle) -> Result<(), 
         }
     }
 
-    // Don't open individual cards in compact or edge peek mode
+    // Don't open individual cards in compact or edge peek mode.
+    // Spawn window creation in a thread to avoid deadlocking on Windows.
     if !get_compact_mode_state(app) && !EDGE_PEEK_ENABLED.load(Ordering::SeqCst) {
         if let Ok(tasks) = db.get_incomplete_tasks() {
-            for (i, task) in tasks.iter().enumerate() {
-                let _ = window::open_task_card(app, task, i);
-            }
-            window::restack_task_cards(app);
+            let app_clone = app.clone();
+            let tasks_clone = tasks.clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_millis(100));
+                for (i, task) in tasks_clone.iter().enumerate() {
+                    let _ = window::open_task_card(&app_clone, task, i);
+                }
+                window::restack_task_cards(&app_clone);
+            });
         }
     }
 

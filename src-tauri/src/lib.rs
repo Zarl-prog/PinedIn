@@ -374,6 +374,7 @@ pub fn run() {
             commands::toggle_edge_peek,
             commands::expand_edge_peek,
             commands::collapse_edge_peek,
+            commands::reposition_edge_peek_y,
             commands::get_edge_peek_expanded,
         ])
         .build(tauri::generate_context!())

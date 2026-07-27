@@ -132,22 +132,22 @@ const STEPS: Step[] = [
     actionHint: "Click Align to tidy your cards",
   },
   {
-    id: "settings",
-    icon: <GearSix size={15} weight="bold" />,
-    title: "Make it yours",
-    description:
-      "Themes, global hotkeys, autostart, and updates all live in Settings. You can even replay this tour from here.",
-    target: "settings",
-    placement: "left",
-    highlightPadding: 8,
-  },
-  {
     id: "mcp-server",
     icon: <Command size={15} weight="bold" />,
     title: "AI-ready MCP Server",
     description:
       "PinedIn runs a built-in MCP server on port 7890. Claude, ChatGPT, Cursor, and other AI tools can create and manage your tasks. Open the panel to copy the connection URL and a ready-to-use prompt.",
     target: "mcp-server",
+    placement: "left",
+    highlightPadding: 8,
+  },
+  {
+    id: "settings",
+    icon: <GearSix size={15} weight="bold" />,
+    title: "Make it yours",
+    description:
+      "Themes, global hotkeys, autostart, and updates all live in Settings. You can even replay this tour from here.",
+    target: "settings",
     placement: "left",
     highlightPadding: 8,
   },

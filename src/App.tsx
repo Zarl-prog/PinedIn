@@ -553,6 +553,7 @@ export default function App() {
             onClick={() => setMcpOpen(true)}
             title="MCP Server"
             className="feature-btn ghost"
+            data-onboarding="mcp-server"
             style={{
               padding: "4px",
               borderRadius: "4px",
@@ -855,6 +856,7 @@ export default function App() {
         <button
           onClick={() => handleTabChange("tasks")}
           className="feature-btn"
+          data-onboarding="tasks-tab"
           style={{
             fontSize: "12px",
             fontWeight: activeTab === "tasks" ? 600 : 400,
@@ -870,6 +872,7 @@ export default function App() {
         <button
           onClick={() => handleTabChange("workspaces")}
           className="feature-btn"
+          data-onboarding="workspaces"
           style={{
             fontSize: "12px",
             fontWeight: activeTab === "workspaces" ? 600 : 400,
@@ -1189,30 +1192,6 @@ export default function App() {
               </>
             )}
           </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setPaletteOpen(true)}
-          title="Open command palette (Ctrl+K)"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-            background: "transparent",
-            border: "none",
-            borderRadius: "4px",
-            padding: "4px 6px",
-            fontSize: "11px",
-            fontFamily: "'Geist Mono', monospace",
-            color: "var(--text-muted)",
-            cursor: "pointer",
-            lineHeight: 1,
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
-        >
-          <img src="/Mac-Command--Streamline-Carbon.svg" alt="" style={{ width: "12px", height: "12px", opacity: 0.6 }} />
-          <span style={{ opacity: 0.6 }}>K</span>
         </button>
       </div>
 

@@ -1,6 +1,4 @@
-<div align="center">
-
-<img src="public/pinedin-icon.png" alt="PinedIn" width="96" height="96" />
+<img width="1774" height="887" alt="ChatGPT Image Jul 27, 2026, 10_58_22 PM" src="https://github.com/user-attachments/assets/df1186ff-9c49-44f3-86af-4c10acd045cc" />
 
 # PinedIn
 

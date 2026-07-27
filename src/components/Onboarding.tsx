@@ -62,6 +62,42 @@ const STEPS: Step[] = [
     highlightPadding: 6,
   },
   {
+    id: "workspaces",
+    icon: <GridFour size={15} weight="bold" />,
+    title: "Organize with Workspaces",
+    description:
+      "Group your tasks into workspaces — one for work, one for personal, whatever you need. Switch between them with the tab above.",
+    target: "workspaces",
+    placement: "bottom",
+    highlightPadding: 8,
+    interaction: "user",
+    actionHint: "Click the Workspace tab to see it in action",
+  },
+  {
+    id: "create-workspace",
+    icon: <Plus size={15} weight="bold" />,
+    title: "Create your first workspace",
+    description:
+      "Click '+ Workspace' to create one. Give it a name like 'Work' or 'Personal' and press Enter to save it. Workspaces save your card positions so you can switch between setups instantly.",
+    target: "create-workspace",
+    placement: "bottom",
+    highlightPadding: 8,
+    interaction: "user",
+    actionHint: "Click + Workspace above to try it",
+  },
+  {
+    id: "back-to-tasks",
+    icon: <List size={15} weight="bold" />,
+    title: "Back to your tasks",
+    description:
+      "Switch back to the Tasks view by clicking the Tasks tab. You can return to your workspaces anytime.",
+    target: "tasks-tab",
+    placement: "bottom",
+    highlightPadding: 8,
+    interaction: "user",
+    actionHint: "Click the Tasks tab to continue",
+  },
+  {
     id: "compact",
     icon: <Command size={15} weight="bold" />,
     title: "Compact mode",
@@ -102,6 +138,16 @@ const STEPS: Step[] = [
     description:
       "Themes, global hotkeys, autostart, and updates all live in Settings. You can even replay this tour from here.",
     target: "settings",
+    placement: "left",
+    highlightPadding: 8,
+  },
+  {
+    id: "mcp-server",
+    icon: <Command size={15} weight="bold" />,
+    title: "AI-ready MCP Server",
+    description:
+      "PinedIn runs a built-in MCP server on port 7890. Claude, ChatGPT, Cursor, and other AI tools can create and manage your tasks. Open the panel to copy the connection URL and a ready-to-use prompt.",
+    target: "mcp-server",
     placement: "left",
     highlightPadding: 8,
   },
@@ -564,36 +610,7 @@ export default function Onboarding() {
                   Take the 60-second tour — I’ll show you around, live.
                 </p>
 
-                <div
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 6,
-                    justifyContent: "center",
-                    marginBottom: 30,
-                  }}
-                >
-                  {["Always on top", "No cloud", "Global hotkey", "AI ready", "Open source"].map(
-                    (tag, i) => (
-                      <motion.span
-                        key={tag}
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 + i * 0.05 }}
-                        style={{
-                          background: "var(--bg-badge)",
-                          border: "1px solid var(--border)",
-                          borderRadius: 999,
-                          padding: "4px 12px",
-                          fontSize: 11,
-                          color: "var(--text-secondary)",
-                        }}
-                      >
-                        {tag}
-                      </motion.span>
-                    ),
-                  )}
-                </div>
+                {/* Feature tags removed per user request */}
 
                 <button
                   type="button"

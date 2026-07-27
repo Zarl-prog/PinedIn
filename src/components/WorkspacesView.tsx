@@ -200,6 +200,7 @@ export default function WorkspacesView({
           <button
             onClick={() => setCreating(true)}
             className="shiny-btn"
+            data-onboarding="create-workspace"
             style={{
               border: "none",
               borderRadius: "6px",

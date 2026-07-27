@@ -1,331 +1,299 @@
-     
 <div align="center">
 
-   
+<img src="public/pinedin-icon.png" alt="PinedIn" width="96" height="96" />
+
 # PinedIn
 
-### 🎯 Always-on-top focus reminder app for desktop productivity
+**The always-on-top task overlay that refuses to let you forget.**
 
-[![Tauri](https://img.shields.io/badge/Built%20with-Tauri-2C2D72?style=for-the-badge&logo=tauri)](https://tauri.app/)
-[![React](https://img.shields.io/badge/Frontend-React-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
-[![Rust](https://img.shields.io/badge/Backend-Rust-000000?style=for-the-badge&logo=rust)](https://www.rust-lang.org/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/Zarl-prog/PinedIn?style=flat-square&color=6366f1&label=latest)](https://github.com/Zarl-prog/PinedIn/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-6366f1?style=flat-square)](LICENSE)
+[![Built with Tauri](https://img.shields.io/badge/tauri-v2-6366f1?style=flat-square&logo=tauri&logoColor=white)](https://tauri.app/)
+[![React](https://img.shields.io/badge/react-18-6366f1?style=flat-square&logo=react&logoColor=white)](https://react.dev/)
+[![Rust](https://img.shields.io/badge/rust-stable-6366f1?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org/)
 
-*A persistent always-on-top task overlay that keeps you focused on what matters most*
+[Download](#-installation) · [Features](#-features) · [Docs](#-getting-started) · [Roadmap](#-roadmap) · [Contributing](#-contributing)
+
+---
+
+*Floating task cards that live above every window. No cloud. No accounts. No distractions.*
 
 </div>
 
+---
+
+## Why PinedIn?
+
+Most task managers hide behind a click. PinedIn doesn't. It pins your most important tasks directly onto your screen as floating, always-on-top cards — and gently shakes them at configurable intervals so nothing slips through the cracks.
+
+- **Zero friction** — tasks are always visible, no alt-tab required
+- **Fully local** — SQLite on your machine, zero telemetry, zero accounts
+- **Lightweight** — a Rust + Tauri backend means single-digit MB memory overhead
+- **Keyboard-first** — command palette, quick-add, and global shortcuts
+
+---
+
 ## ✨ Features
 
-### 🎨 **Clean, Distraction-Free Interface**
-- **Dark/Light/System Theme** – Seamlessly integrates with your desktop
-- **Custom Titlebar** – Frameless window with native window controls (minimize, maximize, close)
-- **Bottom Action Bar** – Fixed footer with Pause, Zen mode, and Align to Grid controls
-- **Smooth Animations** – Powered by Framer Motion for delightful interactions
-- **Floating Task Cards** – Cards that shake gently at configurable intervals to keep tasks top-of-mind
+### Focus & Visibility
+| Feature | Description |
+|---|---|
+| **Floating Task Cards** | Always-on-top cards that float above every window |
+| **Shake Reminders** | Cards nudge at configurable intervals (10 s – 5 min) |
+| **Zen Mode** | Hide the main window; keep only the floating cards |
+| **Edge Peek** | A screen-edge handle that expands into your task list |
+| **Compact Pill** | Minimal always-visible pill showing your active task |
 
-### 📝 **Task Management**
-- **Workspaces** – Organize tasks into separate workspaces with their own views
-- **Pre-Schedule** – Plan tasks ahead and have them appear at their scheduled time
-- **Priority-Based Sorting** – Tasks sorted by urgency (Critical → Medium → Low)
-- **Due Date Tracking** – Visual indicators for overdue/upcoming tasks
-- **Search & Filter** – Quickly find tasks by title or description
-- **Full CRUD** – Create, read, update, and delete tasks with undo support
+### Task Management
+| Feature | Description |
+|---|---|
+| **Workspaces** | Separate task lists for separate contexts |
+| **Priority Sorting** | Critical → Medium → Low, always surfaced in order |
+| **Pre-Scheduling** | Tasks activate as floating cards at a future time |
+| **Due Date Tracking** | Visual overdue/upcoming indicators |
+| **Search & Filter** | Instant full-text search across all tasks |
+| **Undo Support** | Recover from accidental deletes |
 
-### 🚀 **Advanced Features**
-- **Zen Mode** – Hide the main window while floating task cards remain visible
-- **Snap to Grid** – Align all floating cards to a clean grid layout
-- **Configurable Shake Interval** – Cards nudge at intervals from 10s to 5m (configurable in Settings)
-- **Auto-Start** – Optionally launch PinedIn when your computer starts
-- **Auto-Updater** – Checks for updates and can auto-install new versions
-- **System Tray** – Quick access from the system tray
-- **SQLite Database** – Persistent local storage for all tasks and settings
-- **Cross-Platform** – Windows and Linux
+### Power Features
+| Feature | Description |
+|---|---|
+| **Command Palette** | `⌘K` / `Ctrl+K` for everything |
+| **Quick Add** | Global shortcut to capture a task without switching windows |
+| **Daily Digest** | Morning overlay summarising what's on your plate |
+| **MCP Server** | Expose your tasks to AI tooling via Model Context Protocol |
+| **Snap to Grid** | One-click alignment for all floating cards |
+| **Auto-Updater** | Silent background updates with in-app banner |
+| **System Tray** | Quick access without opening the main window |
+| **Auto-Start** | Launch at login, optional |
 
-## 📸 Screenshots
+---
 
-| Main Window | Workspace View | Floating Cards |
-|---|---|---|
-| *(screenshot coming soon)* | *(screenshot coming soon)* | *(screenshot coming soon)* |
+## 🛠 Tech Stack
 
-## 🛠️ Tech Stack
+| Layer | Technology |
+|---|---|
+| **UI** | React 18 + TypeScript |
+| **Styling** | CSS variables · Tailwind CSS · Framer Motion / Motion |
+| **State** | Zustand |
+| **Icons** | Phosphor Icons |
+| **Desktop shell** | Tauri v2 |
+| **Backend** | Rust (tokio · axum · rusqlite · chrono · serde) |
+| **Database** | SQLite — local, embedded, zero-config |
+| **Build** | Vite · Biome (lint + format) |
 
-| Layer | Technology | Purpose |
-|-------|------------|---------|
-| **Frontend** | React 18 + TypeScript | Modern, type-safe UI development |
-| **Styling** | CSS variables + Inline styles | Monochrome design system with theme support |
-| **Animations** | Framer Motion | Smooth transitions and micro-interactions |
-| **State** | Zustand | Lightweight global state management |
-| **Backend** | Rust + Tauri v2 | High-performance desktop backend |
-| **Database** | SQLite (via rusqlite) | Persistent local data storage |
-| **Build** | Vite | Fast development and optimized production builds |
+---
+
+## 📦 Installation
+
+### Pre-built binaries
+
+Download the latest installer from the [Releases](https://github.com/Zarl-prog/PinedIn/releases) page.
+
+| Platform | Format |
+|---|---|
+| Windows 10 / 11 | NSIS installer (`.exe`) |
+| Linux (Ubuntu 22.04+) | AppImage · `.deb` |
+
+### Build from source
+
+**Prerequisites:** Node.js ≥ 18 · Rust (stable) · Tauri CLI v2
+
+```bash
+git clone https://github.com/Zarl-prog/PinedIn.git
+cd PinedIn
+npm install
+npm run tauri dev       # development
+npm run tauri build     # production binary
+```
+
+---
 
 ## 🚀 Getting Started
 
-### Prerequisites
+### Create your first task
 
-- **Node.js** (v18+)
-- **Rust** (latest stable)
-- **Tauri CLI** (v2+)
+Open PinedIn and press `Ctrl+K` to open the command palette, or click **+ New Task**.
 
-### Installation
+Fill in a title, pick a priority, and optionally set a due date. Hit **Save** — a floating card appears immediately.
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/Zarl-prog/PinedIn.git
-   cd PinedIn
-   ```
+### Zen Mode
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+Click the **Zen** button in the bottom bar (or use the command palette). The main window hides; your floating cards stay visible above everything else.
 
-3. **Install Tauri CLI** (if not already installed)
-   ```bash
-   npm install -g @tauri-apps/cli
-   ```
+### Pre-schedule a task
 
-4. **Run in development mode**
-   ```bash
-   npm run tauri dev
-   ```
+In the **New Task** form, toggle **Schedule for later** and pick a date/time. The card will appear automatically when that moment arrives — even if PinedIn is minimised to the tray.
 
-### Building for Production
+### Workspaces
 
-```bash
-# Build for current platform
-npm run tauri build
-```
+Use the **Workspaces** tab to create separate task lists for different projects or contexts. Each workspace has its own floating cards.
 
-Pre-built installers are available for each [release](https://github.com/Zarl-prog/PinedIn/releases).
+### MCP integration
 
-## 📁 Project Structure
+PinedIn runs a local MCP server so AI assistants can read and create tasks on your behalf. Enable it in **Settings → MCP Server** and point your AI tool at the displayed endpoint.
+
+---
+
+## 🗂 Project Structure
 
 ```
-pinedin/
-├── src/                          # Frontend source code
-│   ├── components/               # React components
-│   │   ├── AddTaskModal.tsx      # Create/edit task form
-│   │   ├── DailyDigest.tsx       # Daily task summary overlay
-│   │   ├── PreScheduleModal.tsx  # Schedule future tasks
-│   │   ├── SettingsPanel.tsx     # Settings (theme, shake interval, autostart, updates)
-│   │   ├── TaskCard.tsx          # Floating always-on-top task card
-│   │   ├── TaskList.tsx          # Main task listing with search
-│   │   ├── UpdateBanner.tsx      # Update notification banner
-│   │   ├── UrgencyBadge.tsx      # Urgency indicator (Critical/Medium/Low)
-│   │   ├── WorkspaceDetailView.tsx # Individual workspace task view
-│   │   ├── WorkspacesView.tsx    # Workspace list and management
-│   │   └── ui/                   # Shared UI primitives
+PinedIn/
+├── src/                          # React frontend
+│   ├── components/
+│   │   ├── AddTaskModal.tsx       # Create / edit task form
+│   │   ├── CompactPill.tsx        # Minimal always-visible pill
+│   │   ├── DailyDigest.tsx        # Morning task summary overlay
+│   │   ├── EdgePeek.tsx           # Screen-edge expandable handle
+│   │   ├── McpPanel.tsx           # MCP server settings & status
+│   │   ├── PreScheduleModal.tsx   # Schedule future task activation
+│   │   ├── SettingsPanel.tsx      # Theme · shake interval · autostart · updates
+│   │   ├── TaskCard.tsx           # Floating always-on-top card
+│   │   ├── TaskList.tsx           # Main list with search & filter
+│   │   ├── UpdateBanner.tsx       # In-app update notification
+│   │   ├── UrgencyBadge.tsx       # Critical / Medium / Low indicator
+│   │   ├── WorkspaceDetailView.tsx
+│   │   ├── WorkspacesView.tsx
+│   │   └── ui/                    # Shared primitives
 │   ├── hooks/
-│   │   ├── useReminders.ts       # Task polling and reminder hook
-│   │   └── useSettings.ts        # Theme/settings hook
+│   │   ├── useReminders.ts        # Task polling & reminder logic
+│   │   └── useSettings.ts         # Theme & settings hook
 │   ├── lib/
-│   │   ├── tauriCommands.ts      # Type-safe Tauri command wrappers
-│   │   └── updater.ts            # Update check and install logic
+│   │   ├── tauriCommands.ts       # Type-safe Tauri IPC wrappers
+│   │   └── updater.ts             # Update check & install
 │   ├── store/
-│   │   └── reminderStore.ts      # Zustand global state
-│   ├── App.tsx                   # Main app with layout, tabs, bottom bar
-│   ├── main.tsx                  # React entry point
-│   └── index.css                 # Global styles and CSS variables
-├── src-tauri/                    # Backend Rust code
-│   ├── src/
-│   │   ├── commands.rs           # Tauri IPC commands
-│   │   ├── db.rs                 # SQLite database layer
-│   │   ├── lib.rs                # Plugin registration
-│   │   ├── main.rs               # Entry point
-│   │   ├── notifications.rs      # Native notification handling
-│   │   ├── scheduler.rs          # Task scheduling engine
-│   │   ├── tray.rs               # System tray setup
-│   │   └── window.rs             # Window management
-│   └── tauri.conf.json           # Tauri configuration
-├── public/
-│   └── pinedin-icon.png          # App icon
-└── package.json                  # Frontend dependencies
+│   │   └── reminderStore.ts       # Zustand global state
+│   ├── App.tsx                    # Root layout · tabs · bottom bar
+│   └── index.css                  # Design tokens & global styles
+│
+├── src-tauri/                    # Rust backend
+│   └── src/
+│       ├── commands.rs            # Tauri IPC command handlers
+│       ├── db.rs                  # SQLite layer + idempotent migrations
+│       ├── mcp_server.rs          # Local MCP HTTP server (axum)
+│       ├── notifications.rs       # Native OS notifications
+│       ├── scheduler.rs           # Background task activation engine
+│       ├── tray.rs                # System tray icon & menu
+│       ├── window.rs              # Multi-window management
+│       └── lib.rs                 # Plugin registration
+│
+├── quick-add.html                 # Standalone quick-add window
+├── edge-peek.html                 # Edge peek window entry
+├── task-card.html                 # Floating card window entry
+├── daily-digest.html              # Daily digest window entry
+└── package.json
 ```
 
-## 🧩 Core Components
+> PinedIn uses **Tauri's multi-window model** — each UI surface (main window, floating cards, edge peek, compact pill, quick-add, daily digest) is an independent WebView with its own entry point, keeping each surface minimal and fast.
 
-### 🎯 **Task Management**
-- **`TaskList.tsx`** – Main task listing with search, filtering, and inline actions
-- **`TaskCard.tsx`** – Floating always-on-top card with shake animation and actions
-- **`AddTaskModal.tsx`** – Form for creating and editing tasks
-- **`PreScheduleModal.tsx`** – Schedule tasks for future activation
-- **`UrgencyBadge.tsx`** – Visual urgency indicator (Critical/Medium/Low)
+---
 
-### 📂 **Workspaces**
-- **`WorkspacesView.tsx`** – Workspace listing with create/rename/delete
-- **`WorkspaceDetailView.tsx`** – Scoped task view within a workspace
-
-### ⚙️ **System Features**
-- **`SettingsPanel.tsx`** – Settings: theme, launch at login, shake interval, updates
-- **`UpdateBanner.tsx`** – In-app update notification
-- **`DailyDigest.tsx`** – Daily task summary overlay
-
-### 🔧 **Backend Integration**
-- **`tauriCommands.ts`** – Type-safe Tauri command definitions
-- **`commands.rs`** – Rust command implementations
-- **`db.rs`** – SQLite database layer with migrations
-- **`scheduler.rs`** – Background scheduling for reminders
-- **`tray.rs`** – System tray icon and context menu
-
-## 💡 Usage
-
-### Creating a Task
-```typescript
-import { createTask } from "@/lib/tauriCommands";
-const task = await createTask(
-  "Finish report",
-  "Complete Q4 financial analysis",
-  "critical",
-  "2024-12-15",
-  null,         // recurrence
-  null,         // tags
-  null,         // time limit (minutes)
-  null          // workspace id
-);
-```
-
-### Pre-Scheduling a Task
-```typescript
-import { createTask } from "@/lib/tauriCommands";
-await createTask(
-  "Team standup",
-  "",
-  "medium",
-  "",
-  null, null, null, null,
-  new Date("2024-12-16T09:00").toISOString() // scheduled_at
-);
-```
-
-### Toggle Zen Mode
-```typescript
-import { setZenMode } from "@/lib/tauriCommands";
-await setZenMode(true);  // hides main window, keeps floating cards
-```
-
-### Changing Theme
-```typescript
-const saveSetting = useReminderStore((s) => s.saveSetting);
-await saveSetting("theme", "dark"); // light, dark, or system
-```
-
-## 🚀 Development
-
-### Available Scripts
-
-```bash
-npm run dev           # Start Vite dev server (frontend only)
-npm run build         # Build frontend assets
-npm run tauri dev     # Start full Tauri development environment
-npm run tauri build   # Build production desktop application
-```
-
-### Database Schema
+## 🗄 Database Schema
 
 ```sql
--- Tasks
 CREATE TABLE tasks (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  title TEXT NOT NULL,
-  description TEXT NOT NULL DEFAULT '',
-  urgency TEXT NOT NULL DEFAULT 'medium'
-    CHECK(urgency IN ('low', 'medium', 'critical')),
-  due_time TEXT NOT NULL DEFAULT '',
-  completed INTEGER NOT NULL DEFAULT 0,
-  created_at TEXT NOT NULL,
-  recurrence TEXT DEFAULT NULL,
-  tags TEXT DEFAULT NULL,
-  time_limit_minutes INTEGER DEFAULT NULL,
-  started_at TEXT DEFAULT NULL,
-  is_presceduled INTEGER DEFAULT 0,
-  scheduled_at TEXT DEFAULT NULL
+  id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+  title                TEXT    NOT NULL,
+  description          TEXT    NOT NULL DEFAULT '',
+  urgency              TEXT    NOT NULL DEFAULT 'medium'
+                                CHECK(urgency IN ('low', 'medium', 'critical')),
+  due_time             TEXT    NOT NULL DEFAULT '',
+  completed            INTEGER NOT NULL DEFAULT 0,
+  created_at           TEXT    NOT NULL,
+  recurrence           TEXT,
+  tags                 TEXT,
+  time_limit_minutes   INTEGER,
+  started_at           TEXT,
+  is_presceduled       INTEGER DEFAULT 0,
+  scheduled_at         TEXT
 );
 
--- Settings
-CREATE TABLE settings (
-  key TEXT PRIMARY KEY,
-  value TEXT NOT NULL
-);
-
--- Default settings
-INSERT OR IGNORE INTO settings (key, value) VALUES
-  ('theme', 'dark'),
-  ('shake_interval', '30');
-
--- Workspaces
 CREATE TABLE workspaces (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL,
-  state_json TEXT NOT NULL,
-  created_at TEXT NOT NULL
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  name        TEXT NOT NULL,
+  state_json  TEXT NOT NULL,
+  created_at  TEXT NOT NULL
+);
+
+CREATE TABLE settings (
+  key   TEXT PRIMARY KEY,
+  value TEXT NOT NULL
 );
 ```
 
-## 📱 Platform Support
+Migrations are idempotent and run automatically on startup — no manual steps needed when upgrading.
+
+---
+
+## 🖥 Platform Support
 
 | Platform | Status | Notes |
-|----------|--------|-------|
-| **Windows** | ✅ Fully Supported | NSIS installer, tested on Windows 10/11 |
-| **Linux** | ✅ Supported | AppImage + Deb, tested on Ubuntu 22.04+ |
+|---|---|---|
+| **Windows 10 / 11** | ✅ Fully supported | NSIS installer |
+| **Linux (X11)** | ✅ Fully supported | AppImage · `.deb` |
+| **Linux (Wayland / GNOME)** | ⚠️ Partial | See below |
+| **KDE Plasma** | ✅ Fully supported | X11 and Wayland |
 
-## Linux
+### Linux — Wayland notes
 
-### Requirements
-- WebKitGTK 2.44 or higher
-- libappindicator3 (for system tray)
+Always-on-top floating cards require the X11 backend on GNOME. Either:
 
-### Known Issues
-
-**Wayland:** Always-on-top floating cards require the X11 backend on GNOME. Run with `GDK_BACKEND=x11 pinedin`, or install the [Always on Top](https://extensions.gnome.org/extension/8324/always-on-top) GNOME extension and pin PinedIn windows manually.
-
-**GNOME:** System tray requires the [AppIndicator extension](https://extensions.gnome.org/extension/615/appindicator-support).
-
-**KDE:** Fully supported on both X11 and Wayland.
-
-### Running on Wayland
 ```bash
+# Force X11 backend
 GDK_BACKEND=x11 ./PinedIn.AppImage
 ```
 
-Alternatively, install the [Always on Top](https://extensions.gnome.org/extension/8324/always-on-top) GNOME extension and pin PinedIn windows manually.
+…or install the [Always on Top](https://extensions.gnome.org/extension/8324/always-on-top) GNOME extension and pin PinedIn windows manually.
 
-### Crash on launch
-If the app crashes immediately try:
+**System tray on GNOME** requires the [AppIndicator extension](https://extensions.gnome.org/extension/615/appindicator-support).
+
+**Crash on launch?** Try:
+
 ```bash
 WEBKIT_DISABLE_COMPOSITING_MODE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 ./PinedIn.AppImage
 ```
 
+**WebKitGTK requirement:** version 2.44 or higher · `libappindicator3` for system tray.
+
+---
+
+## 🗺 Roadmap
+
+- [x] **v0.1** — Core CRUD, urgency sorting, floating cards
+- [x] **v0.2** — System tray, auto-start, themes, shake reminders
+- [x] **v0.3** — Workspaces, pre-scheduling, Zen mode, snap-to-grid
+- [x] **v0.4** — Command palette, Edge Peek, Compact Pill, MCP server, Daily Digest, onboarding
+- [ ] **v0.5** — Recurring tasks with cron-like scheduling
+- [ ] **v0.6** — Tags, categories, and advanced filtering
+- [ ] **v0.7** — Android companion app (local-network capture → desktop sync)
+- [ ] **v1.0** — Plugin / extension system
+
+---
+
 ## 🤝 Contributing
 
-Contributions are welcome! Please see our [Contributing Guidelines](CONTRIBUTING.md).
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+```bash
+# Fork, then:
+git checkout -b feat/your-feature
+# make changes
+git commit -m "feat: describe your change"
+git push origin feat/your-feature
+# open a Pull Request
+```
+
+---
 
 ## 📄 License
 
-MIT License — see [LICENSE](LICENSE).
-
-## 🚧 Roadmap
-
-- [x] **v0.1.0** — Core task management with CRUD and urgency sorting
-- [x] **v0.2.0** — System tray, auto-start, theme support, floating task cards
-- [x] **v0.3.0** — Workspaces, pre-scheduling, Zen mode, snap-to-grid
-- [ ] **v0.4.0** — Recurring tasks with cron-like scheduling
-- [ ] **v0.5.0** — Task categories, tags, and advanced filtering
-- [ ] **v1.0.0** — Plugin system for extensions
+MIT — see [LICENSE](LICENSE).
 
 ---
 
 <div align="center">
 
-**Made with ❤️ for productive developers everywhere**
+Built with Rust, React, and a deep hatred of forgotten tasks.
 
-[Report Bug](https://github.com/Zarl-prog/PinedIn/issues) · [Request Feature](https://github.com/Zarl-prog/PinedIn/issues)
+[Report a bug](https://github.com/Zarl-prog/PinedIn/issues) · [Request a feature](https://github.com/Zarl-prog/PinedIn/issues)
 
 </div>

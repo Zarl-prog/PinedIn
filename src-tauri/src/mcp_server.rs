@@ -86,7 +86,18 @@ async fn message_handler(
         "tools/list" => handle_tools_list(&id),
         "tools/call" => {
             let params = body.get("params").and_then(|p| p.as_object()).cloned();
-            handle_tool_call(&id, params, &state).await
+            // Run tool calls on a blocking thread to avoid starving the
+            // tokio runtime with synchronous rusqlite DB operations.
+            let state_clone = state.clone();
+            let id_clone = id.clone();
+            tokio::task::spawn_blocking(move || {
+                handle_tool_call(&id_clone, params, &state_clone)
+            })
+            .await
+            .map_err(|e| {
+                eprintln!("[mcp] Tool call panicked: {e}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?
         }
         "notifications/initialized" => Ok(None),
         _ => Ok(Some(json!({
@@ -494,7 +505,7 @@ fn handle_tools_list(id: &Option<Value>) -> Result<Option<Value>, StatusCode> {
     })))
 }
 
-async fn handle_tool_call(
+fn handle_tool_call(
     id: &Option<Value>,
     params: Option<serde_json::Map<String, Value>>,
     state: &McpState,
@@ -515,7 +526,7 @@ async fn handle_tool_call(
         "add_task" => tool_add_task(arguments, state),
         "list_tasks" => tool_list_tasks(state),
         "complete_task" => tool_complete_task(arguments, state),
-        "add_multiple_tasks" => tool_add_multiple_tasks(arguments, state).await,
+        "add_multiple_tasks" => tool_add_multiple_tasks(arguments, state),
         "update_task" => tool_update_task(arguments, state),
         "delete_task" => tool_delete_task(arguments, state),
         "list_all_tasks" => tool_list_all_tasks(state),
@@ -657,7 +668,7 @@ fn tool_complete_task(
     Ok(format!("Task {} marked as complete.", task_id))
 }
 
-async fn tool_add_multiple_tasks(
+fn tool_add_multiple_tasks(
     arguments: serde_json::Map<String, Value>,
     state: &McpState,
 ) -> Result<String, String> {

@@ -2,7 +2,7 @@ use crate::db::{DbHandle, Task};
 use crate::notifications;
 use crate::window;
 use std::collections::HashSet;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 use tauri::{AppHandle, Emitter, Manager, State, Window};
 use tauri_plugin_autostart::ManagerExt;
@@ -12,12 +12,20 @@ pub static COMPACT_MODE: AtomicBool = AtomicBool::new(false);
 pub static EDGE_PEEK_ENABLED: AtomicBool = AtomicBool::new(false);
 pub static EDGE_PEEK_EXPANDED: AtomicBool = AtomicBool::new(false);
 
+/// Monotonically increasing counter bumped on every task mutation.
+/// Used to detect concurrent changes and abort stale auto-hide threads.
+pub static TASK_GEN: AtomicU64 = AtomicU64::new(0);
+pub fn bump_task_gen() {
+    TASK_GEN.fetch_add(1, Ordering::SeqCst);
+}
+
 static PENDING_SNOOZES: OnceLock<Mutex<HashSet<i64>>> = OnceLock::new();
 pub fn pending_snoozes() -> &'static Mutex<HashSet<i64>> {
     PENDING_SNOOZES.get_or_init(|| Mutex::new(HashSet::new()))
 }
 
 pub fn emit_tasks_updated(app: &tauri::AppHandle, db: &DbHandle) {
+    bump_task_gen();
     if let Ok(tasks) = db.get_all_tasks() {
         let _ = app.emit("tasks-updated", serde_json::json!({ "tasks": tasks }));
     }
@@ -35,8 +43,14 @@ fn check_edge_peek_visibility(app: &AppHandle, db: &DbHandle) {
             // period, if still empty, close the window entirely and reset the
             // expanded state so it reopens as a collapsed pill next time.
             let app_clone = app.clone();
+            let gen = TASK_GEN.load(Ordering::SeqCst);
             std::thread::spawn(move || {
                 std::thread::sleep(std::time::Duration::from_secs(3));
+                // Abort if a task mutation happened while we slept —
+                // the window may have been re-opened by the new task.
+                if TASK_GEN.load(Ordering::SeqCst) != gen {
+                    return;
+                }
                 // Double-check tasks are still empty
                 if let Some(db_state) = app_clone.try_state::<Arc<DbHandle>>() {
                     if let Ok(tasks) = db_state.get_incomplete_tasks() {

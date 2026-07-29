@@ -1,9 +1,12 @@
 use crate::db::{DbHandle, Task};
 use crate::window;
 use chrono::Utc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tauri::{AppHandle, Manager};
+
+static STOP_SCHEDULER: AtomicBool = AtomicBool::new(false);
 
 /// Spawn a background thread that wakes every 30 seconds, finds any
 /// pre-scheduled tasks whose `scheduled_at` has arrived, activates them
@@ -16,9 +19,21 @@ pub fn start_scheduler(app: AppHandle) {
 
     // Then loop every 30 seconds.
     std::thread::spawn(move || loop {
+        if STOP_SCHEDULER.load(Ordering::Relaxed) {
+            eprintln!("[scheduler] Stopped");
+            return;
+        }
         std::thread::sleep(Duration::from_secs(30));
+        if STOP_SCHEDULER.load(Ordering::Relaxed) {
+            eprintln!("[scheduler] Stopped");
+            return;
+        }
         check_and_spawn_due_tasks(&app);
     });
+}
+
+pub fn stop_scheduler() {
+    STOP_SCHEDULER.store(true, Ordering::Relaxed);
 }
 
 fn check_and_spawn_due_tasks(app: &AppHandle) {

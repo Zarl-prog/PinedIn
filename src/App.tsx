@@ -49,7 +49,7 @@ import {
 import { checkAndInstall, checkForUpdates } from "@/lib/updater";
 import { useReminderStore } from "@/store/reminderStore";
 
-type AppTab = "tasks" | "workspaces";
+type AppTab = "tasks" | "workspaces" | "settings";
 
 
 
@@ -58,7 +58,7 @@ export default function App() {
 
   const tasks = useReminderStore((s) => s.tasks);
   const isAddTaskOpen = useReminderStore((s) => s.isAddTaskOpen);
-  const isSettingsOpen = useReminderStore((s) => s.isSettingsOpen);
+  // settings is now a tab via activeTab
   const isPreScheduleOpen = useReminderStore((s) => s.isPreScheduleOpen);
   const isMcpOpen = useReminderStore((s) => s.isMcpOpen);
   const editingTask = useReminderStore((s) => s.editingTask);
@@ -67,7 +67,7 @@ export default function App() {
   // Actions — always stable, never cause re-renders
   const fetchTasks = useReminderStore.getState().fetchTasks;
   const setAddTaskOpen = useReminderStore.getState().setAddTaskOpen;
-  const setSettingsOpen = useReminderStore.getState().setSettingsOpen;
+  // settings is now a tab (no store state needed)
   const setPreScheduleOpen = useReminderStore.getState().setPreScheduleOpen;
   const setMcpOpen = useReminderStore.getState().setMcpOpen;
   const setEditingTask = useReminderStore.getState().setEditingTask;
@@ -153,9 +153,6 @@ export default function App() {
         setAddTaskOpen(false);
         setEditingTask(null);
       }
-      if (isSettingsOpen) {
-        setSettingsOpen(false);
-      }
       if (isPreScheduleOpen) {
         setPreScheduleOpen(false);
       }
@@ -167,11 +164,9 @@ export default function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
     isAddTaskOpen,
-    isSettingsOpen,
     isPreScheduleOpen,
     isMcpOpen,
     setAddTaskOpen,
-    setSettingsOpen,
     setMcpOpen,
     setPreScheduleOpen,
     setEditingTask,
@@ -428,7 +423,7 @@ export default function App() {
         group: "App",
         keywords: "settings preferences config options",
         icon: <GearSix size={15} weight="bold" />,
-        perform: () => setSettingsOpen(true),
+        perform: () => setActiveTab("settings"),
       },
       {
         id: "restart-tour",
@@ -474,7 +469,6 @@ export default function App() {
     toggleCompactMode,
     toggleZenMode,
     toggleShake,
-    setSettingsOpen,
   ]);
 
   return (
@@ -577,7 +571,7 @@ export default function App() {
           </button>
           <div style={{ position: "relative" }}>
             <button
-              onClick={() => setSettingsOpen(true)}
+              onClick={() => setActiveTab("settings")}
               title="Settings"
               data-onboarding="settings"
               className="feature-btn ghost"
@@ -1023,6 +1017,10 @@ export default function App() {
           </>
         )}
 
+        {activeTab === "settings" && (
+          <SettingsPanel updateAvailable={updateAvailable} />
+        )}
+
         {activeTab === "workspaces" && (
           <div
             style={{
@@ -1210,12 +1208,6 @@ export default function App() {
         open={isPreScheduleOpen}
         onClose={() => setPreScheduleOpen(false)}
         workspaceId={effectiveWorkspaceId}
-      />
-
-      <SettingsPanel
-        open={isSettingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        updateAvailable={updateAvailable}
       />
 
       <McpPanel open={isMcpOpen} onClose={() => setMcpOpen(false)} />

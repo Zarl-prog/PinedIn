@@ -7,11 +7,9 @@ import {
   Power,
   SlidersHorizontal,
   Tag,
-  X,
 } from "@phosphor-icons/react";
 import { getVersion } from "@tauri-apps/api/app";
 import { emit } from "@tauri-apps/api/event";
-import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useSettings } from "@/hooks/useSettings";
 import {
@@ -34,8 +32,6 @@ const SHAKE_OPTIONS: { value: number; label: string }[] = [
 ];
 
 interface SettingsPanelProps {
-  open: boolean;
-  onClose: () => void;
   updateAvailable?: string | null;
 }
 
@@ -140,7 +136,7 @@ function Row({
  * shake interval selector, and update controls.
  * All styling uses the exact palette: #0a0a0a, #1a1a1a, #ededed, #fff, etc.
  */
-export default function SettingsPanel({ open, onClose, updateAvailable }: SettingsPanelProps) {
+export default function SettingsPanel({ updateAvailable }: SettingsPanelProps) {
   const { settings, updateSetting } = useSettings();
   const [autostartOn, setAutostartOn] = useState(false);
   const [autostartLoading, setAutostartLoading] = useState(false);
@@ -159,12 +155,10 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
   }, []);
 
   useEffect(() => {
-    if (open) {
-      getShakeInterval()
-        .then(setShakeIntervalState)
-        .catch(() => {});
-    }
-  }, [open]);
+    getShakeInterval()
+      .then(setShakeIntervalState)
+      .catch(() => {});
+  }, []);
 
   const handleShakeIntervalChange = async (value: number) => {
     setShakeIntervalState(value);
@@ -176,12 +170,10 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
   };
 
   useEffect(() => {
-    if (open) {
-      isAutostartEnabled()
-        .then(setAutostartOn)
-        .catch(() => {});
-    }
-  }, [open]);
+    isAutostartEnabled()
+      .then(setAutostartOn)
+      .catch(() => {});
+  }, []);
 
   const handleCheckUpdates = async () => {
     setUpdateStatus({ state: "checking" });
@@ -238,132 +230,68 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
   ];
 
   return (
-    <AnimatePresence>
-      {open && (
+    <div
+      style={{
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        padding: "24px",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "11px",
+          marginBottom: "24px",
+          flexShrink: 0,
+        }}
+      >
         <div
           style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 100,
+            width: "34px",
+            height: "34px",
+            borderRadius: "10px",
+            background: "var(--accent-soft)",
+            color: "var(--accent)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: "24px",
+            flexShrink: 0,
           }}
         >
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+          <SlidersHorizontal size={17} weight="bold" />
+        </div>
+        <div>
+          <span
             style={{
-              position: "absolute",
-              inset: 0,
-              background: "var(--bg-overlay)",
-            }}
-            onClick={onClose}
-          />
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.97, y: 8 }}
-            transition={{ type: "spring", stiffness: 380, damping: 30 }}
-            style={{
-              position: "relative",
-              zIndex: 10,
-              width: "100%",
-              maxWidth: "460px",
-              background: "var(--bg-modal)",
-              border: "1px solid var(--border)",
-              borderRadius: "16px",
-              padding: "24px",
-              boxShadow: "var(--shadow-menu)",
+              display: "block",
+              fontSize: "17px",
+              fontWeight: 600,
+              color: "var(--text-primary)",
+              lineHeight: 1.2,
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: "22px",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "11px" }}>
-                <div
-                  style={{
-                    width: "34px",
-                    height: "34px",
-                    borderRadius: "10px",
-                    background: "var(--accent-soft)",
-                    color: "var(--accent)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  <SlidersHorizontal size={17} weight="bold" />
-                </div>
-                <div>
-                  <span
-                    style={{
-                      display: "block",
-                      fontSize: "17px",
-                      fontWeight: 600,
-                      color: "var(--text-primary)",
-                      lineHeight: 1.2,
-                    }}
-                  >
-                    Settings
-                  </span>
-                  <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                    Preferences &amp; appearance
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={onClose}
-                style={{
-                  width: "28px",
-                  height: "28px",
-                  borderRadius: "8px",
-                  border: "1px solid var(--border-light)",
-                  background: "transparent",
-                  color: "var(--text-secondary)",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "15px",
-                  transition: "all 0.15s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "var(--bg-badge)";
-                  e.currentTarget.style.color = "var(--text-primary)";
-                  e.currentTarget.style.borderColor = "var(--text-muted)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "var(--text-secondary)";
-                  e.currentTarget.style.borderColor = "var(--border-light)";
-                }}
-              >
-                <X size={16} weight="light" />
-              </button>
-            </div>
+            Settings
+          </span>
+          <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+            Preferences &amp; appearance
+          </span>
+        </div>
+      </div>
 
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "20px",
-                maxHeight: "min(70vh, 620px)",
-                overflowY: "auto",
-                margin: "0 -4px",
-                padding: "0 4px",
-              }}
-            >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "20px",
+          overflowY: "auto",
+          flex: 1,
+          margin: "0 -4px",
+          padding: "0 4px",
+        }}
+      >
               {/* ─── General ─────────────────────────────────────── */}
               <Section icon={<Power size={13} weight="bold" />} title="General">
                 <Row
@@ -387,8 +315,6 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                     <button
                       type="button"
                       onClick={() => {
-                        onClose();
-                        // Let the panel finish closing before the tour appears.
                         setTimeout(() => {
                           emit("show_onboarding").catch(() => {});
                         }, 250);
@@ -543,7 +469,6 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                     <button
                       onClick={() => {
                         useReminderStore.getState().setCustomizeOpen(true);
-                        onClose();
                       }}
                       className="feature-btn"
                       style={{
@@ -615,10 +540,7 @@ export default function SettingsPanel({ open, onClose, updateAvailable }: Settin
                   }
                 />
               </Section>
-            </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+      </div>
+    </div>
   );
 }

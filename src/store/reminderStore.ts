@@ -34,7 +34,6 @@ export interface OverlayState {
   // UI state
   isLoading: boolean;
   isAddTaskOpen: boolean;
-  isSettingsOpen: boolean;
   isCustomizeOpen: boolean;
   isPreScheduleOpen: boolean;
   isMcpOpen: boolean;
@@ -92,7 +91,7 @@ export interface OverlayState {
 
   // Actions - UI
   setAddTaskOpen: (open: boolean) => void;
-  setSettingsOpen: (open: boolean) => void;
+  // settings is now a tab in App.tsx
   setMcpOpen: (open: boolean) => void;
   setPreScheduleOpen: (open: boolean) => void;
   setCustomizeOpen: (open: boolean) => void;
@@ -116,7 +115,6 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
   overlayVisible: false,
   isLoading: false,
   isAddTaskOpen: false,
-  isSettingsOpen: false,
   isPreScheduleOpen: false,
   isCustomizeOpen: false,
   isMcpOpen: false,
@@ -469,7 +467,6 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
 
   setAddTaskOpen: (open: boolean) =>
     set({ isAddTaskOpen: open, editingTask: open ? get().editingTask : null }),
-  setSettingsOpen: (open: boolean) => set({ isSettingsOpen: open }),
   setMcpOpen: (open: boolean) => set({ isMcpOpen: open }),
   setPreScheduleOpen: (open: boolean) => set({ isPreScheduleOpen: open }),
   setCustomizeOpen: (open: boolean) => set({ isCustomizeOpen: open }),

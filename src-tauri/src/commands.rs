@@ -780,6 +780,16 @@ pub fn load_workspace(app: AppHandle, workspace_id: i64) -> Result<(), String> {
 pub fn delete_workspace(app: AppHandle, workspace_id: i64) -> Result<(), String> {
     let db = app.state::<Arc<DbHandle>>();
 
+    // Close all floating task card windows for tasks in this workspace
+    // before deleting them, preventing orphan windows with no DB record.
+    if let Ok(tasks) = db.get_all_workspace_tasks(workspace_id) {
+        for task in &tasks {
+            if let Some(id) = task.id {
+                window::close_task_card(&app, id);
+            }
+        }
+    }
+
     // Was the workspace being deleted the currently active one?
     let was_active = matches!(
         db.get_setting("active_workspace_id"),

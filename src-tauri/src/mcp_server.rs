@@ -849,7 +849,31 @@ fn tool_delete_workspace(
         .and_then(|v| v.as_i64())
         .ok_or_else(|| "Missing required argument: workspace_id".to_string())?;
 
+    // Close all floating task card windows for tasks in this workspace
+    // before deleting them, preventing orphan windows with no DB record.
+    if let Ok(tasks) = state.db.get_all_workspace_tasks(workspace_id) {
+        for task in &tasks {
+            if let Some(id) = task.id {
+                crate::window::close_task_card(&state.app_handle, id);
+            }
+        }
+    }
+
+    // Check if this workspace is currently active; if so, deactivate it
+    // so the frontend doesn't point to a non-existent workspace.
+    let was_active = matches!(
+        state.db.get_setting("active_workspace_id"),
+        Ok(Some(val)) if val == workspace_id.to_string()
+    );
+
     state.db.delete_workspace(workspace_id)?;
+
+    if was_active {
+        state.db.update_setting("active_workspace_id", "")?;
+        let _ = state.app_handle.emit("workspace_deactivated", ());
+    }
+
+    commands::emit_tasks_updated(&state.app_handle, &state.db);
     Ok(format!("Workspace {} deleted.", workspace_id))
 }
 

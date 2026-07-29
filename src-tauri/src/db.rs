@@ -94,6 +94,19 @@ pub struct DbHandle {
 }
 
 impl DbHandle {
+    /// Acquire the database connection lock, recovering from a poisoned mutex
+    /// by consuming the poison error. This prevents a single panicking thread
+    /// from permanently disabling all database operations.
+    fn conn(&self) -> Result<std::sync::MutexGuard<'_, Connection>, String> {
+        match self.conn.lock() {
+            Ok(guard) => Ok(guard),
+            Err(poisoned) => {
+                eprintln!("[db] Mutex was poisoned, recovering");
+                Ok(poisoned.into_inner())
+            }
+        }
+    }
+
     pub fn new(app_data_dir: PathBuf) -> Result<Self, String> {
         std::fs::create_dir_all(&app_data_dir)
             .map_err(|e| format!("Failed to create app data directory: {e}"))?;
@@ -119,7 +132,7 @@ impl DbHandle {
     }
 
     fn initialize(&self) -> Result<(), String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
 
         conn.execute_batch(
             "CREATE TABLE IF NOT EXISTS tasks (
@@ -262,7 +275,7 @@ impl DbHandle {
         time_limit_minutes: Option<i64>,
         workspace_id: Option<i64>,
     ) -> Result<Task, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         let now = chrono::Utc::now().to_rfc3339();
         let started_at = if time_limit_minutes.is_some() {
             Some(chrono::Local::now().to_rfc3339())
@@ -319,7 +332,7 @@ impl DbHandle {
         tags: Option<&str>,
         workspace_id: Option<i64>,
     ) -> Result<i64, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         let now = chrono::Utc::now().to_rfc3339();
         let started_at = if time_limit_minutes.is_some() {
             Some(chrono::Local::now().to_rfc3339())
@@ -350,7 +363,7 @@ impl DbHandle {
     /// and that are not yet completed. Used by the scheduler to
     /// determine which tasks to activate.
     pub fn get_due_presceduled_tasks(&self, now: &str) -> Result<Vec<Task>, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
              "SELECT id, title, description, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at, workspace_id
              FROM tasks
@@ -374,7 +387,7 @@ impl DbHandle {
     /// or due but not yet activated by the scheduler). Surfaced in the
     /// main app's Scheduled section so users can see and cancel them.
     pub fn get_presceduled_tasks(&self) -> Result<Vec<Task>, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             "SELECT id, title, description, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at, workspace_id
              FROM tasks
@@ -395,7 +408,7 @@ impl DbHandle {
     /// a normal active task. Called by the scheduler when a pre-scheduled
     /// task's datetime arrives.
     pub fn activate_presceduled_task(&self, id: i64) -> Result<(), String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         conn.execute(
             "UPDATE tasks SET is_presceduled = 0 WHERE id = ?1",
             rusqlite::params![id],
@@ -407,7 +420,7 @@ impl DbHandle {
     /// Active (non-prescheduled) global tasks only — used for the main
     /// "Tasks" view and for opening floating cards on startup.
     pub fn get_all_tasks(&self) -> Result<Vec<Task>, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             "SELECT id, title, description, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at, workspace_id
              FROM tasks
@@ -428,7 +441,7 @@ impl DbHandle {
     /// Active (non-prescheduled) incomplete global tasks only — used to
     /// drive the floating card stack and the due-date notification checker.
     pub fn get_incomplete_tasks(&self) -> Result<Vec<Task>, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             "SELECT id, title, description, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at, workspace_id
              FROM tasks
@@ -448,7 +461,7 @@ impl DbHandle {
 
     /// Incomplete tasks scoped to a specific workspace.
     pub fn get_workspace_tasks(&self, workspace_id: i64) -> Result<Vec<Task>, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             "SELECT id, title, description, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at, workspace_id
              FROM tasks
@@ -468,7 +481,7 @@ impl DbHandle {
     /// All tasks (including completed) scoped to a specific workspace —
     /// used for task counts on workspace cards.
     pub fn get_all_workspace_tasks(&self, workspace_id: i64) -> Result<Vec<Task>, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             "SELECT id, title, description, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at, workspace_id
              FROM tasks
@@ -488,7 +501,7 @@ impl DbHandle {
     /// ALL incomplete non-prescheduled tasks — no LIMIT, ordered by
     /// created_at DESC. Used by compact mode to reopen all task windows.
     pub fn get_all_active_tasks(&self) -> Result<Vec<Task>, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             "SELECT id, title, description, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at, workspace_id
              FROM tasks
@@ -508,7 +521,7 @@ impl DbHandle {
     /// Read a single setting value by key. Returns Ok(None) if the key
     /// does not exist.
     pub fn get_setting(&self, key: &str) -> Result<Option<String>, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         match conn.query_row(
             "SELECT value FROM settings WHERE key = ?1",
             rusqlite::params![key],
@@ -523,7 +536,7 @@ impl DbHandle {
     /// ALL incomplete tasks across global and all workspaces — used for
     /// opening floating cards on startup (cards float regardless of workspace).
     pub fn get_all_incomplete_tasks_global(&self) -> Result<Vec<Task>, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             "SELECT id, title, description, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at, workspace_id
              FROM tasks
@@ -542,7 +555,7 @@ impl DbHandle {
 
     /// Count incomplete tasks in a workspace.
     pub fn count_workspace_tasks(&self, workspace_id: i64) -> Result<i64, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         let n: i64 = conn
             .query_row(
                 "SELECT COUNT(*) FROM tasks WHERE completed = 0 AND is_presceduled = 0 AND workspace_id = ?1",
@@ -554,7 +567,7 @@ impl DbHandle {
     }
 
     pub fn get_task_by_id(&self, id: i64) -> Result<Task, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         conn.query_row(
             "SELECT id, title, description, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at, workspace_id
              FROM tasks WHERE id = ?1",
@@ -575,7 +588,7 @@ impl DbHandle {
         time_limit_minutes: Option<i64>,
         started_at: Option<&str>,
     ) -> Result<(), String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         conn.execute(
             "UPDATE tasks SET title=?1, description=?2, due_time=?3, recurrence=?4, tags=?5, time_limit_minutes=?6, started_at=?7 WHERE id=?8",
             rusqlite::params![title, description, due_time, recurrence, tags, time_limit_minutes, started_at, id],
@@ -584,14 +597,14 @@ impl DbHandle {
     }
 
     pub fn delete_task(&self, id: i64) -> Result<(), String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         conn.execute("DELETE FROM tasks WHERE id=?1", rusqlite::params![id])
             .map_err(|e| format!("Failed to delete task: {e}"))?;
         Ok(())
     }
 
     pub fn complete_task(&self, id: i64) -> Result<(), String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         conn.execute(
             "UPDATE tasks SET completed=1 WHERE id=?1",
             rusqlite::params![id],
@@ -615,7 +628,7 @@ impl DbHandle {
         time_limit_minutes: Option<i64>,
         workspace_id: Option<i64>,
     ) -> Result<Task, String> {
-        let mut conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let mut conn = self.conn()?;
         let now = chrono::Utc::now().to_rfc3339();
         let started_at = if time_limit_minutes.is_some() {
             Some(chrono::Local::now().to_rfc3339())
@@ -672,7 +685,7 @@ impl DbHandle {
     }
 
     pub fn uncomplete_task(&self, id: i64) -> Result<(), String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         conn.execute(
             "UPDATE tasks SET completed=0 WHERE id=?1",
             rusqlite::params![id],
@@ -686,7 +699,7 @@ impl DbHandle {
         task_id: i64,
         workspace_id: Option<i64>,
     ) -> Result<(), String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         conn.execute(
             "UPDATE tasks SET workspace_id = ?1 WHERE id = ?2",
             rusqlite::params![workspace_id, task_id],
@@ -700,7 +713,7 @@ impl DbHandle {
     /// Count tasks due strictly before `today` that are still incomplete.
     /// Tasks with an empty due_time are excluded (never scheduled).
     pub fn count_overdue_tasks(&self, today: &str) -> Result<i64, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         let n: i64 = conn
             .query_row(
                 "SELECT COUNT(*) FROM tasks
@@ -714,7 +727,7 @@ impl DbHandle {
 
     /// Count incomplete tasks whose due_time is exactly `today`.
     pub fn count_due_today(&self, today: &str) -> Result<i64, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         let n: i64 = conn
             .query_row(
                 "SELECT COUNT(*) FROM tasks
@@ -729,7 +742,7 @@ impl DbHandle {
     /// Count incomplete tasks whose due_time is exactly `date` — used
     /// to surface items that were due yesterday and still aren't done.
     pub fn count_unfinished_from_date(&self, date: &str) -> Result<i64, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         let n: i64 = conn
             .query_row(
                 "SELECT COUNT(*) FROM tasks
@@ -743,7 +756,7 @@ impl DbHandle {
 
     /// Count every incomplete task, regardless of due date.
     pub fn count_active_tasks(&self) -> Result<i64, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         let n: i64 = conn
             .query_row(
                 "SELECT COUNT(*) FROM tasks WHERE completed = 0 AND is_presceduled = 0",
@@ -757,7 +770,7 @@ impl DbHandle {
     // ─── Settings ────────────────────────────────────────────────────────
 
     pub fn get_settings_map(&self) -> Result<std::collections::HashMap<String, String>, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         let mut stmt = conn
             .prepare("SELECT key, value FROM settings")
             .map_err(|e| format!("Failed to prepare: {e}"))?;
@@ -776,7 +789,7 @@ impl DbHandle {
     }
 
     pub fn get_settings(&self) -> Result<AppSettings, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         let mut stmt = conn
             .prepare("SELECT key, value FROM settings")
             .map_err(|e| format!("Failed to prepare: {e}"))?;
@@ -803,7 +816,7 @@ impl DbHandle {
     // ─── Workspaces ───────────────────────────────────────────────────────
 
     pub fn save_workspace(&self, name: &str, state_json: &str) -> Result<i64, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         let now = chrono::Utc::now().to_rfc3339();
         conn.execute(
             "INSERT INTO workspaces (name, state_json, created_at) VALUES (?1, ?2, ?3)",
@@ -814,7 +827,7 @@ impl DbHandle {
     }
 
     pub fn get_all_workspaces(&self) -> Result<Vec<Workspace>, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         let mut stmt = conn
             .prepare("SELECT id, name, state_json, created_at FROM workspaces ORDER BY id ASC")
             .map_err(|e| format!("Failed to prepare: {e}"))?;
@@ -836,7 +849,7 @@ impl DbHandle {
     }
 
     pub fn get_workspace_by_id(&self, id: i64) -> Result<Workspace, String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         conn.query_row(
             "SELECT id, name, state_json, created_at FROM workspaces WHERE id = ?1",
             rusqlite::params![id],
@@ -853,7 +866,7 @@ impl DbHandle {
     }
 
     pub fn delete_workspace(&self, id: i64) -> Result<(), String> {
-        let mut conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let mut conn = self.conn()?;
         let tx = conn
             .transaction()
             .map_err(|e| format!("Transaction error: {e}"))?;
@@ -875,7 +888,7 @@ impl DbHandle {
     }
 
     pub fn update_setting(&self, key: &str, value: &str) -> Result<(), String> {
-        let conn = self.conn.lock().map_err(|e| format!("Lock error: {e}"))?;
+        let conn = self.conn()?;
         conn.execute(
             "INSERT OR REPLACE INTO settings (key, value) VALUES (?1, ?2)",
             rusqlite::params![key, value],

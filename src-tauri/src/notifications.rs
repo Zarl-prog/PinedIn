@@ -1,10 +1,13 @@
 use crate::db::DbHandle;
 use chrono::Local;
 use std::collections::HashSet;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Duration;
 use tauri::{AppHandle, Manager};
 use tauri_plugin_notification::NotificationExt;
+
+static STOP_CHECKER: AtomicBool = AtomicBool::new(false);
 
 struct NotificationState {
     notified_ids: HashSet<i64>,
@@ -87,15 +90,29 @@ pub fn check_due_notifications(app: &AppHandle) {
     }
 }
 
+pub fn stop_checker() {
+    STOP_CHECKER.store(true, Ordering::Relaxed);
+}
+
 /// Spawn a background thread that runs the due-date check once immediately
 /// and then repeats every 60 minutes.
 pub fn start_notification_checker(app: AppHandle) {
+    STOP_CHECKER.store(false, Ordering::Relaxed);
+
     // Run once on startup
     check_due_notifications(&app);
 
     // Then repeat every hour
     std::thread::spawn(move || loop {
+        if STOP_CHECKER.load(Ordering::Relaxed) {
+            eprintln!("[notifications] Checker stopped");
+            return;
+        }
         std::thread::sleep(Duration::from_secs(3600));
+        if STOP_CHECKER.load(Ordering::Relaxed) {
+            eprintln!("[notifications] Checker stopped");
+            return;
+        }
         check_due_notifications(&app);
     });
 }

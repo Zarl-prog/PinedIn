@@ -28,7 +28,10 @@ where
             }
         }
     }
-    Err(last_error.unwrap())
+    Err(last_error.unwrap_or_else(|| {
+        eprintln!("[window] build_with_retry: max_retries=0 or no error captured");
+        tauri::Error::WindowNotFound
+    }))
 }
 
 /// Monotonic generation counter for edge-peek geometry changes. Each

@@ -424,7 +424,7 @@ impl DbHandle {
         let mut stmt = conn.prepare(
             "SELECT id, title, description, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at, workspace_id
              FROM tasks
-             WHERE is_presceduled = 0 AND workspace_id IS NULL
+             WHERE is_presceduled = 0
              ORDER BY created_at ASC
              LIMIT 500"
         ).map_err(|e| format!("Failed to prepare query: {e}"))?;
@@ -445,7 +445,7 @@ impl DbHandle {
         let mut stmt = conn.prepare(
             "SELECT id, title, description, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at, workspace_id
              FROM tasks
-             WHERE completed = 0 AND is_presceduled = 0 AND workspace_id IS NULL
+             WHERE completed = 0 AND is_presceduled = 0
              ORDER BY created_at ASC
              LIMIT 500"
         ).map_err(|e| format!("Failed to prepare query: {e}"))?;
@@ -605,11 +605,15 @@ impl DbHandle {
 
     pub fn complete_task(&self, id: i64) -> Result<(), String> {
         let conn = self.conn()?;
-        conn.execute(
-            "UPDATE tasks SET completed=1 WHERE id=?1",
-            rusqlite::params![id],
-        )
-        .map_err(|e| format!("Failed to complete task: {e}"))?;
+        let rows = conn
+            .execute(
+                "UPDATE tasks SET completed=1 WHERE id=?1 AND completed=0",
+                rusqlite::params![id],
+            )
+            .map_err(|e| format!("Failed to complete task: {e}"))?;
+        if rows == 0 {
+            return Err(format!("Task {} already completed or not found.", id));
+        }
         Ok(())
     }
 
@@ -659,11 +663,15 @@ impl DbHandle {
 
         let new_id = tx.last_insert_rowid();
 
-        tx.execute(
-            "UPDATE tasks SET completed=1 WHERE id=?1",
-            rusqlite::params![id],
-        )
-        .map_err(|e| format!("Failed to complete original task: {e}"))?;
+        let rows = tx
+            .execute(
+                "UPDATE tasks SET completed=1 WHERE id=?1 AND completed=0",
+                rusqlite::params![id],
+            )
+            .map_err(|e| format!("Failed to complete original task: {e}"))?;
+        if rows == 0 {
+            return Err(format!("Task {} already completed or not found.", id));
+        }
 
         tx.commit().map_err(|e| format!("Commit error: {e}"))?;
 

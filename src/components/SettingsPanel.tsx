@@ -20,7 +20,7 @@ import {
   isAutostartEnabled,
   setShakeInterval,
 } from "@/lib/tauriCommands";
-import { checkAndInstall } from "@/lib/updater";
+import { checkForUpdates, checkAndInstall } from "@/lib/updater";
 import { useReminderStore } from "@/store/reminderStore";
 
 const SHAKE_OPTIONS: { value: number; label: string }[] = [
@@ -90,11 +90,20 @@ export default function SettingsPanel(props: SettingsPanelProps) {
   };
 
   const handleCheckUpdates = async () => {
+    if (updateStatus.state === "available") {
+      setUpdateStatus({ state: "checking" });
+      try {
+        const result = await checkAndInstall();
+        if (result.installed) setUpdateStatus({ state: "idle" });
+      } catch (err) {
+        setUpdateStatus({ state: "error", error: err instanceof Error ? err.message : "Install failed" });
+      }
+      return;
+    }
     setUpdateStatus({ state: "checking" });
     try {
-      const result = await checkAndInstall();
-      if (result.installed) setUpdateStatus({ state: "idle" });
-      else if (result.available) setUpdateStatus({ state: "available", version: result.version });
+      const result = await checkForUpdates();
+      if (result.available) setUpdateStatus({ state: "available", version: result.version ?? undefined });
       else setUpdateStatus({ state: "none" });
     } catch (err) {
       setUpdateStatus({ state: "error", error: err instanceof Error ? err.message : "Update check failed" });

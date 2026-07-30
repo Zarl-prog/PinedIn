@@ -62,7 +62,10 @@ async fn sse_handler(
     let rx = state.tx.subscribe();
     let stream = BroadcastStream::new(rx).filter_map(|msg| match msg {
         Ok(data) => Some(Ok(Event::default().data(data))),
-        Err(_) => None,
+        Err(tokio_stream::wrappers::errors::BroadcastStreamRecvError::Lagged(n)) => {
+            eprintln!("[mcp] SSE client lagged by {n} messages");
+            None
+        }
     });
     Sse::new(stream).keep_alive(
         axum::response::sse::KeepAlive::new()
@@ -595,6 +598,10 @@ fn tool_add_task(
         .ok_or_else(|| "Missing required argument: title".to_string())?
         .to_string();
 
+    if title.trim().is_empty() {
+        return Err("Title cannot be empty.".to_string());
+    }
+
     let description = arguments
         .get("description")
         .and_then(|v| v.as_str())
@@ -661,6 +668,46 @@ fn tool_complete_task(
         .and_then(|v| v.as_i64())
         .ok_or_else(|| "Missing required argument: task_id".to_string())?;
 
+    // Check for recurrence before completing (mirrors commands::complete_task)
+    let task = state.db.get_task_by_id(task_id)?;
+
+    if let Some(ref recurrence) = task.recurrence {
+        let new_due = commands::advance_due_date(&task.due_time, recurrence);
+        let new_task = state.db.complete_with_recurrence(
+            task_id,
+            &task.title,
+            &task.description,
+            &new_due,
+            Some(recurrence.as_str()),
+            task.tags.as_deref(),
+            task.time_limit_minutes,
+            task.workspace_id,
+        )?;
+        window::close_task_card(&state.app_handle, task_id);
+
+        let app_clone = state.app_handle.clone();
+        let db_clone = state.db.clone();
+        let new_task_clone = new_task.clone();
+        std::thread::spawn(move || {
+            if commands::get_compact_mode_state(&app_clone) {
+                crate::window::open_compact_pill_window(&app_clone);
+            } else if let Ok(tasks) = db_clone.get_incomplete_tasks() {
+                let index = tasks
+                    .iter()
+                    .position(|t| t.id == new_task_clone.id)
+                    .unwrap_or(0);
+                let _ = crate::window::open_task_card(&app_clone, &new_task_clone, index);
+            }
+        });
+
+        commands::emit_tasks_updated(&state.app_handle, &state.db);
+        return Ok(format!(
+            "Task {} completed and recurred (new task {}).",
+            task_id,
+            new_task.id.unwrap_or(0)
+        ));
+    }
+
     state.db.complete_task(task_id)?;
     window::close_task_card(&state.app_handle, task_id);
     commands::emit_tasks_updated(&state.app_handle, &state.db);
@@ -677,7 +724,10 @@ fn tool_add_multiple_tasks(
         .and_then(|v| v.as_array())
         .ok_or_else(|| "Missing required argument: titles".to_string())?
         .iter()
-        .filter_map(|v| v.as_str().map(String::from))
+        .filter_map(|v| {
+            let s = v.as_str()?;
+            if s.trim().is_empty() { None } else { Some(s.to_string()) }
+        })
         .collect();
 
     if titles.is_empty() {
@@ -697,8 +747,7 @@ fn tool_add_multiple_tasks(
             None,
         ) {
             Ok(task) => {
-                if let Some(_task_id) = task.id {
-                    let _ = window::open_task_card(&state.app_handle, &task, 0);
+                if task.id.is_some() {
                     added.push(title.clone());
                 }
             }
@@ -732,6 +781,9 @@ fn tool_update_task(
         .get("title")
         .and_then(|v| v.as_str())
         .unwrap_or(&existing.title);
+    if arguments.contains_key("title") && title.trim().is_empty() {
+        return Err("Title cannot be empty.".to_string());
+    }
     let description = arguments
         .get("description")
         .and_then(|v| v.as_str())
@@ -916,6 +968,10 @@ fn tool_snooze_task(
         .get("minutes")
         .and_then(|v| v.as_i64())
         .ok_or_else(|| "Missing required argument: minutes".to_string())?;
+
+    if minutes <= 0 {
+        return Err("Minutes must be a positive integer.".to_string());
+    }
 
     // MCP snooze: hide the card and re-show after N minutes with a background
     // thread (same approach as the Tauri command). Unlike the Tauri command
@@ -1271,6 +1327,10 @@ fn tool_add_presceduled_task(
         .and_then(|v| v.as_str())
         .ok_or_else(|| "Missing required argument: title".to_string())?
         .to_string();
+
+    if title.trim().is_empty() {
+        return Err("Title cannot be empty.".to_string());
+    }
 
     let scheduled_at = arguments
         .get("scheduled_at")

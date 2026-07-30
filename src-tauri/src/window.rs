@@ -418,7 +418,7 @@ const EDGE_PEEK_TOP_OFFSET: f64 = 100.0;
 /// Returns (x, y, w, h) in logical pixels, right-edge anchored.
 /// Height stays fixed — expanding only widens leftward.
 /// Y is clamped so the window stays fully on-screen.
-fn edge_peek_geometry(sw: f64, sh: f64, expanded: bool) -> (f64, f64, f64, f64) {
+fn edge_peek_geometry(sw: f64, sh: f64, ox: f64, oy: f64, expanded: bool) -> (f64, f64, f64, f64) {
     let anchor_y = get_anchor_center_y();
     if anchor_y.is_nan() {
         set_anchor_center_y(EDGE_PEEK_TOP_OFFSET);
@@ -429,9 +429,9 @@ fn edge_peek_geometry(sw: f64, sh: f64, expanded: bool) -> (f64, f64, f64, f64) 
     } else {
         (EDGE_PEEK_TAB_W, EDGE_PEEK_TAB_H)
     };
-    let x = (sw - w).max(0.0);
-    let max_y = (sh - h).max(0.0);
-    let y = get_anchor_center_y().clamp(0.0, max_y);
+    let x = ox + (sw - w).max(0.0);
+    let max_y = oy + (sh - h).max(0.0);
+    let y = get_anchor_center_y().clamp(oy, max_y);
     (x, y, w, h)
 }
 
@@ -448,7 +448,10 @@ fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
     let scale = monitor.scale_factor();
     let sw = monitor.size().width as f64 / scale;
     let sh = monitor.size().height as f64 / scale;
-    let (x, y, w, h) = edge_peek_geometry(sw, sh, expanded);
+    let pos = monitor.position();
+    let ox = pos.x as f64 / scale;
+    let oy = pos.y as f64 / scale;
+    let (x, y, w, h) = edge_peek_geometry(sw, sh, ox, oy, expanded);
 
     // Always update Tauri's internal state first — this is the source of truth
     // for the webview bounds cache. Without it WebView2 content layout desyncs
@@ -465,25 +468,29 @@ fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
         // synchronous SetWindowPos could deadlock (B2).
         if let Ok(hwnd) = window.hwnd() {
             let hwnd: windows::Win32::Foundation::HWND = hwnd;
-            let x_px = (x * scale).round() as i32;
-            let y_px = (y * scale).round() as i32;
-            let w_px = (w * scale).round().max(1.0) as i32;
-            let h_px = (h * scale).round().max(1.0) as i32;
-            unsafe {
-                let ok = windows::Win32::UI::WindowsAndMessaging::SetWindowPos(
-                    hwnd,
-                    None,
-                    x_px, y_px, w_px, h_px,
-                    windows::Win32::UI::WindowsAndMessaging::SWP_NOZORDER
-                        | windows::Win32::UI::WindowsAndMessaging::SWP_NOACTIVATE
-                        | windows::Win32::UI::WindowsAndMessaging::SWP_NOOWNERZORDER
-                        | windows::Win32::UI::WindowsAndMessaging::SWP_ASYNCWINDOWPOS,
-                );
-                if let Err(e) = ok {
-                    eprintln!(
-                        "[edge_peek] SetWindowPos failed: {}",
-                        e
+            if unsafe {
+                windows::Win32::UI::WindowsAndMessaging::IsWindow(hwnd).as_bool()
+            } {
+                let x_px = (x * scale).round() as i32;
+                let y_px = (y * scale).round() as i32;
+                let w_px = (w * scale).round().max(1.0) as i32;
+                let h_px = (h * scale).round().max(1.0) as i32;
+                unsafe {
+                    let ok = windows::Win32::UI::WindowsAndMessaging::SetWindowPos(
+                        hwnd,
+                        None,
+                        x_px, y_px, w_px, h_px,
+                        windows::Win32::UI::WindowsAndMessaging::SWP_NOZORDER
+                            | windows::Win32::UI::WindowsAndMessaging::SWP_NOACTIVATE
+                            | windows::Win32::UI::WindowsAndMessaging::SWP_NOOWNERZORDER
+                            | windows::Win32::UI::WindowsAndMessaging::SWP_ASYNCWINDOWPOS,
                     );
+                    if let Err(e) = ok {
+                        eprintln!(
+                            "[edge_peek] SetWindowPos failed: {}",
+                            e
+                        );
+                    }
                 }
             }
         }
@@ -524,7 +531,10 @@ pub fn open_edge_peek_window(app: &AppHandle, expanded: bool) {
         let scale = monitor.scale_factor();
         let sw = monitor.size().width as f64 / scale;
         let sh = monitor.size().height as f64 / scale;
-        let (x, y, w, h) = edge_peek_geometry(sw, sh, expanded);
+        let pos = monitor.position();
+        let ox = pos.x as f64 / scale;
+        let oy = pos.y as f64 / scale;
+        let (x, y, w, h) = edge_peek_geometry(sw, sh, ox, oy, expanded);
 
         let build = || {
             let builder = WebviewWindowBuilder::new(

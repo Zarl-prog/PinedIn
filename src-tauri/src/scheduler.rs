@@ -13,6 +13,7 @@ static STOP_SCHEDULER: AtomicBool = AtomicBool::new(false);
 /// (sets `is_presceduled = 0`), opens a floating card for each, and
 /// emits a `tasks-updated` event so the frontend refreshes.
 pub fn start_scheduler(app: AppHandle) {
+    STOP_SCHEDULER.store(false, Ordering::Relaxed);
     // Run once on startup in case the user had pre-scheduled tasks
     // whose time arrived while the app was closed.
     check_and_spawn_due_tasks(&app);

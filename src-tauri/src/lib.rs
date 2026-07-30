@@ -208,14 +208,6 @@ pub fn run() {
             commands::COMPACT_MODE.store(compact_enabled, std::sync::atomic::Ordering::SeqCst);
             commands::EDGE_PEEK_ENABLED.store(edge_peek_enabled, std::sync::atomic::Ordering::SeqCst);
 
-            // Restore persisted Y position so the pill opens where the
-            // user last left it.
-            if let Ok(Some(y_str)) = db_handle.get_setting("edge_peek_y") {
-                if let Ok(y) = y_str.parse::<f64>() {
-                    window::set_anchor_center_y(y.max(0.0));
-                }
-            }
-
             // Only open edge peek if enabled AND there are incomplete tasks
             if edge_peek_enabled {
                 if let Ok(tasks) = db_handle.get_incomplete_tasks() {
@@ -301,8 +293,8 @@ pub fn run() {
 
             if digest_enabled {
                 let handle = app.handle().clone();
-                tauri::async_runtime::spawn_blocking(move || {
-                    std::thread::sleep(std::time::Duration::from_secs(2));
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
                     window::open_daily_digest_window(&handle);
                 });
             }
@@ -379,7 +371,6 @@ pub fn run() {
             commands::toggle_edge_peek,
             commands::expand_edge_peek,
             commands::collapse_edge_peek,
-            commands::reposition_edge_peek_y,
             commands::get_edge_peek_expanded,
         ])
         .build(tauri::generate_context!())

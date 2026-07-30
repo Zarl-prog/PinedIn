@@ -1,11 +1,12 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef } from "react";
-import { createTask, uncompleteTask } from "@/lib/tauriCommands";
+import { uncompleteTask } from "@/lib/tauriCommands";
 import { useReminderStore } from "@/store/reminderStore";
 
 export default function UndoToast() {
   const undoEntry = useReminderStore((s) => s.undoEntry);
   const clearUndo = useReminderStore.getState().clearUndo;
+  const addTask = useReminderStore.getState().addTask;
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
@@ -23,12 +24,12 @@ export default function UndoToast() {
     const t = undoEntry.task;
     try {
       if (undoEntry.action === "delete") {
-        await createTask(
+        await addTask(
           t.title,
           t.description,
           t.due_time,
-          t.recurrence,
-          t.tags,
+          t.recurrence ?? undefined,
+          t.tags ?? undefined,
           t.time_limit_minutes ?? null,
           t.workspace_id ?? null,
         );

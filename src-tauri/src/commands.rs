@@ -297,6 +297,7 @@ pub fn complete_task(
 
     db.complete_task(id)?;
     window::close_task_card(&app, id);
+    window::restack_task_cards(&app);
     emit_tasks_updated(&app, &db);
     Ok(())
 }
@@ -381,7 +382,13 @@ pub fn snooze_task(
 ) -> Result<(), String> {
     // Guard: skip if a snooze thread is already pending for this task
     {
-        let mut set = pending_snoozes().lock().map_err(|e| e.to_string())?;
+        let mut set = match pending_snoozes().lock() {
+            Ok(guard) => guard,
+            Err(poisoned) => {
+                eprintln!("[snooze] Mutex poisoned, recovering");
+                poisoned.into_inner()
+            }
+        };
         if !set.insert(id) {
             return Ok(());
         }
@@ -400,18 +407,28 @@ pub fn snooze_task(
         let task = match db_clone.get_task_by_id(id) {
             Ok(t) if !t.completed => t,
             _ => {
-                if let Ok(mut set) = pending_snoozes().lock() {
-                    set.remove(&id);
-                }
+                let mut set = match pending_snoozes().lock() {
+                    Ok(guard) => guard,
+                    Err(poisoned) => {
+                        eprintln!("[snooze] Mutex poisoned, recovering");
+                        poisoned.into_inner()
+                    }
+                };
+                set.remove(&id);
                 return;
             }
         };
 
         // Don't reopen a card if compact mode is active
         if crate::commands::get_compact_mode_state(&app_clone) {
-            if let Ok(mut set) = pending_snoozes().lock() {
-                set.remove(&id);
-            }
+            let mut set = match pending_snoozes().lock() {
+                Ok(guard) => guard,
+                Err(poisoned) => {
+                    eprintln!("[snooze] Mutex poisoned, recovering");
+                    poisoned.into_inner()
+                }
+            };
+            set.remove(&id);
             return;
         }
 
@@ -424,9 +441,14 @@ pub fn snooze_task(
         }
         window::restack_task_cards(&app_clone);
 
-        if let Ok(mut set) = pending_snoozes().lock() {
-            set.remove(&id);
-        }
+        let mut set = match pending_snoozes().lock() {
+            Ok(guard) => guard,
+            Err(poisoned) => {
+                eprintln!("[snooze] Mutex poisoned, recovering");
+                poisoned.into_inner()
+            }
+        };
+        set.remove(&id);
     });
 
     Ok(())
@@ -538,6 +560,9 @@ pub fn update_setting(
     }
     if key == "compact_mode" {
         COMPACT_MODE.store(value == "true", Ordering::SeqCst);
+    }
+    if key == "edge_peek_enabled" {
+        EDGE_PEEK_ENABLED.store(value == "true", Ordering::SeqCst);
     }
     Ok(())
 }
@@ -985,21 +1010,6 @@ pub fn collapse_edge_peek(app: AppHandle) -> Result<(), String> {
     // Persist collapsed state
     if let Some(db) = app.try_state::<Arc<DbHandle>>() {
         let _ = db.update_setting("edge_peek_expanded", "false");
-    }
-    Ok(())
-}
-
-/// Move the edge-peek pill vertically (X stays pinned to the right edge).
-/// Called live during a drag with `persist=false` for smooth tracking, and
-/// once on release with `persist=true` to save the final position.
-#[tauri::command]
-pub fn reposition_edge_peek_y(app: AppHandle, y: f64, persist: bool) -> Result<(), String> {
-    if let Some(new_y) = crate::window::reposition_edge_peek_y(&app, y) {
-        if persist {
-            if let Some(db) = app.try_state::<Arc<DbHandle>>() {
-                let _ = db.update_setting("edge_peek_y", &new_y.to_string());
-            }
-        }
     }
     Ok(())
 }

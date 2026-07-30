@@ -28,18 +28,15 @@ export default function DailyDigest() {
   useEffect(() => {
     if (dismissed) return;
     const interval = setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) {
-          handleDismiss();
-          return 0;
-        }
-        return c - 1;
-      });
+      setCountdown((c) => c - 1);
     }, 1000);
     return () => clearInterval(interval);
-    // handleDismiss is stable enough — it only reads state setters.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dismissed]);
+
+  useEffect(() => {
+    if (dismissed) return;
+    if (countdown <= 1) handleDismiss();
+  }, [countdown, dismissed]);
 
   async function handleDismiss() {
     if (dismissed) return;

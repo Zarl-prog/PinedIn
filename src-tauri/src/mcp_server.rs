@@ -982,7 +982,10 @@ fn tool_snooze_task(
     window::close_task_card(&state.app_handle, task_id);
     commands::pending_snoozes()
         .lock()
-        .map_err(|e| e.to_string())?
+        .unwrap_or_else(|poisoned| {
+            eprintln!("[snooze] Mutex poisoned, recovering");
+            poisoned.into_inner()
+        })
         .insert(task_id);
 
     let app_clone = state.app_handle.clone();
@@ -1000,6 +1003,9 @@ fn tool_snooze_task(
             && !crate::commands::EDGE_PEEK_ENABLED.load(std::sync::atomic::Ordering::SeqCst)
         {
             let _ = window::open_task_card(&app_clone, &task, 0);
+        } else {
+            let _ = commands::pending_snoozes().lock().map(|mut s| s.remove(&task_id));
+            return;
         }
         let _ = commands::pending_snoozes().lock().map(|mut s| s.remove(&task_id));
     });
@@ -1252,10 +1258,11 @@ fn tool_save_workspace(
         if label.starts_with("task_") {
             let task_id: i64 = label.replace("task_", "").parse().unwrap_or(0);
             if let Ok(pos) = window.outer_position() {
+                let scale = window.scale_factor().unwrap_or(1.0);
                 cards.push(serde_json::json!({
                     "task_id": task_id,
-                    "x": pos.x,
-                    "y": pos.y
+                    "x": (pos.x as f64 / scale).round(),
+                    "y": (pos.y as f64 / scale).round()
                 }));
             }
         }

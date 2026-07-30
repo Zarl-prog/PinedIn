@@ -100,14 +100,18 @@ export default function App() {
   useEffect(() => {
     let u1: (() => void) | null = null;
     let u2: (() => void) | null = null;
+    let cancelled = false;
     const p1 = listen<{ name: string }>("workspace_activated", (e) => {
       setActiveWorkspaceName(e.payload.name);
     });
     const p2 = listen("workspace_deactivated", () => {
       setActiveWorkspaceName(null);
     });
-    Promise.all([p1, p2]).then(([f1, f2]) => { u1 = f1; u2 = f2; });
-    return () => { u1?.(); u2?.(); };
+    Promise.all([p1, p2]).then(([f1, f2]) => {
+      if (cancelled) { f1(); f2(); return; }
+      u1 = f1; u2 = f2;
+    });
+    return () => { cancelled = true; u1?.(); u2?.(); };
   }, []);
 
   const [updateAvailable, setUpdateAvailable] = useState<string | null>(null);
@@ -1295,30 +1299,6 @@ export default function App() {
                 }}
               >
                 Update Now
-        </button>
-        <button
-          type="button"
-          onClick={() => setPaletteOpen(true)}
-          title="Open command palette (Ctrl+K)"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-            background: "transparent",
-            border: "none",
-            borderRadius: "4px",
-            padding: "4px 6px",
-            fontSize: "11px",
-            fontFamily: "'Geist Mono', monospace",
-            color: "var(--text-muted)",
-            cursor: "pointer",
-            lineHeight: 1,
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
-        >
-          <img src="/Mac-Command--Streamline-Carbon.svg" alt="" style={{ width: "12px", height: "12px", opacity: 0.6 }} />
-          <span style={{ opacity: 0.6 }}>K</span>
         </button>
       </div>
           </div>

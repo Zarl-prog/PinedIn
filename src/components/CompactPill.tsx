@@ -204,7 +204,7 @@ export default function CompactPill() {
       const all = await invoke<Task[]>("get_incomplete_tasks");
       setTasks(all);
       if (all.length === 0) setExpanded(false);
-      setCurrentIndex(nextIndex);
+      setCurrentIndex(Math.min(nextIndex, Math.max(0, all.length - 1)));
     } catch (e) {
       console.error("[CompactPill] Failed to complete task:", e);
       refresh().catch(() => {});

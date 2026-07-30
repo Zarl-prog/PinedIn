@@ -40,7 +40,13 @@ fn notification_state() -> &'static Mutex<NotificationState> {
 /// whose due_date matches today — deduplicating so each task only
 /// notifies once per day regardless of how many times this is called.
 pub fn check_due_notifications(app: &AppHandle) {
-    let db = app.state::<Arc<DbHandle>>();
+    let db = match app.try_state::<Arc<DbHandle>>() {
+        Some(state) => state,
+        None => {
+            eprintln!("[notifications] DbHandle not available, skipping");
+            return;
+        }
+    };
     let today = Local::now().format("%Y-%m-%d").to_string();
 
     let tasks = match db.get_incomplete_tasks() {
@@ -53,7 +59,10 @@ pub fn check_due_notifications(app: &AppHandle) {
 
     let mut state = match notification_state().lock() {
         Ok(s) => s,
-        Err(_) => return,
+        Err(poisoned) => {
+            eprintln!("[notifications] Mutex poisoned, recovering");
+            poisoned.into_inner()
+        }
     };
     state.reset_if_new_day(&today);
 

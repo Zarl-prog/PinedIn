@@ -445,9 +445,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
     try {
       await updateSetting(key, value);
       const { settings } = get();
-      const updated: AppSettings =
-        key === "theme" ? { ...settings, theme: value as AppSettings["theme"] } : settings;
-      set({ settings: updated });
+      set({ settings: { ...settings, [key]: value } as AppSettings });
       if (key === "theme") {
         stopSystemTheme();
         applyTheme(value);

@@ -51,20 +51,6 @@ fn current_edge_peek_gen() -> u64 {
     atomic.load(Ordering::SeqCst)
 }
 
-/// Atomic anchor center Y for consistent positioning
-static ANCHOR_CENTER_Y: OnceLock<std::sync::atomic::AtomicU64> = OnceLock::new();
-
-/// Returns the anchor Y, or NaN if never set.
-fn get_anchor_center_y() -> f64 {
-    let atomic = ANCHOR_CENTER_Y.get_or_init(|| std::sync::atomic::AtomicU64::new(f64::NAN.to_bits()));
-    f64::from_bits(atomic.load(Ordering::Relaxed))
-}
-
-pub(crate) fn set_anchor_center_y(y: f64) {
-    let atomic = ANCHOR_CENTER_Y.get_or_init(|| std::sync::atomic::AtomicU64::new(f64::NAN.to_bits()));
-    atomic.store(y.to_bits(), Ordering::Relaxed);
-}
-
 fn monitor_size(app: &AppHandle) -> (f64, f64) {
     if let Some(monitor) = app.primary_monitor().ok().flatten().or_else(|| {
         app.available_monitors()
@@ -419,11 +405,6 @@ const EDGE_PEEK_TOP_OFFSET: f64 = 100.0;
 /// Height stays fixed — expanding only widens leftward.
 /// Y is clamped so the window stays fully on-screen.
 fn edge_peek_geometry(sw: f64, sh: f64, expanded: bool) -> (f64, f64, f64, f64) {
-    let anchor_y = get_anchor_center_y();
-    if anchor_y.is_nan() {
-        set_anchor_center_y(EDGE_PEEK_TOP_OFFSET);
-    }
-
     let (w, h) = if expanded {
         (EDGE_PEEK_EXPANDED_W, EDGE_PEEK_EXPANDED_H)
     } else {
@@ -431,7 +412,7 @@ fn edge_peek_geometry(sw: f64, sh: f64, expanded: bool) -> (f64, f64, f64, f64) 
     };
     let x = (sw - w).max(0.0);
     let max_y = (sh - h).max(0.0);
-    let y = get_anchor_center_y().clamp(0.0, max_y);
+    let y = EDGE_PEEK_TOP_OFFSET.clamp(0.0, max_y);
     (x, y, w, h)
 }
 
@@ -577,36 +558,6 @@ pub fn collapse_edge_peek(app: &AppHandle) {
     }
 }
 
-/// Move the edge-peek window to a new vertical position while keeping it flush
-/// against the right screen edge (X never changes — Y-axis drag only). `y` is
-/// the desired top edge in logical px; it's clamped so the window stays fully
-/// on-screen. Updates the persisted anchor so expand/collapse reuse this Y.
-/// Returns the applied (clamped) Y.
-pub fn reposition_edge_peek_y(app: &AppHandle, y: f64) -> Option<f64> {
-    let window = app.get_webview_window("edge_peek")?;
-    let monitor = window
-        .current_monitor().ok().flatten()
-        .or_else(|| window.primary_monitor().ok().flatten())?;
-
-    let scale = monitor.scale_factor();
-    let sw = monitor.size().width as f64 / scale;
-    let sh = monitor.size().height as f64 / scale;
-    let mon_x = monitor.position().x as f64 / scale;
-    let mon_y = monitor.position().y as f64 / scale;
-
-    let (w, h) = window
-        .outer_size()
-        .map(|s| (s.width as f64 / scale, s.height as f64 / scale))
-        .unwrap_or((EDGE_PEEK_TAB_W, EDGE_PEEK_TAB_H));
-
-    let new_y = y.clamp(0.0, (sh - h).max(0.0));
-    set_anchor_center_y(new_y);
-
-    let x = (sw - w).max(0.0) + mon_x;
-    let _ = window.set_position(Position::Logical(LogicalPosition::new(x, new_y + mon_y)));
-
-    Some(new_y)
-}
 
 /// Open the small always-on-top Daily Digest popup (420x220) that
 /// summarizes the user's day. The window is centered, non-focusable

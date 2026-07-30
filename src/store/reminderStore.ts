@@ -464,7 +464,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
   // ─── UI ────────────────────────────────────────────────────────────────
 
   setAddTaskOpen: (open: boolean) =>
-    set({ isAddTaskOpen: open, editingTask: open ? get().editingTask : null }),
+    set({ isAddTaskOpen: open, editingTask: open ? null : null }),
   setMcpOpen: (open: boolean) => set({ isMcpOpen: open }),
   setPreScheduleOpen: (open: boolean) => set({ isPreScheduleOpen: open }),
   setCustomizeOpen: (open: boolean) => set({ isCustomizeOpen: open }),

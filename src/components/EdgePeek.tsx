@@ -26,38 +26,7 @@ function getTimeLeft(task: Task): string | null {
   return `${Math.max(1, mins)}m left`;
 }
 
-// Lets the user drag the edge-peek window vertically. Once movement settles
-// the backend re-docks it flush to the right edge and persists the new Y.
-function useDragToMove() {
-  const snapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    let unlisten: (() => void) | null = null;
-    getCurrentWindow()
-      .onMoved(() => {
-        if (snapTimer.current) clearTimeout(snapTimer.current);
-        snapTimer.current = setTimeout(async () => {
-          try {
-            const pos = await getCurrentWindow().outerPosition();
-            await invoke("reposition_edge_peek_y", { y: pos.y, persist: true });
-          } catch {}
-        }, 150);
-      })
-      .then((u) => { unlisten = u; });
-    return () => {
-      unlisten?.();
-      if (snapTimer.current) clearTimeout(snapTimer.current);
-    };
-  }, []);
-
-  return useCallback((e: React.MouseEvent) => {
-    if (e.button !== 0) return;
-    getCurrentWindow().startDragging().catch(() => {});
-  }, []);
-}
-
 export default function EdgePeek() {
-  const startDrag = useDragToMove();
   const [expanded, setExpanded] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [hovered, setHovered] = useState(false);
@@ -204,7 +173,6 @@ export default function EdgePeek() {
         </div>
       ) : (
         <div
-          onMouseDown={startDrag}
           onClick={expand}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
@@ -328,7 +296,7 @@ const pillStyle: React.CSSProperties = {
   background: "var(--pill-bg, #0A0A0A)",
   border: "1px solid var(--pill-border, #1A1A1A)",
   borderRight: "none",
-  cursor: "grab",
+  cursor: "pointer",
   display: "flex",
   flexDirection: "row",
   alignItems: "center",

@@ -685,6 +685,7 @@ fn tool_add_multiple_tasks(
     }
 
     let mut added: Vec<String> = Vec::new();
+    let mut failed: Vec<String> = Vec::new();
 
     for title in &titles {
         match state.db.create_task_with_tags(
@@ -704,17 +705,27 @@ fn tool_add_multiple_tasks(
             }
             Err(e) => {
                 eprintln!("Failed to add task '{}': {}", title, e);
+                failed.push(format!("{} ({})", title, e));
             }
         }
     }
 
     commands::emit_tasks_updated(&state.app_handle, &state.db);
 
-    Ok(format!(
-        "Added {} tasks: {}",
-        added.len(),
-        added.join(", ")
-    ))
+    // Surface per-task failures to the caller instead of silently dropping
+    // them — the MCP client otherwise has no way to know a task never landed.
+    if failed.is_empty() {
+        Ok(format!("Added {} tasks: {}", added.len(), added.join(", ")))
+    } else {
+        Ok(format!(
+            "Added {} of {} tasks: {}. Failed {}: {}",
+            added.len(),
+            titles.len(),
+            added.join(", "),
+            failed.len(),
+            failed.join("; ")
+        ))
+    }
 }
 
 fn tool_update_task(
@@ -741,15 +752,18 @@ fn tool_update_task(
         .and_then(|v| v.as_str())
         .unwrap_or(&existing.due_time);
 
+    // Preserve fields the MCP tool does not expose. update_task sets every
+    // column unconditionally, so passing None here would wipe recurrence,
+    // tags, time_limit_minutes and started_at on any partial edit.
     state.db.update_task(
         task_id,
         title,
         description,
         due_time,
-        None,
-        None,
-        None,
-        None,
+        existing.recurrence.as_deref(),
+        existing.tags.as_deref(),
+        existing.time_limit_minutes,
+        existing.started_at.as_deref(),
     )?;
 
     commands::emit_tasks_updated(&state.app_handle, &state.db);
@@ -916,6 +930,12 @@ fn tool_snooze_task(
         .get("minutes")
         .and_then(|v| v.as_i64())
         .ok_or_else(|| "Missing required argument: minutes".to_string())?;
+    // Guard against negative/zero (would panic on `as u64`) and absurd values
+    // (would overflow the `* 60` and hold a thread forever). Cap at one week.
+    if minutes <= 0 {
+        return Err("minutes must be a positive number.".to_string());
+    }
+    let minutes = minutes.min(10080);
 
     // MCP snooze: hide the card and re-show after N minutes with a background
     // thread (same approach as the Tauri command). Unlike the Tauri command
@@ -1129,10 +1149,12 @@ fn tool_get_daily_digest(state: &McpState) -> Result<String, String> {
         }
         active += 1;
         if !t.due_time.is_empty() {
-            let date_part = &t.due_time[..10.min(t.due_time.len())];
-            if date_part < today.as_str() {
+            // Char-safe: byte slicing `[..10]` panics if byte 10 falls inside
+            // a multi-byte UTF-8 sequence. Taking chars avoids that entirely.
+            let date_part: String = t.due_time.chars().take(10).collect();
+            if date_part.as_str() < today.as_str() {
                 overdue += 1;
-            } else if date_part == today.as_str() {
+            } else if date_part.as_str() == today.as_str() {
                 due_today += 1;
             }
         }

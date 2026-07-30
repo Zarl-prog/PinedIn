@@ -56,6 +56,10 @@ type AppTab = "tasks" | "workspaces" | "settings";
 export default function App() {
   useReminders();
 
+  useEffect(() => {
+    useReminderStore.getState().fetchSettings();
+  }, []);
+
   const tasks = useReminderStore((s) => s.tasks);
   const isAddTaskOpen = useReminderStore((s) => s.isAddTaskOpen);
   // settings is now a tab via activeTab
@@ -84,6 +88,7 @@ export default function App() {
   const [activeWorkspaceName, setActiveWorkspaceName] = useState<string | null>(null);
 
   useEffect(() => {
+    useReminderStore.getState().fetchSettings();
     invoke<number | null>("get_active_workspace_id")
       .then(async (id) => {
         if (id !== null) {
@@ -153,15 +158,26 @@ export default function App() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
+      if (paletteOpen) {
+        setPaletteOpen(false);
+        return;
+      }
+      if (showUpdateModal) {
+        setShowUpdateModal(false);
+        return;
+      }
       if (isAddTaskOpen) {
         setAddTaskOpen(false);
         setEditingTask(null);
+        return;
       }
       if (isPreScheduleOpen) {
         setPreScheduleOpen(false);
+        return;
       }
       if (isMcpOpen) {
         setMcpOpen(false);
+        return;
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -170,10 +186,14 @@ export default function App() {
     isAddTaskOpen,
     isPreScheduleOpen,
     isMcpOpen,
+    paletteOpen,
+    showUpdateModal,
     setAddTaskOpen,
     setMcpOpen,
     setPreScheduleOpen,
     setEditingTask,
+    setPaletteOpen,
+    setShowUpdateModal,
   ]);
 
   const [zenMode, setZenModeState] = useState(false);
@@ -1016,7 +1036,9 @@ export default function App() {
 
             {/* Task List */}
             <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
-              <TaskList searchQuery={searchQuery} />
+              <ErrorBoundary>
+                <TaskList searchQuery={searchQuery} />
+              </ErrorBoundary>
             </div>
           </>
         )}

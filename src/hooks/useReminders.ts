@@ -15,6 +15,12 @@ export function useReminders() {
     let unlisten1: (() => void) | null = null;
     let unlisten2: (() => void) | null = null;
 
+    // Fetch first, then register listeners — avoids a race where a
+    // tasks-updated event fires between the listen() resolution and
+    // the initial fetch, causing stale data to overwrite fresh data.
+    fetchTasks();
+    fetchScheduledTasks();
+
     const l1 = listen("tasks-updated", () => {
       if (!mounted) return;
       fetchTasks();
@@ -29,9 +35,6 @@ export function useReminders() {
       unlisten1 = u1;
       unlisten2 = u2;
     });
-
-    fetchTasks();
-    fetchScheduledTasks();
 
     return () => {
       mounted = false;

@@ -136,7 +136,7 @@ const STEPS: Step[] = [
     icon: <Command size={15} weight="bold" />,
     title: "AI-ready MCP Server",
     description:
-      "PinedIn runs a built-in MCP server on port 7890. Claude, ChatGPT, Cursor, and other AI tools can create and manage your tasks. Open the panel to copy the connection URL and a ready-to-use prompt.",
+      "Pinned runs a built-in MCP server on port 7890. Claude, ChatGPT, Cursor, and other AI tools can create and manage your tasks. Open the panel to copy the connection URL and a ready-to-use prompt.",
     target: "mcp-server",
     placement: "left",
     highlightPadding: 8,
@@ -156,7 +156,7 @@ const STEPS: Step[] = [
     icon: <Sparkle size={15} weight="fill" />,
     title: "You’re all set",
     description:
-      "That’s the tour. Start pinning what matters — PinedIn keeps it in sight until it’s done.",
+      "That’s the tour. Start pinning what matters — Pinned keeps it in sight until it’s done.",
     placement: "center",
   },
 ];
@@ -435,7 +435,7 @@ export default function Onboarding() {
           style={{ position: "fixed", inset: 0, zIndex: 9998, pointerEvents: "none" }}
           role="dialog"
           aria-modal="true"
-          aria-label={currentStep ? `Onboarding: ${currentStep.title}` : "Welcome to PinedIn"}
+          aria-label={currentStep ? `Onboarding: ${currentStep.title}` : "Welcome to Pinned"}
         >
           {/* ─── Dimmed backdrop with animated spotlight cutout ───────────── */}
           {showSpotlight ? (
@@ -595,7 +595,7 @@ export default function Onboarding() {
                     letterSpacing: "-0.5px",
                   }}
                 >
-                  Welcome to PinedIn
+                  Welcome to Pinned
                 </h1>
                 <p
                   style={{

@@ -34,8 +34,8 @@ I have a few options:
 1. Upload a release now — but I don't have the compiled binaries
 2. Point to a source download — like GitHub's "Download ZIP" of the source repo
 3. Disable/warn — show a message that no release is available yet
-Actually, the most practical approach: since the PinedIn-Releases repo has no releases, I should check the main PinedIn repo for a release. Or I should check if there's at least a release tag.
-Wait, checking the main PinedIn repo:
+Actually, the most practical approach: since the PinedIn-Releases repo has no releases, I should check the main Pinned repo for a release. Or I should check if there's at least a release tag.
+Wait, checking the main Pinned repo:
 https://api.github.com/repos/Zarl-prog/PinedIn/releases/latest
 But releases are supposed to go to PinedIn-Releases based on our CI setup. If the CI hasn't run yet or hasn't succeeded, there are no assets.
 Let me think about this differently. The user wants the button to download the app directly. Without a release existing, I can't do that. But I can:
@@ -62,8 +62,8 @@ Thinking: No releases at all in the PinedIn-Releases repo. The CI workflow proba
 So the download button can't download anything because there's nothing to download. I need to:
 1. Either create a release ourselves (but we don't have binaries)
 2. Or have the button gracefully handle the "no release" state
-Let me check if the main PinedIn repo has releases:
-# Check releases in main PinedIn repo
+Let me check if the main Pinned repo has releases:
+# Check releases in main Pinned repo
 $ Invoke-RestMethod -Uri "https://api.github.com/repos/Zarl-prog/PinedIn/releases/latest" | ConvertTo-Json -Depth 5
 Invoke-RestMethod : {"message":"Not 
 Found","documentation_url":"https://docs.github.com/rest/releases/releases#get-the-latest-release","status":"404"}

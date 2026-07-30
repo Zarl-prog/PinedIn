@@ -446,9 +446,9 @@ pub fn enable_autostart(app: AppHandle) -> Result<(), String> {
         .map_err(|e| format!("Failed to enable autostart: {e}"))?;
 
     // On Linux, patch the autostart .desktop file to add a 5-second
-    // delay so PinedIn doesn't start before the desktop environment,
+    // delay so Pinned doesn't start before the desktop environment,
     // display server, and WebKitGTK are fully initialized. Without
-    // this, systemd launches PinedIn too early and WebKit fails to
+    // this, systemd launches Pinned too early and WebKit fails to
     // load the bundled frontend (appears as "unable to connect to
     // localhost" even though no localhost is involved).
     #[cfg(target_os = "linux")]
@@ -1094,7 +1094,7 @@ pub fn fire_time_limit_notification(
     use tauri_plugin_notification::NotificationExt;
     app.notification()
         .builder()
-        .title("Time's up — PinedIn")
+        .title("Time's up — Pinned")
         .body(format!("Time limit reached for: {}", task_title))
         .show()
         .map_err(|e| e.to_string())?;

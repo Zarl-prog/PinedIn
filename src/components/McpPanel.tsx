@@ -2,7 +2,7 @@ import { ArrowDown, CaretDown, CaretUp, X } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
-const MCP_PROMPT = `I have a local PinedIn task manager running on my machine. It exposes an MCP-compatible HTTP API.
+const MCP_PROMPT = `I have a local Pinned task manager running on my machine. It exposes an MCP-compatible HTTP API.
 
 You can manage my tasks by sending POST requests to:
 http://127.0.0.1:7890/message

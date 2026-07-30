@@ -1,0 +1,22 @@
+/home/asim/Desktop/Projects/PinedIn/AGENTS.md
+/home/asim/Desktop/Projects/PinedIn/BRIEF.md
+/home/asim/Desktop/Projects/PinedIn/CHANGELOG.md
+/home/asim/Desktop/Projects/PinedIn/CONTRIBUTING.md
+/home/asim/Desktop/Projects/PinedIn/Context history.txt
+/home/asim/Desktop/Projects/PinedIn/README.md
+/home/asim/Desktop/Projects/PinedIn/Roadmap.txt
+/home/asim/Desktop/Projects/PinedIn/compact-pill.html
+/home/asim/Desktop/Projects/PinedIn/daily-digest.html
+/home/asim/Desktop/Projects/PinedIn/edge-peek.html
+/home/asim/Desktop/Projects/PinedIn/goal.md
+/home/asim/Desktop/Projects/PinedIn/index.html
+/home/asim/Desktop/Projects/PinedIn/pinedin-mobile-app-plan.md
+/home/asim/Desktop/Projects/PinedIn/quick-add.html
+/home/asim/Desktop/Projects/PinedIn/task-card.html
+/home/asim/Desktop/Projects/PinedIn/.agents/skills/caveman/SKILL.md
+/home/asim/Desktop/Projects/PinedIn/.agents/skills/design-an-interface/SKILL.md
+/home/asim/Desktop/Projects/PinedIn/.agents/skills/diagnose/SKILL.md
+/home/asim/Desktop/Projects/PinedIn/.agents/skills/edit-article/SKILL.md
+/home/asim/Desktop/Projects/PinedIn/.agents/skills/git-guardrails-claude-code/SKILL.md
+/home/asim/Desktop/Projects/PinedIn/.agents/skills/grill-me/SKILL.md
+/home/asim/Desktop/Projects/PinedIn/.agents/skills/grill-with-docs/ADR-FORMAT.md

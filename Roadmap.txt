@@ -8,7 +8,7 @@ Smart Task Breakdown — AI splits one big task into smaller floating cards
 v0.5.0 — Power User / Developer
 
 WebSocket Path — listen on ws://localhost:8888, any script pushes JSON and card appears
-MCP Server — PinedIn exposes itself as MCP tool for Claude Desktop and AI agents
+MCP Server — Pinned exposes itself as MCP tool for Claude Desktop and AI agents
 REST API — local HTTP server on localhost:7777 for task management
 
 

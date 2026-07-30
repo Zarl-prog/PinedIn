@@ -46,7 +46,7 @@ async function main() {
   // 1. Project identity
   const pkg = JSON.parse(readFileSync(join(BASE, "package.json"), "utf-8"));
   await remember(
-    `PinedIn v${pkg.version} — A Tauri v2 desktop app built with React 18, TypeScript, Tailwind CSS, framer-motion, and Zustand. ` +
+    `Pinned v${pkg.version} — A Tauri v2 desktop app built with React 18, TypeScript, Tailwind CSS, framer-motion, and Zustand. ` +
     `It is a pinboard-style task manager with floating cards, reminders, workspaces, and a system tray. ` +
     `The app uses Tauri's window API for draggable, closable card windows and SQL plugin for persistence.`,
     ["project", "overview"]
@@ -56,7 +56,7 @@ async function main() {
   console.log("  Reading git history...");
   const gitLog = execSync("git log --oneline --all --max-count=100", { cwd: BASE }).toString().trim();
   await remember(
-    `Recent commit history of PinedIn:\n${gitLog}\n\nFull history available via 'git log'.`,
+    `Recent commit history of Pinned:\n${gitLog}\n\nFull history available via 'git log'.`,
     ["git", "history"]
   );
 

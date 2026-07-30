@@ -17,14 +17,14 @@ pub fn is_gnome() -> bool {
 /// Setup the system tray with menu items and event handlers.
 /// Clicking the tray icon toggles the main window's visibility so the
 /// app stays running in the background between sessions, exactly like
-/// Discord or Spotify. Only the explicit "Quit PinedIn" menu item
+/// Discord or Spotify. Only the explicit "Quit Pinned" menu item
 /// actually kills the process; it flips the shared `QuitFlag` and then
 /// calls `app.exit(0)` so the main window's close-to-tray handler
 /// knows to let the next close event through to the OS.
 pub fn setup_tray(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     let show_app = MenuItemBuilder::with_id("show_app", "Show App").build(app)?;
     let quick_task = MenuItemBuilder::with_id("quick_task", "Add Quick Task").build(app)?;
-    let quit = MenuItemBuilder::with_id("quit", "Quit PinedIn").build(app)?;
+    let quit = MenuItemBuilder::with_id("quit", "Quit Pinned").build(app)?;
 
     let menu = MenuBuilder::new(app)
         .item(&show_app)
@@ -51,7 +51,7 @@ pub fn setup_tray(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Erro
 
     let tray = TrayIconBuilder::new()
         .icon(icon)
-        .tooltip("PinedIn")
+        .tooltip("Pinned")
         .menu(&menu)
         .show_menu_on_left_click(show_menu)
         .on_menu_event(move |app_handle, event| match event.id().as_ref() {

@@ -1,16 +1,16 @@
-# PinedIn Mobile Companion — Planning Doc (v1)
+# Pinned Mobile Companion — Planning Doc (v1)
 
 ## 1. Goal
 
-PinedIn currently lives only on desktop (Windows, Tauri/Rust, local SQLite). The goal is
+Pinned currently lives only on desktop (Windows, Tauri/Rust, local SQLite). The goal is
 a lightweight **Android companion app** that lets you jot down tasks/ideas while away from
-your laptop, then sync them into PinedIn's desktop database when you're back home —
+your laptop, then sync them into Pinned's desktop database when you're back home —
 **via QR code**, no cloud, no accounts, no background services.
 
 ## 2. v1 Scope
 
 - **Capture-only.** The mobile app is for adding tasks quickly — not viewing, editing, or
-  completing existing PinedIn tasks. This avoids sync-conflict problems entirely (data
+  completing existing Pinned tasks. This avoids sync-conflict problems entirely (data
   only flows one direction: phone → laptop).
 - **Android only** for v1.
 - **QR-based sync**, no persistent pairing, no local network auto-discovery, no server.
@@ -75,7 +75,7 @@ Simple JSON array, sent as the POST body:
 - Since this stays on the local network only, full TLS isn't strictly required for v1,
   but the token-expiry safeguard is a must.
 - No task data is ever sent anywhere except directly between the two devices on the same
-  WiFi network — consistent with PinedIn's "zero telemetry, fully local" positioning.
+  WiFi network — consistent with Pinned's "zero telemetry, fully local" positioning.
 
 ## 6. Explicitly Out of Scope (v1)
 

@@ -53,7 +53,7 @@ export default function UpdateBanner() {
               Update available — v{version}
             </span>
             <span style={{ fontSize: "11px", color: "var(--text-secondary)", marginLeft: "10px" }}>
-              A new version of PinedIn is ready
+              A new version of Pinned is ready
             </span>
           </div>
           <button

@@ -535,7 +535,7 @@ export default function App() {
             </svg>
           </div>
           <ShinyText
-            text="PinedIn"
+            text="Pinned"
             speed={4}
             className="font-semibold"
             style={{ fontSize: "14px" }}
@@ -739,7 +739,7 @@ export default function App() {
             <Warning size={15} weight="light" /> Wayland detected
           </span>
           <span style={{ color: "var(--text-secondary)" }}>
-            Always-on-top floating cards require the X11 backend on GNOME. Run PinedIn with:
+            Always-on-top floating cards require the X11 backend on GNOME. Run Pinned with:
           </span>
           <code
             style={{
@@ -762,7 +762,7 @@ export default function App() {
             >
               Always on Top
             </a>{" "}
-            GNOME extension and pin PinedIn windows manually.
+            GNOME extension and pin Pinned windows manually.
           </span>
           <button
             onClick={() => setShowWaylandWarning(false)}
@@ -1264,7 +1264,7 @@ export default function App() {
               New Version Available
             </div>
             <p style={{ fontSize: "14px", color: "var(--text-secondary)", marginBottom: "8px" }}>
-              PinedIn v{updateAvailable} is ready to install.
+              Pinned v{updateAvailable} is ready to install.
             </p>
             <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "20px" }}>
               Your current version: v0.3.9

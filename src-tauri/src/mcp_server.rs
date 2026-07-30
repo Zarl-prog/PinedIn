@@ -41,7 +41,7 @@ pub fn start(app_handle: AppHandle, db: Arc<DbHandle>) {
             .with_state(state);
 
         let addr = format!("127.0.0.1:{}", MCP_PORT);
-        println!("PinedIn MCP server running on http://{}/sse", addr);
+        println!("Pinned MCP server running on http://{}/sse", addr);
 
         match tokio::net::TcpListener::bind(&addr).await {
             Ok(listener) => {
@@ -144,7 +144,7 @@ fn handle_tools_list(id: &Option<Value>) -> Result<Option<Value>, StatusCode> {
             "tools": [
                 {
                     "name": "add_task",
-                    "description": "Add a new task to PinedIn. The task will appear as a floating card on the user's screen immediately.",
+                    "description": "Add a new task to Pinned. The task will appear as a floating card on the user's screen immediately.",
                     "inputSchema": {
                         "type": "object",
                         "properties": {
@@ -170,7 +170,7 @@ fn handle_tools_list(id: &Option<Value>) -> Result<Option<Value>, StatusCode> {
                 },
                 {
                     "name": "list_tasks",
-                    "description": "List all active (incomplete) tasks in PinedIn",
+                    "description": "List all active (incomplete) tasks in Pinned",
                     "inputSchema": {
                         "type": "object",
                         "properties": {}
@@ -298,7 +298,7 @@ fn handle_tools_list(id: &Option<Value>) -> Result<Option<Value>, StatusCode> {
                 },
                 {
                     "name": "update_setting",
-                    "description": "Change any PinedIn setting by key/value pair (e.g. compact_mode, daily_digest_enabled)",
+                    "description": "Change any Pinned setting by key/value pair (e.g. compact_mode, daily_digest_enabled)",
                     "inputSchema": {
                         "type": "object",
                         "properties": {
@@ -342,7 +342,7 @@ fn handle_tools_list(id: &Option<Value>) -> Result<Option<Value>, StatusCode> {
                 },
                 {
                     "name": "get_settings",
-                    "description": "Get all PinedIn settings as key/value pairs",
+                    "description": "Get all Pinned settings as key/value pairs",
                     "inputSchema": { "type": "object", "properties": {} }
                 },
                 {

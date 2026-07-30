@@ -178,7 +178,7 @@ export default function SettingsPanel(props: SettingsPanelProps) {
             <Card>
               <CardRow
                 title="Launch at login"
-                description="Automatically start PinedIn when you log in"
+                description="Automatically start Pinned when you log in"
                 control={
                   <button
                     onClick={handleAutostartToggle}
@@ -191,7 +191,7 @@ export default function SettingsPanel(props: SettingsPanelProps) {
               />
               <CardRow
                 title="Restart tour"
-                description="Replay the guided walkthrough of PinedIn"
+                description="Replay the guided walkthrough of Pinned"
                 control={
                   <button
                     onClick={() => setTimeout(() => emit("show_onboarding").catch(() => {}), 250)}
@@ -209,7 +209,7 @@ export default function SettingsPanel(props: SettingsPanelProps) {
             <Card>
               <div style={{ padding: "16px" }}>
                 <div style={{ marginBottom: "6px", fontSize: "13.5px", fontWeight: 500, color: "var(--text-primary)" }}>Theme</div>
-                <div style={{ marginBottom: "14px", fontSize: "12px", color: "var(--text-muted)" }}>Choose how PinedIn looks</div>
+                <div style={{ marginBottom: "14px", fontSize: "12px", color: "var(--text-muted)" }}>Choose how Pinned looks</div>
                 <div style={{ display: "flex", gap: "8px" }}>
                   {themeOptions.map((option) => (
                     <button

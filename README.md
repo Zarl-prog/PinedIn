@@ -1,6 +1,6 @@
 <img width="1774" height="887" alt="ChatGPT Image Jul 27, 2026, 10_58_22 PM" src="https://github.com/user-attachments/assets/df1186ff-9c49-44f3-86af-4c10acd045cc" />
 
-# PinedIn
+# Pinned
 
 **The always-on-top task overlay that refuses to let you forget.**
 
@@ -20,9 +20,9 @@
 
 ---
 
-## Why PinedIn?
+## Why Pinned?
 
-Most task managers hide behind a click. PinedIn doesn't. It pins your most important tasks directly onto your screen as floating, always-on-top cards — and gently shakes them at configurable intervals so nothing slips through the cracks.
+Most task managers hide behind a click. Pinned doesn't. It pins your most important tasks directly onto your screen as floating, always-on-top cards — and gently shakes them at configurable intervals so nothing slips through the cracks.
 
 - **Zero friction** — tasks are always visible, no alt-tab required
 - **Fully local** — SQLite on your machine, zero telemetry, zero accounts
@@ -110,7 +110,7 @@ npm run tauri build     # production binary
 
 ### Create your first task
 
-Open PinedIn and press `Ctrl+K` to open the command palette, or click **+ New Task**.
+Open Pinned and press `Ctrl+K` to open the command palette, or click **+ New Task**.
 
 Fill in a title, pick a priority, and optionally set a due date. Hit **Save** — a floating card appears immediately.
 
@@ -120,7 +120,7 @@ Click the **Zen** button in the bottom bar (or use the command palette). The mai
 
 ### Pre-schedule a task
 
-In the **New Task** form, toggle **Schedule for later** and pick a date/time. The card will appear automatically when that moment arrives — even if PinedIn is minimised to the tray.
+In the **New Task** form, toggle **Schedule for later** and pick a date/time. The card will appear automatically when that moment arrives — even if Pinned is minimised to the tray.
 
 ### Workspaces
 
@@ -128,7 +128,7 @@ Use the **Workspaces** tab to create separate task lists for different projects 
 
 ### MCP integration
 
-PinedIn runs a local MCP server so AI assistants can read and create tasks on your behalf. Enable it in **Settings → MCP Server** and point your AI tool at the displayed endpoint.
+Pinned runs a local MCP server so AI assistants can read and create tasks on your behalf. Enable it in **Settings → MCP Server** and point your AI tool at the displayed endpoint.
 
 ---
 
@@ -181,7 +181,7 @@ PinedIn/
 └── package.json
 ```
 
-> PinedIn uses **Tauri's multi-window model** — each UI surface (main window, floating cards, edge peek, compact pill, quick-add, daily digest) is an independent WebView with its own entry point, keeping each surface minimal and fast.
+> Pinned uses **Tauri's multi-window model** — each UI surface (main window, floating cards, edge peek, compact pill, quick-add, daily digest) is an independent WebView with its own entry point, keeping each surface minimal and fast.
 
 ---
 
@@ -240,7 +240,7 @@ Always-on-top floating cards require the X11 backend on GNOME. Either:
 GDK_BACKEND=x11 ./PinedIn.AppImage
 ```
 
-…or install the [Always on Top](https://extensions.gnome.org/extension/8324/always-on-top) GNOME extension and pin PinedIn windows manually.
+…or install the [Always on Top](https://extensions.gnome.org/extension/8324/always-on-top) GNOME extension and pin Pinned windows manually.
 
 **System tray on GNOME** requires the [AppIndicator extension](https://extensions.gnome.org/extension/615/appindicator-support).
 

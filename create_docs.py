@@ -5,15 +5,15 @@ content = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>Docs — PinedIn</title>
-  <meta name="description" content="PinedIn documentation — setup, shortcuts, and features." />
-  <meta property="og:title" content="PinedIn — Docs" />
-  <meta property="og:description" content="PinedIn documentation — setup, shortcuts, and features." />
+  <title>Docs — Pinned</title>
+  <meta name="description" content="Pinned documentation — setup, shortcuts, and features." />
+  <meta property="og:title" content="Pinned — Docs" />
+  <meta property="og:description" content="Pinned documentation — setup, shortcuts, and features." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://pinedin.app/docs" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="PinedIn — Docs" />
-  <meta name="twitter:description" content="PinedIn documentation — setup, shortcuts, and features." />
+  <meta name="twitter:title" content="Pinned — Docs" />
+  <meta name="twitter:description" content="Pinned documentation — setup, shortcuts, and features." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />

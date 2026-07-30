@@ -1,6 +1,6 @@
-# Contributing to PinedIn
+# Contributing to Pinned
 
-Thank you for your interest in contributing to PinedIn! This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to Pinned! This document provides guidelines and instructions for contributing to the project.
 
 ## 🚀 Development Setup
 
@@ -155,7 +155,7 @@ We welcome feature requests! Please:
 
 ## 📄 License
 
-By contributing to PinedIn, you agree that your contributions will be licensed under the project's MIT License.
+By contributing to Pinned, you agree that your contributions will be licensed under the project's MIT License.
 
 ## ❓ Need Help?
 
@@ -163,4 +163,4 @@ By contributing to PinedIn, you agree that your contributions will be licensed u
 - Open a [GitHub Issue](https://github.com/Zarl-prog/PinedIn/issues) for questions
 - Join our community discussions
 
-Thank you for contributing to PinedIn! 🎯
+Thank you for contributing to Pinned! 🎯

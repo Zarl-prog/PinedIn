@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to PinedIn will be documented in this file.
+All notable changes to Pinned will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -56,7 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Pre-Schedule**: schedule a task to spawn as an active floating card at a future date and time. New mode toggle in the add-task modal (Immediate / Pre-Schedule) with a Schedule For date+time picker pair. The new Scheduled section in the main list shows pending pre-scheduled tasks with per-row cancel buttons. A 30-second background scheduler activates any pre-scheduled task whose time has arrived, opens a floating card for it, and emits the `tasks-updated` event.
-- **Minimize-to-tray**: clicking the close button on the main window hides it to the system tray instead of exiting the process, matching Discord / Spotify behavior. Left click or double click on the tray icon toggles the main window (show+focus if hidden, hide if visible). The tray menu's "Quit PinedIn" item now uses `std::process::exit(0)` so the process is guaranteed to die.
+- **Minimize-to-tray**: clicking the close button on the main window hides it to the system tray instead of exiting the process, matching Discord / Spotify behavior. Left click or double click on the tray icon toggles the main window (show+focus if hidden, hide if visible). The tray menu's "Quit Pinned" item now uses `std::process::exit(0)` so the process is guaranteed to die.
 - Idempotent DB migrations: `is_presceduled` and `scheduled_at` columns are added automatically to existing v0.1.0 user databases on next launch.
 
 ### Changed

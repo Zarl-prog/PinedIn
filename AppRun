@@ -1,5 +1,5 @@
 #!/bin/bash
-# PinedIn AppImage wrapper
+# Pinned AppImage wrapper
 # Fixes WebKitGTK GPU compositing crashes on systems where
 # WebKit tries to use GPU acceleration and aborts.
 export WEBKIT_DISABLE_COMPOSITING_MODE=1

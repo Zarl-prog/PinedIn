@@ -40,7 +40,7 @@ pub fn set_linux_webkit_env() {
 }
 
 /// Wait up to 10 seconds for the display server to be ready.
-/// On Linux with systemd autostart, PinedIn can launch before the
+/// On Linux with systemd autostart, Pinned can launch before the
 /// desktop environment is fully initialized, causing WebKit to fail
 /// loading the bundled frontend. This check polls for DISPLAY or
 /// WAYLAND_DISPLAY before allowing any window creation.

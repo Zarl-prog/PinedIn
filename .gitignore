@@ -43,3 +43,6 @@ priv.key
 .signing-key
 .signing-key.pub
 .env.keys
+
+# Graphify generated output
+graphify-out/

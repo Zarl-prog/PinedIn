@@ -37,6 +37,7 @@ export interface OverlayState {
   isCustomizeOpen: boolean;
   isPreScheduleOpen: boolean;
   isMcpOpen: boolean;
+  isPhoneSyncOpen: boolean;
   editingTask: Task | null;
   activeTags: string[];
   isPaused: boolean;
@@ -93,6 +94,7 @@ export interface OverlayState {
   setAddTaskOpen: (open: boolean) => void;
   // settings is now a tab in App.tsx
   setMcpOpen: (open: boolean) => void;
+  setPhoneSyncOpen: (open: boolean) => void;
   setPreScheduleOpen: (open: boolean) => void;
   setCustomizeOpen: (open: boolean) => void;
   setEditingTask: (task: Task | null) => void;
@@ -118,6 +120,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
   isPreScheduleOpen: false,
   isCustomizeOpen: false,
   isMcpOpen: false,
+  isPhoneSyncOpen: false,
   editingTask: null,
   activeTags: [],
   isPaused: false,
@@ -466,6 +469,7 @@ export const useReminderStore = create<OverlayState>()((set, get) => ({
   setAddTaskOpen: (open: boolean) =>
     set({ isAddTaskOpen: open, editingTask: open ? null : null }),
   setMcpOpen: (open: boolean) => set({ isMcpOpen: open }),
+  setPhoneSyncOpen: (open: boolean) => set({ isPhoneSyncOpen: open }),
   setPreScheduleOpen: (open: boolean) => set({ isPreScheduleOpen: open }),
   setCustomizeOpen: (open: boolean) => set({ isCustomizeOpen: open }),
   setEditingTask: (task: Task | null) => set({ editingTask: task, isAddTaskOpen: !!task }),

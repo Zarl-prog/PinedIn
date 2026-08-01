@@ -1,4 +1,4 @@
-use rusqlite::Connection;
+use rusqlite::{Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -213,12 +213,20 @@ impl DbHandle {
             );
         }
 
+        if !column_exists(&conn, "tasks", "mobile_id") {
+            let _ = conn.execute(
+                "ALTER TABLE tasks ADD COLUMN mobile_id TEXT DEFAULT NULL",
+                [],
+            );
+        }
+
         // Performance indices for common query patterns
         conn.execute_batch(
             "CREATE INDEX IF NOT EXISTS idx_tasks_workspace_state ON tasks(workspace_id, is_presceduled, completed);
              CREATE INDEX IF NOT EXISTS idx_tasks_due ON tasks(due_time, completed, is_presceduled);
              CREATE INDEX IF NOT EXISTS idx_tasks_scheduled ON tasks(is_presceduled, scheduled_at);
-             CREATE INDEX IF NOT EXISTS idx_tasks_active ON tasks(completed, is_presceduled, created_at DESC);"
+             CREATE INDEX IF NOT EXISTS idx_tasks_active ON tasks(completed, is_presceduled, created_at DESC);
+             CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_mobile_id ON tasks(mobile_id) WHERE mobile_id IS NOT NULL;"
         ).map_err(|e| format!("Failed to create indices: {e}"))?;
 
         Ok(())
@@ -317,8 +325,80 @@ impl DbHandle {
         })
     }
 
-    /// Insert a pre-scheduled task. Sets `is_presceduled = 1` and
-    /// `scheduled_at` to the given ISO datetime. Pre-scheduled tasks
+    /// Resolve a workspace name coming off the phone to a local workspace id.
+    ///
+    /// Matching is case-insensitive because the phone's names are lowercase
+    /// (`work`, `personal`, `inbox`) while desktop workspaces are user-typed.
+    /// `Ok(None)` means "no such workspace" — the caller lands the task in the
+    /// unfiled list rather than inventing a workspace, since a stray workspace
+    /// row would show up in the desktop's own workspace picker.
+    pub fn find_workspace_by_name(&self, name: &str) -> Result<Option<i64>, String> {
+        let conn = self.conn()?;
+        conn.query_row(
+            "SELECT id FROM workspaces WHERE LOWER(name) = LOWER(?1) ORDER BY id LIMIT 1",
+            rusqlite::params![name],
+            |row| row.get::<_, i64>(0),
+        )
+        .optional()
+        .map_err(|e| format!("Failed to look up workspace '{name}': {e}"))
+    }
+
+    /// Insert one task that arrived from the phone.
+    ///
+    /// `mobile_id` is the phone's local UUID. It is stored so a retried POST —
+    /// the phone lost the response but the laptop had already committed — is a
+    /// no-op instead of a duplicate. `Ok(None)` means "already had this one".
+    ///
+    /// Captures have no due time by design: v1 is capture-only, so the phone
+    /// never collects one and guessing here would put a deadline on the task the
+    /// user did not ask for.
+    pub fn insert_synced_task(
+        &self,
+        mobile_id: &str,
+        text: &str,
+        created_at: &str,
+        workspace_id: Option<i64>,
+    ) -> Result<Option<Task>, String> {
+        let conn = self.conn()?;
+
+        let already: Option<i64> = conn
+            .query_row(
+                "SELECT id FROM tasks WHERE mobile_id = ?1 LIMIT 1",
+                rusqlite::params![mobile_id],
+                |row| row.get(0),
+            )
+            .optional()
+            .map_err(|e| format!("Failed to check for an existing synced task: {e}"))?;
+        if already.is_some() {
+            return Ok(None);
+        }
+
+        conn.execute(
+            "INSERT INTO tasks (title, description, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at, workspace_id, mobile_id)
+             VALUES (?1, '', '', 0, ?2, NULL, NULL, NULL, NULL, 0, NULL, ?3, ?4)",
+            rusqlite::params![text, created_at, workspace_id, mobile_id],
+        )
+        .map_err(|e| format!("Failed to insert synced task: {e}"))?;
+
+        let id = conn.last_insert_rowid();
+        Ok(Some(Task {
+            id: Some(id),
+            title: text.to_string(),
+            description: String::new(),
+            due_time: String::new(),
+            completed: false,
+            created_at: created_at.to_string(),
+            recurrence: None,
+            tags: None,
+            time_limit_minutes: None,
+            started_at: None,
+            is_presceduled: 0,
+            scheduled_at: None,
+            workspace_id,
+        }))
+    }
+
+    /// Insert a pre-scheduled task. Sets `is_presceduled = 1` and    /// `scheduled_at` to the given ISO datetime. Pre-scheduled tasks
     /// are hidden from the normal active task lists until the
     /// scheduler activates them.
     #[allow(clippy::too_many_arguments)]
@@ -362,22 +442,46 @@ impl DbHandle {
     /// Returns all pre-scheduled tasks whose `scheduled_at` has passed
     /// and that are not yet completed. Used by the scheduler to
     /// determine which tasks to activate.
+    ///
+    /// `now` is an RFC 3339 timestamp. Comparison is done on absolute
+    /// instants (parsed to `DateTime`), NOT on the raw strings: stored
+    /// `scheduled_at` values carry a local UTC offset (e.g. `+05:00`)
+    /// while `now` is UTC (`+00:00`), so a lexicographic SQL comparison
+    /// (`scheduled_at <= ?1`) would mis-order equal instants across
+    /// offsets and fire tasks early or never. We fetch all pending
+    /// pre-scheduled rows and filter by parsed instant here.
     pub fn get_due_presceduled_tasks(&self, now: &str) -> Result<Vec<Task>, String> {
+        let now_dt = chrono::DateTime::parse_from_rfc3339(now)
+            .map_err(|e| format!("Invalid `now` timestamp: {e}"))?
+            .with_timezone(&chrono::Utc);
+
         let conn = self.conn()?;
         let mut stmt = conn.prepare(
              "SELECT id, title, description, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at, workspace_id
              FROM tasks
              WHERE is_presceduled = 1
                AND scheduled_at IS NOT NULL
-               AND scheduled_at <= ?1
                AND completed = 0
              ORDER BY scheduled_at ASC"
         ).map_err(|e| format!("Failed to prepare due presceduled query: {e}"))?;
 
         let tasks = stmt
-            .query_map(rusqlite::params![now], row_to_task)
+            .query_map([], row_to_task)
             .map_err(|e| format!("Query error: {e}"))?
             .filter_map(|r| r.ok())
+            .filter(|task: &Task| match &task.scheduled_at {
+                Some(s) => match chrono::DateTime::parse_from_rfc3339(s) {
+                    Ok(dt) => dt.with_timezone(&chrono::Utc) <= now_dt,
+                    Err(e) => {
+                        eprintln!(
+                            "[db] Skipping pre-scheduled task {:?} with unparseable scheduled_at {s:?}: {e}",
+                            task.id
+                        );
+                        false
+                    }
+                },
+                None => false,
+            })
             .collect();
 
         Ok(tasks)

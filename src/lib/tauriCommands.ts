@@ -296,3 +296,29 @@ export async function setEdgePeekEnabled(enabled: boolean): Promise<void> {
 export async function toggleEdgePeek(): Promise<void> {
   return invoke("toggle_edge_peek");
 }
+
+// ─── Phone Sync ─────────────────────────────────────────────────────────────
+
+export interface PairingPayload {
+  /** The JSON string encoded in the QR — shown as a fallback if scanning fails. */
+  encoded: string;
+  /** Pre-rendered QR, ready to drop into the DOM. */
+  svg: string;
+  host: string;
+  port: number;
+  expires_at: string;
+  expires_in_secs: number;
+}
+
+/**
+ * Mint a pairing code and start the temporary listener. The code expires on its
+ * own; call {@link cancelPhoneSync} when the dialog closes so the listener
+ * doesn't outlive the dialog.
+ */
+export async function startPhoneSync(): Promise<PairingPayload> {
+  return invoke("start_phone_sync");
+}
+
+export async function cancelPhoneSync(): Promise<void> {
+  return invoke("cancel_phone_sync");
+}

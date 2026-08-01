@@ -53,12 +53,12 @@ dependencies {
     implementation(composeBom)
 
     implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     // Supplies androidx.lifecycle.compose.LocalLifecycleOwner, which ScanScreen
     // binds CameraX against. The compose-ui copy of that CompositionLocal is
     // deprecated as of Compose 1.7, so take it from lifecycle instead.
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("androidx.activity:activity-compose:1.9.2")
 
     // Flow/coroutines arrive transitively via room-ktx and lifecycle, but the app

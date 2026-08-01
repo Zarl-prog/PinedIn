@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 const GAP = 6;
+const FADE_OUT_MS = 150;
 
 export default function SmartTooltip({
   anchorEl,
@@ -14,6 +15,24 @@ export default function SmartTooltip({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const [visible, setVisible] = useState(false);
+  const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Show immediately when anchor is set, fade out with delay when cleared.
+  useLayoutEffect(() => {
+    if (fadeTimer.current) {
+      clearTimeout(fadeTimer.current);
+      fadeTimer.current = null;
+    }
+    if (anchorEl) {
+      setVisible(true);
+    } else {
+      fadeTimer.current = setTimeout(() => setVisible(false), FADE_OUT_MS);
+    }
+    return () => {
+      if (fadeTimer.current) clearTimeout(fadeTimer.current);
+    };
+  }, [anchorEl]);
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -54,6 +73,8 @@ export default function SmartTooltip({
     setPos({ top, left });
   }, [anchorEl, title, description]);
 
+  if (!visible) return null;
+
   return createPortal(
     <div
       ref={ref}
@@ -70,8 +91,8 @@ export default function SmartTooltip({
         maxWidth: "260px",
         whiteSpace: "pre-wrap",
         pointerEvents: "none",
-        opacity: pos ? 1 : 0,
-        transition: "opacity 120ms ease",
+        opacity: anchorEl ? 1 : 0,
+        transition: `opacity ${FADE_OUT_MS}ms ease`,
       }}
     >
       <div style={{

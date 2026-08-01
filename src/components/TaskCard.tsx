@@ -536,9 +536,7 @@ export default function TaskCard({
         </div>
       )}
 
-      {tooltip && (
-        <SmartTooltip anchorEl={tooltip.el} title={tooltip.title} description={tooltip.description} />
-      )}
+      <SmartTooltip anchorEl={tooltip?.el ?? null} title={tooltip?.title ?? ""} description={tooltip?.description} />
     </div>
   );
 }

@@ -26,15 +26,6 @@ export default function CompactPill() {
   const [tooltip, setTooltip] = useState<{ title: string; description?: string; el: HTMLElement } | null>(null);
   const titleRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const win = getCurrentWindow();
-    if (tooltip) {
-      win.setSize(new LogicalSize(EXPANDED_W, EXPANDED_H + 80)).catch(() => {});
-    } else {
-      win.setSize(new LogicalSize(EXPANDED_W, EXPANDED_H)).catch(() => {});
-    }
-  }, [tooltip]);
-
   function getTimerColor(task: Task): string | null {
     if (!task.time_limit_minutes || !task.started_at) return null;
     const totalMs = task.time_limit_minutes * 60 * 1000;
@@ -92,11 +83,12 @@ export default function CompactPill() {
 
   useEffect(() => {
     const win = getCurrentWindow();
-    if (expanded) {
-      win.setSize(new LogicalSize(EXPANDED_W, EXPANDED_H));
-    } else {
-      win.setSize(new LogicalSize(COLLAPSED_W, COLLAPSED_H));
-    }
+    const size = expanded
+      ? new LogicalSize(EXPANDED_W, EXPANDED_H)
+      : new LogicalSize(COLLAPSED_W, COLLAPSED_H);
+    // Re-shape the OS input region (capsule → rounded panel) once the new
+    // size has been applied by the backend.
+    win.setSize(size).then(() => invoke("reassert_window_properties")).catch(() => {});
   }, [expanded]);
 
   useEffect(() => {

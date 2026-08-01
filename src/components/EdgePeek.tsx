@@ -1,8 +1,6 @@
 import { CaretLeft, CaretRight, CheckCircle } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
-import { LogicalSize } from "@tauri-apps/api/dpi";
 import { listen } from "@tauri-apps/api/event";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useCallback, useEffect, useRef, useState } from "react";
 import SmartTooltip from "@/components/SmartTooltip";
 import type { Task } from "../lib/tauriCommands";
@@ -35,16 +33,6 @@ export default function EdgePeek() {
   const autoCollapseRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hoveringRef = useRef(false);
   const [tooltip, setTooltip] = useState<{ title: string; description?: string; el: HTMLElement } | null>(null);
-
-  useEffect(() => {
-    if (!expanded) return;
-    const win = getCurrentWindow();
-    if (tooltip) {
-      win.setSize(new LogicalSize(340, 56 + 120)).catch(() => {});
-    } else {
-      win.setSize(new LogicalSize(340, 56)).catch(() => {});
-    }
-  }, [tooltip, expanded]);
 
   const AUTO_COLLAPSE_MS = 3000;
 

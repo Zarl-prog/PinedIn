@@ -25,10 +25,10 @@ export function localDateStr(d: Date = new Date()): string {
 
 /**
  * Format a Date as a local-time ISO 8601 string with timezone offset,
- * e.g. "2026-06-08T14:30:00+05:00". The Rust scheduler compares
- * scheduled_at against `Local::now().to_rfc3339()` (also offset-aware);
- * a naive "YYYY-MM-DDTHH:MM:SS" works by accident under ASCII ordering
- * but breaks for negative offsets.
+ * e.g. "2026-06-08T14:30:00+05:00". The offset makes the string an
+ * unambiguous absolute instant. The Rust scheduler parses scheduled_at
+ * to a DateTime and compares it against `Utc::now()` on the absolute
+ * instant (not by raw string), so any valid offset is handled correctly.
  */
 export function localIsoString(d: Date = new Date()): string {
   const pad = (n: number) => String(n).padStart(2, "0");

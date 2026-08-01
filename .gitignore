@@ -46,3 +46,9 @@ priv.key
 
 # Graphify generated output
 graphify-out/
+
+# Local data / caches
+.freebuff/
+
+# Archives / installers
+*.tgz

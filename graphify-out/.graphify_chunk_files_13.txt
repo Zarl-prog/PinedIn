@@ -1,1 +1,0 @@
-/home/asim/Desktop/Projects/PinedIn/src-tauri/icons/16x16.png

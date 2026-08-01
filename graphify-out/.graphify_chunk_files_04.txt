@@ -1,7 +1,0 @@
-/home/asim/Desktop/Projects/PinedIn/mockups/placements.html
-/home/asim/Desktop/Projects/PinedIn/videos/pinedin-product-intro/AGENTS.md
-/home/asim/Desktop/Projects/PinedIn/videos/pinedin-product-intro/BRIEF.md
-/home/asim/Desktop/Projects/PinedIn/videos/pinedin-product-intro/CLAUDE.md
-/home/asim/Desktop/Projects/PinedIn/videos/pinedin-product-intro/index.html
-/home/asim/Desktop/Projects/PinedIn/videos/pinedin-product-intro/.media/index.md
-/home/asim/Desktop/Projects/PinedIn/videos/pinedin-product-intro/assets/index.md

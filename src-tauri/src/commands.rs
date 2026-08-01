@@ -356,8 +356,18 @@ pub fn get_display_mode_state(app: &AppHandle) -> String {
 
 /// Advance the due date by the given recurrence interval.
 fn advance_due_date(current_date: &str, recurrence: &str) -> String {
-    let base_date = chrono::NaiveDate::parse_from_str(current_date, "%Y-%m-%d")
-        .unwrap_or_else(|_| chrono::Utc::now().date_naive());
+    let base_date = match chrono::NaiveDate::parse_from_str(current_date, "%Y-%m-%d") {
+        Ok(d) => d,
+        Err(e) => {
+            // due_time is always a %Y-%m-%d string, so this is only reachable
+            // with corrupt data. Anchor recurrence to today so the task keeps
+            // recurring, but make the fallback loud instead of silent.
+            eprintln!(
+                "[recurrence] Failed to parse due_time {current_date:?} as %Y-%m-%d ({e}); anchoring to today"
+            );
+            chrono::Utc::now().date_naive()
+        }
+    };
 
     let new_date = match recurrence {
         "daily" => base_date + chrono::Duration::days(1),
@@ -1075,6 +1085,52 @@ pub fn set_compact_mode(app: AppHandle, db: State<'_, Arc<DbHandle>>, enabled: b
     Ok(())
 }
 
+// Internal version that takes Arc directly (for shortcuts and the MCP server),
+// mirroring set_edge_peek_enabled_internal. Keeps the compact/edge-peek mutual
+// exclusivity and window management in one place instead of duplicating it.
+pub fn set_compact_mode_internal(app: AppHandle, db: Arc<DbHandle>, enabled: bool) -> Result<(), String> {
+    db.update_setting("compact_mode", if enabled { "true" } else { "false" })?;
+    COMPACT_MODE.store(enabled, Ordering::SeqCst);
+
+    if enabled {
+        // Disable edge_peek when compact_mode is enabled (mutually exclusive)
+        let _ = db.update_setting("edge_peek_enabled", "false");
+        EDGE_PEEK_ENABLED.store(false, Ordering::SeqCst);
+        crate::window::close_edge_peek_window(&app);
+        let _ = app.emit("edge_peek_disabled", ());
+
+        // Close open task cards
+        let windows = app.webview_windows();
+        for (label, window) in &windows {
+            if label.starts_with("task_") {
+                let _ = window.close();
+            }
+        }
+
+        let app_clone = app.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            crate::window::open_compact_pill_window(&app_clone);
+        });
+        let _ = app.emit("compact_mode_enabled", ());
+    } else {
+        crate::window::close_compact_pill_window(&app);
+        let app_clone = app.clone();
+        let db_clone = Arc::clone(&db);
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            if let Ok(tasks) = db_clone.get_all_active_tasks() {
+                for (i, task) in tasks.iter().enumerate() {
+                    let _ = crate::window::open_task_card(&app_clone, task, i);
+                }
+                crate::window::restack_task_cards(&app_clone);
+            }
+        });
+        let _ = app.emit("compact_mode_disabled", ());
+    }
+    Ok(())
+}
+
 // ─── Zen Mode ─────────────────────────────────────────────────────────────────
 
 #[tauri::command]
@@ -1348,7 +1404,77 @@ pub fn reassert_window_properties(window: Window) -> Result<(), String> {
     #[cfg(any(target_os = "linux", target_os = "windows"))]
     let _ = window.set_always_on_top(true);
     let _ = window.set_skip_taskbar(true);
+    // Re-clip the OS input region to the window's visible shape. Overlay
+    // windows call this after every frontend-driven resize (expand/collapse,
+    // card size changes), so the transparent pixels outside the rounded
+    // pill/card stay click-through.
+    let app = window.app_handle();
+    crate::window::apply_window_shape(&app, &window.label());
     Ok(())
+}
+
+// ─── Tooltip popup window ─────────────────────────────────────────────────
+
+#[derive(Clone, serde::Serialize)]
+pub struct TooltipContent {
+    pub title: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+
+static TOOLTIP_CONTENT: OnceLock<Mutex<Option<TooltipContent>>> = OnceLock::new();
+fn tooltip_content_state() -> &'static Mutex<Option<TooltipContent>> {
+    TOOLTIP_CONTENT.get_or_init(|| Mutex::new(None))
+}
+
+/// Show the shared click-through tooltip popup at screen `(x, y)` sized to
+/// the tooltip content. The owning window stays its normal size — the tooltip
+/// lives in its own window so it never forces the owner to grow (which left
+/// transparent click-blocking margins on the pill / edge-peek).
+#[tauri::command]
+pub fn show_tooltip(
+    app: AppHandle,
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+    title: String,
+    description: Option<String>,
+) -> Result<(), String> {
+    crate::window::ensure_tooltip_window(&app)?;
+
+    let content = TooltipContent { title, description };
+    *tooltip_content_state().lock().unwrap() = Some(content.clone());
+
+    if let Some(window) = app.get_webview_window("tooltip") {
+        window
+            .set_size(tauri::LogicalSize::new(width.max(1.0), height.max(1.0)))
+            .map_err(|e| e.to_string())?;
+        window
+            .set_position(tauri::LogicalPosition::new(x, y))
+            .map_err(|e| e.to_string())?;
+        #[cfg(any(target_os = "linux", target_os = "windows"))]
+        let _ = window.set_always_on_top(true);
+        let _ = window.emit("tooltip-content", content);
+        window.show().map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn hide_tooltip(app: AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("tooltip") {
+        let _ = window.hide();
+    }
+    Ok(())
+}
+
+/// Lets the tooltip window fetch its current content on mount, in case the
+/// "tooltip-content" event fired before its listener was registered.
+#[tauri::command]
+pub fn get_tooltip_content() -> Result<Option<TooltipContent>, String> {
+    let content = tooltip_content_state().lock().unwrap().clone();
+    Ok(content)
 }
 
 #[tauri::command]
@@ -1356,4 +1482,22 @@ pub fn complete_onboarding(app: AppHandle) -> Result<(), String> {
     let state = app.state::<Arc<DbHandle>>();
     state.update_setting("onboarding_completed", "true")
         .map_err(|e| e.to_string())
+}
+
+// ─── Phone sync ──────────────────────────────────────────────────────────
+
+/// Mint a pairing code and start listening for the phone. Returns the QR (as an
+/// SVG string) plus the address and expiry so the dialog can show a countdown.
+#[tauri::command]
+pub fn start_phone_sync(app: AppHandle) -> Result<crate::phone_sync::PairingPayload, String> {
+    let db = app.state::<Arc<DbHandle>>().inner().clone();
+    crate::phone_sync::begin(&app, db)
+}
+
+/// Drop the pairing code and close the listener — the user dismissed the dialog
+/// without scanning. Idempotent, so closing twice is fine.
+#[tauri::command]
+pub fn cancel_phone_sync(app: AppHandle) -> Result<(), String> {
+    crate::phone_sync::cancel(&app);
+    Ok(())
 }

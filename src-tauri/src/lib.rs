@@ -4,6 +4,7 @@ pub mod commands;
 pub mod db;
 pub mod mcp_server;
 pub mod notifications;
+pub mod phone_sync;
 pub mod scheduler;
 pub mod tray;
 pub mod window;
@@ -83,7 +84,7 @@ pub fn run() {
                 // Deny-list windows we position programmatically: the plugin
                 // would otherwise save/restore their geometry from the
                 // registry and race with our own positioning on startup.
-                .with_denylist(&["main", "quick_add", "edge_peek", "compact_pill", "daily_digest"])
+                .with_denylist(&["main", "quick_add", "edge_peek", "compact_pill", "daily_digest", "tooltip"])
                 .build(),
         )
         .plugin(tauri_plugin_notification::init())
@@ -119,6 +120,10 @@ pub fn run() {
             };
 
             app.manage(db_handle.clone());
+
+            // Phone-sync state. Nothing binds a port or holds a token until the
+            // user actually clicks "Sync Phone" — this is just the empty holder.
+            app.manage(Arc::new(phone_sync::PhoneSync::default()));
 
             // Bind close-to-tray handler if main window exists
             if let Some(main_window) = app.get_webview_window("main") {
@@ -367,6 +372,11 @@ pub fn run() {
             commands::expand_edge_peek,
             commands::collapse_edge_peek,
             commands::get_edge_peek_expanded,
+            commands::start_phone_sync,
+            commands::cancel_phone_sync,
+            commands::show_tooltip,
+            commands::hide_tooltip,
+            commands::get_tooltip_content,
         ])
         .build(tauri::generate_context!())
         .unwrap_or_else(|e| {

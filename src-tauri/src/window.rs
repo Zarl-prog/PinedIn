@@ -34,6 +34,207 @@ where
     }))
 }
 
+/// Debug helper: log if a freshly-built window's actual size doesn't match the
+/// requested size. On Linux/GTK the webview's natural size request can force a
+/// window larger than the requested inner size, which leaves transparent
+/// click-blocking margins around the visible pill/card.
+#[cfg(target_os = "linux")]
+fn log_size_mismatch(window: &tauri::WebviewWindow, label: &str, want_w: f64, want_h: f64) {
+    let Ok(actual) = window.inner_size() else {
+        return;
+    };
+    let scale = window.scale_factor().unwrap_or(1.0);
+    let actual_logical = (actual.width as f64 / scale, actual.height as f64 / scale);
+    if (actual_logical.0 - want_w).abs() > 0.5 || (actual_logical.1 - want_h).abs() > 0.5 {
+        eprintln!(
+            "[window:{label}] size mismatch: requested {want_w:.0}x{want_h:.0}, got {:.0}x{:.0}",
+            actual_logical.0, actual_logical.1
+        );
+    }
+}
+
+// ─── Input shaping (click-through dead zones) ───────────────────────────────
+//
+// Transparent windows still receive mouse events in the pixels *between* the
+// visible pill/card and the OS window rect (rounded corners, capsule ends,
+// and tooltip-growth space). We clip each window's native input region to the
+// visible shape so those transparent pixels pass clicks through to whatever
+// is underneath:
+//   • Windows — SetWindowRgn with a per-row region union.
+//   • Linux — GTK input_shape_combine_region with a cairo region (works on
+//     the X11 backend the app forces; not available on macOS).
+//
+// Radii are in logical px, matching the frontend border-radius of each shape.
+// Unknown labels (e.g. the main window) get None and are left untouched.
+
+fn window_radii(label: &str, logical_h: f64) -> Option<[f64; 4]> {
+    if label == "edge_peek" {
+        return Some([28.0, 0.0, 0.0, 28.0]);
+    }
+    if label == "compact_pill" {
+        // Collapsed 36px-high capsule rounds to r=18; expanded 120px panel is r=16.
+        return Some(if logical_h <= 36.0 { [18.0; 4] } else { [16.0; 4] });
+    }
+    if label.starts_with("task_") {
+        return Some([12.0; 4]);
+    }
+    if label == "quick_add" {
+        return Some([14.0; 4]);
+    }
+    None
+}
+
+/// For each pixel row of an `w×h` window, the inclusive-input x-range
+/// `(x0, x1)` of a rounded rectangle with corner radii tl/tr/br/bl.
+/// Rows where the shape is empty are omitted.
+fn rounded_rect_rows(w: i32, h: i32, tl: f64, tr: f64, br: f64, bl: f64) -> Vec<(i32, i32)> {
+    let mut rows = Vec::with_capacity(h.max(0) as usize);
+    for y in 0..h {
+        let yf = y as f64;
+        let dyb = (h - y) as f64;
+
+        let mut x0 = 0.0f64;
+        if tl > 0.0 && yf < tl {
+            let d = 2.0 * tl * yf - yf * yf;
+            x0 = x0.max(tl - if d > 0.0 { d.sqrt() } else { tl });
+        }
+        if bl > 0.0 && dyb <= bl {
+            let d = 2.0 * bl * dyb - dyb * dyb;
+            x0 = x0.max(bl - if d > 0.0 { d.sqrt() } else { bl });
+        }
+
+        let mut x1 = w as f64;
+        if tr > 0.0 && yf < tr {
+            let d = 2.0 * tr * yf - yf * yf;
+            x1 = x1.min(w as f64 - (tr - if d > 0.0 { d.sqrt() } else { tr }));
+        }
+        if br > 0.0 && dyb <= br {
+            let d = 2.0 * br * dyb - dyb * dyb;
+            x1 = x1.min(w as f64 - (br - if d > 0.0 { d.sqrt() } else { br }));
+        }
+
+        let ix0 = x0.ceil() as i32;
+        let ix1 = x1.floor() as i32;
+        if ix1 > ix0 {
+            rows.push((ix0, ix1));
+        }
+    }
+    rows
+}
+
+#[cfg(target_os = "windows")]
+fn apply_shape_windows(window: &tauri::WebviewWindow, rows: &[(i32, i32)]) {
+    use windows::Win32::Graphics::Gdi::{
+        CombineRgn, CreateRectRgn, DeleteObject, HGDIOBJ, HRGN, RGN_OR,
+    };
+    use windows::Win32::UI::WindowsAndMessaging::SetWindowRgn;
+
+    let Ok(hwnd) = window.hwnd() else {
+        return;
+    };
+    let hwnd: windows::Win32::Foundation::HWND = hwnd;
+
+    unsafe {
+        let dst = CreateRectRgn(0, 0, 0, 0);
+        if dst.0.is_null() {
+            return;
+        }
+        for (y, &(x0, x1)) in rows.iter().enumerate() {
+            let row = CreateRectRgn(x0, y as i32, x1, y as i32 + 1);
+            if row.0.is_null() {
+                continue;
+            }
+            let _ = CombineRgn(Some(dst), Some(dst), Some(row), RGN_OR);
+            let _ = DeleteObject(HGDIOBJ(row.0));
+        }
+        // The system owns the region on success — don't delete it then.
+        let ok = SetWindowRgn(hwnd, Some(dst), true);
+        if ok == 0 {
+            let _ = DeleteObject(HGDIOBJ(dst.0));
+        }
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn apply_shape_linux(window: &tauri::WebviewWindow, rows: &[(i32, i32)]) {
+    use gtk::prelude::WidgetExt;
+
+    fn shape_region(rows: &[(i32, i32)]) -> gtk::cairo::Region {
+        let region = gtk::cairo::Region::create_rectangle(&gtk::cairo::RectangleInt::new(
+            0, 0, 1, 1,
+        ));
+        for (y, &(x0, x1)) in rows.iter().enumerate() {
+            let _ = region.union_rectangle(&gtk::cairo::RectangleInt::new(
+                x0,
+                y as i32,
+                (x1 - x0).max(1),
+                1,
+            ));
+        }
+        region
+    }
+
+    fn apply(win: &tauri::WebviewWindow, rows: &[(i32, i32)]) {
+        let Ok(gtk_window) = win.gtk_window() else {
+            return;
+        };
+        gtk_window.input_shape_combine_region(Some(&shape_region(rows)));
+    }
+
+    // Run on the GTK main thread. The first pass may run before the GdkWindow
+    // is realized (input shape on an unrealized widget is a silent no-op), so
+    // a second pass after the window has been shown settles the shape.
+    let _ = window.run_on_main_thread({
+        let win = window.clone();
+        let rows = rows.to_vec();
+        move || apply(&win, &rows)
+    });
+    let win2 = window.clone();
+    let rows2 = rows.to_vec();
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(200));
+        let win3 = win2.clone();
+        let _ = win2.run_on_main_thread(move || apply(&win3, &rows2));
+    });
+}
+
+/// Clip the window's native input region to its visible rounded shape.
+/// No-op on macOS and for labels without a known shape.
+pub fn apply_window_shape(app: &AppHandle, label: &str) {
+    let Some(window) = app.get_webview_window(label) else {
+        return;
+    };
+    apply_window_shape_to(&window);
+}
+
+fn apply_window_shape_to(window: &tauri::WebviewWindow) {
+    #[cfg(any(target_os = "windows", target_os = "linux"))]
+    {
+        let Ok(size) = window.inner_size() else {
+            return;
+        };
+        let scale = window.scale_factor().unwrap_or(1.0);
+        let logical_h = size.height as f64 / scale;
+        let Some(radii) = window_radii(&window.label(), logical_h) else {
+            return;
+        };
+        let rows = rounded_rect_rows(
+            size.width.max(1) as i32,
+            size.height.max(1) as i32,
+            radii[0] * scale,
+            radii[1] * scale,
+            radii[2] * scale,
+            radii[3] * scale,
+        );
+
+        #[cfg(target_os = "windows")]
+        apply_shape_windows(window, &rows);
+
+        #[cfg(target_os = "linux")]
+        apply_shape_linux(window, &rows);
+    }
+}
+
 /// Monotonic generation counter for edge-peek geometry changes. Each
 /// expand/collapse bumps it; the Linux delayed re-assert only applies if its
 /// generation is still current, so a stale thread can't yank a resized window
@@ -127,6 +328,11 @@ pub fn open_task_card(app: &AppHandle, task: &Task, _index: usize) -> Result<(),
     let result = build_fn();
 
     let window = result.map_err(|e| format!("Failed to create task card window: {e}"))?;
+
+    #[cfg(target_os = "linux")]
+    log_size_mismatch(&window, &label, CARD_WIDTH, CARD_HEIGHT);
+
+    apply_window_shape(app, &label);
 
     // Re-assert always-on-top after creation on Linux only — GNOME/Mutter
     // on Wayland may drop the builder hint during Alt+Tab. Windows/macOS
@@ -253,6 +459,8 @@ pub fn open_task_card_window_at(app: &AppHandle, task: &Task, x: f64, y: f64) {
     #[cfg(target_os = "linux")]
     let _ = window.set_always_on_top(true);
 
+    apply_window_shape(app, &label);
+
     if ZEN_MODE.load(Ordering::SeqCst) {
         let _ = window.hide();
     }
@@ -305,6 +513,8 @@ pub fn open_quick_add_window(app: &AppHandle) {
 
     #[cfg(target_os = "linux")]
     let _ = window.set_visible_on_all_workspaces(true);
+
+    apply_window_shape(app, label);
 
     let w_clone = window.clone();
     window.on_window_event(move |event| {
@@ -375,7 +585,12 @@ pub fn open_compact_pill_window(app: &AppHandle) {
     };
 
     #[cfg(target_os = "linux")]
+    log_size_mismatch(&_window, label, 100.0, 36.0);
+
+    #[cfg(target_os = "linux")]
     let _ = _window.set_always_on_top(true);
+
+    apply_window_shape(app, label);
 }
 
 pub fn close_compact_pill_window(app: &AppHandle) {
@@ -437,6 +652,9 @@ fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
     let gen = bump_edge_peek_gen();
     let _ = window.set_size(Size::Logical(LogicalSize::new(w, h)));
     let _ = window.set_position(Position::Logical(LogicalPosition::new(x, y)));
+
+    // Re-clip the input region to the new pill/strip geometry.
+    apply_window_shape_to(window);
 
     #[cfg(target_os = "windows")]
     {
@@ -530,8 +748,13 @@ pub fn open_edge_peek_window(app: &AppHandle, expanded: bool) {
         #[cfg(not(target_os = "linux"))]
         let result = build();
 
-        if let Err(e) = result {
-            eprintln!("Failed to open edge peek window: {e}");
+        match &result {
+            Ok(win) => {
+                #[cfg(target_os = "linux")]
+                log_size_mismatch(win, label, w, h);
+                apply_window_shape(app, label);
+            }
+            Err(e) => eprintln!("Failed to open edge peek window: {e}"),
         }
     } else {
         eprintln!("[edge_peek] no primary monitor, cannot open window");
@@ -591,4 +814,48 @@ pub fn open_daily_digest_window(app: &AppHandle) {
     {
         let _ = build_fn().map_err(|e| eprintln!("Failed to open daily digest window: {e}"));
     }
+}
+
+// ─── Tooltip Window ──────────────────────────────────────────────────────────
+
+pub const TOOLTIP_W: f64 = 260.0;
+pub const TOOLTIP_H: f64 = 120.0;
+
+/// Create the shared, always-on-top, fully click-through tooltip popup.
+/// Built hidden and sized/positioned on demand by `show_tooltip`; content is
+/// pushed to it via the "tooltip-content" event. One instance serves every
+/// overlay window, so tooltips never make the owner window grow (which is
+/// what used to leave large transparent click-blocking margins around the
+/// pill and edge-peek strip).
+pub fn ensure_tooltip_window(app: &AppHandle) -> Result<(), String> {
+    let label = "tooltip";
+    if app.get_webview_window(label).is_some() {
+        return Ok(());
+    }
+
+    let build_fn = || {
+        WebviewWindowBuilder::new(app, label, WebviewUrl::App("tooltip.html".into()))
+            .inner_size(TOOLTIP_W, TOOLTIP_H)
+            .resizable(false)
+            .decorations(false)
+            .transparent(true)
+            .shadow(false)
+            .always_on_top(true)
+            .skip_taskbar(true)
+            .focused(false)
+            .visible(false)
+            .position(0.0, 0.0)
+            .build()
+    };
+
+    #[cfg(target_os = "linux")]
+    let result = build_with_retry(build_fn, 3);
+    #[cfg(not(target_os = "linux"))]
+    let result = build_fn();
+
+    let window = result.map_err(|e| format!("Failed to create tooltip window: {e}"))?;
+    window
+        .set_ignore_cursor_events(true)
+        .map_err(|e| format!("Failed to make tooltip window click-through: {e}"))?;
+    Ok(())
 }

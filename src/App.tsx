@@ -1070,7 +1070,7 @@ export default function App() {
         )}
 
         {activeTab === "settings" && (
-          <SettingsPanel updateAvailable={updateAvailable} />
+          <SettingsPanel updateAvailable={updateAvailable} onBack={() => setActiveTab("tasks")} />
         )}
 
         {activeTab === "workspaces" && (

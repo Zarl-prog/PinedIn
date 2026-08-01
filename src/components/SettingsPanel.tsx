@@ -1,4 +1,5 @@
 import {
+  ArrowLeft,
   Compass,
   DownloadSimple,
   GearSix,
@@ -42,6 +43,7 @@ interface TabItem {
 
 interface SettingsPanelProps {
   updateAvailable?: string | null;
+  onBack?: () => void;
 }
 
 const tabs: TabItem[] = [
@@ -135,6 +137,28 @@ export default function SettingsPanel(props: SettingsPanelProps) {
         }}
       >
         <div style={{ padding: "0 10px 16px" }}>
+          {props.onBack && (
+            <button
+              onClick={props.onBack}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                background: "none",
+                border: "none",
+                color: "var(--text-secondary)",
+                fontSize: "12px",
+                cursor: "pointer",
+                padding: "4px 0",
+                marginBottom: "8px",
+                transition: "color 0.12s ease",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-primary)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-secondary)"; }}
+            >
+              <ArrowLeft size={14} weight="light" /> Tasks
+            </button>
+          )}
           <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)" }}>Settings</span>
           <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>Preferences</div>
         </div>

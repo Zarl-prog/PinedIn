@@ -355,19 +355,9 @@ pub fn get_display_mode_state(app: &AppHandle) -> String {
 }
 
 /// Advance the due date by the given recurrence interval.
-fn advance_due_date(current_date: &str, recurrence: &str) -> String {
-    let base_date = match chrono::NaiveDate::parse_from_str(current_date, "%Y-%m-%d") {
-        Ok(d) => d,
-        Err(e) => {
-            // due_time is always a %Y-%m-%d string, so this is only reachable
-            // with corrupt data. Anchor recurrence to today so the task keeps
-            // recurring, but make the fallback loud instead of silent.
-            eprintln!(
-                "[recurrence] Failed to parse due_time {current_date:?} as %Y-%m-%d ({e}); anchoring to today"
-            );
-            chrono::Utc::now().date_naive()
-        }
-    };
+pub fn advance_due_date(current_date: &str, recurrence: &str) -> String {
+    let base_date = chrono::NaiveDate::parse_from_str(current_date, "%Y-%m-%d")
+        .unwrap_or_else(|_| chrono::Utc::now().date_naive());
 
     let new_date = match recurrence {
         "daily" => base_date + chrono::Duration::days(1),
@@ -746,10 +736,11 @@ pub fn save_workspace(app: AppHandle, name: String) -> Result<i64, String> {
         if label.starts_with("task_") {
             let task_id: i64 = label.replace("task_", "").parse().unwrap_or(0);
             if let Ok(pos) = window.outer_position() {
+                let scale = window.scale_factor().unwrap_or(1.0);
                 cards.push(serde_json::json!({
                     "task_id": task_id,
-                    "x": pos.x,
-                    "y": pos.y
+                    "x": (pos.x as f64 / scale).round(),
+                    "y": (pos.y as f64 / scale).round()
                 }));
             }
         }

@@ -63,9 +63,14 @@ fn wait_for_display() {
 pub fn run() {
     // Force X11 backend on Linux so global shortcuts and transparent
     // windows work reliably (Wayland's security model blocks both).
+    // But detect pure Wayland sessions (no XWayland) and skip the override
+    // so the app doesn't crash on launch.
     #[cfg(target_os = "linux")]
     {
-        std::env::set_var("GDK_BACKEND", "x11");
+        let has_wayland = std::env::var("WAYLAND_DISPLAY").is_ok();
+        if !has_wayland {
+            std::env::set_var("GDK_BACKEND", "x11");
+        }
         std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
         std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
         wait_for_display();

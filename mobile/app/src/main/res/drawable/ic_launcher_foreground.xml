@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Adaptive launcher icon: a pin over Pinned's near-black surface.
+  minSdk is 26, so the adaptive icon covers every supported device and no
+  density-bucket PNGs are required.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Pin head -->
+    <path
+        android:fillColor="#EDEDED"
+        android:pathData="M54,30 m-11,0 a11,11 0 1,0 22,0 a11,11 0 1,0 -22,0" />
+    <!-- Pin body tapering to the point -->
+    <path
+        android:fillColor="#EDEDED"
+        android:pathData="M50,40 L58,40 L56,62 L54,78 L52,62 Z" />
+</vector>

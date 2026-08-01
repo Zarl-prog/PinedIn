@@ -1,0 +1,9 @@
+# Built outputs
+.gradle/
+.kotlin/
+**/build/
+local.properties
+*.apk
+*.aab
+*.iml
+.idea/

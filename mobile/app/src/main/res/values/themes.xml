@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+      Compose draws every pixel of the UI, so this theme only needs to set the
+      window chrome. Parented on the platform Material theme rather than
+      com.google.android.material so the app doesn't pull in the View-based
+      Material library it never uses.
+    -->
+    <style name="Theme.PinnedMobile" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/pinned_bg_app</item>
+        <item name="android:statusBarColor">@color/pinned_bg_app</item>
+        <item name="android:navigationBarColor">@color/pinned_bg_app</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+</resources>

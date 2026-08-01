@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mobile-elevated dark tokens (see ui/theme/Theme.kt). -->
+    <color name="pinned_bg_app">#FF0B0C0F</color>
+    <color name="pinned_surface">#FF16181D</color>
+    <color name="pinned_border">#FF2A2E38</color>
+    <color name="pinned_text_primary">#FFF2F3F5</color>
+    <color name="pinned_accent">#FF5B8CFF</color>
+    <color name="pinned_success">#FF4ADE80</color>
+</resources>

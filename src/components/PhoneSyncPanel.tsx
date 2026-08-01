@@ -257,8 +257,8 @@ export default function PhoneSyncPanel({ open, onClose }: PhoneSyncPanelProps) {
                   style={{
                     position: "relative",
                     alignSelf: "center",
-                    width: "220px",
-                    height: "220px",
+                    width: "240px",
+                    height: "240px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -270,10 +270,10 @@ export default function PhoneSyncPanel({ open, onClose }: PhoneSyncPanelProps) {
                 >
                   {pairing ? (
                     <div
-                      style={{ width: "100%", height: "100%", opacity: expired ? 0.15 : 1 }}
+                      style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: expired ? 0.15 : 1 }}
                       // The SVG is generated locally by the `qrcode` crate from
                       // our own address and token — no external input reaches it.
-                      dangerouslySetInnerHTML={{ __html: pairing.svg }}
+                      dangerouslySetInnerHTML={{ __html: pairing.svg.replace('<svg ', '<svg style="width:100%;height:100%" ') }}
                     />
                   ) : (
                     <span style={{ fontSize: "12px", color: "#888" }}>Generating…</span>

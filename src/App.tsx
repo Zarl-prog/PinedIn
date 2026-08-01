@@ -2,6 +2,7 @@ import {
   ArrowRight,
   ArrowsInSimple,
   Circle,
+  DeviceMobile,
   Eye,
   EyeSlash,
   GearSix,
@@ -26,6 +27,7 @@ import CommandPalette, { type Command } from "@/components/CommandPalette";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import CustomizeCardModal from "@/components/CustomizeCardModal";
 import McpPanel from "@/components/McpPanel";
+import PhoneSyncPanel from "@/components/PhoneSyncPanel";
 import Onboarding from "@/components/Onboarding";
 import PreScheduleModal from "@/components/PreScheduleModal";
 import SettingsPanel from "@/components/SettingsPanel";
@@ -65,6 +67,7 @@ export default function App() {
   // settings is now a tab via activeTab
   const isPreScheduleOpen = useReminderStore((s) => s.isPreScheduleOpen);
   const isMcpOpen = useReminderStore((s) => s.isMcpOpen);
+  const isPhoneSyncOpen = useReminderStore((s) => s.isPhoneSyncOpen);
   const editingTask = useReminderStore((s) => s.editingTask);
   const isPaused = useReminderStore((s) => s.isPaused);
 
@@ -74,6 +77,7 @@ export default function App() {
   // settings is now a tab (no store state needed)
   const setPreScheduleOpen = useReminderStore.getState().setPreScheduleOpen;
   const setMcpOpen = useReminderStore.getState().setMcpOpen;
+  const setPhoneSyncOpen = useReminderStore.getState().setPhoneSyncOpen;
   const setEditingTask = useReminderStore.getState().setEditingTask;
   const togglePaused = useReminderStore.getState().togglePaused;
 
@@ -179,6 +183,10 @@ export default function App() {
         setMcpOpen(false);
         return;
       }
+      if (isPhoneSyncOpen) {
+        setPhoneSyncOpen(false);
+        return;
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -186,10 +194,12 @@ export default function App() {
     isAddTaskOpen,
     isPreScheduleOpen,
     isMcpOpen,
+    isPhoneSyncOpen,
     paletteOpen,
     showUpdateModal,
     setAddTaskOpen,
     setMcpOpen,
+    setPhoneSyncOpen,
     setPreScheduleOpen,
     setEditingTask,
     setPaletteOpen,
@@ -592,6 +602,22 @@ export default function App() {
               <path d="M15.688 2.343a2.588 2.588 0 00-3.61 0l-9.626 9.44a.863.863 0 01-1.203 0 .823.823 0 010-1.18l9.626-9.44a4.313 4.313 0 016.016 0 4.116 4.116 0 011.204 3.54 4.3 4.3 0 013.609 1.18l.05.05a4.115 4.115 0 010 5.9l-8.706 8.537a.274.274 0 000 .393l1.788 1.754a.823.823 0 010 1.18.863.863 0 01-1.203 0l-1.788-1.753a1.92 1.92 0 010-2.754l8.706-8.538a2.47 2.47 0 000-3.54l-.05-.049a2.588 2.588 0 00-3.607-.003l-7.172 7.034-.002.002-.098.097a.863.863 0 01-1.204 0 .823.823 0 010-1.18l7.273-7.133a2.47 2.47 0 00-.003-3.537z" />
               <path d="M14.485 4.703a.823.823 0 000-1.18.863.863 0 00-1.204 0l-7.119 6.982a4.115 4.115 0 000 5.9 4.314 4.314 0 006.016 0l7.12-6.982a.823.823 0 000-1.18.863.863 0 00-1.204 0l-7.119 6.982a2.588 2.588 0 01-3.61 0 2.47 2.47 0 010-3.54l7.12-6.982z" />
             </svg>
+          </button>
+          <button
+            onClick={() => setPhoneSyncOpen(true)}
+            title="Sync Phone"
+            data-onboarding="phone-sync"
+            className="feature-btn ghost"
+            style={{
+              padding: "4px",
+              borderRadius: "4px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "var(--text-secondary)",
+            }}
+          >
+            <DeviceMobile size={18} weight="light" />
           </button>
           <div style={{ position: "relative" }}>
             <button
@@ -1237,6 +1263,7 @@ export default function App() {
       />
 
       <McpPanel open={isMcpOpen} onClose={() => setMcpOpen(false)} />
+      <PhoneSyncPanel open={isPhoneSyncOpen} onClose={() => setPhoneSyncOpen(false)} />
 
       <CustomizeCardModal />
 

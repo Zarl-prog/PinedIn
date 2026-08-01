@@ -1404,77 +1404,7 @@ pub fn reassert_window_properties(window: Window) -> Result<(), String> {
     #[cfg(any(target_os = "linux", target_os = "windows"))]
     let _ = window.set_always_on_top(true);
     let _ = window.set_skip_taskbar(true);
-    // Re-clip the OS input region to the window's visible shape. Overlay
-    // windows call this after every frontend-driven resize (expand/collapse,
-    // card size changes), so the transparent pixels outside the rounded
-    // pill/card stay click-through.
-    let app = window.app_handle();
-    crate::window::apply_window_shape(&app, &window.label());
     Ok(())
-}
-
-// ─── Tooltip popup window ─────────────────────────────────────────────────
-
-#[derive(Clone, serde::Serialize)]
-pub struct TooltipContent {
-    pub title: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-}
-
-static TOOLTIP_CONTENT: OnceLock<Mutex<Option<TooltipContent>>> = OnceLock::new();
-fn tooltip_content_state() -> &'static Mutex<Option<TooltipContent>> {
-    TOOLTIP_CONTENT.get_or_init(|| Mutex::new(None))
-}
-
-/// Show the shared click-through tooltip popup at screen `(x, y)` sized to
-/// the tooltip content. The owning window stays its normal size — the tooltip
-/// lives in its own window so it never forces the owner to grow (which left
-/// transparent click-blocking margins on the pill / edge-peek).
-#[tauri::command]
-pub fn show_tooltip(
-    app: AppHandle,
-    x: f64,
-    y: f64,
-    width: f64,
-    height: f64,
-    title: String,
-    description: Option<String>,
-) -> Result<(), String> {
-    crate::window::ensure_tooltip_window(&app)?;
-
-    let content = TooltipContent { title, description };
-    *tooltip_content_state().lock().unwrap() = Some(content.clone());
-
-    if let Some(window) = app.get_webview_window("tooltip") {
-        window
-            .set_size(tauri::LogicalSize::new(width.max(1.0), height.max(1.0)))
-            .map_err(|e| e.to_string())?;
-        window
-            .set_position(tauri::LogicalPosition::new(x, y))
-            .map_err(|e| e.to_string())?;
-        #[cfg(any(target_os = "linux", target_os = "windows"))]
-        let _ = window.set_always_on_top(true);
-        let _ = window.emit("tooltip-content", content);
-        window.show().map_err(|e| e.to_string())?;
-    }
-    Ok(())
-}
-
-#[tauri::command]
-pub fn hide_tooltip(app: AppHandle) -> Result<(), String> {
-    if let Some(window) = app.get_webview_window("tooltip") {
-        let _ = window.hide();
-    }
-    Ok(())
-}
-
-/// Lets the tooltip window fetch its current content on mount, in case the
-/// "tooltip-content" event fired before its listener was registered.
-#[tauri::command]
-pub fn get_tooltip_content() -> Result<Option<TooltipContent>, String> {
-    let content = tooltip_content_state().lock().unwrap().clone();
-    Ok(content)
 }
 
 #[tauri::command]

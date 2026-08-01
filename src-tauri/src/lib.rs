@@ -84,7 +84,7 @@ pub fn run() {
                 // Deny-list windows we position programmatically: the plugin
                 // would otherwise save/restore their geometry from the
                 // registry and race with our own positioning on startup.
-                .with_denylist(&["main", "quick_add", "edge_peek", "compact_pill", "daily_digest", "tooltip"])
+                .with_denylist(&["main", "quick_add", "edge_peek", "compact_pill", "daily_digest"])
                 .build(),
         )
         .plugin(tauri_plugin_notification::init())
@@ -374,9 +374,6 @@ pub fn run() {
             commands::get_edge_peek_expanded,
             commands::start_phone_sync,
             commands::cancel_phone_sync,
-            commands::show_tooltip,
-            commands::hide_tooltip,
-            commands::get_tooltip_content,
         ])
         .build(tauri::generate_context!())
         .unwrap_or_else(|e| {

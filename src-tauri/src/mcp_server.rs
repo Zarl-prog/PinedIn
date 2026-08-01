@@ -992,15 +992,28 @@ fn tool_update_setting(
         .ok_or_else(|| "Missing required argument: value".to_string())?
         .to_string();
 
-    state.db.update_setting(&key, &value)?;
-
-    if key == "compact_mode" {
-        let enabled = value == "true";
-        crate::commands::COMPACT_MODE.store(enabled, std::sync::atomic::Ordering::SeqCst);
-        if enabled {
-            let _ = state.app_handle.emit("compact_mode_enabled", ());
-        } else {
-            let _ = state.app_handle.emit("compact_mode_disabled", ());
+    // compact_mode and edge_peek_enabled are mutually exclusive and each drive
+    // window creation/teardown. Delegate to the shared command logic so the MCP
+    // path stays in sync with the UI path (persist, flip atomics, disable the
+    // other mode, and open/close the relevant windows) instead of only writing
+    // the setting and flipping one atomic.
+    match key.as_str() {
+        "compact_mode" => {
+            crate::commands::set_compact_mode_internal(
+                state.app_handle.clone(),
+                state.db.clone(),
+                value == "true",
+            )?;
+        }
+        "edge_peek_enabled" => {
+            crate::commands::set_edge_peek_enabled_internal(
+                state.app_handle.clone(),
+                state.db.clone(),
+                value == "true",
+            )?;
+        }
+        _ => {
+            state.db.update_setting(&key, &value)?;
         }
     }
 
@@ -1024,6 +1037,12 @@ fn tool_deactivate_workspace(state: &McpState) -> Result<String, String> {
     commands::deactivate_workspace_inner(&state.app_handle, &state.db)?;
     Ok("Showing all workspaces.".to_string())
 }
+
+
+
+
+
+
 
 fn tool_align_tasks(state: &McpState) -> Result<String, String> {
     let windows = state.app_handle.webview_windows();

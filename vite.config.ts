@@ -17,8 +17,7 @@ export default defineConfig(async () => ({
         taskCard: "task-card.html",
         dailyDigest: "daily-digest.html",
         compactPill: "compact-pill.html",
-        edgePeek: "edge-peek.html",
-        tooltip: "tooltip.html"
+        edgePeek: "edge-peek.html"
       }
     }
   },

@@ -404,20 +404,15 @@ const EDGE_PEEK_TOP_OFFSET: f64 = 100.0;
 /// Returns (x, y, w, h) in logical pixels, right-edge anchored.
 /// Height stays fixed — expanding only widens leftward.
 /// Y is clamped so the window stays fully on-screen.
-fn edge_peek_geometry(sw: f64, sh: f64, ox: f64, oy: f64, expanded: bool) -> (f64, f64, f64, f64) {
-    let anchor_y = get_anchor_center_y();
-    if anchor_y.is_nan() {
-        set_anchor_center_y(EDGE_PEEK_TOP_OFFSET);
-    }
-
+fn edge_peek_geometry(sw: f64, sh: f64, expanded: bool) -> (f64, f64, f64, f64) {
     let (w, h) = if expanded {
         (EDGE_PEEK_EXPANDED_W, EDGE_PEEK_EXPANDED_H)
     } else {
         (EDGE_PEEK_TAB_W, EDGE_PEEK_TAB_H)
     };
-    let x = ox + (sw - w).max(0.0);
-    let max_y = oy + (sh - h).max(0.0);
-    let y = get_anchor_center_y().clamp(oy, max_y);
+    let x = (sw - w).max(0.0);
+    let max_y = (sh - h).max(0.0);
+    let y = EDGE_PEEK_TOP_OFFSET.clamp(0.0, max_y);
     (x, y, w, h)
 }
 
@@ -434,10 +429,7 @@ fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
     let scale = monitor.scale_factor();
     let sw = monitor.size().width as f64 / scale;
     let sh = monitor.size().height as f64 / scale;
-    let pos = monitor.position();
-    let ox = pos.x as f64 / scale;
-    let oy = pos.y as f64 / scale;
-    let (x, y, w, h) = edge_peek_geometry(sw, sh, ox, oy, expanded);
+    let (x, y, w, h) = edge_peek_geometry(sw, sh, expanded);
 
     // Always update Tauri's internal state first — this is the source of truth
     // for the webview bounds cache. Without it WebView2 content layout desyncs
@@ -517,10 +509,7 @@ pub fn open_edge_peek_window(app: &AppHandle, expanded: bool) {
         let scale = monitor.scale_factor();
         let sw = monitor.size().width as f64 / scale;
         let sh = monitor.size().height as f64 / scale;
-        let pos = monitor.position();
-        let ox = pos.x as f64 / scale;
-        let oy = pos.y as f64 / scale;
-        let (x, y, w, h) = edge_peek_geometry(sw, sh, ox, oy, expanded);
+        let (x, y, w, h) = edge_peek_geometry(sw, sh, expanded);
 
         let build = || {
             let builder = WebviewWindowBuilder::new(

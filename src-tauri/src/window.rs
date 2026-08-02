@@ -447,7 +447,7 @@ fn apply_edge_peek_geometry(window: &tauri::WebviewWindow, expanded: bool) {
         if let Ok(hwnd) = window.hwnd() {
             let hwnd: windows::Win32::Foundation::HWND = hwnd;
             if unsafe {
-                windows::Win32::UI::WindowsAndMessaging::IsWindow(hwnd).as_bool()
+                windows::Win32::UI::WindowsAndMessaging::IsWindow(Some(hwnd)).as_bool()
             } {
                 let x_px = (x * scale).round() as i32;
                 let y_px = (y * scale).round() as i32;

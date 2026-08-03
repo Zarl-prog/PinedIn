@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -27,16 +28,15 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,10 +66,13 @@ fun CaptureScreen(
     onDelete: (String) -> Unit,
 ) {
     val c = PinnedTheme.colors
-    var confirmDelete by remember { mutableStateOf<CapturedTask?>(null) }
 
     Column(modifier = Modifier.fillMaxSize().background(c.bgApp)) {
-        AppBar(onOpenSettings = onOpenSettings)
+        AppBar(
+            unsyncedCount = state.unsyncedCount,
+            lastSyncAt = state.lastSyncAt,
+            onOpenSettings = onOpenSettings,
+        )
 
         Box(modifier = Modifier.weight(1f)) {
             if (state.tasks.isEmpty()) {
@@ -97,17 +100,16 @@ fun CaptureScreen(
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
                         )
                     }
-                    // Pending first (phone store), then already-sent — quieter.
                     items(state.pending, key = { it.id }) { task ->
                         SwipeDeleteCard(
                             task = task,
-                            onRequestDelete = { confirmDelete = task },
+                            onDelete = { onDelete(task.id) },
                         )
                     }
                     items(state.synced, key = { it.id }) { task ->
                         SwipeDeleteCard(
                             task = task,
-                            onRequestDelete = { confirmDelete = task },
+                            onDelete = { onDelete(task.id) },
                         )
                     }
                 }
@@ -126,61 +128,82 @@ fun CaptureScreen(
             onOpenScan = onOpenScan,
         )
     }
+}
 
-    val target = confirmDelete
-    if (target != null) {
-        AlertDialog(
-            onDismissRequest = { confirmDelete = null },
-            containerColor = c.bgCard,
-            titleContentColor = c.textPrimary,
-            textContentColor = c.textSecondary,
-            title = { Text("Delete this capture?", style = MaterialTheme.typography.titleMedium) },
-            text = { Text(target.text, style = MaterialTheme.typography.bodyMedium) },
-            confirmButton = {
-                TextButton(onClick = {
-                    onDelete(target.id)
-                    confirmDelete = null
-                }) {
-                    Text("Delete", color = c.textDanger, style = MaterialTheme.typography.bodyMedium)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmDelete = null }) {
-                    Text("Cancel", color = c.textSecondary, style = MaterialTheme.typography.bodyMedium)
-                }
-            },
-        )
+@Composable
+private fun AppBar(
+    unsyncedCount: Int,
+    lastSyncAt: String?,
+    onOpenSettings: () -> Unit,
+) {
+    val c = PinnedTheme.colors
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 18.dp, end = 10.dp, top = 14.dp, bottom = 2.dp),
+        ) {
+            Text(
+                text = "Pinned",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = (-0.4).sp,
+                ),
+                color = c.textPrimary,
+            )
+            if (unsyncedCount > 0) {
+                Spacer(Modifier.width(8.dp))
+                Badge(count = unsyncedCount)
+            }
+            Spacer(Modifier.weight(1f))
+            Icon(
+                imageVector = Icons.Outlined.Settings,
+                contentDescription = "Settings",
+                tint = c.textMuted,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable(onClick = onOpenSettings)
+                    .padding(8.dp),
+            )
+        }
+        if (lastSyncAt != null) {
+            Text(
+                text = "Synced ${relativeTime(lastSyncAt)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = c.textMuted,
+                modifier = Modifier.padding(start = 18.dp, bottom = 6.dp),
+            )
+        } else {
+            Text(
+                text = "Never synced",
+                style = MaterialTheme.typography.bodySmall,
+                color = c.textMuted,
+                modifier = Modifier.padding(start = 18.dp, bottom = 6.dp),
+            )
+        }
     }
 }
 
 @Composable
-private fun AppBar(onOpenSettings: () -> Unit) {
+private fun Badge(count: Int) {
     val c = PinnedTheme.colors
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    Box(
+        contentAlignment = Alignment.Center,
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 18.dp, end = 10.dp, top = 14.dp, bottom = 10.dp),
+            .size(22.dp)
+            .clip(CircleShape)
+            .background(c.accent),
     ) {
         Text(
-            text = "Pinned",
-            style = MaterialTheme.typography.titleMedium.copy(
-                fontSize = 20.sp,
+            text = if (count > 99) "99+" else count.toString(),
+            style = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.SemiBold,
-                letterSpacing = (-0.4).sp,
+                fontSize = 10.sp,
             ),
-            color = c.textPrimary,
-        )
-        Spacer(Modifier.weight(1f))
-        Icon(
-            imageVector = Icons.Outlined.Settings,
-            contentDescription = "Settings",
-            tint = c.textMuted,
-            modifier = Modifier
-                .size(36.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .clickable(onClick = onOpenSettings)
-                .padding(8.dp),
+            color = Color.White,
         )
     }
 }
@@ -213,13 +236,13 @@ private fun QuietSyncLink(count: Int, onClick: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SwipeDeleteCard(task: CapturedTask, onRequestDelete: () -> Unit) {
+private fun SwipeDeleteCard(task: CapturedTask, onDelete: () -> Unit) {
     val c = PinnedTheme.colors
     val rowShape = RoundedCornerShape(12.dp)
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
             if (value == SwipeToDismissBoxValue.EndToStart) {
-                onRequestDelete()
+                onDelete()
             }
             false
         },
@@ -254,20 +277,19 @@ private fun SwipeDeleteCard(task: CapturedTask, onRequestDelete: () -> Unit) {
             }
         },
     ) {
-        TaskRow(task = task, onLongPress = onRequestDelete)
+        TaskRow(task = task)
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun TaskRow(task: CapturedTask, onLongPress: () -> Unit) {
+private fun TaskRow(task: CapturedTask) {
     val c = PinnedTheme.colors
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(if (task.synced) Color.Transparent else c.bgCard)
-            .combinedClickable(onClick = {}, onLongClick = onLongPress)
             .padding(horizontal = 14.dp, vertical = 13.dp),
     ) {
         Text(

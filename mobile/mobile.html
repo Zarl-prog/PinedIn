@@ -502,6 +502,19 @@ body {
   0%, 100% { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(91, 140, 255, 0.4); }
   50% { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 0 10px rgba(91, 140, 255, 0); }
 }
+
+/* ─── Badge + sync timestamp ────────────────────────────────────────────── */
+.badge-count {
+  display: inline-grid; place-items: center;
+  min-width: 22px; height: 22px; padding: 0 6px;
+  border-radius: 999px; background: var(--accent); color: #fff;
+  font-size: 11px; font-weight: 600; letter-spacing: 0;
+}
+.sync-timestamp {
+  font-size: 12px; color: var(--text-muted);
+  padding: 0 18px 6px;
+}
+.app-bar-left { align-items: center; gap: 8px; }
 </style>
 </head>
 <body>
@@ -549,6 +562,7 @@ body {
         <div class="app-bar">
           <div class="app-bar-left">
             <span class="app-title">Pinned</span>
+            <span class="badge-count">3</span>
           </div>
           <div class="app-bar-right">
             <div class="icon-btn" title="Settings">
@@ -558,6 +572,7 @@ body {
             </div>
           </div>
         </div>
+        <div class="sync-timestamp">Synced 2h ago</div>
 
         <div class="body">
           <div class="rail">

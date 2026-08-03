@@ -89,6 +89,9 @@ dependencies {
     // JSON payload building uses Android's bundled org.json — no extra dependency
     // and no compiler plugin needed for a payload this small.
 
+    // WorkManager — background task scheduling for due-date notifications.
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
+
     debugImplementation("androidx.compose.ui:ui-tooling")
     implementation("androidx.compose.ui:ui-tooling-preview")
 }

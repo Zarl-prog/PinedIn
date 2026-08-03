@@ -74,8 +74,8 @@ class CaptureViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun capture(text: String, workspace: String, tags: String = "") {
-        viewModelScope.launch { repo.capture(text, workspace, tags) }
+    fun capture(text: String, workspace: String, tags: String = "", dueAt: String? = null) {
+        viewModelScope.launch { repo.capture(text, workspace, tags, dueAt) }
     }
 
     fun delete(id: String) {

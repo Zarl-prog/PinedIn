@@ -16,7 +16,7 @@ class CaptureRepository(private val dao: CapturedTaskDao) {
     val unsyncedCount: Flow<Int> = dao.observeUnsyncedCount()
 
     /** Returns false for blank input so the caller can leave the composer open. */
-    suspend fun capture(text: String, workspace: String, tags: String = ""): Boolean {
+    suspend fun capture(text: String, workspace: String, tags: String = "", dueAt: String? = null): Boolean {
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return false
         dao.insert(
@@ -26,6 +26,7 @@ class CaptureRepository(private val dao: CapturedTaskDao) {
                 createdAt = nowIsoUtc(),
                 workspace = workspace,
                 tags = tags,
+                dueAt = dueAt,
             ),
         )
         return true
@@ -35,6 +36,12 @@ class CaptureRepository(private val dao: CapturedTaskDao) {
 
     /** Exactly what a sync would send: everything the laptop hasn't acknowledged. */
     suspend fun pending(): List<CapturedTask> = dao.unsynced()
+
+    /** Tasks that are due now and haven't been notified yet. */
+    suspend fun dueTasks(): List<CapturedTask> = dao.dueTasks(nowIsoUtc())
+
+    /** Mark a task as notified so we don't buzz again. */
+    suspend fun markNotified(id: String) = dao.markNotified(id)
 
     /**
      * Marks only the ids that were actually posted. Anything captured while the

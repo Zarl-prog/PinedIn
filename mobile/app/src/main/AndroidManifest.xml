@@ -8,12 +8,15 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- RECORD_AUDIO is used for voice-to-text task capture. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- POST_NOTIFICATIONS is required for due-date reminders on Android 13+. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <uses-feature
         android:name="android.hardware.camera.any"
         android:required="false" />
 
     <application
+        android:name=".PinnedApplication"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"

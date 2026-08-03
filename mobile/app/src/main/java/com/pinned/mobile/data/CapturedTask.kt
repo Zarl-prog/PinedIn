@@ -23,8 +23,12 @@ data class CapturedTask(
     val workspace: String,
     /** Comma-separated tags applied on the phone before sync. */
     val tags: String = "",
+    /** ISO-8601 UTC due date, or null if no deadline. */
+    val dueAt: String? = null,
     /** Set once the laptop has acknowledged the POST. Unsynced rows are what get sent. */
     val synced: Boolean = false,
     /** ISO-8601 UTC timestamp of the successful push, or null while unsynced. */
     val syncedAt: String? = null,
+    /** Set to true once the due notification has been shown. */
+    val notified: Boolean = false,
 )

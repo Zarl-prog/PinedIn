@@ -1,6 +1,7 @@
 package com.pinned.mobile.ui
 
 import android.Manifest
+import android.app.DatePickerDialog
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -26,6 +27,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material3.CircularProgressIndicator
@@ -62,6 +65,11 @@ import com.pinned.mobile.ui.components.PrimaryButton
 import com.pinned.mobile.ui.theme.PinnedShape
 import com.pinned.mobile.ui.theme.PinnedTheme
 import com.pinned.mobile.util.VoiceRecognizer
+import com.pinned.mobile.util.nowIsoUtc
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /**
  * The quick-add sheet. Opens with the keyboard already up and the cursor placed —
@@ -77,7 +85,7 @@ fun QuickAddSheet(
     keepOpenAfterSave: Boolean,
     availableTags: List<String>,
     initialText: String = "",
-    onSave: (text: String, workspace: String, tags: String) -> Unit,
+    onSave: (text: String, workspace: String, tags: String, dueAt: String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val c = PinnedTheme.colors
@@ -89,7 +97,27 @@ fun QuickAddSheet(
     var field by remember { mutableStateOf(TextFieldValue(initialText, TextRange(initialText.length))) }
     var workspace by remember(defaultWorkspace) { mutableStateOf(defaultWorkspace) }
     var selectedTags by remember { mutableStateOf(setOf<String>()) }
+    var dueDate by remember { mutableStateOf<LocalDate?>(null) }
     val canSave = field.text.isNotBlank()
+
+    val formatter = remember { DateTimeFormatter.ofPattern("MMM d") }
+
+    fun showDatePicker() {
+        val now = LocalDate.now()
+        val initial = dueDate ?: now
+        DatePickerDialog(
+            context,
+            { _, year, month, day ->
+                dueDate = LocalDate.of(year, month + 1, day)
+            },
+            initial.year,
+            initial.monthValue - 1,
+            initial.dayOfMonth,
+        ).apply {
+            datePicker.minDate = System.currentTimeMillis()
+            show()
+        }
+    }
 
     // Voice recognizer
     val recognizer = remember { VoiceRecognizer(context) }
@@ -143,10 +171,14 @@ fun QuickAddSheet(
 
     fun save() {
         if (!canSave) return
-        onSave(field.text, workspace, selectedTags.joinToString(","))
+        val dueAtIso = dueDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.let {
+            java.time.format.DateTimeFormatter.ISO_INSTANT.format(it)
+        }
+        onSave(field.text, workspace, selectedTags.joinToString(","), dueAtIso)
         if (keepOpenAfterSave) {
             field = TextFieldValue("", TextRange.Zero)
             selectedTags = emptySet()
+            dueDate = null
         } else {
             onDismiss()
         }
@@ -267,6 +299,51 @@ fun QuickAddSheet(
             }
 
             Spacer(Modifier.height(16.dp))
+
+            // Due date row
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(PinnedShape.field)
+                    .background(c.bgInput)
+                    .border(1.dp, if (dueDate != null) c.accentRing else c.border, PinnedShape.field)
+                    .clickable { showDatePicker() }
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.CalendarToday,
+                    contentDescription = "Set due date",
+                    tint = if (dueDate != null) c.accent else c.textMuted,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                if (dueDate != null) {
+                    Text(
+                        text = "Due ${dueDate!!.format(formatter)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = c.accent,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Clear due date",
+                        tint = c.textMuted,
+                        modifier = Modifier
+                            .size(18.dp)
+                            .clickable { dueDate = null },
+                    )
+                } else {
+                    Text(
+                        text = "Set due date (optional)",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = c.textMuted,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,

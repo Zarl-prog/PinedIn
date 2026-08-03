@@ -19,6 +19,14 @@ interface CapturedTaskDao {
     @Query("SELECT * FROM captured_tasks WHERE synced = 0 ORDER BY createdAt ASC")
     suspend fun unsynced(): List<CapturedTask>
 
+    /** Tasks that are due (dueAt <= now) and haven't been notified yet. */
+    @Query("SELECT * FROM captured_tasks WHERE dueAt IS NOT NULL AND dueAt <= :now AND notified = 0")
+    suspend fun dueTasks(now: String): List<CapturedTask>
+
+    /** Mark a task as notified so we don't buzz again. */
+    @Query("UPDATE captured_tasks SET notified = 1 WHERE id = :id")
+    suspend fun markNotified(id: String)
+
     @Insert
     suspend fun insert(task: CapturedTask)
 

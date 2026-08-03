@@ -136,8 +136,8 @@ fun PinnedApp(vm: CaptureViewModel = viewModel()) {
                     keepOpenAfterSave = state.keepComposerOpen,
                     availableTags = state.availableTags,
                     initialText = sharedText ?: "",
-                    onSave = { text, workspace, tags ->
-                        vm.capture(text, workspace, tags)
+                    onSave = { text, workspace, tags, dueAt ->
+                        vm.capture(text, workspace, tags, dueAt)
                         sharedText = null
                     },
                     onDismiss = {

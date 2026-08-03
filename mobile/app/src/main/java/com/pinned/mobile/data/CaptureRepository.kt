@@ -16,7 +16,7 @@ class CaptureRepository(private val dao: CapturedTaskDao) {
     val unsyncedCount: Flow<Int> = dao.observeUnsyncedCount()
 
     /** Returns false for blank input so the caller can leave the composer open. */
-    suspend fun capture(text: String, workspace: String): Boolean {
+    suspend fun capture(text: String, workspace: String, tags: String = ""): Boolean {
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return false
         dao.insert(
@@ -25,6 +25,7 @@ class CaptureRepository(private val dao: CapturedTaskDao) {
                 text = trimmed,
                 createdAt = nowIsoUtc(),
                 workspace = workspace,
+                tags = tags,
             ),
         )
         return true

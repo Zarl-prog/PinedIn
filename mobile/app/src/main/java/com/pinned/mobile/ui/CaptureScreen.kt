@@ -307,6 +307,20 @@ private fun TaskRow(task: CapturedTask) {
                 style = MaterialTheme.typography.bodySmall,
                 color = c.textSecondary,
             )
+            if (task.tags.isNotBlank()) {
+                task.tags.split(",").forEach { tag ->
+                    Text(
+                        text = " · ",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = c.textMuted.copy(alpha = 0.5f),
+                    )
+                    Text(
+                        text = tag.trim(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = c.accent,
+                    )
+                }
+            }
             Text(
                 text = " · ",
                 style = MaterialTheme.typography.bodySmall,

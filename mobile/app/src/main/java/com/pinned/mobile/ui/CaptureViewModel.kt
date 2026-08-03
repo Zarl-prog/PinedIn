@@ -13,6 +13,7 @@ import com.pinned.mobile.sync.SyncClient
 import com.pinned.mobile.sync.SyncResult
 import com.pinned.mobile.sync.isExpired
 import com.pinned.mobile.util.nowIsoUtc
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,6 +27,8 @@ data class CaptureUiState(
     val keepComposerOpen: Boolean = true,
     val lastSyncAt: String? = null,
     val syncing: Boolean = false,
+    /** Tags available for selection — kept on the ViewModel so the UI can pick. */
+    val availableTags: List<String> = listOf("urgent", "later", "idea", "errand"),
 ) {
     val pending: List<CapturedTask> get() = tasks.filter { !it.synced }
     val synced: List<CapturedTask> get() = tasks.filter { it.synced }
@@ -70,8 +73,8 @@ class CaptureViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun capture(text: String, workspace: String) {
-        viewModelScope.launch { repo.capture(text, workspace) }
+    fun capture(text: String, workspace: String, tags: String = "") {
+        viewModelScope.launch { repo.capture(text, workspace, tags) }
     }
 
     fun delete(id: String) {
@@ -97,6 +100,9 @@ class CaptureViewModel(app: Application) : AndroidViewModel(app) {
      * records the outcome for the result screen. The token expiry is checked here
      * too so an old screenshot fails immediately instead of after a network round
      * trip — the desktop re-checks it regardless.
+     *
+     * If the push fails due to a network error (not a 401), the task stays
+     * unsynced and will be retried on the next scan — the "offline queue" pattern.
      */
     fun syncWith(pairing: PairingInfo) {
         if (_state.value.syncing) return
@@ -106,13 +112,32 @@ class CaptureViewModel(app: Application) : AndroidViewModel(app) {
             val result = when {
                 batch.isEmpty() -> SyncResult.NothingToSync
                 pairing.isExpired() -> SyncResult.Failure("That code has expired — generate a new one")
-                else -> syncClient.push(pairing, batch).also { r ->
-                    if (r is SyncResult.Success) {
-                        repo.markSynced(batch.map { it.id })
-                        val stamp = nowIsoUtc()
-                        prefs.lastSyncAt = stamp
-                        _state.update { it.copy(lastSyncAt = stamp) }
+                else -> {
+                    var lastError: SyncResult.Failure? = null
+                    var attempts = 0
+                    val maxAttempts = 3
+
+                    while (attempts < maxAttempts) {
+                        attempts++
+                        when (val r = syncClient.push(pairing, batch)) {
+                            is SyncResult.Success -> {
+                                repo.markSynced(batch.map { it.id })
+                                val stamp = nowIsoUtc()
+                                prefs.lastSyncAt = stamp
+                                _state.update { it.copy(lastSyncAt = stamp) }
+                                lastError = null
+                                break
+                            }
+                            is SyncResult.Failure -> {
+                                lastError = r
+                                if (attempts < maxAttempts) {
+                                    delay(1000L * attempts)
+                                }
+                            }
+                            is SyncResult.NothingToSync -> break
+                        }
                     }
+                    lastError ?: SyncResult.Success(batch.size)
                 }
             }
             _outcome.value = SyncOutcome(

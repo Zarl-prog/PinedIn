@@ -269,6 +269,12 @@ body {
 .tag.work, .tag.personal, .tag.inbox {
   color: var(--text-secondary); background: none; border: none;
 }
+.tag-accent {
+  font-family: var(--font-sans); font-size: 11px; padding: 2px 6px;
+  border: 1px solid var(--accent-ring); background: var(--accent-soft);
+  border-radius: 6px; color: var(--accent); letter-spacing: 0;
+  text-transform: none; font-weight: 500;
+}
 .time {
   font-family: var(--font-sans); font-size: 12px;
   color: var(--text-muted); letter-spacing: 0;
@@ -338,6 +344,11 @@ body {
   border: 1px solid var(--border); background: var(--bg-badge); color: var(--text-secondary);
 }
 .chip.on { background: var(--btn-primary-bg); color: var(--btn-primary-text); border-color: var(--btn-primary-bg); }
+.chip-sm {
+  font-size: 11px; padding: 5px 10px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--bg-badge); color: var(--text-secondary);
+}
+.chip-sm.on { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-ring); }
 .sheet-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .hint { font-size: 12px; color: var(--text-muted); flex: 1; }
 .btn-primary {
@@ -581,28 +592,43 @@ body {
             <div class="card work">
               <div class="card-main">
                 <div class="card-text">Follow up with design team on the new mockups</div>
-                <div class="card-meta"><span class="tag work">work</span><span class="time">2m</span></div>
+                <div class="card-meta">
+                  <span class="tag work">work</span>
+                  <span class="tag-accent">urgent</span>
+                  <span class="time">2m</span>
+                </div>
               </div>
             </div>
 
             <div class="card personal">
               <div class="card-main">
                 <div class="card-text">Buy birthday gift for mom</div>
-                <div class="card-meta"><span class="tag personal">personal</span><span class="time">18m</span></div>
+                <div class="card-meta">
+                  <span class="tag personal">personal</span>
+                  <span class="tag-accent">errand</span>
+                  <span class="time">18m</span>
+                </div>
               </div>
             </div>
 
             <div class="card inbox">
               <div class="card-main">
                 <div class="card-text">Idea: keyboard shortcut to pin the last copied line</div>
-                <div class="card-meta"><span class="tag inbox">inbox</span><span class="time">1h</span></div>
+                <div class="card-meta">
+                  <span class="tag inbox">inbox</span>
+                  <span class="tag-accent">idea</span>
+                  <span class="time">1h</span>
+                </div>
               </div>
             </div>
 
             <div class="card work">
               <div class="card-main">
                 <div class="card-text">Renew domain before the 12th</div>
-                <div class="card-meta"><span class="tag work">work</span><span class="time">yesterday</span></div>
+                <div class="card-meta">
+                  <span class="tag work">work</span>
+                  <span class="time">yesterday</span>
+                </div>
               </div>
             </div>
 
@@ -713,6 +739,12 @@ body {
             <span class="chip on">work</span>
             <span class="chip">personal</span>
             <span class="chip">inbox</span>
+          </div>
+          <div class="chips" style="margin-top:8px">
+            <span class="chip-sm">urgent</span>
+            <span class="chip-sm on">later</span>
+            <span class="chip-sm">idea</span>
+            <span class="chip-sm">errand</span>
           </div>
           <div class="sheet-actions">
             <span class="hint">Saved locally · syncs on next scan</span>

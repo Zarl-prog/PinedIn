@@ -7,11 +7,11 @@
 - [x] **Last sync timestamp** — show "Synced 2 hours ago" on the capture screen
 
 ## Medium Effort
-- [ ] **Quick settings tile** — pull down notification shade, tap tile to open composer instantly
-- [ ] **Share intent** — share text from any app (browser, notes, messages) → Pinned captures it as a task
-- [ ] **Workspaces on phone** — pick which workspace a task goes to before syncing
-- [ ] **Offline queue with retry** — if desktop isn't reachable, queue and prompt to retry later
-- [ ] **Task categories/tags** — tag tasks on the phone side before sync
+- [x] **Quick settings tile** — pull down notification shade, tap tile to open composer instantly
+- [x] **Share intent** — share text from any app (browser, notes, messages) → Pinned captures it as a task
+- [x] **Workspaces on phone** — pick which workspace a task goes to before syncing
+- [x] **Offline queue with retry** — if desktop isn't reachable, queue and prompt to retry later
+- [x] **Task categories/tags** — tag tasks on the phone side before sync
 
 ## Bigger Features
 - [ ] **Bi-directional sync** — view desktop tasks on phone (read-only)

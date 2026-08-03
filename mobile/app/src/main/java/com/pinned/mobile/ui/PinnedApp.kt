@@ -1,5 +1,6 @@
 package com.pinned.mobile.ui
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,7 +13,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.pinned.mobile.QuickTileService
 import com.pinned.mobile.ui.theme.PinnedTheme
 
 /**
@@ -30,9 +33,33 @@ private sealed interface Screen {
 fun PinnedApp(vm: CaptureViewModel = viewModel()) {
     val state by vm.state.collectAsState()
     val outcome by vm.outcome.collectAsState()
+    val context = LocalContext.current
 
     var screen by remember { mutableStateOf<Screen>(Screen.Capture) }
     var composerOpen by remember { mutableStateOf(false) }
+
+    // Handle intents: share text or quick settings tile
+    var sharedText by remember { mutableStateOf<String?>(null) }
+    remember(Unit) {
+        val intent = (context as? android.app.Activity)?.intent
+        when {
+            // Share intent: receive text from any app
+            intent?.action == Intent.ACTION_SEND && intent.type == "text/plain" -> {
+                val text = intent.getStringExtra(Intent.EXTRA_TEXT)
+                if (!text.isNullOrBlank()) {
+                    sharedText = text
+                    composerOpen = true
+                }
+                intent.removeExtra(Intent.EXTRA_TEXT)
+                intent.action = null
+            }
+            // Quick settings tile: open composer directly
+            intent?.action == QuickTileService.ACTION_OPEN_COMPOSER -> {
+                composerOpen = true
+                intent.action = null
+            }
+        }
+    }
 
     PinnedTheme {
         Box(
@@ -107,8 +134,16 @@ fun PinnedApp(vm: CaptureViewModel = viewModel()) {
                 QuickAddSheet(
                     defaultWorkspace = state.defaultWorkspace,
                     keepOpenAfterSave = state.keepComposerOpen,
-                    onSave = vm::capture,
-                    onDismiss = { composerOpen = false },
+                    availableTags = state.availableTags,
+                    initialText = sharedText ?: "",
+                    onSave = { text, workspace, tags ->
+                        vm.capture(text, workspace, tags)
+                        sharedText = null
+                    },
+                    onDismiss = {
+                        composerOpen = false
+                        sharedText = null
+                    },
                 )
             }
         }

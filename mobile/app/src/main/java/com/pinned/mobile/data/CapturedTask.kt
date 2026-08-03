@@ -21,6 +21,8 @@ data class CapturedTask(
     val createdAt: String,
     /** Workspace label chosen on the phone; the desktop maps it to a workspace row. */
     val workspace: String,
+    /** Comma-separated tags applied on the phone before sync. */
+    val tags: String = "",
     /** Set once the laptop has acknowledged the POST. Unsynced rows are what get sent. */
     val synced: Boolean = false,
     /** ISO-8601 UTC timestamp of the successful push, or null while unsynced. */

@@ -67,6 +67,9 @@ class HttpSyncClient(
                     put("text", task.text)
                     put("created_at", task.createdAt)
                     put("workspace", task.workspace)
+                    if (task.tags.isNotBlank()) {
+                        put("tags", task.tags)
+                    }
                 },
             )
         }

@@ -75,7 +75,9 @@ import com.pinned.mobile.util.VoiceRecognizer
 fun QuickAddSheet(
     defaultWorkspace: String,
     keepOpenAfterSave: Boolean,
-    onSave: (text: String, workspace: String) -> Unit,
+    availableTags: List<String>,
+    initialText: String = "",
+    onSave: (text: String, workspace: String, tags: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val c = PinnedTheme.colors
@@ -84,8 +86,9 @@ fun QuickAddSheet(
     val keyboard = LocalSoftwareKeyboardController.current
     val context = LocalContext.current
 
-    var field by remember { mutableStateOf(TextFieldValue("")) }
+    var field by remember { mutableStateOf(TextFieldValue(initialText, TextRange(initialText.length))) }
     var workspace by remember(defaultWorkspace) { mutableStateOf(defaultWorkspace) }
+    var selectedTags by remember { mutableStateOf(setOf<String>()) }
     val canSave = field.text.isNotBlank()
 
     // Voice recognizer
@@ -140,9 +143,10 @@ fun QuickAddSheet(
 
     fun save() {
         if (!canSave) return
-        onSave(field.text, workspace)
+        onSave(field.text, workspace, selectedTags.joinToString(","))
         if (keepOpenAfterSave) {
             field = TextFieldValue("", TextRange.Zero)
+            selectedTags = emptySet()
         } else {
             onDismiss()
         }
@@ -274,6 +278,29 @@ fun QuickAddSheet(
                         selected = name == workspace,
                         onClick = { workspace = name },
                     )
+                }
+            }
+
+            if (availableTags.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    availableTags.forEach { tag ->
+                        val isSelected = tag in selectedTags
+                        ChoiceChip(
+                            label = tag,
+                            selected = isSelected,
+                            onClick = {
+                                selectedTags = if (isSelected) {
+                                    selectedTags - tag
+                                } else {
+                                    selectedTags + tag
+                                }
+                            },
+                        )
+                    }
                 }
             }
 

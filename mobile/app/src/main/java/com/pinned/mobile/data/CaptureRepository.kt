@@ -50,4 +50,8 @@ class CaptureRepository(private val dao: CapturedTaskDao) {
     suspend fun markSynced(ids: List<String>) = dao.markSynced(ids, nowIsoUtc())
 
     suspend fun clearSynced() = dao.clearSynced()
+
+    suspend fun deleteBatch(ids: List<String>) = dao.deleteBatch(ids)
+
+    suspend fun retagBatch(ids: List<String>, tags: String) = dao.retagBatch(ids, tags)
 }

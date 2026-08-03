@@ -42,4 +42,10 @@ interface CapturedTaskDao {
 
     @Query("DELETE FROM captured_tasks WHERE synced = 1")
     suspend fun clearSynced()
+
+    @Query("DELETE FROM captured_tasks WHERE id IN (:ids)")
+    suspend fun deleteBatch(ids: List<String>)
+
+    @Query("UPDATE captured_tasks SET tags = :tags WHERE id IN (:ids)")
+    suspend fun retagBatch(ids: List<String>, tags: String)
 }

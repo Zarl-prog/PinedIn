@@ -1,9 +1,16 @@
 package com.pinned.mobile.ui
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +20,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -23,7 +31,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,7 +45,6 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,13 +72,27 @@ fun CaptureScreen(
     onOpenScan: () -> Unit,
     onOpenSettings: () -> Unit,
     onDelete: (String) -> Unit,
+    onBatchDelete: (List<String>) -> Unit,
+    onBatchRetag: (List<String>, String) -> Unit,
 ) {
     val c = PinnedTheme.colors
+    var selectedIds by remember { mutableStateOf(setOf<String>()) }
+    val selectionMode = selectedIds.isNotEmpty()
+
+    fun toggleSelect(id: String) {
+        selectedIds = if (id in selectedIds) selectedIds - id else selectedIds + id
+    }
+
+    fun clearSelection() { selectedIds = emptySet() }
 
     Column(modifier = Modifier.fillMaxSize().background(c.bgApp)) {
         AppBar(
             unsyncedCount = state.unsyncedCount,
             lastSyncAt = state.lastSyncAt,
+            selectionMode = selectionMode,
+            selectedCount = selectedIds.size,
+            onSelectAll = { selectedIds = state.tasks.map { it.id }.toSet() },
+            onClearSelection = ::clearSelection,
             onOpenSettings = onOpenSettings,
         )
 
@@ -99,32 +123,72 @@ fun CaptureScreen(
                         )
                     }
                     items(state.pending, key = { it.id }) { task ->
-                        SwipeDeleteCard(
-                            task = task,
-                            onDelete = { onDelete(task.id) },
-                        )
+                        val isSelected = task.id in selectedIds
+                        if (selectionMode) {
+                            SelectableTaskRow(
+                                task = task,
+                                selected = isSelected,
+                                onClick = { toggleSelect(task.id) },
+                            )
+                        } else {
+                            SwipeDeleteCard(
+                                task = task,
+                                onDelete = { onDelete(task.id) },
+                            )
+                        }
                     }
                     items(state.synced, key = { it.id }) { task ->
-                        SwipeDeleteCard(
-                            task = task,
-                            onDelete = { onDelete(task.id) },
-                        )
+                        val isSelected = task.id in selectedIds
+                        if (selectionMode) {
+                            SelectableTaskRow(
+                                task = task,
+                                selected = isSelected,
+                                onClick = { toggleSelect(task.id) },
+                            )
+                        } else {
+                            SwipeDeleteCard(
+                                task = task,
+                                onDelete = { onDelete(task.id) },
+                            )
+                        }
                     }
                 }
             }
         }
 
-        if (state.unsyncedCount > 0) {
+        // Batch action bar
+        AnimatedVisibility(
+            visible = selectionMode,
+            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+        ) {
+            BatchActionBar(
+                selectedCount = selectedIds.size,
+                onDelete = {
+                    onBatchDelete(selectedIds.toList())
+                    clearSelection()
+                },
+                onRetag = { tag ->
+                    onBatchRetag(selectedIds.toList(), tag)
+                    clearSelection()
+                },
+                onDismiss = ::clearSelection,
+            )
+        }
+
+        if (!selectionMode && state.unsyncedCount > 0) {
             QuietSyncLink(
                 count = state.unsyncedCount,
                 onClick = onOpenScan,
             )
         }
 
-        Composer(
-            onOpenComposer = onOpenComposer,
-            onOpenScan = onOpenScan,
-        )
+        if (!selectionMode) {
+            Composer(
+                onOpenComposer = onOpenComposer,
+                onOpenScan = onOpenScan,
+            )
+        }
     }
 }
 
@@ -132,6 +196,10 @@ fun CaptureScreen(
 private fun AppBar(
     unsyncedCount: Int,
     lastSyncAt: String?,
+    selectionMode: Boolean,
+    selectedCount: Int,
+    onSelectAll: () -> Unit,
+    onClearSelection: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     val c = PinnedTheme.colors
@@ -142,45 +210,179 @@ private fun AppBar(
                 .fillMaxWidth()
                 .padding(start = 18.dp, end = 10.dp, top = 14.dp, bottom = 2.dp),
         ) {
-            Text(
-                text = "Pinned",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = (-0.4).sp,
-                ),
-                color = c.textPrimary,
-            )
-            if (unsyncedCount > 0) {
+            if (selectionMode) {
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = "Clear selection",
+                    tint = c.textSecondary,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable(onClick = onClearSelection)
+                        .padding(8.dp),
+                )
                 Spacer(Modifier.width(8.dp))
-                Badge(count = unsyncedCount)
+                Text(
+                    text = "$selectedCount selected",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                    color = c.accent,
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = "Select all",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = c.accent,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable(onClick = onSelectAll)
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                )
+            } else {
+                Text(
+                    text = "Pinned",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = (-0.4).sp,
+                    ),
+                    color = c.textPrimary,
+                )
+                if (unsyncedCount > 0) {
+                    Spacer(Modifier.width(8.dp))
+                    Badge(count = unsyncedCount)
+                }
+                Spacer(Modifier.weight(1f))
+                Icon(
+                    imageVector = Icons.Outlined.Settings,
+                    contentDescription = "Settings",
+                    tint = c.textMuted,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable(onClick = onOpenSettings)
+                        .padding(8.dp),
+                )
             }
-            Spacer(Modifier.weight(1f))
-            Icon(
-                imageVector = Icons.Outlined.Settings,
-                contentDescription = "Settings",
-                tint = c.textMuted,
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .clickable(onClick = onOpenSettings)
-                    .padding(8.dp),
-            )
         }
-        if (lastSyncAt != null) {
-            Text(
-                text = "Synced ${relativeTime(lastSyncAt)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = c.textMuted,
-                modifier = Modifier.padding(start = 18.dp, bottom = 6.dp),
-            )
-        } else {
-            Text(
-                text = "Never synced",
-                style = MaterialTheme.typography.bodySmall,
-                color = c.textMuted,
-                modifier = Modifier.padding(start = 18.dp, bottom = 6.dp),
-            )
+        if (!selectionMode) {
+            if (lastSyncAt != null) {
+                Text(
+                    text = "Synced ${relativeTime(lastSyncAt)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.textMuted,
+                    modifier = Modifier.padding(start = 18.dp, bottom = 6.dp),
+                )
+            } else {
+                Text(
+                    text = "Never synced",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.textMuted,
+                    modifier = Modifier.padding(start = 18.dp, bottom = 6.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BatchActionBar(
+    selectedCount: Int,
+    onDelete: () -> Unit,
+    onRetag: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val c = PinnedTheme.colors
+    var showRetagMenu by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .background(c.bgFloat)
+            .border(1.dp, c.border),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        ) {
+            // Delete button
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable(onClick = onDelete)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Delete,
+                    contentDescription = "Delete",
+                    tint = c.textDanger,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = "Delete",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = c.textDanger,
+                )
+            }
+
+            Spacer(Modifier.weight(1f))
+
+            // Retag button
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable { showRetagMenu = true }
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Label,
+                    contentDescription = "Retag",
+                    tint = c.accent,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = "Retag",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = c.accent,
+                )
+            }
+        }
+
+        // Simple retag dropdown
+        if (showRetagMenu) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 16.dp, bottom = 56.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(c.bgCard)
+                    .border(1.dp, c.border, RoundedCornerShape(12.dp))
+                    .padding(vertical = 4.dp),
+            ) {
+                listOf("urgent", "later", "idea", "errand").forEach { tag ->
+                    Text(
+                        text = tag,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = c.textPrimary,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onRetag(tag)
+                                showRetagMenu = false
+                            }
+                            .padding(horizontal = 20.dp, vertical = 10.dp),
+                    )
+                }
+            }
         }
     }
 }
@@ -276,6 +478,87 @@ private fun SwipeDeleteCard(task: CapturedTask, onDelete: () -> Unit) {
         },
     ) {
         TaskRow(task = task)
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SelectableTaskRow(
+    task: CapturedTask,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val c = PinnedTheme.colors
+    val bg by animateColorAsState(
+        targetValue = if (selected) c.accentSoft else if (task.synced) Color.Transparent else c.bgCard,
+        label = "select-bg",
+    )
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(bg)
+            .border(
+                width = if (selected) 1.5.dp else 0.dp,
+                color = if (selected) c.accent else Color.Transparent,
+                shape = RoundedCornerShape(12.dp),
+            )
+            .combinedClickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 13.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = if (selected) Icons.Filled.CheckCircle else Icons.Filled.CheckCircle,
+                contentDescription = if (selected) "Deselect" else "Select",
+                tint = if (selected) c.accent else c.border,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text = task.text,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = if (task.synced) FontWeight.Normal else FontWeight.Medium,
+                    letterSpacing = (-0.2).sp,
+                ),
+                color = if (task.synced) c.textMuted else c.textPrimary,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Spacer(Modifier.height(7.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(start = 30.dp),
+        ) {
+            Text(
+                text = task.workspace,
+                style = MaterialTheme.typography.bodySmall,
+                color = c.textSecondary,
+            )
+            if (task.tags.isNotBlank()) {
+                task.tags.split(",").forEach { tag ->
+                    Text(
+                        text = " · ",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = c.textMuted.copy(alpha = 0.5f),
+                    )
+                    Text(
+                        text = tag.trim(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = c.accent,
+                    )
+                }
+            }
+            Text(
+                text = " · ",
+                style = MaterialTheme.typography.bodySmall,
+                color = c.textMuted.copy(alpha = 0.5f),
+            )
+            Text(
+                text = relativeTime(task.createdAt),
+                style = MaterialTheme.typography.bodySmall,
+                color = c.textMuted,
+            )
+        }
     }
 }
 

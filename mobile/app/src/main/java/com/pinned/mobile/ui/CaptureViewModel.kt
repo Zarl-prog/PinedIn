@@ -103,6 +103,14 @@ class CaptureViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { repo.clearSynced() }
     }
 
+    fun batchDelete(ids: List<String>) {
+        viewModelScope.launch { repo.deleteBatch(ids) }
+    }
+
+    fun batchRetag(ids: List<String>, tag: String) {
+        viewModelScope.launch { repo.retagBatch(ids, tag) }
+    }
+
     /**
      * Called with the decoded QR payload. Pushes everything still unsynced and
      * records the outcome for the result screen. The token expiry is checked here

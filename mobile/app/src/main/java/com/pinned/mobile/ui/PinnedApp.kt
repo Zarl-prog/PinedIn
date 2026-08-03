@@ -103,6 +103,8 @@ fun PinnedApp(vm: CaptureViewModel = viewModel()) {
                         onOpenScan = { screen = Screen.Scan },
                         onOpenSettings = { screen = Screen.Settings },
                         onDelete = vm::delete,
+                        onBatchDelete = vm::batchDelete,
+                        onBatchRetag = vm::batchRetag,
                     )
                 }
 

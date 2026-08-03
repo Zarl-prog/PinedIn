@@ -28,6 +28,7 @@ data class CaptureUiState(
     val keepComposerOpen: Boolean = true,
     val lastSyncAt: String? = null,
     val syncing: Boolean = false,
+    val useLightTheme: Boolean = false,
     /** Tags available for selection — kept on the ViewModel so the UI can pick. */
     val availableTags: List<String> = listOf("urgent", "later", "idea", "errand"),
 ) {
@@ -58,6 +59,7 @@ class CaptureViewModel(app: Application) : AndroidViewModel(app) {
             defaultWorkspace = prefs.defaultWorkspace,
             keepComposerOpen = prefs.keepComposerOpen,
             lastSyncAt = prefs.lastSyncAt,
+            useLightTheme = prefs.useLightTheme,
         ),
     )
     val state: StateFlow<CaptureUiState> = _state.asStateFlow()
@@ -90,6 +92,11 @@ class CaptureViewModel(app: Application) : AndroidViewModel(app) {
     fun setKeepComposerOpen(enabled: Boolean) {
         prefs.keepComposerOpen = enabled
         _state.update { it.copy(keepComposerOpen = enabled) }
+    }
+
+    fun setUseLightTheme(enabled: Boolean) {
+        prefs.useLightTheme = enabled
+        _state.update { it.copy(useLightTheme = enabled) }
     }
 
     fun clearSyncedHistory() {

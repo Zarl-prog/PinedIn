@@ -17,5 +17,5 @@
 - [ ] **Bi-directional sync** — view desktop tasks on phone (read-only)
 - [x] **Widgets with task list** — see what's on your desktop without opening the app
 - [x] **Notifications** — phone buzzes when a task is due (synced from desktop)
-- [ ] **Dark/light theme toggle** — match the desktop theme
+- [x] **Dark/light theme toggle** — match the desktop theme
 - [ ] **Batch edit** — select multiple tasks, delete or re-tag them at once

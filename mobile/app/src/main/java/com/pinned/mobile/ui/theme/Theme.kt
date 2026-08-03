@@ -66,8 +66,8 @@ val PinnedDarkColors = PinnedColors(
     btnPrimaryBg = Color(0xFFFFFFFF),
     btnPrimaryText = Color(0xFF0B0C0F),
     accent = Color(0xFF5B8CFF),
-    accentSoft = Color(0x335B8CFF), // ~20%
-    accentRing = Color(0x665B8CFF), // ~40%
+    accentSoft = Color(0x335B8CFF),
+    accentRing = Color(0x665B8CFF),
     success = Color(0xFF4ADE80),
     successSoft = Color(0x244ADE80),
     cardBg = Color(0xFF16181D),
@@ -77,6 +77,35 @@ val PinnedDarkColors = PinnedColors(
     cardTextPrimary = Color(0xFFF2F3F5),
     cardTextSecondary = Color(0xFFA8ADB8),
     cardTextMuted = Color(0xFF7A8090),
+)
+
+val PinnedLightColors = PinnedColors(
+    bgApp = Color(0xFFFFFFFF),
+    bgCard = Color(0xFFF4F4F5),
+    bgFloat = Color(0xFFFFFFFF),
+    bgInput = Color(0xFFF4F4F5),
+    bgHover = Color(0xFFE4E4E7),
+    bgBadge = Color(0xFFF4F4F5),
+    border = Color(0xFFD4D4D8),
+    borderLight = Color(0xFFA1A1AA),
+    textPrimary = Color(0xFF18181B),
+    textSecondary = Color(0xFF52525B),
+    textMuted = Color(0xFF71717A),
+    textDanger = Color(0xFFDC2626),
+    btnPrimaryBg = Color(0xFF18181B),
+    btnPrimaryText = Color(0xFFFFFFFF),
+    accent = Color(0xFF2563EB),
+    accentSoft = Color(0x1F2563EB),
+    accentRing = Color(0x592563EB),
+    success = Color(0xFF16A34A),
+    successSoft = Color(0x1F16A34A),
+    cardBg = Color(0xFFF4F4F5),
+    cardBorder = Color(0xFFE4E4E7),
+    tagBg = Color(0xFFF4F4F5),
+    tagBorder = Color(0xFFE4E4E7),
+    cardTextPrimary = Color(0xFF18181B),
+    cardTextSecondary = Color(0xFF52525B),
+    cardTextMuted = Color(0xFF71717A),
 )
 
 object PinnedShape {
@@ -149,8 +178,7 @@ object PinnedTheme {
 }
 
 /**
- * Capture app is dark-only — one-handed glance UI. [PinnedColors] is a plain value
- * class so light/parchment can be added later by providing another instance.
+ * The Pinned theme. Dark is the default; light can be toggled in Settings.
  */
 @Composable
 fun PinnedTheme(

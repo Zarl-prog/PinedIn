@@ -6,8 +6,8 @@ import android.content.Context
 val WORKSPACES = listOf("work", "personal", "inbox")
 
 /**
- * Two capture preferences and the last-sync stamp. SharedPreferences is enough —
- * this is three values read once per screen, not a data layer.
+ * Capture preferences, theme, and last-sync stamp. SharedPreferences is enough —
+ * this is a handful of values read once per screen, not a data layer.
  */
 class Prefs(context: Context) {
     private val sp = context.getSharedPreferences("pinned-prefs", Context.MODE_PRIVATE)
@@ -26,9 +26,15 @@ class Prefs(context: Context) {
         get() = sp.getString(KEY_LAST_SYNC, null)
         set(value) = sp.edit().putString(KEY_LAST_SYNC, value).apply()
 
+    /** false = dark (default), true = light. */
+    var useLightTheme: Boolean
+        get() = sp.getBoolean(KEY_LIGHT_THEME, false)
+        set(value) = sp.edit().putBoolean(KEY_LIGHT_THEME, value).apply()
+
     private companion object {
         const val KEY_WORKSPACE = "default_workspace"
         const val KEY_KEEP_OPEN = "keep_composer_open"
         const val KEY_LAST_SYNC = "last_sync_at"
+        const val KEY_LIGHT_THEME = "use_light_theme"
     }
 }

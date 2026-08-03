@@ -16,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pinned.mobile.QuickTileService
+import com.pinned.mobile.ui.theme.PinnedDarkColors
+import com.pinned.mobile.ui.theme.PinnedLightColors
 import com.pinned.mobile.ui.theme.PinnedTheme
 
 /**
@@ -61,7 +63,7 @@ fun PinnedApp(vm: CaptureViewModel = viewModel()) {
         }
     }
 
-    PinnedTheme {
+    PinnedTheme(colors = if (state.useLightTheme) PinnedLightColors else PinnedDarkColors) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -125,6 +127,7 @@ fun PinnedApp(vm: CaptureViewModel = viewModel()) {
                         onBack = { screen = Screen.Capture },
                         onDefaultWorkspace = vm::setDefaultWorkspace,
                         onKeepComposerOpen = vm::setKeepComposerOpen,
+                        onUseLightTheme = vm::setUseLightTheme,
                         onClearSynced = vm::clearSyncedHistory,
                     )
                 }

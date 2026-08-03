@@ -47,6 +47,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onDefaultWorkspace: (String) -> Unit,
     onKeepComposerOpen: (Boolean) -> Unit,
+    onUseLightTheme: (Boolean) -> Unit,
     onClearSynced: () -> Unit,
 ) {
     val c = PinnedTheme.colors
@@ -117,6 +118,29 @@ fun SettingsScreen(
                         Switch(
                             checked = state.keepComposerOpen,
                             onCheckedChange = onKeepComposerOpen,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = c.btnPrimaryBg,
+                                checkedTrackColor = c.accent,
+                                uncheckedThumbColor = c.textMuted,
+                                uncheckedTrackColor = c.bgBadge,
+                                uncheckedBorderColor = c.borderLight,
+                            ),
+                        )
+                    },
+                )
+            }
+
+            Spacer(Modifier.height(12.dp))
+            SectionLabel("Appearance")
+
+            SettingsGroup {
+                SettingsRow(
+                    title = "Light theme",
+                    subtitle = "Switch to a brighter color palette",
+                    trailing = {
+                        Switch(
+                            checked = state.useLightTheme,
+                            onCheckedChange = onUseLightTheme,
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = c.btnPrimaryBg,
                                 checkedTrackColor = c.accent,

@@ -61,20 +61,6 @@ fun PinnedApp(vm: CaptureViewModel = viewModel()) {
                 return@Box
             }
 
-            // After a scan, keep the user on a dedicated syncing screen until the
-            // POST finishes — don't flash Capture with no feedback.
-            if (state.syncing) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .statusBarsPadding()
-                        .navigationBarsPadding(),
-                ) {
-                    SyncingScreen()
-                }
-                return@Box
-            }
-
             when (screen) {
                 Screen.Capture -> Box(
                     modifier = Modifier

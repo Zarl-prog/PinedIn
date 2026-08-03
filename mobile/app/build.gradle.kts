@@ -59,7 +59,7 @@ dependencies {
     // binds CameraX against. The compose-ui copy of that CompositionLocal is
     // deprecated as of Compose 1.7, so take it from lifecycle instead.
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
-    implementation("androidx.activity:activity-compose:1.9.2")
+    implementation("androidx.activity:activity-compose:1.9.3")
 
     // Flow/coroutines arrive transitively via room-ktx and lifecycle, but the app
     // uses them directly (DAO Flows, Dispatchers.IO for the sync POST) so pin them.

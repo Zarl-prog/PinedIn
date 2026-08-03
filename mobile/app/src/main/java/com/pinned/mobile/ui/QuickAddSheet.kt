@@ -1,7 +1,13 @@
 package com.pinned.mobile.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,17 +19,26 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,16 +49,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.pinned.mobile.data.WORKSPACES
 import com.pinned.mobile.ui.components.ChoiceChip
 import com.pinned.mobile.ui.components.PrimaryButton
 import com.pinned.mobile.ui.theme.PinnedShape
 import com.pinned.mobile.ui.theme.PinnedTheme
+import com.pinned.mobile.util.VoiceRecognizer
 
 /**
  * The quick-add sheet. Opens with the keyboard already up and the cursor placed —
@@ -64,10 +82,61 @@ fun QuickAddSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
+    val context = LocalContext.current
 
     var field by remember { mutableStateOf(TextFieldValue("")) }
     var workspace by remember(defaultWorkspace) { mutableStateOf(defaultWorkspace) }
     val canSave = field.text.isNotBlank()
+
+    // Voice recognizer
+    val recognizer = remember { VoiceRecognizer(context) }
+    val voiceState by recognizer.state.collectAsState()
+
+    // Handle voice recognition results
+    LaunchedEffect(voiceState) {
+        when (val s = voiceState) {
+            is VoiceRecognizer.State.Done -> {
+                field = TextFieldValue(s.text, TextRange(s.text.length))
+                recognizer.reset()
+            }
+            is VoiceRecognizer.State.Error -> {
+                recognizer.reset()
+            }
+            else -> {}
+        }
+    }
+
+    // Permission launcher for RECORD_AUDIO
+    var micPermissionGranted by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                PackageManager.PERMISSION_GRANTED
+        )
+    }
+    val micPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        micPermissionGranted = granted
+        if (granted) recognizer.start()
+    }
+
+    fun toggleVoice() {
+        when (voiceState) {
+            is VoiceRecognizer.State.Listening -> recognizer.cancel()
+            else -> {
+                if (micPermissionGranted) {
+                    recognizer.start()
+                } else {
+                    micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                }
+            }
+        }
+    }
+
+    // Cleanup on dismiss
+    DisposableEffect(Unit) {
+        onDispose { recognizer.cancel() }
+    }
 
     fun save() {
         if (!canSave) return
@@ -85,7 +154,10 @@ fun QuickAddSheet(
     }
 
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            recognizer.cancel()
+            onDismiss()
+        },
         sheetState = sheetState,
         containerColor = c.bgFloat,
         contentColor = c.textPrimary,
@@ -115,34 +187,80 @@ fun QuickAddSheet(
                 .padding(horizontal = 16.dp)
                 .padding(bottom = 20.dp),
         ) {
-            BasicTextField(
-                value = field,
-                onValueChange = { field = it },
-                textStyle = MaterialTheme.typography.bodyLarge.copy(color = c.textPrimary),
-                cursorBrush = SolidColor(c.accent),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { save() }),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .defaultMinSize(minHeight = 100.dp)
-                    .clip(PinnedShape.field)
-                    .background(c.bgInput)
-                    .border(1.5.dp, c.accentRing, PinnedShape.field)
-                    .focusRequester(focusRequester)
-                    .padding(horizontal = 16.dp, vertical = 16.dp),
-                decorationBox = { inner ->
-                    Box(contentAlignment = Alignment.TopStart) {
-                        if (field.text.isEmpty()) {
-                            Text(
-                                text = "Jot something down…",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = c.textMuted,
-                            )
+            // Text field with mic button
+            Row(
+                verticalAlignment = Alignment.Top,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                BasicTextField(
+                    value = field,
+                    onValueChange = { field = it },
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = c.textPrimary),
+                    cursorBrush = SolidColor(c.accent),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { save() }),
+                    modifier = Modifier
+                        .weight(1f)
+                        .defaultMinSize(minHeight = 100.dp)
+                        .clip(PinnedShape.field)
+                        .background(c.bgInput)
+                        .border(1.5.dp, c.accentRing, PinnedShape.field)
+                        .focusRequester(focusRequester)
+                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                    decorationBox = { inner ->
+                        Box(contentAlignment = Alignment.TopStart) {
+                            if (field.text.isEmpty() && voiceState !is VoiceRecognizer.State.Listening) {
+                                Text(
+                                    text = "Jot something down…",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = c.textMuted,
+                                )
+                            }
+                            if (voiceState is VoiceRecognizer.State.Listening) {
+                                Text(
+                                    text = "Listening…",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = c.accent,
+                                )
+                            }
+                            inner()
                         }
-                        inner()
+                    },
+                )
+
+                // Mic button
+                val isListening = voiceState is VoiceRecognizer.State.Listening
+                val micColor by animateColorAsState(
+                    targetValue = if (isListening) c.accent else c.textMuted,
+                    label = "mic-color",
+                )
+
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .padding(start = 8.dp, top = 8.dp)
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(if (isListening) c.accent.copy(alpha = 0.15f) else c.bgInput)
+                        .border(1.dp, if (isListening) c.accent.copy(alpha = 0.4f) else c.border, CircleShape)
+                        .clickable(enabled = voiceState !is VoiceRecognizer.State.Listening) { toggleVoice() },
+                ) {
+                    if (voiceState is VoiceRecognizer.State.Listening) {
+                        CircularProgressIndicator(
+                            color = c.accent,
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Filled.Mic,
+                            contentDescription = "Voice capture",
+                            tint = micColor,
+                            modifier = Modifier.size(20.dp),
+                        )
                     }
-                },
-            )
+                }
+            }
 
             Spacer(Modifier.height(16.dp))
 

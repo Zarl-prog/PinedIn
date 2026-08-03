@@ -6,6 +6,8 @@
     <!-- INTERNET is required to open a socket to the laptop on the local WiFi.
          No traffic ever leaves the local network. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- RECORD_AUDIO is used for voice-to-text task capture. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <uses-feature
         android:name="android.hardware.camera.any"

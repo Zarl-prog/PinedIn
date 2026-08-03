@@ -133,6 +133,9 @@ fun QuickAddSheet(
         }
     }
 
+    val isListening = voiceState is VoiceRecognizer.State.Listening
+    val isLoading = voiceState is VoiceRecognizer.State.Loading
+
     // Permission launcher for RECORD_AUDIO
     var micPermissionGranted by remember {
         mutableStateOf(
@@ -162,7 +165,7 @@ fun QuickAddSheet(
 
     // Cleanup on dismiss
     DisposableEffect(Unit) {
-        onDispose { recognizer.cancel() }
+        onDispose { recognizer.destroy() }
     }
 
     fun save() {
@@ -241,19 +244,28 @@ fun QuickAddSheet(
                         .padding(horizontal = 16.dp, vertical = 16.dp),
                     decorationBox = { inner ->
                         Box(contentAlignment = Alignment.TopStart) {
-                            if (field.text.isEmpty() && voiceState !is VoiceRecognizer.State.Listening) {
-                                Text(
-                                    text = "Jot something down…",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = c.textMuted,
-                                )
-                            }
-                            if (voiceState is VoiceRecognizer.State.Listening) {
-                                Text(
-                                    text = "Listening…",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = c.accent,
-                                )
+                            when {
+                                voiceState is VoiceRecognizer.State.Listening -> {
+                                    Text(
+                                        text = "Listening…",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = c.accent,
+                                    )
+                                }
+                                voiceState is VoiceRecognizer.State.Loading -> {
+                                    Text(
+                                        text = "Downloading speech model…",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = c.textMuted,
+                                    )
+                                }
+                                field.text.isEmpty() -> {
+                                    Text(
+                                        text = "Jot something down…",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = c.textMuted,
+                                    )
+                                }
                             }
                             inner()
                         }
@@ -261,9 +273,12 @@ fun QuickAddSheet(
                 )
 
                 // Mic button
-                val isListening = voiceState is VoiceRecognizer.State.Listening
                 val micColor by animateColorAsState(
-                    targetValue = if (isListening) c.accent else c.textMuted,
+                    targetValue = when {
+                        isListening -> c.accent
+                        isLoading -> c.textMuted
+                        else -> c.textMuted
+                    },
                     label = "mic-color",
                 )
 
@@ -273,23 +288,47 @@ fun QuickAddSheet(
                         .padding(start = 8.dp, top = 8.dp)
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(if (isListening) c.accent.copy(alpha = 0.15f) else c.bgInput)
-                        .border(1.dp, if (isListening) c.accent.copy(alpha = 0.4f) else c.border, CircleShape)
-                        .clickable(enabled = voiceState !is VoiceRecognizer.State.Listening) { toggleVoice() },
+                        .background(
+                            when {
+                                isListening -> c.accent.copy(alpha = 0.15f)
+                                isLoading -> c.bgBadge
+                                else -> c.bgInput
+                            }
+                        )
+                        .border(
+                            1.dp,
+                            when {
+                                isListening -> c.accent.copy(alpha = 0.4f)
+                                isLoading -> c.border
+                                else -> c.border
+                            },
+                            CircleShape,
+                        )
+                        .clickable(enabled = !isListening && !isLoading) { toggleVoice() },
                 ) {
-                    if (voiceState is VoiceRecognizer.State.Listening) {
-                        CircularProgressIndicator(
-                            color = c.accent,
-                            strokeWidth = 2.dp,
-                            modifier = Modifier.size(20.dp),
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Filled.Mic,
-                            contentDescription = "Voice capture",
-                            tint = micColor,
-                            modifier = Modifier.size(20.dp),
-                        )
+                    when {
+                        isListening -> {
+                            CircularProgressIndicator(
+                                color = c.accent,
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                        isLoading -> {
+                            CircularProgressIndicator(
+                                color = c.textMuted,
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                        else -> {
+                            Icon(
+                                imageVector = Icons.Filled.Mic,
+                                contentDescription = "Voice capture",
+                                tint = micColor,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
                     }
                 }
             }

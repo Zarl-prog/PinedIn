@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Adaptive launcher icon: a pin over Pinned's near-black surface.
+  Adaptive launcher icon: stroke-based location pin over Pinned's near-black surface.
   minSdk is 26, so the adaptive icon covers every supported device and no
   density-bucket PNGs are required.
 -->
@@ -10,12 +10,17 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Pin head -->
+    <!-- Pin outline (stroke only, scaled from 24x24 SVG by 4.5x) -->
     <path
-        android:fillColor="#EDEDED"
-        android:pathData="M54,30 m-11,0 a11,11 0 1,0 22,0 a11,11 0 1,0 -22,0" />
-    <!-- Pin body tapering to the point -->
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="11.25"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M54,9 a31.5,31.5,0,0,0,-31.5,31.5 c0,23.625,31.5,58.5,31.5,58.5 s31.5,-34.875,31.5,-58.5 a31.5,31.5,0,0,0,-63,0 Z" />
+
+    <!-- Inner circle (filled) -->
     <path
-        android:fillColor="#EDEDED"
-        android:pathData="M50,40 L58,40 L56,62 L54,78 L52,62 Z" />
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,40.5 m-11.25,0 a11.25,11.25,0,1,1,22.5,0 a11.25,11.25,0,1,1,-22.5,0" />
 </vector>

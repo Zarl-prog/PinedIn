@@ -3,6 +3,7 @@ package com.pinned.mobile.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.pinned.mobile.PinnedWidgetProvider
 import com.pinned.mobile.data.CaptureRepository
 import com.pinned.mobile.data.CapturedTask
 import com.pinned.mobile.data.PinnedDatabase
@@ -125,6 +126,7 @@ class CaptureViewModel(app: Application) : AndroidViewModel(app) {
                                 val stamp = nowIsoUtc()
                                 prefs.lastSyncAt = stamp
                                 _state.update { it.copy(lastSyncAt = stamp) }
+                                PinnedWidgetProvider.updateAll(app)
                                 lastError = null
                                 break
                             }

@@ -1,10 +1,10 @@
 # Pinned Mobile — Feature Roadmap
 
 ## Quick Wins (low effort)
-- [ ] **Voice capture** — tap mic, speak task, auto-transcribe to text
-- [ ] **Swipe to delete** — swipe left on a captured task to remove it before sync
-- [ ] **Task count badge** — show how many unsynced tasks are sitting on the phone
-- [ ] **Last sync timestamp** — show "Synced 2 hours ago" on the capture screen
+- [x] **Voice capture** — tap mic, speak task, auto-transcribe to text
+- [x] **Swipe to delete** — swipe left on a captured task to remove it before sync
+- [x] **Task count badge** — show how many unsynced tasks are sitting on the phone
+- [x] **Last sync timestamp** — show "Synced 2 hours ago" on the capture screen
 
 ## Medium Effort
 - [ ] **Quick settings tile** — pull down notification shade, tap tile to open composer instantly

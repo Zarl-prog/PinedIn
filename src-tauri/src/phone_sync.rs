@@ -41,6 +41,8 @@ pub struct IncomingTask {
     pub text: String,
     pub created_at: String,
     pub workspace: Option<String>,
+    #[serde(default)]
+    pub tags: Option<String>,
 }
 
 /// What the frontend needs to draw the pairing screen.
@@ -297,9 +299,13 @@ fn insert_batch(
             }
             _ => None,
         };
-        if let Some(created) =
-            db.insert_synced_task(&task.id, task.text.trim(), &task.created_at, workspace_id)?
-        {
+        if let Some(created) = db.insert_synced_task(
+            &task.id,
+            task.text.trim(),
+            &task.created_at,
+            workspace_id,
+            task.tags.as_deref(),
+        )? {
             inserted.push(created);
         }
     }

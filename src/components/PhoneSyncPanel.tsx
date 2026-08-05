@@ -1,4 +1,5 @@
 import { CheckCircle, DeviceMobile, X } from "@phosphor-icons/react";
+import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -9,7 +10,6 @@ import {
   type PairingPayload,
 } from "@/lib/tauriCommands";
 import { useReminderStore } from "@/store/reminderStore";
-
 interface PhoneSyncPanelProps {
   open: boolean;
   onClose: () => void;
@@ -30,6 +30,7 @@ export default function PhoneSyncPanel({ open, onClose }: PhoneSyncPanelProps) {
   const [error, setError] = useState<string | null>(null);
 
   const fetchTasks = useReminderStore.getState().fetchTasks;
+  const fetchWorkspaceTasks = useReminderStore.getState().fetchWorkspaceTasks;
 
   // `open` is read inside the unmount cleanup below; a ref keeps that cleanup
   // out of the effect's dependency list so the listeners aren't rebound on
@@ -93,6 +94,14 @@ export default function PhoneSyncPanel({ open, onClose }: PhoneSyncPanelProps) {
         setReceived(event.payload);
         setError(null);
         void fetchTasks();
+        // A synced task may have landed in a workspace. Refresh the list the
+        // Tasks tab is currently showing so it appears as a normal task card
+        // right away instead of waiting for a restart.
+        void invoke<number | null>("get_active_workspace_id")
+          .then((wsId) => {
+            if (wsId !== null) return fetchWorkspaceTasks(wsId);
+          })
+          .catch(() => {});
       }),
       listen<string>("phone_sync_error", (event) => {
         setError(event.payload);
@@ -101,7 +110,7 @@ export default function PhoneSyncPanel({ open, onClose }: PhoneSyncPanelProps) {
     return () => {
       void unlisten.then((fns) => fns.forEach((fn) => fn()));
     };
-  }, [open, fetchTasks]);
+  }, [open, fetchTasks, fetchWorkspaceTasks]);
 
   const expired = pairing !== null && secondsLeft <= 0 && received === null;
 

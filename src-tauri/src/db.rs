@@ -358,6 +358,7 @@ impl DbHandle {
         text: &str,
         created_at: &str,
         workspace_id: Option<i64>,
+        tags: Option<&str>,
     ) -> Result<Option<Task>, String> {
         let conn = self.conn()?;
 
@@ -375,8 +376,8 @@ impl DbHandle {
 
         conn.execute(
             "INSERT INTO tasks (title, description, due_time, completed, created_at, recurrence, tags, time_limit_minutes, started_at, is_presceduled, scheduled_at, workspace_id, mobile_id)
-             VALUES (?1, '', '', 0, ?2, NULL, NULL, NULL, NULL, 0, NULL, ?3, ?4)",
-            rusqlite::params![text, created_at, workspace_id, mobile_id],
+             VALUES (?1, '', '', 0, ?2, NULL, ?5, NULL, NULL, 0, NULL, ?3, ?4)",
+            rusqlite::params![text, created_at, workspace_id, mobile_id, tags],
         )
         .map_err(|e| format!("Failed to insert synced task: {e}"))?;
 
@@ -389,7 +390,7 @@ impl DbHandle {
             completed: false,
             created_at: created_at.to_string(),
             recurrence: None,
-            tags: None,
+            tags: tags.map(str::to_string),
             time_limit_minutes: None,
             started_at: None,
             is_presceduled: 0,

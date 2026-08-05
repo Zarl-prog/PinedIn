@@ -16,7 +16,6 @@ import org.vosk.Model
 import org.vosk.Recognizer
 import org.vosk.android.RecognitionListener
 import org.vosk.android.SpeechService
-import org.vosk.android.storage.StorageService
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URL

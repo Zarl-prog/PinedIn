@@ -10,17 +10,26 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Pin outline (stroke only, scaled from 24x24 SVG by 4.5x) -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="11.25"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M54,9 a31.5,31.5,0,0,0,-31.5,31.5 c0,23.625,31.5,58.5,31.5,58.5 s31.5,-34.875,31.5,-58.5 a31.5,31.5,0,0,0,-63,0 Z" />
+    <!-- Group scales fully-framed 108dp artwork down into the 66dp adaptive safe-zone
+         so the launcher never crops the pin's tip or bottom point. -->
+    <group
+        android:scaleX="0.72"
+        android:scaleY="0.72"
+        android:pivotX="54"
+        android:pivotY="54">
 
-    <!-- Inner circle (filled) -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,40.5 m-11.25,0 a11.25,11.25,0,1,1,22.5,0 a11.25,11.25,0,1,1,-22.5,0" />
+        <!-- Pin outline (stroke only, scaled from 24x24 SVG by 4.5x) -->
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="11.25"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M54,9 a31.5,31.5,0,0,0,-31.5,31.5 c0,23.625,31.5,58.5,31.5,58.5 s31.5,-34.875,31.5,-58.5 a31.5,31.5,0,0,0,-63,0 Z" />
+
+        <!-- Inner circle (filled) -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M54,40.5 m-11.25,0 a11.25,11.25,0,1,1,22.5,0 a11.25,11.25,0,1,1,-22.5,0" />
+    </group>
 </vector>

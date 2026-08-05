@@ -39,6 +39,7 @@ fun PinnedApp(vm: CaptureViewModel = viewModel()) {
 
     var screen by remember { mutableStateOf<Screen>(Screen.Capture) }
     var composerOpen by remember { mutableStateOf(false) }
+    var autoStartVoice by remember { mutableStateOf(false) }
 
     // Handle intents: share text or quick settings tile
     var sharedText by remember { mutableStateOf<String?>(null) }
@@ -100,6 +101,10 @@ fun PinnedApp(vm: CaptureViewModel = viewModel()) {
                     CaptureScreen(
                         state = state,
                         onOpenComposer = { composerOpen = true },
+                        onVoiceCapture = {
+                            composerOpen = true
+                            autoStartVoice = true
+                        },
                         onOpenScan = { screen = Screen.Scan },
                         onOpenSettings = { screen = Screen.Settings },
                         onDelete = vm::delete,
@@ -141,13 +146,16 @@ fun PinnedApp(vm: CaptureViewModel = viewModel()) {
                     keepOpenAfterSave = state.keepComposerOpen,
                     availableTags = state.availableTags,
                     initialText = sharedText ?: "",
+                    autoStartVoice = autoStartVoice,
                     onSave = { text, workspace, tags, dueAt ->
                         vm.capture(text, workspace, tags, dueAt)
                         sharedText = null
+                        autoStartVoice = false
                     },
                     onDismiss = {
                         composerOpen = false
                         sharedText = null
+                        autoStartVoice = false
                     },
                 )
             }

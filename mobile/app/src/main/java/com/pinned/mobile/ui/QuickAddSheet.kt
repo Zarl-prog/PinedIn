@@ -64,6 +64,7 @@ import com.pinned.mobile.ui.components.PrimaryButton
 import com.pinned.mobile.ui.theme.PinnedShape
 import com.pinned.mobile.ui.theme.PinnedTheme
 import com.pinned.mobile.util.VoiceRecognizer
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -81,6 +82,7 @@ fun QuickAddSheet(
     keepOpenAfterSave: Boolean,
     availableTags: List<String>,
     initialText: String = "",
+    autoStartVoice: Boolean = false,
     onSave: (text: String, workspace: String, tags: String, dueAt: String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -93,7 +95,7 @@ fun QuickAddSheet(
     var field by remember { mutableStateOf(TextFieldValue(initialText, TextRange(initialText.length))) }
     var workspace by remember(defaultWorkspace) { mutableStateOf(defaultWorkspace) }
     var selectedTags by remember { mutableStateOf(setOf<String>()) }
-    var dueDate by remember { mutableStateOf<LocalDate?>(null) }
+    var dueDate: LocalDate? by remember { mutableStateOf(null) }
     val canSave = field.text.isNotBlank()
 
     val formatter = remember { DateTimeFormatter.ofPattern("MMM d") }
@@ -186,6 +188,16 @@ fun QuickAddSheet(
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
         keyboard?.show()
+    }
+
+    LaunchedEffect(autoStartVoice) {
+        if (autoStartVoice && !isListening && !isLoading) {
+            if (micPermissionGranted) {
+                recognizer.start()
+            } else {
+                micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            }
+        }
     }
 
     ModalBottomSheet(

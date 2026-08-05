@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -35,6 +36,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -52,6 +54,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -69,6 +72,7 @@ import com.pinned.mobile.util.relativeTime
 fun CaptureScreen(
     state: CaptureUiState,
     onOpenComposer: () -> Unit,
+    onVoiceCapture: () -> Unit,
     onOpenScan: () -> Unit,
     onOpenSettings: () -> Unit,
     onDelete: (String) -> Unit,
@@ -187,6 +191,7 @@ fun CaptureScreen(
             Composer(
                 onOpenComposer = onOpenComposer,
                 onOpenScan = onOpenScan,
+                onVoiceCapture = onVoiceCapture,
             )
         }
     }
@@ -490,7 +495,7 @@ private fun SelectableTaskRow(
 ) {
     val c = PinnedTheme.colors
     val bg by animateColorAsState(
-        targetValue = if (selected) c.accentSoft else if (task.synced) Color.Transparent else c.bgCard,
+        targetValue = if (selected) c.accentSoft else c.bgCard,
         label = "select-bg",
     )
     Column(
@@ -520,7 +525,7 @@ private fun SelectableTaskRow(
                     fontWeight = if (task.synced) FontWeight.Normal else FontWeight.Medium,
                     letterSpacing = (-0.2).sp,
                 ),
-                color = if (task.synced) c.textMuted else c.textPrimary,
+                color = if (task.synced) c.textSecondary else c.textPrimary,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -529,6 +534,21 @@ private fun SelectableTaskRow(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(start = 30.dp),
         ) {
+            if (task.synced) {
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = "Synced",
+                    tint = c.success,
+                    modifier = Modifier.size(14.dp),
+                )
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    text = "Synced",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.success,
+                )
+                Spacer(Modifier.width(8.dp))
+            }
             Text(
                 text = task.workspace,
                 style = MaterialTheme.typography.bodySmall,
@@ -569,7 +589,7 @@ private fun TaskRow(task: CapturedTask) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(if (task.synced) Color.Transparent else c.bgCard)
+            .background(c.bgCard)
             .padding(horizontal = 14.dp, vertical = 13.dp),
     ) {
         Text(
@@ -578,10 +598,25 @@ private fun TaskRow(task: CapturedTask) {
                 fontWeight = if (task.synced) FontWeight.Normal else FontWeight.Medium,
                 letterSpacing = (-0.2).sp,
             ),
-            color = if (task.synced) c.textMuted else c.textPrimary,
+            color = if (task.synced) c.textSecondary else c.textPrimary,
         )
         Spacer(Modifier.height(7.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
+            if (task.synced) {
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = "Synced",
+                    tint = c.success,
+                    modifier = Modifier.size(14.dp),
+                )
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    text = "Synced",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.success,
+                )
+                Spacer(Modifier.width(8.dp))
+            }
             Text(
                 text = task.workspace,
                 style = MaterialTheme.typography.bodySmall,
@@ -617,56 +652,82 @@ private fun TaskRow(task: CapturedTask) {
 
 /** Primary jot dock — scan stays available but visually quiet. */
 @Composable
-private fun Composer(onOpenComposer: () -> Unit, onOpenScan: () -> Unit) {
+private fun Composer(onOpenComposer: () -> Unit, onOpenScan: () -> Unit, onVoiceCapture: () -> Unit) {
     val c = PinnedTheme.colors
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    // Wrapper like mobile.html .composer-wrap so the mic floats over the composer's top edge.
+    Box(
+        contentAlignment = Alignment.TopCenter,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 12.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(c.bgFloat)
-            .border(1.dp, c.border, RoundedCornerShape(14.dp))
-            .padding(start = 16.dp, end = 10.dp, top = 10.dp, bottom = 10.dp),
+            .padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 12.dp),
     ) {
-        Box(
-            contentAlignment = Alignment.CenterStart,
+        // Composer bar
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .weight(1f)
-                .height(40.dp)
-                .clickable(onClick = onOpenComposer)
-                .padding(end = 8.dp),
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(c.bgFloat)
+                .border(1.dp, c.border, RoundedCornerShape(14.dp))
+                .padding(start = 16.dp, end = 10.dp, top = 10.dp, bottom = 10.dp),
         ) {
-            Text(
-                text = "Jot something down…",
-                style = MaterialTheme.typography.bodyLarge,
-                color = c.textMuted,
+            Box(
+                contentAlignment = Alignment.CenterStart,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(40.dp)
+                    .clickable(onClick = onOpenComposer)
+                    .padding(end = 8.dp),
+            ) {
+                Text(
+                    text = "Jot something down…",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = c.textMuted,
+                )
+            }
+            Icon(
+                imageVector = Icons.Filled.QrCodeScanner,
+                contentDescription = "Scan the QR code on your laptop",
+                tint = c.textMuted,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable(onClick = onOpenScan)
+                    .padding(8.dp),
             )
+            Spacer(Modifier.width(4.dp))
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(11.dp))
+                    .background(c.btnPrimaryBg)
+                    .clickable(onClick = onOpenComposer),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = "Add a task",
+                    tint = c.btnPrimaryText,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
         }
-        Icon(
-            imageVector = Icons.Filled.QrCodeScanner,
-            contentDescription = "Scan the QR code on your laptop",
-            tint = c.textMuted,
-            modifier = Modifier
-                .size(36.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .clickable(onClick = onOpenScan)
-                .padding(8.dp),
-        )
-        Spacer(Modifier.width(4.dp))
+
+        // Floating mic button — straddles the composer's top edge, like mobile.html .mic-float
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(11.dp))
+                .offset(y = (-20).dp)
+                .size(36.dp)
+                .clip(CircleShape)
                 .background(c.btnPrimaryBg)
-                .clickable(onClick = onOpenComposer),
+                .clickable(onClick = onVoiceCapture),
         ) {
             Icon(
-                imageVector = Icons.Filled.Add,
-                contentDescription = "Add a task",
+                imageVector = Icons.Filled.Mic,
+                contentDescription = "Voice capture",
                 tint = c.btnPrimaryText,
-                modifier = Modifier.size(22.dp),
+                modifier = Modifier.size(20.dp),
             )
         }
     }

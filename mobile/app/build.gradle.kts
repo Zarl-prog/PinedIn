@@ -72,9 +72,9 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
 
     // Room — local capture store, mirrors the desktop's SQLite approach.
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.room:room-runtime:2.7.2")
+    implementation("androidx.room:room-ktx:2.7.2")
+    ksp("androidx.room:room-compiler:2.7.2")
 
     // QR scanning — CameraX preview + ML Kit barcode analysis.
     implementation("androidx.camera:camera-core:1.3.4")

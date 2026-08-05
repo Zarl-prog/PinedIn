@@ -141,7 +141,7 @@ class CaptureViewModel(app: Application) : AndroidViewModel(app) {
                                 val stamp = nowIsoUtc()
                                 prefs.lastSyncAt = stamp
                                 _state.update { it.copy(lastSyncAt = stamp) }
-                                PinnedWidgetProvider.updateAll(app)
+                                PinnedWidgetProvider.updateAll(getApplication())
                                 lastError = null
                                 break
                             }

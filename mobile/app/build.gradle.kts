@@ -86,9 +86,6 @@ dependencies {
     // Networking — single plain POST to the laptop over the LAN.
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
-    // Vosk — offline speech recognition for voice capture.
-    implementation("com.alphacephei:vosk-android:0.3.47")
-
     // JSON payload building uses Android's bundled org.json — no extra dependency
     // and no compiler plugin needed for a payload this small.
 

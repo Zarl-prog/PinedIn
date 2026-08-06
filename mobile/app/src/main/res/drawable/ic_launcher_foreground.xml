@@ -11,10 +11,13 @@
     android:viewportHeight="108">
 
     <!-- Group scales fully-framed 108dp artwork down into the 66dp adaptive safe-zone
-         so the launcher never crops the pin's tip or bottom point. -->
+         so the launcher never crops the pin's tip or bottom point.
+         Pin path spans ±45 from center; stroke width 11.25 adds ±5.625, so the
+         visual extent is ±50.625. The safe-zone circle has radius 33, so the max
+         scale is 33/50.625 = 0.652 — 0.65 keeps the whole pin (stroke included) visible. -->
     <group
-        android:scaleX="0.72"
-        android:scaleY="0.72"
+        android:scaleX="0.65"
+        android:scaleY="0.65"
         android:pivotX="54"
         android:pivotY="54">
 

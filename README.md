@@ -78,7 +78,7 @@ Most task managers hide behind a click. Pinned doesn't. It pins your most import
 | **Backend** | Rust (tokio · axum · rusqlite · chrono · serde) |
 | **Database** | SQLite — local, embedded, zero-config |
 | **Build** | Vite · Biome (lint + format) |
-
+  
 ---
 
 ## 📦 Installation
